@@ -1,6 +1,4 @@
 node_modules
-node_modules.nosync
 .next
-.next.nosync
 pnpm-lock.yaml
 next-env.d.ts

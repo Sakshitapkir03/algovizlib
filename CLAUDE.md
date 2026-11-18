@@ -192,9 +192,10 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 
 ## Gotchas
 
-- **Next.js 16 with Cache Components**: `generateStaticParams` must return at least one param, `dynamicParams` is
-  not allowed, and unknown ids call `notFound()`. Read `node_modules/next/dist/docs/` before using unfamiliar APIs.
-- **iCloud-synced folders**: if the repo is on an iCloud-synced Desktop/Documents folder, macOS may evict
-  `node_modules` files ("dataless"), and every tool hangs. Keep deps in `node_modules.nosync` with a `node_modules`
-  symlink (same for `.next`). See the README.
+- **Next.js 16 with Cache Components**: `generateStaticParams` must return at least one param and `dynamicParams` is
+  not allowed. `/learn/[id]` exports `ensureStatic = "navigation"` so unknown ids render fully and `notFound()`
+  returns a real 404 (otherwise Partial Prefetching serves the fallback shell with a 200). Read
+  `node_modules/next/dist/docs/` before using unfamiliar APIs.
+- **Keep the repo out of iCloud-synced folders** (Desktop/Documents). macOS can evict `node_modules` files, and
+  every tool hangs.
 - Remotion requires a company license for teams of 4+ people. See https://remotion.dev/license.

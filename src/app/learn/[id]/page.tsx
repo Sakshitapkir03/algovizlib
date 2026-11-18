@@ -6,6 +6,11 @@ import { ExampleSourceBadge } from "@/components/learn/example-source-badge";
 import { LearnView } from "@/components/learn/learn-view";
 import { getStoryboard, storyboards } from "@/content/storyboards";
 
+// Storyboards are static, so render the whole route before responding. Without this, Partial Prefetching serves
+// the fallback shell with a 200 for unknown ids before notFound() runs. (dynamicParams isn't allowed with Cache
+// Components.)
+export const ensureStatic = "navigation";
+
 export function generateStaticParams() {
   return storyboards.map((sb) => ({ id: sb.id }));
 }

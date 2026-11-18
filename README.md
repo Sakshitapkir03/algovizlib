@@ -46,22 +46,6 @@ Play/pause, scrubber, speed (0.5x–2x), and fullscreen. Keyboard: **Space** pla
 Import the repo into Vercel. It needs no configuration: the framework, pnpm, and the build command are detected
 automatically, and every page is statically prerendered.
 
-## Project on an iCloud-synced folder?
-
-If the repo lives in an iCloud-synced Desktop or Documents folder, macOS can offload `node_modules` files to the
-cloud, which makes `next`, `eslint`, and `tsc` hang. Keep generated folders out of iCloud by giving them a `.nosync`
-name and symlinking:
-
-```bash
-rm -rf node_modules .next
-mkdir node_modules.nosync .next.nosync
-ln -s node_modules.nosync node_modules
-ln -s .next.nosync .next
-pnpm install
-```
-
-Both `.nosync` folders are already gitignored and excluded from TypeScript, ESLint, and Prettier.
-
 ## Contributing
 
 See [CLAUDE.md](./CLAUDE.md) for the architecture, the storyboard and primitive system, how to add a primitive
