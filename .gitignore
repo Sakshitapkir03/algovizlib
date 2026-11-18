@@ -41,3 +41,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# generation cache (scripts/generate-storyboards.ts)
+.cache/

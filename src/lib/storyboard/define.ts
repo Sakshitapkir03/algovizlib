@@ -1,16 +1,24 @@
-import { storyboardSchema, type Storyboard, type StoryboardInput } from "./schema";
+import { formatIssue, zodIssues } from "./issues";
+import { resolveStoryboard } from "./resolve";
+import { storyboardSourceSchema, type Storyboard, type StoryboardInput } from "./schema";
 
 /**
- * Parse an authored storyboard, applying defaults. Throws a readable error if
+ * Parse an authored storyboard, apply defaults, and resolve trace-derived values. Throws a readable error if
  * the storyboard is invalid, so a bad content file fails tests and builds.
  */
 export function defineStoryboard(input: StoryboardInput): Storyboard {
-  const result = storyboardSchema.safeParse(input);
-  if (!result.success) {
-    const details = result.error.issues
-      .map((issue) => `  - ${issue.path.join(".") || "(root)"}: ${issue.message}`)
-      .join("\n");
-    throw new Error(`Invalid storyboard "${input.id}":\n${details}`);
-  }
-  return result.data;
+  return loadStoryboard(input);
+}
+
+/** Same as `defineStoryboard`, for untyped input such as a generated JSON file. */
+export function loadStoryboard(input: unknown): Storyboard {
+  const id = (input as { id?: unknown } | null)?.id;
+  const fail = (lines: string[]) => {
+    throw new Error(`Invalid storyboard "${String(id)}":\n${lines.map((l) => `  - ${l}`).join("\n")}`);
+  };
+  const source = storyboardSourceSchema.safeParse(input);
+  if (!source.success) return fail(zodIssues("", source.error.issues).map(formatIssue));
+  const { storyboard, issues } = resolveStoryboard(source.data);
+  if (!storyboard) return fail(issues.map(formatIssue));
+  return storyboard;
 }

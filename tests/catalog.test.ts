@@ -4,14 +4,14 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { categories, patterns, problems } from "@/content/catalog";
-import { getStoryboard } from "@/content/storyboards";
-import { validateStoryboard } from "@/lib/engines";
 import { DIFFICULTIES, categorySchema, patternSchema, problemSchema } from "@/lib/catalog";
+import { validateStoryboard } from "@/lib/storyboard";
 import {
   getAdjacentProblems,
   getPatternStats,
   getProblem,
   getProblems,
+  getProblemStoryboard,
   getSearchIndex,
 } from "@/lib/catalog/repository";
 
@@ -56,25 +56,25 @@ describe("catalog integrity", () => {
     }
   });
 
-  it("only links storyboards that exist and pass the engine validator", () => {
+  it("only links storyboards that exist and pass the validator", () => {
     const linked = problems.filter((p) => p.storyboardId !== undefined);
     expect(linked.length).toBeGreaterThan(0);
-    for (const problem of linked) {
-      const storyboard = getStoryboard(problem.storyboardId!);
-      expect(storyboard, `${problem.slug} → ${problem.storyboardId}`).toBeDefined();
-      const result = validateStoryboard(storyboard!);
-      expect(result.issues, problem.slug).toEqual([]);
+    for (const problem of problems) {
+      const storyboard = getProblemStoryboard(problem);
+      if (problem.storyboardId) expect(storyboard, `${problem.slug} → ${problem.storyboardId}`).toBeDefined();
+      if (!storyboard) continue;
+      expect(validateStoryboard(storyboard).issues, problem.slug).toEqual([]);
     }
   });
 
-  it("uses the storyboard's own numbers in one of the problem's examples", () => {
+  it("animates the problem's own example when a video is bound to a trace", () => {
     for (const problem of problems) {
-      const engine = problem.storyboardId ? getStoryboard(problem.storyboardId)?.engine : undefined;
-      if (engine?.name !== "two-pointers") continue;
-      const { values, target } = engine.input;
+      const trace = getProblemStoryboard(problem)?.trace;
+      if (!trace) continue;
+      expect(trace.problem, problem.slug).toBe(`${problem.patternSlug}/${problem.slug}`);
       expect(
-        problem.examples.some((e) => JSON.stringify(e.args) === JSON.stringify([values, target])),
-        `${problem.slug} should include an example with args [${JSON.stringify(values)}, ${target}]`,
+        problem.examples.some((e) => JSON.stringify(e.args) === JSON.stringify(trace.args)),
+        `${problem.slug} should include an example with args ${JSON.stringify(trace.args)}`,
       ).toBe(true);
     }
   });
@@ -111,6 +111,26 @@ describe("catalog repository", () => {
     expect(index.patterns).toHaveLength(patterns.filter((p) => p.categorySlug === "dsa").length);
     expect(index.problems).toHaveLength(problems.length);
     expect(index.problems.find((p) => p.slug === "pair-with-target-sum")?.hasVideo).toBe(true);
+  });
+});
+
+describe("generation code stays out of the app", () => {
+  it("no app source imports the generator or the AI SDK", () => {
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const file = path.join(dir, name);
+        if (file.includes(`${path.sep}lib${path.sep}generation`)) continue;
+        if (statSync(file).isDirectory()) walk(file);
+        else if (
+          /\.(ts|tsx)$/.test(name) &&
+          /from ["'](@\/lib\/generation|ai["'/]|@ai-sdk\/)/.test(readFileSync(file, "utf8"))
+        )
+          offenders.push(file);
+      }
+    };
+    walk(path.join(process.cwd(), "src"));
+    expect(offenders).toEqual([]);
   });
 });
 

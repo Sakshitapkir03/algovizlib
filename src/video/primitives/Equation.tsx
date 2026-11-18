@@ -16,7 +16,7 @@ export function Equation({ element }: { element: EquationElement }) {
 
   const tokens: { text: string; kind: "num" | "op" | "result" }[] = [];
   element.terms.forEach((t, i) => {
-    if (i > 0) tokens.push({ text: "+", kind: "op" });
+    if (i > 0) tokens.push({ text: element.operator === "-" ? "−" : element.operator, kind: "op" });
     tokens.push({ text: fmt(t), kind: "num" });
   });
   tokens.push({ text: "=", kind: "op" }, { text: fmt(element.result), kind: "result" });

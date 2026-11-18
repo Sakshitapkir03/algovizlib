@@ -13,6 +13,24 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
+  {
+    // Generation code (AI SDK, API keys, file writes) runs only in scripts/ and tests. Never in the app bundle.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/lib/generation/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/lib/generation", "@/lib/generation/*", "**/lib/generation/*", "ai", "@ai-sdk/*"],
+              message: "Storyboard generation is offline tooling (scripts/). Don't import it from app code.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);
 

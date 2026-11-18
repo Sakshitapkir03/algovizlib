@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { twoPointersStoryboard } from "@/content/storyboards/two-pointers";
-import { validateStoryboard } from "@/lib/engines";
-import { getSceneTimeline, sceneIndexAtFrame, storyboardSchema, type Storyboard } from "@/lib/storyboard";
+import {
+  getSceneTimeline,
+  sceneIndexAtFrame,
+  storyboardSchema,
+  validateStoryboard,
+  type Storyboard,
+} from "@/lib/storyboard";
 
 /** Deep-copy so mutations in one test never leak into another. */
 const clone = (): Storyboard => structuredClone(twoPointersStoryboard);
@@ -20,7 +25,7 @@ describe("two-pointers storyboard", () => {
     expect(twoPointersStoryboard.analogy?.mapping.length).toBeGreaterThan(0);
   });
 
-  it("passes the engine validator", () => {
+  it("passes the trace validator", () => {
     const result = validateStoryboard(twoPointersStoryboard);
     expect(result.issues).toEqual([]);
     expect(result.ok).toBe(true);
@@ -48,12 +53,12 @@ describe("validator catches wrong storyboards", () => {
     eq.comparison.op = "=";
     const result = validateStoryboard(sb);
     expect(result.ok).toBe(false);
-    expect(result.issues.map((i) => i.message).join("\n")).toMatch(/pointed-at values|Engine compares/);
+    expect(result.issues.map((i) => i.message).join("\n")).toMatch(/should be 4 \+ 45|trace compares/);
   });
 
-  it("rejects false arithmetic even without an engine", () => {
+  it("rejects false arithmetic even without a trace", () => {
     const sb = clone();
-    delete sb.engine;
+    delete sb.trace;
     const eq = sb.scenes.find((s) => s.id === "found")?.elements.find((el) => el.id === "sum");
     if (eq?.type !== "equation") throw new Error("fixture changed");
     eq.result = 51;

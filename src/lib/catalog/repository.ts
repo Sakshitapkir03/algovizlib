@@ -1,5 +1,5 @@
 import { categories, patterns, problems } from "@/content/catalog";
-import { getStoryboard } from "@/content/storyboards";
+import { getGeneratedStoryboard, getStoryboard } from "@/content/storyboards";
 
 import {
   DIFFICULTIES,
@@ -50,12 +50,17 @@ export function getProblem(patternSlug: string, slug: string): Problem | undefin
   return problems.find((p) => p.patternSlug === patternSlug && p.slug === slug);
 }
 
-export function hasVideo(problem: Problem): boolean {
-  return problem.storyboardId !== undefined && getStoryboard(problem.storyboardId) !== undefined;
+/**
+ * A problem's video: the hand-written storyboard it names with `storyboardId`, otherwise the one generated for it
+ * (content/storyboards/generated), so generating a storyboard never requires editing the problem file.
+ */
+export function getProblemStoryboard(problem: Problem) {
+  if (problem.storyboardId) return getStoryboard(problem.storyboardId);
+  return getGeneratedStoryboard(`${problem.patternSlug}/${problem.slug}`);
 }
 
-export function getProblemStoryboard(problem: Problem) {
-  return problem.storyboardId ? getStoryboard(problem.storyboardId) : undefined;
+export function hasVideo(problem: Problem): boolean {
+  return getProblemStoryboard(problem) !== undefined;
 }
 
 export function problemHref(problem: Pick<Problem, "patternSlug" | "slug">): string {

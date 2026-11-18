@@ -4,11 +4,12 @@ import { defineStoryboard, estimateDurationInFrames, type SceneInput } from "@/l
  * Two Pointers — pair sum on a sorted array, told as two friends spending a
  * $50 gift card on a price-sorted shelf. exampleSource: "analogy".
  *
- * Engine run for values [4, 9, 14, 21, 28, 36, 45], target 50:
- *   (0,6) 4+45=49 <  → You move right
- *   (1,6) 9+45=54 >  → Friend moves left
- *   (1,5) 9+36=45 <  → You move right
- *   (2,5) 14+36=50 = → found
+ * Trace (src/lib/traces/two-pointers/pair-with-target-sum.ts) for values [4, 9, 14, 21, 28, 36, 45], target 50.
+ * Scenes bind to these steps with `traceStep`:
+ *   #0 (0,6) 4+45=49 <  → You move right
+ *   #1 (1,6) 9+45=54 >  → Friend moves left
+ *   #2 (1,5) 9+36=45 <  → You move right
+ *   #3 (2,5) 14+36=50 = → found
  */
 
 const TARGET = 50;
@@ -84,7 +85,7 @@ export const twoPointersStoryboard = defineStoryboard({
       "Moving one end changes the answer in a predictable direction",
     ],
   },
-  engine: { name: "two-pointers", input: { values: VALUES, target: TARGET } },
+  trace: { problem: "two-pointers/pair-with-target-sum", args: [VALUES, TARGET] },
   scenes: [
     scene({
       id: "problem",
@@ -124,6 +125,7 @@ export const twoPointersStoryboard = defineStoryboard({
     }),
     scene({
       id: "idea",
+      traceStep: 0,
       caption: "Start at both ends of the shelf",
       narration:
         "Here's a smarter plan. You stand at the cheap end, and your friend stands at the expensive end. Add your two prices. If the total is too low, you step toward pricier items. If it's too high, your friend steps toward cheaper ones.",
@@ -141,6 +143,7 @@ export const twoPointersStoryboard = defineStoryboard({
     }),
     scene({
       id: "check-1",
+      traceStep: 0,
       caption: "$49 is too low — You move right",
       narration:
         "Stickers plus sneakers is forty-nine dollars, one short. Sneakers are already the most expensive item, so the stickers can't reach fifty with anything. Stickers are out — you step right.",
@@ -171,6 +174,7 @@ export const twoPointersStoryboard = defineStoryboard({
     }),
     scene({
       id: "check-2",
+      traceStep: 1,
       caption: "$54 is too high — Friend moves left",
       narration:
         "Now it's the notebook plus the sneakers: fifty-four dollars, too much. The notebook is the cheapest item still in play, so the sneakers will overshoot with anything. Sneakers are out — your friend steps left.",
@@ -202,6 +206,7 @@ export const twoPointersStoryboard = defineStoryboard({
     }),
     scene({
       id: "check-3",
+      traceStep: 2,
       caption: "$45 is too low — You move right again",
       narration:
         "Notebook plus headphones is forty-five dollars, too low again. Same reasoning: the notebook can't reach fifty with anything left, so you step right to the mug.",
@@ -233,6 +238,7 @@ export const twoPointersStoryboard = defineStoryboard({
     }),
     scene({
       id: "found",
+      traceStep: 3,
       caption: "$14 + $36 = $50 exactly",
       narration:
         "Mug plus headphones: fourteen plus thirty-six is exactly fifty dollars. Gift card spent, no change. You found the pair after only four checks instead of twenty-one.",
@@ -264,6 +270,7 @@ export const twoPointersStoryboard = defineStoryboard({
     }),
     scene({
       id: "pattern",
+      traceStep: 3,
       caption: "The pattern: Two Pointers, O(n)",
       narration:
         "Now strip away the story. The shelf is a sorted array, you are the left index, your friend is the right index, and the gift card is the target. Each comparison throws out one element for good, so the pointers meet after at most n steps. That's linear time, O(n), with constant extra space.",

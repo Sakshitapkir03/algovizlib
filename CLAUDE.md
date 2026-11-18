@@ -6,8 +6,10 @@ A web app that teaches computer science concepts (DSA first, then system design)
 (category → pattern → problem) and short animated videos. Each video explains the **approach** through a concrete
 real-world example, not a line-by-line code walkthrough. Narration will be voiced with ElevenLabs later.
 
-Every video is driven by a **storyboard**: plain, typed data. Today storyboards are hand-written. Later Claude will
-generate them, and they will go through the same schema and engine validator before anyone sees them.
+Every video is driven by a **storyboard**: plain, typed data bound to a **trace** (the exact steps an algorithm takes
+on one example). Storyboards are hand-written or generated offline by a model (`pnpm generate:storyboards`). Either
+way, the model writes the story and deterministic code guarantees correctness: every storyboard passes the same
+schema and trace validator before anyone sees it.
 
 ## Commands
 
@@ -18,6 +20,7 @@ pnpm typecheck    # next typegen && tsc --noEmit
 pnpm test         # Vitest
 pnpm build        # production build (static prerender)
 pnpm format       # Prettier
+pnpm generate:storyboards --pattern two-pointers --dry-run   # offline AI generation (see below)
 ```
 
 Run `lint`, `typecheck`, `test`, and `build` before committing.
@@ -41,21 +44,26 @@ src/
   content/
     catalog/                 categories, patterns/<slug>.ts, problems/<pattern>/<slug>.ts, index.ts
     storyboards/             hand-written storyboards + registry (index.ts)
+      generated/             <pattern>/<slug>.json written by the generator + index.ts (regenerated, don't edit)
     legacy-redirects.ts      old /learn/<id> URLs (imported by next.config.ts)
   lib/
     catalog/                 Zod schemas, define*(), judgeOutput(), repository.ts (the only way pages read content)
     progress/                ProgressRepository (localStorage, memory fallback) + useProgress hook
-    storyboard/              Zod schemas → inferred types, defineStoryboard(), timing/timeline helpers
-    engines/                 deterministic algorithm engines + validateStoryboard()
+    storyboard/              Zod schemas (source + resolved), defineStoryboard(), resolveStoryboard(),
+                             validateStoryboard(), primitive catalog, timing/timeline helpers
+    traces/                  deterministic instrumented solutions: <pattern>/<slug>.ts + registry (app code)
+    generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
   video/                     Remotion composition, scene renderer, primitives + registry, theme
   store/player-store.ts      Zustand: mirrors PlayerRef events, exposes toggle/seekTo
   hooks/                     useReducedMotion
-tests/                       Vitest specs
+scripts/generate-storyboards.ts   the generator CLI (tsx)
+tests/                       Vitest specs (fixtures/drafts.ts builds a correct draft from any trace)
   reference-solutions/       test-only solve() per problem; never imported by src/ (a test enforces it)
 ```
 
-Data flow: `content/*.ts` → `defineStoryboard()` (Zod parse, applies defaults, throws on invalid) →
-`validateStoryboard()` in tests (engine check) → `LearnView` → `<Player component={StoryboardComposition}>` →
+Data flow: `content/storyboards/*.ts` or `generated/*.json` → `defineStoryboard()` / `loadStoryboard()` (parse the
+source schema, run the bound trace, fill omitted values from it, parse the resolved schema; throws on invalid) →
+`validateStoryboard()` in tests (trace check) → `LearnView` → `<Player component={StoryboardComposition}>` →
 `TransitionSeries` of `SceneView`s → each element rendered by its registry component.
 
 Key rules:
@@ -126,8 +134,8 @@ hand-computed example fails the suite. Reference solutions are test-only: nothin
 1. Build and register the storyboard (see "How to add a video" below). It must pass `validateStoryboard`.
 2. Set `storyboardId: "<storyboard id>"` on the problem. The problem page renders the player; the table and cards
    show "video: yes". The catalog test validates every linked storyboard.
-3. If the storyboard is bound to an engine, one of the problem's examples must use the storyboard's exact input
-   (tested for `two-pointers`), so the video and the written example tell the same story.
+3. A storyboard's `trace.args` must equal one of the problem's examples (tested), so the video and the written
+   example tell the same story. Generated storyboards don't need step 2: the repository finds them by problem key.
 4. On the problem page, the video's takeaway card moves inside the "Show approach" toggle (`showTakeaway={false}`),
    so nothing spoils the approach before the learner asks.
 
@@ -154,6 +162,8 @@ The problem page body is `ProblemTabs` with a single "Explanation" tab. Solving 
    containers or a hosted judge) takes `{ language, code, cases, judge }`, runs with CPU/memory/time limits and no
    network, and returns per-case results. The app calls it from a rate-limited server route.
 4. Reference solutions stay test-only: they verify the cases, they're never shipped to the client.
+5. The machine-readable `args`/`expected` are the same foundation the trace system runs on, so a Practice tab can
+   later show "your code vs. the trace" step by step.
 
 ## The storyboard
 
@@ -163,17 +173,28 @@ Storyboard = {
   exampleSource: "problem-native" | "analogy",
   analogy?: { scenario, mapping: { real, abstract }[] },   // required iff exampleSource === "analogy"
   takeaway: { pattern, summary, timeComplexity, spaceComplexity, whenToUse[] },
-  engine?: { name: "two-pointers", input: { values, target } },  // enables engine validation
+  trace?: { problem: "pattern/slug", args: unknown[] },   // binds scenes to a trace (src/lib/traces)
+  generation?: { promptVersion, provider, model, generatedAt, repairAttempts },   // generated storyboards only
   scenes: Scene[],
 }
-Scene = { id, narration, caption (≤80 chars), durationInFrames, elements: Element[] }
+Scene = { id, narration, caption (≤80 chars), durationInFrames, traceStep?, elements: Element[] }
 ```
+
+Two forms of the same schema:
+
+- **Source** (`storyboardSourceSchema`, `StoryboardInput`): what files and the model write. With a trace, the
+  state-carrying values may be **omitted** and come from the scene's bound step: row values (`item-row.items` /
+  `bar-row.bars`, with optional `labels`), pointer `index` (and `fromIndex`, from the previous bound step), equation
+  `terms`/`operator`/`result`/`comparison`, highlight `indices`, bar `fill`/`water`, and a `result`'s `value` when
+  `showsAnswer: true`. Any value that _is_ written is kept and checked against the trace.
+- **Resolved** (`storyboardSchema`, `Storyboard`): every value present. `resolveStoryboard()` produces it;
+  renderers and the validator only see this form.
 
 - `narration` is what gets voiced. `caption` is the short on-screen headline.
 - `durationInFrames` is currently `estimateDurationInFrames(narration)` (~150 wpm plus padding, 30 fps). Once audio
   exists, the audio clip's length replaces it. Nothing else needs to change because element timing is relative (below).
 - Schema-level checks (in `superRefine`): unique scene/element ids, and every `rowId`/index reference points at an
-  existing item-row and an in-range item.
+  existing item-row or bar-row and an in-range item.
 
 ## Primitives
 
@@ -182,12 +203,13 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 
 | type        | purpose                                                                                           | slot   |
 | ----------- | ------------------------------------------------------------------------------------------------- | ------ |
-| `item-row`  | labeled cards with values (product + price, `a[i]` + value)                                       | canvas |
-| `pointer`   | named marker on an item; `fromIndex` makes it slide; `binds` ties it to an engine variable        | canvas |
+| `item-row`  | labeled cards with values (product + price, `a[i]` + value, a character)                          | canvas |
+| `bar-row`   | vertical bars on a baseline; optional container `fill` and per-bar `water` (wave pattern + label) | canvas |
+| `pointer`   | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer           | canvas |
 | `highlight` | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone) | canvas |
 | `callout`   | speech bubble; anchored to an item or floating at the top                                         | canvas |
-| `equation`  | `terms`, `result`, optional `comparison` vs target, `verdict` word                                | bottom |
-| `result`    | final answer / stat card (`indices` checked against engine)                                       | bottom |
+| `equation`  | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` word           | bottom |
+| `result`    | final answer / stat card; `showsAnswer` / `indices` checked against the trace                     | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -196,51 +218,128 @@ Canvas primitives are absolutely positioned on the 1280×720 stage using `useSce
 
 ### How to add a primitive
 
-1. **Schema**: in `src/lib/storyboard/elements.ts`, define `fooElementSchema = z.object({ ...baseElement, type:
-z.literal("foo"), ... })` and append it to `elementSchemas`. Export `FooElement = ElementOf<"foo">`.
+1. **Schema**: in `src/lib/storyboard/elements.ts`, define the resolved `fooElementSchema` and a `fooSourceSchema`
+   (trace-derivable fields optional), and append them to `elementSchemas` / `elementSourceSchemas`. Export
+   `FooElement = ElementOf<"foo">`. Describe it in `primitive-catalog.ts` (typed: the generator prompt reads it).
 2. **Cross-references**: if it references rows or items, add a case to the `superRefine` in `schema.ts`.
 3. **Component**: create `src/video/primitives/Foo.tsx` taking `{ element: FooElement }`. Use `useScene()` for
    palette, row layout, and `reducedMotion`, and `enterProgress()`/`motion()` for animation. `useCurrentFrame()` is
    already local to the element's entrance (it's wrapped in a `<Sequence from={enterAt * duration}>`).
 4. **Register**: add `foo: { component: Foo, slot, layer }` to `primitiveRegistry` (typecheck fails until you do).
    If it needs its own region (for example a staircase replacing the row band), extend `layout.ts`.
-5. **Validate**: if it carries algorithm state, check it in the relevant engine validator.
+5. **Resolve + validate**: if it carries algorithm state, fill it from the step in `resolve.ts` and check it in
+   `validate.ts` (and add the state to `TraceStep` if it's new).
 6. **Test**: add a schema test and, if validated, a "wrong storyboard fails" test.
 
 Existing primitives and storyboards never change when one is added.
 
-Planned primitives (not built): `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change),
-`box-arrow` (system-design boxes and connections).
+`bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
+`staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
-## Engines and validation
+## Traces and validation
 
-`src/lib/engines/` holds pure, deterministic implementations that return the **exact move sequence**.
-`twoPointers(values, target)` returns `{ steps, states, pair }`.
+`src/lib/traces/<pattern>/<slug>.ts` is an **instrumented solution**: a pure function that runs the algorithm on one
+input and returns a `Trace` (types in `traces/types.ts`):
+
+```ts
+Trace = {
+  problem: "pattern/slug", row: { values, display: "cards" | "bars" }, pointerNames,
+  steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water? }[],
+  answer,             // same shape as the reference solution's return value (tested)
+  answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
+  answerIndices?,     // when the answer is a set of positions
+}
+```
+
+Each file also exports a `TraceDefinition` (`exampleIndex`: which catalog example the video animates;
+`exampleSource`: "problem-native" or "analogy"; a Zod `args` tuple that also caps input size so it fits on screen).
+`traces/index.ts` registers them; `runTrace(problem, args)` validates args and runs. Trace code is **app code** (the
+video resolves values from it); reference solutions stay test-only.
+
+**Key steps** (`key: true`) are the decisions a video must show; others may happen off-screen. Choose them so a video
+fits in 10 scenes (≈ key steps + 3). The last step is always key.
 
 `validateStoryboard(storyboard)` returns `{ ok, issues[] }`:
 
-- Always: every equation's arithmetic and comparison must be true.
-- With `engine: { name: "two-pointers" }`: rows referenced by bound pointers must hold the engine's input values.
-  Each scene's `left`/`right` pointers (`binds`) must sit on a state the algorithm visits. `fromIndex → index` may
-  advance at most one step, and steps can't go backwards or happen off-screen. Equations must add the pointed-at
-  values with the engine's comparison. `found` highlights and `result.indices` must equal the engine's pair, and
-  the pair must be revealed somewhere.
+- Always: every equation's arithmetic (with its operator) and comparison must be true.
+- With `trace`: every `traceStep` exists and they never decrease; every key step is bound by some scene; rows used
+  by bound pointers/highlights hold the trace's values; bound pointers sit where the step says (and slide from where
+  the previous bound step left them); pointers only bind names the step has; equations equal the step's equation;
+  highlights equal the step's active/rejected/found items; bar fills and water match; `result.indices` equal
+  `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
-AI-generated storyboards must pass both `storyboardSchema` and `validateStoryboard` before they're stored or shown.
+The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
 
-### How to add a video
+### How to make a problem generatable
 
-1. If it needs a new algorithm, add `src/lib/engines/<name>.ts` (pure function returning the move sequence) with
-   tests covering found, not found, duplicates, and minimum input.
-2. Add a variant to `engineBindingSchema` in `lib/storyboard/schema.ts` and a `case` in `validateStoryboard`.
-3. Add any new primitives (see above).
-4. Write `src/content/storyboards/<id>.ts` with `defineStoryboard({...})`, 6–9 scenes. Use the `scene()` helper
-   pattern so `durationInFrames` comes from the narration.
-5. Register it in `src/content/storyboards/index.ts`, then attach it to a problem with `storyboardId` (above).
-6. Add tests: it passes the schema, it passes the validator, and a mutated copy fails.
+1. Write `src/lib/traces/<pattern>/<slug>.ts`: the same algorithm as the reference solution, recording a step per
+   decision with a one-sentence `note`, the state snapshot, and `key` on the decisions worth a scene. Export a
+   `TraceDefinition` (pick a small example; add one to the problem if none fits on screen).
+2. Register it in `src/lib/traces/index.ts`. `tests/traces.test.ts` then checks its answer against the reference
+   solution on every example that fits, and `tests/trace-storyboards.test.ts` checks a fixture storyboard built from
+   it resolves and validates.
+3. If the visual needs a new primitive (bars, a staircase…), add it (above).
+4. Run `pnpm generate:storyboards --problem <pattern>/<slug> --dry-run`, then without `--dry-run`.
+
+### How to add a video by hand
+
+1. Make the problem generatable (above), or reuse its trace.
+2. Write `src/content/storyboards/<id>.ts` with `defineStoryboard({...})`, 6–10 scenes, `trace` set and
+   `traceStep` on every scene that shows a move. Use the `scene()` helper so `durationInFrames` comes from the
+   narration. Prefer omitting trace-derived values over writing them.
+3. Register it in `src/content/storyboards/index.ts`, then attach it with `storyboardId` (above).
+4. Add tests: it passes the schema, it passes the validator, and a mutated copy fails.
 
 Recommended arc: the problem in real-life terms → why brute force is slow → the key idea → a few moves with the
 reasoning → the answer → a closing scene mapping back to the general pattern and its complexity.
+
+## Generating storyboards (offline)
+
+`pnpm generate:storyboards` runs `scripts/generate-storyboards.ts` locally. It is never called by the app: an ESLint
+rule and a test forbid importing `@/lib/generation`, `ai`, or `@ai-sdk/*` from app code.
+
+```bash
+pnpm generate:storyboards --pattern two-pointers --dry-run   # validate and print, write nothing
+pnpm generate:storyboards --problem two-pointers/three-sum   # one problem
+pnpm generate:storyboards --missing                          # every generatable problem without a storyboard
+#   --force             regenerate even if a storyboard exists, ignoring the cache (hand-written ones never change)
+#   --max-requests <n>  stop after n model calls, counting repairs and retries (default 15)
+```
+
+Per problem: skip if it has a storyboard (unless `--force`) or no trace → reuse a valid cache entry → otherwise call
+the model (`generateText` + `Output.object` with `draftSchema`) with the problem, the numbered trace (key steps
+marked), the primitive catalog, and the "Choosing the example" rule → `evaluateDraft()` (draft schema, assembly,
+source schema, resolution, `validateStoryboard`, exampleSource rule) → on failure send the exact issues back, up to
+**2 repairs** → cache it and write `generated/<pattern>/<slug>.json`, regenerating `generated/index.ts`. The
+repository serves it for that problem automatically. A summary table lists result, repairs, scenes, and requests.
+
+- **Prompts** live in `src/lib/generation/prompts/` as typed template functions with a `PROMPT_VERSION`. Bump it on
+  any wording change. The version, provider, and model are recorded in each storyboard's `generation` metadata.
+- **Cache**: `.cache/generation/<pattern>/<slug>.json` (gitignored), keyed by problem + prompt version + trace hash.
+  Dry runs fill it too, so a real run after a dry run makes no requests. A changed prompt or trace makes it stale.
+- **Quotas** (Gemini free tier ≈ 20 requests/day): `GENERATION_DELAY_MS` (default 10s) between requests. Per-minute
+  429s, temporary overloads (503/529), timeouts (`GENERATION_TIMEOUT_MS`, default 2 min), and dropped connections
+  retry with exponential backoff (20s, 40s, 80s, or the provider's `retryDelay`), max 3. If it's still failing after
+  that, the run stops ("unavailable") instead of repeating the same waits for every remaining problem. A **daily** quota error (Gemini's `…PerDay…` quota id) is not retried: the run stops, keeps
+  everything cached or saved, lists what remains, and says to rerun with `--missing`. `--max-requests` caps total
+  calls.
+- **Tests** never call a real API: the pipeline takes injected `model`, `cache`, `writer`, `sleep`, and `log`, and
+  the AI SDK adapter is tested with `MockLanguageModelV4`.
+
+### Provider config
+
+Set in `.env.local` (gitignored; see `.env.example`). Never print, log, or commit key values.
+
+| var                            | default                                                    |
+| ------------------------------ | ---------------------------------------------------------- |
+| `AI_PROVIDER`                  | `google` (or `anthropic`)                                  |
+| `AI_MODEL`                     | `gemini-3.8-flash` (google), `claude-opus-5-5` (anthropic) |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | required for `google`                                      |
+| `ANTHROPIC_API_KEY`            | required for `anthropic`                                   |
+| `GENERATION_DELAY_MS`          | `10000`                                                    |
+| `GENERATION_TIMEOUT_MS`        | `120000` (a timed-out request is retried like an overload) |
+
+The script fails fast, naming the missing variable, if the selected provider's key isn't set.
 
 ## Choosing the example
 
@@ -281,10 +380,9 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 
 ## Roadmap
 
-1. **AI storyboard generation with Claude.** A server route takes a problem (from the library or custom), calls
-   Claude with the storyboard JSON schema (`z.toJSONSchema(storyboardSchema)`), the primitive catalog, and the
-   "Choosing the example" rule. Parse with Zod, run `validateStoryboard`, and feed issues back to Claude for repair
-   until it passes. Abstract problems need an engine binding before they're accepted.
+1. **More generated videos.** Offline generation exists (above) and is proven on Two Pointers. Next: traces for the
+   other patterns (and the primitives they need), then runtime generation for custom questions behind a server
+   route with rate limits, reusing the same pipeline and validator.
 2. **ElevenLabs narration.** Voice each scene's `narration`, store the audio, set `durationInFrames` from the clip
    length (plus padding), and add an `<Audio>` per scene in `SceneView`. Element `enterAt` fractions keep animations
    aligned. Later, use word timestamps to time callouts and equations.
@@ -292,10 +390,10 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
    move progress to a server-backed `ProgressRepository` after auth, and let users paste their own question.
 4. **Practice mode.** See "Practice mode (planned)" above.
 5. **System design explainers.** `box-arrow` primitive (services, queues, caches, arrows with animated requests),
-   plus engines/validators for things like consistent hashing, rate limiters, and load balancing.
+   plus traces/validators for things like consistent hashing, rate limiters, and load balancing.
 6. **Rate limiting.** Per-user and per-IP limits on generation and narration endpoints (both cost money), plus
    caching identical requests.
-7. More videos for catalog problems. Planned DSA primitives: `staircase`, `house-row`, `coin-set`, with their engines.
+7. Planned DSA primitives: `staircase`, `house-row`, `coin-set`, with their traces.
 
 ## Gotchas
 
@@ -310,6 +408,11 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
   `content/legacy-redirects.ts` (and `tests/routing.test.ts` checks them against the catalog).
 - **shadcn's `CommandDialog` doesn't include `<Command>`.** Wrap the items in `<Command>` yourself or cmdk throws
   ("reading 'subscribe'") as soon as the dialog opens.
+- **pnpm's minimum release age.** pnpm refuses packages published in the last day. Don't pin a brand-new version
+  (pnpm then writes an exemption into `pnpm-workspace.yaml`); pick one a few days old. `esbuild` (via `tsx`) is
+  listed under `allowBuilds: false` like `sharp`, otherwise `pnpm install --frozen-lockfile` fails on Vercel.
+- **AI SDK v7**: `generateObject` is deprecated; use `generateText` with `output: Output.object({ schema })`. Pass
+  `maxRetries: 0` so our own backoff (logged, budgeted) is the only retry layer.
 - After deleting a route, `pnpm typecheck` can fail on stale `.next/dev/types`. Stop `pnpm dev` and remove
   `.next/dev`.
 - **Keep the repo out of iCloud-synced folders** (Desktop/Documents). macOS can evict `node_modules` files, and

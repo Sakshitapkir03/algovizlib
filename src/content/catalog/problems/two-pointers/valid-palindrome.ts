@@ -32,6 +32,13 @@ Return \`true\` if it does and \`false\` otherwise. A string with no letters or 
       args: [".,! ?"],
       expected: true,
     },
+    {
+      input: 's = "Taco cat!"',
+      output: "true",
+      explanation: 'Skipping the space and the "!" leaves "tacocat", which reads the same both ways.',
+      args: ["Taco cat!"],
+      expected: true,
+    },
   ],
   constraints: ["1 ≤ s.length ≤ 2 × 10⁵", "s contains printable ASCII characters only"],
   hints: [

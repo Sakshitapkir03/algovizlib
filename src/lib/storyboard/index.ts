@@ -1,4 +1,8 @@
 export * from "./elements";
 export * from "./schema";
 export * from "./timing";
-export { defineStoryboard } from "./define";
+export * from "./issues";
+export { defineStoryboard, loadStoryboard } from "./define";
+export { applyOperator, resolveStoryboard, type ResolveResult } from "./resolve";
+export { validateStoryboard } from "./validate";
+export { primitiveCatalog } from "./primitive-catalog";

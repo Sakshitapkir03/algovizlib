@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "generate:storyboards": "node --env-file-if-exists=.env.local --import tsx scripts/generate-storyboards.ts"
   },
   "dependencies": {
     "@remotion/player": "4.0.544",
@@ -32,16 +33,20 @@
     "zustand": "^5.1.0"
   },
   "devDependencies": {
+    "@ai-sdk/anthropic": "4.0.105",
+    "@ai-sdk/google": "4.0.121",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "ai": "7.0.172",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.10.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
     "typescript": "^5",
     "vitest": "^5.1.0"
   },

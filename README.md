@@ -12,6 +12,10 @@ Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card
 
 You can mark each problem Not started / Learning / Done. Progress is saved in your browser.
 
+Videos are **trace-bound storyboards**: deterministic code runs each algorithm on one example and records every
+decision, and a storyboard's pointers, equations, and highlights come from (and are checked against) that trace.
+Storyboards can be generated offline by a model: the model writes the story, the validator guarantees the moves.
+
 ## Stack
 
 Next.js (App Router, `src/`) · TypeScript (strict) · Tailwind CSS v4 · shadcn/ui · Remotion (`@remotion/player`) ·
@@ -51,6 +55,21 @@ to `/dsa/two-pointers/pair-with-target-sum`.
 | `pnpm test`       | Run the Vitest suite once (includes checking every problem example against a reference solution) |
 | `pnpm test:watch` | Vitest in watch mode                                                                             |
 | `pnpm format`     | Format with Prettier                                                                             |
+
+## Generating storyboards
+
+Requires a model key in `.env.local` (copy `.env.example`). The default provider is Google Gemini
+(`gemini-3.8-flash`, available on the free tier); set `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY` to use Claude.
+
+```bash
+pnpm generate:storyboards --pattern two-pointers --dry-run   # validate and print; nothing written
+pnpm generate:storyboards --pattern two-pointers             # write src/content/storyboards/generated/…
+pnpm generate:storyboards --missing                          # everything generatable that has no video yet
+```
+
+Flags: `--problem <pattern>/<slug>`, `--force`, `--max-requests <n>` (default 15). Valid results are cached in
+`.cache/generation`, so a real run after a dry run makes no new requests. On the free tier's daily limit the run stops
+cleanly and tells you to rerun with `--missing` the next day. Details: [CLAUDE.md](./CLAUDE.md).
 
 ## Player controls
 
