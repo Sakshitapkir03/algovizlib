@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "generate:storyboards": "node --env-file-if-exists=.env.local --import tsx scripts/generate-storyboards.ts"
+    "generate:storyboards": "node --env-file-if-exists=.env.local --import tsx scripts/generate-storyboards.ts",
+    "storyboards:prompt": "node --import tsx scripts/render-prompt.ts",
+    "storyboards:validate-draft": "node --import tsx scripts/validate-draft.ts"
   },
   "dependencies": {
     "@remotion/player": "4.0.544",

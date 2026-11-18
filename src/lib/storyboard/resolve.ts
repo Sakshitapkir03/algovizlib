@@ -39,6 +39,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
     if (scene.traceStep !== undefined && trace && !step) {
       issues.push({
         sceneId: scene.id,
+        field: "traceStep",
         message: `traceStep ${scene.traceStep} does not exist (the trace has steps 0–${trace.steps.length - 1})`,
       });
     }
@@ -46,6 +47,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
       issues.push({
         sceneId: scene.id,
         elementId: el.id,
+        field: what,
         message: `${what} is missing and can't be taken from the trace${step ? "" : " (the scene has no traceStep)"}`,
       });
 
@@ -68,6 +70,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
               issues.push({
                 sceneId: scene.id,
                 elementId: el.id,
+                field: "bars",
                 message: "This trace's values can't be drawn as bars",
               });
             } else {
@@ -93,6 +96,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
               issues.push({
                 sceneId: scene.id,
                 elementId: el.id,
+                field: "binds",
                 message: `Trace step ${scene.traceStep} has no pointer "${el.binds}" (it has: ${Object.keys(step.pointers).join(", ") || "none"}). Remove this pointer from the scene.`,
               });
             } else missing(el, "index");
@@ -113,6 +117,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             issues.push({
               sceneId: scene.id,
               elementId: el.id,
+              field: "indices",
               message: `No "${el.state}" items to take from ${step ? `trace step ${scene.traceStep}` : "the trace"}; give indices or remove the highlight`,
             });
             return el;
@@ -128,6 +133,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             issues.push({
               sceneId: scene.id,
               elementId: el.id,
+              field: "terms",
               message: step
                 ? `Trace step ${scene.traceStep} has no arithmetic to show; remove the equation or bind another step`
                 : "An equation without terms needs a scene.traceStep",
@@ -152,7 +158,8 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
   });
 
   if (issues.length > 0) return { trace, issues };
-  const parsed = storyboardSchema.safeParse({ ...source, scenes });
-  if (!parsed.success) return { trace, issues: zodIssues("", parsed.error.issues) };
+  const resolved = { ...source, scenes };
+  const parsed = storyboardSchema.safeParse(resolved);
+  if (!parsed.success) return { trace, issues: zodIssues("", parsed.error.issues, resolved) };
   return { storyboard: parsed.data, trace, issues: [] };
 }

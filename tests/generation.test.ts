@@ -23,6 +23,7 @@ import {
   type GenerationTarget,
 } from "@/lib/generation/pipeline";
 import { currentPrompts } from "@/lib/generation/prompts";
+import { exitStatus } from "@/lib/generation/report";
 import { renderRegistry, type StoryboardWriter } from "@/lib/generation/writer";
 import type { StoryboardSource } from "@/lib/storyboard";
 
@@ -120,6 +121,7 @@ describe("runGeneration", () => {
     const t = deps(model);
     const summary = await runGeneration([target(PALINDROME)], OPTIONS, t.deps);
     expect(summary.rows[0]).toMatchObject({ status: "saved", repairs: 0, requests: 1 });
+    expect(exitStatus(summary).code).toBe(0);
     expect(summary.requestsUsed).toBe(1);
     const saved = t.writer.written.get(PALINDROME)!;
     expect(saved.generation).toEqual({
@@ -159,6 +161,7 @@ describe("runGeneration", () => {
     expect(summary.rows[1]).toMatchObject({ status: "saved", requests: 1 });
     expect([...t.writer.written.keys()]).toEqual([CONTAINER]);
     expect(t.cache.entries.has(PALINDROME)).toBe(false);
+    expect(exitStatus(summary).code).toBe(1);
   });
 
   it("--dry-run validates and caches but writes nothing", async () => {
@@ -242,6 +245,7 @@ describe("runGeneration", () => {
     expect(summary.stoppedBy).toBe("daily-quota");
     expect(summary.rows.map((r) => r.status)).toEqual(["saved", "not run", "not run"]);
     expect(summary.remaining).toEqual([PALINDROME, "two-pointers/three-sum"]);
+    expect(exitStatus(summary).code).toBe(2);
     expect(t.writer.written.has(CONTAINER)).toBe(true);
     expect(t.cache.entries.has(CONTAINER)).toBe(true);
   });
@@ -257,6 +261,7 @@ describe("runGeneration", () => {
     expect(summary.requestsUsed).toBe(2);
     expect(model.prompts).toHaveLength(2);
     expect(summary.stoppedBy).toBe("budget");
+    expect(exitStatus(summary).code).toBe(2);
     expect(summary.remaining).toEqual([PALINDROME, CONTAINER]);
   });
 });

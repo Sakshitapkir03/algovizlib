@@ -1,0 +1,525 @@
+{
+  "id": "two-pointers-valid-palindrome",
+  "title": "Valid Palindrome: Checking a Bead Bracelet From Both Clasps",
+  "concept": "Two Pointers",
+  "category": "dsa",
+  "summary": "Two friends read a letter-bead bracelet from opposite clasps, skipping the charms, to see if it spells the same thing both ways.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A bracelet strung with letter beads and a few decorative charms. You start at the left clasp and your friend at the right clasp; you skip any charm, compare the letter beads you're holding, and step toward each other.",
+    "mapping": [
+      {
+        "real": "Bracelet",
+        "abstract": "String s"
+      },
+      {
+        "real": "Letter bead",
+        "abstract": "Letter or digit"
+      },
+      {
+        "real": "Charm or spacer",
+        "abstract": "Character to skip (space, punctuation)"
+      },
+      {
+        "real": "You (left clasp)",
+        "abstract": "left index"
+      },
+      {
+        "real": "Friend (right clasp)",
+        "abstract": "right index"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "palindrome"
+  ],
+  "takeaway": {
+    "pattern": "Two Pointers (opposite ends)",
+    "summary": "Walk inward from both ends, skip characters that don't count, and compare the rest ignoring case. One mismatch means false; meeting in the middle means true.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Compare a sequence with its own reverse",
+      "Some characters should be ignored without building a cleaned copy",
+      "One comparison at each end decides whether to keep going"
+    ]
+  },
+  "trace": {
+    "problem": "two-pointers/valid-palindrome",
+    "args": [
+      "Taco cat!"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v1",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-18T22:10:12.769Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Here's a bracelet of letter beads with a spacer and a charm mixed in: T, a, c, o, a spacer, c, a, t, and an exclamation-mark charm. Ignoring the spacer, the charm, and capital letters, does it spell the same thing from either clasp?",
+      "caption": "Does this bracelet read the same both ways?",
+      "durationInFrames": 564,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bead",
+            "bead",
+            "bead",
+            "bead",
+            "spacer",
+            "bead",
+            "bead",
+            "bead",
+            "charm"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.4,
+          "type": "callout",
+          "text": "Only letter beads count, and capitals don't matter"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "The obvious way is to restring a second bracelet with only the letter beads, flip it around, and compare the two. That works, but it needs a whole extra bracelet's worth of beads. We can check it in place instead.",
+      "caption": "Restringing a clean copy wastes beads",
+      "durationInFrames": 516,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bead",
+            "bead",
+            "bead",
+            "bead",
+            "spacer",
+            "bead",
+            "bead",
+            "bead",
+            "charm"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.35,
+          "type": "result",
+          "title": "Clean copy + reverse",
+          "value": "a second bracelet",
+          "detail": "extra memory as long as the string",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "You hold the left clasp and your friend holds the right clasp. Your friend's first piece is the exclamation-mark charm, which isn't a letter, so they simply skip it and move one bead in.",
+      "caption": "Start at both clasps and skip the charm",
+      "durationInFrames": 444,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bead",
+            "bead",
+            "bead",
+            "bead",
+            "spacer",
+            "bead",
+            "bead",
+            "bead",
+            "charm"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "You",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "friend",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Friend",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.2,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.4,
+          "type": "callout",
+          "text": "A charm isn't a letter, so I skip it",
+          "anchor": {
+            "rowId": "row",
+            "index": 8
+          },
+          "speaker": "Friend"
+        }
+      ]
+    },
+    {
+      "id": "first-match",
+      "narration": "Now you're holding a capital T and your friend is holding a lowercase t. Capitals don't matter, so they match. You each step one bead toward the middle.",
+      "caption": "T and t: the same letter, so both step inward",
+      "durationInFrames": 372,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bead",
+            "bead",
+            "bead",
+            "bead",
+            "spacer",
+            "bead",
+            "bead",
+            "bead",
+            "charm"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "You",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "friend",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Friend",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "skipped",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.4,
+          "type": "callout",
+          "text": "T and t are the same letter",
+          "anchor": {
+            "rowId": "row",
+            "index": 0
+          },
+          "speaker": "You"
+        }
+      ]
+    },
+    {
+      "id": "keep-matching",
+      "narration": "The pattern repeats: a matches a, then c matches c. Every matching pair is settled for good, so neither of you ever looks back at those beads.",
+      "caption": "a and a, then c and c: still matching",
+      "durationInFrames": 360,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bead",
+            "bead",
+            "bead",
+            "bead",
+            "spacer",
+            "bead",
+            "bead",
+            "bead",
+            "charm"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "You",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "friend",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Friend",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "skipped",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Matched pairs never need checking again"
+        }
+      ]
+    },
+    {
+      "id": "skip-spacer",
+      "narration": "Your friend reaches the spacer between the two words. Like the charm, it isn't a letter, so they skip it and step in once more.",
+      "caption": "A spacer in the middle gets skipped too",
+      "durationInFrames": 336,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bead",
+            "bead",
+            "bead",
+            "bead",
+            "spacer",
+            "bead",
+            "bead",
+            "bead",
+            "charm"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "You",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "friend",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Friend",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "skipped",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.4,
+          "type": "callout",
+          "text": "Spacers don't count either",
+          "anchor": {
+            "rowId": "row",
+            "index": 4
+          },
+          "speaker": "Friend"
+        }
+      ]
+    },
+    {
+      "id": "meet",
+      "narration": "Now you're both holding the same o bead in the middle. You met without finding a single mismatch, so the bracelet reads the same from either clasp. The answer is true.",
+      "caption": "You meet in the middle with no mismatch",
+      "durationInFrames": 408,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bead",
+            "bead",
+            "bead",
+            "bead",
+            "spacer",
+            "bead",
+            "bead",
+            "bead",
+            "charm"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "You",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "friend",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Friend",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "skipped",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Reads the same both ways?",
+          "detail": "6 checks, no extra bracelet",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Now drop the story. The bracelet is the string s, your position is the left index and your friend's is the right index, and the charms are characters to skip. Each step moves at least one pointer inward, so the pointers meet after at most n steps, using no extra copy of the string.",
+      "caption": "The pattern: Two Pointers, O(n) time, O(1) space",
+      "durationInFrames": 684,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "s[0]",
+            "s[1]",
+            "s[2]",
+            "s[3]",
+            "s[4]",
+            "s[5]",
+            "s[6]",
+            "s[7]",
+            "s[8]"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.25,
+          "type": "callout",
+          "text": "skip non-letters · mismatch → false · meet → true"
+        },
+        {
+          "id": "complexity",
+          "enterAt": 0.55,
+          "type": "result",
+          "title": "Two Pointers",
+          "value": "O(n) time · O(1) space",
+          "detail": "vs. O(n) extra space for a cleaned, reversed copy",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    }
+  ]
+}

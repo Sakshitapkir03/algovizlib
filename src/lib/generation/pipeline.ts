@@ -6,7 +6,7 @@ import { hashTrace, sameKey, type CacheKey, type GenerationCache } from "./cache
 import { evaluateDraft, evaluateSource, type GenerationContext } from "./draft";
 import { DailyQuotaError, RateLimitError } from "./errors";
 import type { StoryboardModel } from "./model";
-import type { PromptSet } from "./prompts";
+import type { PromptSet, StoryboardPromptInput } from "./prompts";
 import type { StoryboardWriter } from "./writer";
 
 export const MAX_REPAIRS = 2;
@@ -77,6 +77,33 @@ const STOP_DETAIL: Record<StopReason, string> = {
   unavailable: "model unavailable after retries",
 };
 
+/**
+ * Everything both the generator and the Claude Code draft validator need for one problem: its trace on the chosen
+ * example, the cache key, the evaluation context, and the prompt input. Undefined when the problem has no trace.
+ */
+export function prepareTarget(target: GenerationTarget, promptVersion: string) {
+  const definition = getTraceDefinition(target.key);
+  if (!definition) return undefined;
+  const args = target.problem.examples[definition.exampleIndex].args;
+  const trace = runTrace(target.key, args);
+  const key: CacheKey = { problem: target.key, promptVersion, traceHash: hashTrace(args, trace) };
+  const ctx: GenerationContext = {
+    problem: target.problem,
+    patternName: target.patternName,
+    definition,
+    args,
+  };
+  const promptInput: StoryboardPromptInput = {
+    problem: target.problem,
+    patternName: target.patternName,
+    patternCoreIdea: target.patternCoreIdea,
+    exampleSource: definition.exampleSource,
+    trace,
+    exampleIndex: definition.exampleIndex,
+  };
+  return { key, ctx, promptInput };
+}
+
 class StopRun extends Error {
   constructor(readonly reason: StopReason) {
     super(reason);
@@ -145,33 +172,12 @@ export async function runGeneration(
       skip("already generated (use --force to regenerate)");
       continue;
     }
-    const definition = getTraceDefinition(target.key);
-    if (!definition) {
+    const prepared = prepareTarget(target, prompts.version);
+    if (!prepared) {
       skip("no trace yet (see 'How to make a problem generatable')");
       continue;
     }
-
-    const args = target.problem.examples[definition.exampleIndex].args;
-    const trace = runTrace(target.key, args);
-    const key: CacheKey = {
-      problem: target.key,
-      promptVersion: prompts.version,
-      traceHash: hashTrace(args, trace),
-    };
-    const ctx: GenerationContext = {
-      problem: target.problem,
-      patternName: target.patternName,
-      definition,
-      args,
-    };
-    const promptInput = {
-      problem: target.problem,
-      patternName: target.patternName,
-      patternCoreIdea: target.patternCoreIdea,
-      exampleSource: definition.exampleSource,
-      trace,
-      exampleIndex: definition.exampleIndex,
-    };
+    const { key, ctx, promptInput } = prepared;
 
     const finish = (source: Parameters<StoryboardWriter["write"]>[1], scenes: number) => {
       if (!options.dryRun) writer.write(target.key, source);

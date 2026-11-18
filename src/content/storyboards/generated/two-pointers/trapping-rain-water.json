@@ -1,0 +1,547 @@
+{
+  "id": "two-pointers-trapping-rain-water",
+  "title": "Trapping Rain Water: Settling the Strip From Its Lower Side",
+  "concept": "Two Pointers",
+  "category": "dsa",
+  "summary": "After the storm, settle one bar at a time from whichever edge is lower: its water is that side's tallest wall minus its own height.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "simulation"
+  ],
+  "takeaway": {
+    "pattern": "Two Pointers with running maxima",
+    "summary": "Keep the tallest wall seen from each side. The side with the lower wall is settled: its water is that side's max minus its height, because the other side is known to be at least as tall.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Each position's answer depends on the tallest value to its left and to its right",
+      "The smaller of two bounds decides the result",
+      "You want one pass without prefix/suffix arrays"
+    ]
+  },
+  "trace": {
+    "problem": "two-pointers/trapping-rain-water",
+    "args": [
+      [
+        3,
+        0,
+        1,
+        4,
+        0,
+        2,
+        1,
+        3
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v1",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-18T22:10:12.768Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A strip of land is a row of bars with heights 3, 0, 1, 4, 0, 2, 1, and 3. After a heavy rainstorm, water collects in the dips between taller bars, and anything past either edge drains away. How many units of water are left standing?",
+      "caption": "After the storm, how much water stays on this strip of land?",
+      "durationInFrames": 600,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Water drains off either edge of the strip"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Water above a bar rises to the shorter of the tallest bar on its left and the tallest bar on its right. Finding both by scanning from every bar means looking across the whole strip again and again.",
+      "caption": "Scanning both ways from every bar is slow",
+      "durationInFrames": 492,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.2,
+          "type": "callout",
+          "text": "water at a bar = min(tallest left, tallest right) − its height"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Scan from every bar",
+          "value": "O(n²) looks",
+          "detail": "every bar searches the whole strip both ways",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "settle-right-edge",
+      "narration": "Here's the idea: walk in from both edges, remembering the tallest bar seen on each side. The right edge, 3, is no taller than the left edge, 3, so the right side is settled first. Bar 7 is its own tallest wall, so it holds 3 minus 3, which is 0.",
+      "caption": "Work in from both edges and settle the lower side first",
+      "durationInFrames": 648,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "settling",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "water",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "no water"
+        }
+      ]
+    },
+    {
+      "id": "first-water",
+      "narration": "The left edge is still 3, and bar 6 is only 1, so the right side is still lower. The tallest wall on the right is 3, and the left side is at least 3, so the water over bar 6 can rise to 3. It holds 3 minus 1, which is 2.",
+      "caption": "Bar 6 sits 2 below the right side's tallest wall",
+      "durationInFrames": 672,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "settling",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "water",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "2 units"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.55,
+          "type": "callout",
+          "text": "The left side is at least as tall, so only the right max matters",
+          "anchor": {
+            "rowId": "row",
+            "index": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "right-dip",
+      "narration": "The right side keeps being the lower one. Bar 5 holds 3 minus 2, which is 1, and bar 4 holds 3 minus 0, which is 3. The whole right-hand dip is now settled.",
+      "caption": "Bars 5 and 4 fill the same way: 1 unit, then 3 units",
+      "durationInFrames": 444,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "settling",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "water",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "3 units"
+        }
+      ]
+    },
+    {
+      "id": "switch-sides",
+      "narration": "Now the right pointer stands on the tallest bar, 4, which is taller than the left edge's 3. So the left side becomes the one to settle. Bar 0 is its own tallest wall, so it holds 3 minus 3, which is 0.",
+      "caption": "Right reaches the 4: now the left side is lower",
+      "durationInFrames": 552,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "settling",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "water",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "no water"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.5,
+          "type": "callout",
+          "text": "Always settle whichever side has the lower wall",
+          "anchor": {
+            "rowId": "row",
+            "index": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "left-water",
+      "narration": "Bar 1 is only 0 tall. The tallest wall on the left is 3, and the right side already has a 4, so the water over bar 1 rises to 3. It holds 3 minus 0, which is 3. Bar 2 follows with 3 minus 1, which is 2.",
+      "caption": "Bar 1 holds 3 units under the left side's wall of 3",
+      "durationInFrames": 624,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "settling",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "water",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "3 units"
+        }
+      ]
+    },
+    {
+      "id": "total",
+      "narration": "The two pointers meet at the tallest bar, and every other bar has been settled exactly once. Adding it up, 0, 3, 2, 0, 3, 1, 2, and 0 make 11 units of water left standing.",
+      "caption": "The pointers meet: 11 units of water in total",
+      "durationInFrames": 468,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.35,
+          "type": "result",
+          "title": "Water left standing",
+          "detail": "0 + 3 + 2 + 0 + 3 + 1 + 2 + 0",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "In general, keep a left max and a right max while two pointers move inward. Whichever side has the lower wall is settled, because the other side is guaranteed to be at least as tall. One pass, constant memory.",
+      "caption": "The pattern: Two Pointers with running maxima, O(n)",
+      "durationInFrames": 504,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "h[0]",
+            "h[1]",
+            "h[2]",
+            "h[3]",
+            "h[4]",
+            "h[5]",
+            "h[6]",
+            "h[7]"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.25,
+          "type": "callout",
+          "text": "lower side settles: water = sideMax − h[i], then move inward"
+        },
+        {
+          "id": "complexity",
+          "enterAt": 0.55,
+          "type": "result",
+          "title": "Two Pointers",
+          "value": "O(n) time · O(1) space",
+          "detail": "vs. O(n²) for scanning from every bar",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    }
+  ]
+}

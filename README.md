@@ -67,6 +67,10 @@ pnpm generate:storyboards --pattern two-pointers             # write src/content
 pnpm generate:storyboards --missing                          # everything generatable that has no video yet
 ```
 
+No model available? Claude Code (or you) can write the draft by hand against the same prompt and checks:
+`pnpm storyboards:prompt <pattern>/<slug>` prints the instructions, and `pnpm storyboards:validate-draft <path...>`
+validates (`--dry-run`) and saves it like a generated storyboard.
+
 Flags: `--problem <pattern>/<slug>`, `--force`, `--max-requests <n>` (default 15). Valid results are cached in
 `.cache/generation`, so a real run after a dry run makes no new requests. On the free tier's daily limit the run stops
 cleanly and tells you to rerun with `--missing` the next day. Details: [CLAUDE.md](./CLAUDE.md).

@@ -92,15 +92,54 @@ export type Evaluation =
  */
 export function evaluateDraft(raw: unknown, ctx: GenerationContext, generation: GenerationMeta): Evaluation {
   const draft = draftSchema.safeParse(raw);
-  if (!draft.success) return { ok: false, issues: zodIssues("", draft.error.issues) };
-  return evaluateSource(assembleStoryboard(draft.data, ctx, generation), ctx);
+  if (draft.success) return evaluateSource(assembleStoryboard(draft.data, ctx, generation), ctx);
+
+  const schemaIssues = zodIssues("", draft.error.issues, raw);
+  // Text-only problems (an over-long caption, an empty label) shouldn't hide the trace checks: patch them on a
+  // copy and keep going, so one round reports every issue.
+  const patched = patchTextFields(raw, draft.error.issues);
+  const retry = patched === undefined ? undefined : draftSchema.safeParse(patched);
+  if (!retry?.success) return { ok: false, issues: schemaIssues };
+  const rest = evaluateSource(assembleStoryboard(retry.data, ctx, generation), ctx);
+  return { ok: false, issues: [...schemaIssues, ...rest.issues] };
+}
+
+/** Fields that never affect structure or trace checks. */
+const TEXT_FIELDS = new Set([
+  "caption",
+  "narration",
+  "title",
+  "summary",
+  "text",
+  "verdict",
+  "detail",
+  "label",
+  "speaker",
+]);
+
+/** A copy of `raw` with each failing text field replaced by a valid placeholder, or undefined if any other field failed. */
+function patchTextFields(raw: unknown, issues: readonly { path: PropertyKey[] }[]): unknown {
+  if (
+    issues.some((i) => !TEXT_FIELDS.has(String(i.path.at(-1))) && !TEXT_FIELDS.has(String(i.path.at(-2))))
+  ) {
+    return undefined;
+  }
+  const copy: unknown = structuredClone(raw);
+  for (const { path } of issues) {
+    const key = TEXT_FIELDS.has(String(path.at(-1))) ? path.at(-1)! : path.at(-2)!;
+    const parentPath = path.slice(0, path.lastIndexOf(key));
+    let parent: unknown = copy;
+    for (const step of parentPath) parent = (parent as Record<PropertyKey, unknown> | undefined)?.[step];
+    if (parent && typeof parent === "object") (parent as Record<PropertyKey, unknown>)[key] = "…";
+  }
+  return copy;
 }
 
 /** The same checks for an already-assembled storyboard (e.g. one read back from the cache). */
 export function evaluateSource(input: unknown, ctx: GenerationContext): Evaluation {
   const issues: ValidationIssue[] = [];
   const source = storyboardSourceSchema.safeParse(input);
-  if (!source.success) return { ok: false, issues: zodIssues("", source.error.issues) };
+  if (!source.success) return { ok: false, issues: zodIssues("", source.error.issues, input) };
 
   if (source.data.exampleSource !== ctx.definition.exampleSource) {
     issues.push({

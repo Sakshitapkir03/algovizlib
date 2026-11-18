@@ -5,44 +5,26 @@
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-import { getPattern, getPatterns, getProblems } from "@/lib/catalog/repository";
 import { createFileCache } from "@/lib/generation/cache";
+import { createCatalogAccess } from "@/lib/generation/catalog-access";
 import { parseCli, selectTargets, USAGE, type CliOptions } from "@/lib/generation/cli";
 import { readGenerationConfig } from "@/lib/generation/config";
-import { describeIssues } from "@/lib/generation/draft";
 import { createStoryboardModel } from "@/lib/generation/model";
 import { runGeneration, type RunSummary } from "@/lib/generation/pipeline";
 import { currentPrompts } from "@/lib/generation/prompts";
+import { exitStatus, formatFailures, formatSummaryTable } from "@/lib/generation/report";
 import { createFileWriter } from "@/lib/generation/writer";
 
 const ROOT = process.cwd();
 const GENERATED_DIR = path.join(ROOT, "src/content/storyboards/generated");
 const CACHE_DIR = path.join(ROOT, ".cache/generation");
 
-function table(rows: string[][]): string {
-  const widths = rows[0].map((_, c) => Math.max(...rows.map((r) => r[c].length)));
-  return rows.map((r) => r.map((cell, c) => cell.padEnd(widths[c])).join("  ")).join("\n");
-}
-
 function printSummary(summary: RunSummary, options: CliOptions) {
   console.log("");
-  console.log(
-    table([
-      ["problem", "result", "repairs", "scenes", "requests", "note"],
-      ...summary.rows.map((r) => [
-        r.problem,
-        r.status,
-        String(r.repairs),
-        r.scenes === undefined ? "-" : String(r.scenes),
-        String(r.requests),
-        r.detail ?? "",
-      ]),
-    ]),
-  );
+  console.log(formatSummaryTable(summary));
   console.log(`\nRequests used: ${summary.requestsUsed} of ${summary.maxRequests}`);
-  for (const r of summary.rows.filter((row) => row.issues?.length)) {
-    console.log(`\nIssues for ${r.problem} (last attempt):\n${describeIssues(r.issues!.slice(0, 15))}`);
-  }
+  const failures = formatFailures(summary);
+  if (failures) console.log(`\n${failures}`);
   if (summary.stoppedBy === "daily-quota") {
     console.log(
       `\nStopped: the provider's daily quota is used up. Everything above that was saved or cached is kept.` +
@@ -73,17 +55,7 @@ async function main() {
   const options = parseCli(argv);
   const config = readGenerationConfig(process.env);
   const writer = createFileWriter(GENERATED_DIR);
-  const targets = selectTargets(options, {
-    getPatterns: () => getPatterns("dsa"),
-    getPattern,
-    getProblems,
-    existingStoryboard: (problem) =>
-      problem.storyboardId
-        ? "hand-written"
-        : writer.exists(`${problem.patternSlug}/${problem.slug}`)
-          ? "generated"
-          : undefined,
-  });
+  const targets = selectTargets(options, createCatalogAccess(writer));
 
   console.log(
     `Provider: ${config.provider} · model: ${config.model} · prompt: ${currentPrompts.version} · ` +
@@ -126,7 +98,9 @@ async function main() {
   }
 
   printSummary(summary, options);
-  if (summary.rows.some((r) => r.status === "failed")) process.exitCode = 1;
+  const status = exitStatus(summary);
+  console.log(`\n${status.code === 0 ? "OK" : "FAILED"} (exit ${status.code}): ${status.reason}`);
+  process.exitCode = status.code;
 }
 
 main().catch((error: unknown) => {

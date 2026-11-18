@@ -44,35 +44,6 @@ export function BarRow({ element }: { element: BarRowElement }) {
           background: palette.border,
         }}
       />
-      {fill ? (
-        <div
-          style={{
-            position: "absolute",
-            left: layout.centers[fill.from],
-            width: layout.centers[fill.to] - layout.centers[fill.from],
-            top: baseline - fill.level * unitHeight,
-            height: fill.level * unitHeight,
-            borderRadius: 4,
-            opacity: p,
-            ...waterStyle,
-          }}
-        >
-          <span
-            style={{
-              position: "absolute",
-              top: 6,
-              left: "50%",
-              transform: "translateX(-50%)",
-              fontFamily: FONT_SANS,
-              fontSize: 16,
-              fontWeight: 700,
-              color: palette.text,
-            }}
-          >
-            water
-          </span>
-        </div>
-      ) : null}
       {element.bars.map((bar, i) => {
         const grow = enterProgress(frame, fps, reducedMotion, i * 2);
         const height = bar.value * unitHeight * grow;
@@ -128,6 +99,39 @@ export function BarRow({ element }: { element: BarRowElement }) {
           </div>
         );
       })}
+      {/* Drawn over the bars (translucent), so one water level reads across the whole container. */}
+      {fill ? (
+        <div
+          style={{
+            position: "absolute",
+            left: layout.centers[fill.from],
+            width: layout.centers[fill.to] - layout.centers[fill.from],
+            top: baseline - fill.level * unitHeight,
+            height: fill.level * unitHeight,
+            borderRadius: 4,
+            opacity: p,
+            ...waterStyle,
+          }}
+        >
+          <span
+            style={{
+              position: "absolute",
+              top: 6,
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontFamily: FONT_SANS,
+              fontSize: 16,
+              fontWeight: 700,
+              color: palette.text,
+              background: palette.surface,
+              padding: "0 6px",
+              borderRadius: 6,
+            }}
+          >
+            water
+          </span>
+        </div>
+      ) : null}
     </>
   );
 }

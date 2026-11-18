@@ -313,7 +313,8 @@ source schema, resolution, `validateStoryboard`, exampleSource rule) → on fail
 **2 repairs** → cache it and write `generated/<pattern>/<slug>.json`, regenerating `generated/index.ts`. The
 repository serves it for that problem automatically. A summary table lists result, repairs, scenes, and requests.
 
-- **Prompts** live in `src/lib/generation/prompts/` as typed template functions with a `PROMPT_VERSION`. Bump it on
+- **Prompts** live in `src/lib/generation/prompts/` as typed template functions with a `PROMPT_VERSION`
+  (`pnpm storyboards:prompt <pattern>/<slug>` prints the rendered prompt). Bump it on
   any wording change. The version, provider, and model are recorded in each storyboard's `generation` metadata.
 - **Cache**: `.cache/generation/<pattern>/<slug>.json` (gitignored), keyed by problem + prompt version + trace hash.
   Dry runs fill it too, so a real run after a dry run makes no requests. A changed prompt or trace makes it stale.
@@ -325,6 +326,36 @@ repository serves it for that problem automatically. A summary table lists resul
   calls.
 - **Tests** never call a real API: the pipeline takes injected `model`, `cache`, `writer`, `sleep`, and `log`, and
   the AI SDK adapter is tested with `MockLanguageModelV4`.
+
+### Exit codes (both commands)
+
+`0`: every targeted problem ended saved, cached, valid (dry run), or skipped. `1`: at least one failed (invalid after
+repairs, or an error). `2`: the run stopped early (budget, daily quota, or model unavailable) with problems left. The
+last line says why. Logic: `exitStatus()` in `src/lib/generation/report.ts`.
+
+### Authoring fallback (Claude Code writes the draft)
+
+When no model is available, a coding agent (or a person) can author the draft instead, against the same prompt and
+the same checks:
+
+```bash
+pnpm storyboards:prompt two-pointers/three-sum > .cache/drafts/two-pointers/three-sum.prompt.md   # exact instructions
+# write the draft JSON (the model's format) to .cache/drafts/two-pointers/three-sum.json, then:
+pnpm storyboards:validate-draft .cache/drafts/two-pointers/*.json --dry-run --model claude-opus-5-5
+pnpm storyboards:validate-draft .cache/drafts/two-pointers/*.json --model claude-opus-5-5          # save
+```
+
+- Drafts live in `.cache/drafts/<pattern>/<slug>.json` (gitignored); the problem comes from the path. Only validated
+  storyboards reach `src/`.
+- Each issue is located (`scene "too-low" › element "sum" › terms`) with expected vs. actual values. Schema errors in
+  text fields (an over-long caption) don't hide the trace checks; both are reported in one pass. The generator's
+  repair prompts get the same located issues.
+- Valid drafts are saved exactly like generated ones (JSON, regenerated registry, cache entry) with
+  `generation.provider: "claude-code"`, `model` from `--model` (default `claude-code`), the prompt version, and
+  `repairAttempts` = failed validations before it passed (counted in `.cache/drafts/attempts.json`, dry runs included).
+  The generator's `--missing` then treats the problem as done.
+- Hand-written storyboards are never replaced; an existing generated one only with `--force`.
+- Generated JSON is in `.prettierignore`: the writer owns its formatting.
 
 ### Provider config
 

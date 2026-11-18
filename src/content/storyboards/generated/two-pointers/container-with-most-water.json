@@ -1,0 +1,496 @@
+{
+  "id": "two-pointers-container-with-most-water",
+  "title": "Container With Most Water: Picking the Best Pair of Trough Ends",
+  "concept": "Two Pointers",
+  "category": "dsa",
+  "summary": "Choose two planks as the ends of a water trough. Start wide, and always give up the shorter plank, because it can never do better.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Six planks of different heights stand in a row in a garden. You pick two of them to be the ends of a trough; water fills the space between them, but only up to the shorter plank before it spills.",
+    "mapping": [
+      {
+        "real": "Plank height",
+        "abstract": "heights[i]"
+      },
+      {
+        "real": "Gap between the two planks",
+        "abstract": "right − left"
+      },
+      {
+        "real": "Water held",
+        "abstract": "(right − left) × min(heights[left], heights[right])"
+      },
+      {
+        "real": "Left end of the trough",
+        "abstract": "left index"
+      },
+      {
+        "real": "Right end of the trough",
+        "abstract": "right index"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "greedy"
+  ],
+  "takeaway": {
+    "pattern": "Two Pointers (opposite ends)",
+    "summary": "Start with the widest pair. The shorter wall caps the water, and every other partner for it is closer, so discard it by moving that pointer inward. Track the best area as you go.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Pick two positions to maximize something that depends on their distance",
+      "The smaller of the two values is the bottleneck",
+      "Moving the bottleneck side is the only move that can help"
+    ]
+  },
+  "trace": {
+    "problem": "two-pointers/container-with-most-water",
+    "args": [
+      [
+        2,
+        5,
+        3,
+        8,
+        4,
+        7
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v1",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-18T22:10:12.762Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Six planks stand in a row, with heights 2, 5, 3, 8, 4, and 7. Pick any two as the ends of a trough. Water fills the gap between them, but only as high as the shorter plank. Which pair holds the most?",
+      "caption": "Which two planks make the trough that holds the most water?",
+      "durationInFrames": 552,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Water rises only as high as the shorter end"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "You could try every pair of planks and measure each trough. With six planks that's fifteen pairs. With a thousand planks it's about half a million, and most of them are obviously bad.",
+      "caption": "Trying every pair takes 15 tries for 6 planks",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Every pair",
+          "value": "15 tries for 6 planks",
+          "detail": "1,000 planks → 499,500 tries",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "widest",
+      "narration": "Start with the two outermost planks, the widest trough possible. They're 5 apart, but the left plank is only 2 tall, so the trough holds 5 times 2, which is 10. That's our best so far.",
+      "caption": "Start wide: the short plank caps the water at 2",
+      "durationInFrames": 468,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left end",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "ends",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "area",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "drop-short",
+      "narration": "Here's the key idea. Plank A is the bottleneck, and every other partner for it is closer, so it can never beat 10. Drop it and step the left end inward. Planks B and F are 4 apart and B is 5 tall: 4 times 5 is 20, a new best.",
+      "caption": "Give up the shorter plank: 4 × 5 = 20, a new best",
+      "durationInFrames": 648,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left end",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "ends",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "area",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.5,
+          "type": "callout",
+          "text": "A short plank only gets worse with a closer partner",
+          "anchor": {
+            "rowId": "row",
+            "index": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "not-better",
+      "narration": "B is still the shorter end, so it goes too. C and F hold only 3 times 3, which is 9, less than our best of 20. We keep 20 and drop C next, since it's the shorter end again.",
+      "caption": "3 × 3 = 9: worse, but the short plank still moves",
+      "durationInFrames": 516,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left end",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "ends",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "area",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not better"
+        }
+      ]
+    },
+    {
+      "id": "switch-sides",
+      "narration": "With D on the left, the tall plank is 8 and F is only 7, so now the right end is the bottleneck. They hold 2 times 7, which is 14, still less than 20, so the right end steps inward.",
+      "caption": "Now the right plank is shorter, so the right end moves",
+      "durationInFrames": 528,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left end",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "ends",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "area",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not better"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.5,
+          "type": "callout",
+          "text": "Always move the shorter end, whichever side it's on",
+          "anchor": {
+            "rowId": "row",
+            "index": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "After one more check the two ends meet, and every plank has been ruled out exactly once. The best trough used planks B and F, holding 20 units of water.",
+      "caption": "The ends meet: planks B and F hold the most water",
+      "durationInFrames": 396,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Left end",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "Right end",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "best",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Most water",
+          "detail": "planks B and F, 5 checks instead of 15",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Without the garden, the planks are the array heights, the two trough ends are the left and right indices, and the water is the distance times the shorter height. Each step discards the shorter wall for good, so the pointers meet after at most n steps.",
+      "caption": "The pattern: Two Pointers, O(n) time, O(1) space",
+      "durationInFrames": 588,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "h[0]",
+            "h[1]",
+            "h[2]",
+            "h[3]",
+            "h[4]",
+            "h[5]"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.25,
+          "type": "callout",
+          "text": "area = (right − left) × min(h[left], h[right]); move the shorter side"
+        },
+        {
+          "id": "complexity",
+          "enterAt": 0.55,
+          "type": "result",
+          "title": "Two Pointers",
+          "value": "O(n) time · O(1) space",
+          "detail": "vs. O(n²) for trying every pair",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    }
+  ]
+}

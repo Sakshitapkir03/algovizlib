@@ -17,7 +17,7 @@ export function loadStoryboard(input: unknown): Storyboard {
     throw new Error(`Invalid storyboard "${String(id)}":\n${lines.map((l) => `  - ${l}`).join("\n")}`);
   };
   const source = storyboardSourceSchema.safeParse(input);
-  if (!source.success) return fail(zodIssues("", source.error.issues).map(formatIssue));
+  if (!source.success) return fail(zodIssues("", source.error.issues, input).map(formatIssue));
   const { storyboard, issues } = resolveStoryboard(source.data);
   if (!storyboard) return fail(issues.map(formatIssue));
   return storyboard;

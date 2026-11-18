@@ -27,6 +27,7 @@ function validateArithmetic(scene: Scene, issues: ValidationIssue[]) {
       issues.push({
         sceneId: scene.id,
         elementId: el.id,
+        field: "result",
         message: `${el.terms.join(` ${el.operator} `)} is ${value}, not ${el.result}`,
       });
     }
@@ -34,6 +35,7 @@ function validateArithmetic(scene: Scene, issues: ValidationIssue[]) {
       issues.push({
         sceneId: scene.id,
         elementId: el.id,
+        field: "comparison",
         message: `${el.result} ${el.comparison.op} ${el.comparison.target} is false`,
       });
     }
@@ -47,26 +49,42 @@ function checkEquation(
   stepIndex: number,
   issues: ValidationIssue[],
 ) {
-  const push = (message: string) => issues.push({ sceneId: scene.id, elementId: el.id, message });
+  const push = (field: string, message: string, values?: { expected: string; actual: string }) =>
+    issues.push({ sceneId: scene.id, elementId: el.id, field, message, ...values });
   const expected = step.equation;
   if (!expected) {
-    push(`Trace step ${stepIndex} has no arithmetic, so this scene can't show an equation`);
+    push("type", `Trace step ${stepIndex} has no arithmetic, so this scene can't show an equation`);
     return;
   }
   const show = (terms: readonly number[], op: string) => terms.join(` ${op} `);
   if (el.operator !== expected.operator || !sameList(el.terms, expected.terms)) {
     push(
+      "terms",
       `Equation should be ${show(expected.terms, expected.operator)} (trace step ${stepIndex}), not ${show(el.terms, el.operator)}`,
     );
   }
-  if (el.result !== expected.result) push(`Equation result should be ${expected.result}`);
-  if (el.comparison && !expected.comparison) push(`Trace step ${stepIndex} doesn't compare against anything`);
+  if (el.result !== expected.result) {
+    push("result", "Equation result doesn't match the trace", {
+      expected: String(expected.result),
+      actual: String(el.result),
+    });
+  }
+  if (el.comparison && !expected.comparison) {
+    push("comparison", `Trace step ${stepIndex} doesn't compare against anything; omit comparison`);
+  }
   if (el.comparison && expected.comparison) {
     if (el.comparison.target !== expected.comparison.target) {
-      push(`Equation should compare against ${expected.comparison.target}`);
+      push("comparison.target", "Equation compares against the wrong target", {
+        expected: String(expected.comparison.target),
+        actual: String(el.comparison.target),
+      });
     }
     if (el.comparison.op !== expected.comparison.op) {
-      push(`The trace compares ${expected.result} ${expected.comparison.op} ${expected.comparison.target}`);
+      push(
+        "comparison.op",
+        `The trace compares ${expected.result} ${expected.comparison.op} ${expected.comparison.target}`,
+        { expected: expected.comparison.op, actual: el.comparison.op },
+      );
     }
   }
 }
@@ -84,14 +102,22 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
   let revealed = false;
 
   for (const scene of storyboard.scenes) {
-    const push = (message: string, elementId?: string) =>
-      issues.push({ sceneId: scene.id, elementId, message });
+    const push = (
+      message: string,
+      elementId?: string,
+      field?: string,
+      values?: { expected: string; actual: string },
+    ) => issues.push({ sceneId: scene.id, elementId, field, message, ...values });
+    const list = (values: readonly unknown[]) => `[${values.join(", ")}]`;
     const rows = new Map(scene.elements.flatMap((el) => (rowValues(el) ? [[el.id, el] as const] : [])));
-    const checkRow = (rowId: string, elementId: string) => {
+    const checkRow = (rowId: string) => {
       const row = rows.get(rowId);
       const values = row && rowValues(row);
       if (values && !sameList(values, trace.row.values)) {
-        push(`Row "${rowId}" must hold the trace's values [${trace.row.values.join(", ")}]`, elementId);
+        push(`Row "${rowId}" must hold the trace's values`, rowId, "items", {
+          expected: list(trace.row.values),
+          actual: list(values),
+        });
       }
     };
 
@@ -104,18 +130,30 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
         scene.traceStep === undefined
       ) {
         if (sameSet(el.indices, trace.answerIndices)) revealed = true;
-        else push(`Highlighted answer should be items [${trace.answerIndices.join(", ")}]`, el.id);
+        else
+          push("Highlighted answer is wrong", el.id, "indices", {
+            expected: list(trace.answerIndices),
+            actual: list(el.indices),
+          });
       }
       if (el.type === "result") {
         if (el.indices && trace.answerIndices) {
           if (sameSet(el.indices, trace.answerIndices)) revealed = true;
-          else push(`Result indices should be [${trace.answerIndices.join(", ")}]`, el.id);
+          else
+            push("Result indices are wrong", el.id, "indices", {
+              expected: list(trace.answerIndices),
+              actual: list(el.indices),
+            });
         } else if (el.indices) {
-          push("This trace's answer isn't a set of positions; drop indices", el.id);
+          push("This trace's answer isn't a set of positions; drop indices", el.id, "indices");
         }
         if (el.showsAnswer) {
           if (el.value === trace.answerDisplay) revealed = true;
-          else push(`A result with showsAnswer must display exactly "${trace.answerDisplay}"`, el.id);
+          else
+            push(`A result with showsAnswer must display exactly "${trace.answerDisplay}"`, el.id, "value", {
+              expected: JSON.stringify(trace.answerDisplay),
+              actual: JSON.stringify(el.value),
+            });
         }
       }
     }
@@ -123,7 +161,7 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
     if (scene.traceStep === undefined) {
       for (const el of scene.elements) {
         if (el.type === "pointer" && el.binds) {
-          push(`Pointer bound to "${el.binds}" needs the scene to set traceStep`, el.id);
+          push(`Pointer bound to "${el.binds}" needs the scene to set traceStep`, el.id, "binds");
         }
       }
       continue;
@@ -132,34 +170,54 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
     const stepIndex = scene.traceStep;
     const step = trace.steps[stepIndex];
     if (!step) {
-      push(`traceStep ${stepIndex} does not exist (the trace has steps 0–${trace.steps.length - 1})`);
+      push(
+        `traceStep ${stepIndex} does not exist (the trace has steps 0–${trace.steps.length - 1})`,
+        undefined,
+        "traceStep",
+      );
       continue;
     }
-    if (stepIndex < lastStep) push(`Scenes go backwards in the trace (step ${lastStep} → ${stepIndex})`);
+    if (stepIndex < lastStep) {
+      push(`Scenes go backwards in the trace (step ${lastStep} → ${stepIndex})`, undefined, "traceStep", {
+        expected: `≥ ${lastStep}`,
+        actual: String(stepIndex),
+      });
+    }
     covered.add(stepIndex);
 
     for (const el of scene.elements) {
       switch (el.type) {
         case "pointer": {
           if (!el.binds) break;
-          checkRow(el.rowId, el.id);
+          checkRow(el.rowId);
           const expected = step.pointers[el.binds];
           if (expected === undefined) {
-            push(`Trace step ${stepIndex} has no pointer "${el.binds}"`, el.id);
+            push(
+              `Trace step ${stepIndex} has no pointer "${el.binds}" (it has: ${Object.keys(step.pointers).join(", ") || "none"})`,
+              el.id,
+              "binds",
+            );
           } else if (el.index !== expected) {
             push(
               `Pointer "${el.binds}" should be at ${expected} in trace step ${stepIndex}, not ${el.index}`,
               el.id,
+              "index",
             );
           }
           if (el.fromIndex !== undefined && el.fromIndex !== el.index) {
             const before = previous?.pointers[el.binds];
             if (before === undefined)
-              push(`Pointer "${el.binds}" slides in from nowhere (no earlier bound step)`, el.id);
+              push(
+                `Pointer "${el.binds}" slides in from nowhere (no earlier bound step)`,
+                el.id,
+                "fromIndex",
+              );
             else if (el.fromIndex !== before) {
               push(
                 `Pointer "${el.binds}" should slide from ${before}, where the previous scene left it`,
                 el.id,
+                "fromIndex",
+                { expected: String(before), actual: String(el.fromIndex) },
               );
             }
           }
@@ -169,11 +227,14 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           checkEquation(scene, el, step, stepIndex, issues);
           break;
         case "highlight": {
-          checkRow(el.rowId, el.id);
+          checkRow(el.rowId);
           const expected = step[el.state] ?? (el.state === "found" ? trace.answerIndices : undefined);
-          if (!expected) push(`Trace step ${stepIndex} has no "${el.state}" items`, el.id);
+          if (!expected) push(`Trace step ${stepIndex} has no "${el.state}" items`, el.id, "state");
           else if (!sameSet(el.indices, expected)) {
-            push(`"${el.state}" items in trace step ${stepIndex} are [${expected.join(", ")}]`, el.id);
+            push(`Wrong "${el.state}" items for trace step ${stepIndex}`, el.id, "indices", {
+              expected: list(expected),
+              actual: list(el.indices),
+            });
           } else if (el.state === "found" && sameSet(el.indices, trace.answerIndices)) revealed = true;
           break;
         }
@@ -187,10 +248,16 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               el.fill.level === step.fill.level
             )
           ) {
-            push(`Container fill doesn't match trace step ${stepIndex}`, el.id);
+            push(`Container fill doesn't match trace step ${stepIndex}`, el.id, "fill", {
+              expected: JSON.stringify(step.fill ?? null),
+              actual: JSON.stringify(el.fill),
+            });
           }
           if (el.water && !(step.water && sameList(el.water, step.water))) {
-            push(`Water levels don't match trace step ${stepIndex}`, el.id);
+            push(`Water levels don't match trace step ${stepIndex}`, el.id, "water", {
+              expected: list(step.water ?? []),
+              actual: list(el.water),
+            });
           }
           break;
         default:

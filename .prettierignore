@@ -2,3 +2,6 @@ node_modules
 .next
 pnpm-lock.yaml
 next-env.d.ts
+
+# Machine-written by pnpm generate:storyboards / storyboards:validate-draft
+src/content/storyboards/generated/**/*.json
