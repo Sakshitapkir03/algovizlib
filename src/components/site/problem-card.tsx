@@ -19,6 +19,7 @@ export function ProblemCard({ storyboard }: { storyboard: Storyboard }) {
         <CardTitle className="text-lg">
           <Link
             href={`/learn/${storyboard.id}`}
+            prefetch={true}
             className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-3 focus-visible:after:ring-ring/50"
           >
             {storyboard.concept}
