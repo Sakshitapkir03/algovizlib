@@ -1,65 +1,101 @@
-import { Film, Lightbulb, ShieldCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-import { ProblemCard } from "@/components/site/problem-card";
-import { storyboards } from "@/content/storyboards";
+import { Button } from "@/components/ui/button";
+import { getAllProblems, getCategories, getPatterns, hasVideo } from "@/lib/catalog/repository";
 
-const FEATURES = [
+const PRINCIPLES = [
   {
-    icon: Lightbulb,
-    title: "Approach first",
-    body: "Each video builds intuition for why the approach works, not a line-by-line walkthrough of the code.",
+    label: "approach-first",
+    body: "Build intuition for why an approach works, not a line-by-line code walkthrough.",
   },
   {
-    icon: Film,
-    title: "Real-world examples",
-    body: "Problems that are already real-world stories keep their own scenario. Abstract ones get a relatable analogy.",
+    label: "real-examples",
+    body: "Problems that are already real-world stories keep their scenario. Abstract ones get one clear analogy.",
   },
   {
-    icon: ShieldCheck,
-    title: "Verified steps",
-    body: "Every pointer move and equation is checked against a deterministic algorithm engine.",
+    label: "verified",
+    body: "Every animated step and every example is checked against a reference implementation.",
   },
 ];
 
 export default function Home() {
+  const categories = getCategories();
+  const patterns = getPatterns("dsa");
+  const problems = getAllProblems();
+  const videos = problems.filter(hasVideo).length;
+
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <section className="py-14 sm:py-20" aria-labelledby="hero-heading">
-        <p className="text-sm font-medium text-primary">Algorithms & system design, visualized</p>
+      <section className="py-16 sm:py-24" aria-labelledby="hero-heading">
+        <p className="font-mono text-xs text-muted-foreground">
+          <span className="text-primary">$</span> algovizlib --learn approach
+        </p>
         <h1
           id="hero-heading"
-          className="mt-2 max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-5xl"
+          className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl"
         >
-          Understand the idea behind the algorithm in two minutes.
+          Learn the pattern behind the problem.
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-pretty text-muted-foreground">
-          algovizlib turns computer science concepts into short animated videos. Each one follows a concrete,
-          real-world example from the problem to the pattern you can reuse.
+          Short animated explanations and a curated problem set, organized by the handful of patterns that
+          solve most algorithm questions.
         </p>
-        <ul className="mt-10 grid gap-4 sm:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, body }) => (
-            <li key={title} className="rounded-xl border p-4">
-              <Icon aria-hidden className="size-5 text-primary" />
-              <p className="mt-2 font-semibold">{title}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-            </li>
-          ))}
+        <div className="mt-8 flex flex-wrap items-center gap-3">
+          <Button asChild size="lg">
+            <Link href="/dsa/two-pointers" prefetch={true}>
+              Start with Two Pointers
+              <ArrowRight aria-hidden data-icon="inline-end" />
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="ghost">
+            <Link href="/dsa">Browse all patterns</Link>
+          </Button>
+        </div>
+        <p className="mt-6 font-mono text-xs text-muted-foreground">
+          {patterns.length} patterns · {problems.length} problems · {videos}{" "}
+          {videos === 1 ? "video" : "videos"}
+        </p>
+      </section>
+
+      <section className="pb-16" aria-labelledby="categories-heading">
+        <h2 id="categories-heading" className="mb-4 font-mono text-xs text-muted-foreground">
+          categories
+        </h2>
+        <ul className="grid gap-4 md:grid-cols-2">
+          {categories.map((c) => {
+            const available = c.status === "available";
+            return (
+              <li key={c.slug} className="group relative rounded-xl border p-6 hover:bg-muted/30">
+                <div className="flex items-center justify-between gap-4">
+                  <h3 className="text-lg font-semibold">
+                    <Link href={`/${c.slug}`} className="after:absolute after:inset-0 after:rounded-xl">
+                      {c.name}
+                    </Link>
+                  </h3>
+                  <span className="rounded-md border px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
+                    {available ? `${patterns.length} patterns` : "coming soon"}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{c.description}</p>
+                <p className="mt-6 font-mono text-xs text-muted-foreground group-hover:text-foreground">
+                  /{c.slug} <span aria-hidden>→</span>
+                </p>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
-      <section className="pb-20" aria-labelledby="library-heading">
-        <div className="mb-4 flex items-end justify-between">
-          <h2 id="library-heading" className="text-xl font-semibold tracking-tight">
-            Problem library
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {storyboards.length} {storyboards.length === 1 ? "video" : "videos"}
-          </p>
-        </div>
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {storyboards.map((sb) => (
-            <li key={sb.id}>
-              <ProblemCard storyboard={sb} />
+      <section className="border-t py-12" aria-labelledby="principles-heading">
+        <h2 id="principles-heading" className="sr-only">
+          How it works
+        </h2>
+        <ul className="grid gap-8 sm:grid-cols-3">
+          {PRINCIPLES.map(({ label, body }) => (
+            <li key={label}>
+              <p className="font-mono text-xs text-primary">{`// ${label}`}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{body}</p>
             </li>
           ))}
         </ul>

@@ -4,8 +4,13 @@ Short animated videos that explain computer science concepts (starting with data
 system design) through real-world examples. Each video focuses on the **approach**, not a line-by-line code
 walkthrough.
 
-The first video is **Two Pointers** (pair sum on a sorted array), told as a price-sorted shelf where you and a
-friend look for two items that use up a $50 gift card exactly.
+The library is organized by **category → pattern → problem**. Data Structures & Algorithms has 8 patterns (Two
+Pointers, Sliding Window, Binary Search, Stack, Linked List, Trees (DFS), Graphs (BFS), Dynamic Programming), each
+with 5 problems across easy, medium, and hard. Every problem has an original statement, examples, progressive hints,
+and the approach behind a spoiler toggle. Problems with a video play it inline; the first is **Pair with Target
+Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
+
+You can mark each problem Not started / Learning / Done. Progress is saved in your browser.
 
 ## Stack
 
@@ -21,20 +26,31 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3000, then pick **Two Pointers** to open `/learn/two-pointers`.
+Open http://localhost:3000. Routes:
+
+| Route                   | Page                                                 |
+| ----------------------- | ---------------------------------------------------- |
+| `/`                     | Landing                                              |
+| `/dsa`                  | Pattern grid with per-pattern progress               |
+| `/dsa/<pattern>`        | Pattern intro and a filterable problem table         |
+| `/dsa/<pattern>/<slug>` | Problem: statement, examples, video, hints, approach |
+| `/system-design`        | Coming soon, with planned topics                     |
+
+Press **Cmd/Ctrl + K** anywhere to jump to a pattern or problem. Old `/learn/two-pointers` links redirect permanently
+to `/dsa/two-pointers/pair-with-target-sum`.
 
 ## Scripts
 
-| Command           | What it does                       |
-| ----------------- | ---------------------------------- |
-| `pnpm dev`        | Start the dev server               |
-| `pnpm build`      | Production build                   |
-| `pnpm start`      | Serve the production build         |
-| `pnpm lint`       | ESLint                             |
-| `pnpm typecheck`  | Generate route types and run `tsc` |
-| `pnpm test`       | Run the Vitest suite once          |
-| `pnpm test:watch` | Vitest in watch mode               |
-| `pnpm format`     | Format with Prettier               |
+| Command           | What it does                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| `pnpm dev`        | Start the dev server                                                                             |
+| `pnpm build`      | Production build                                                                                 |
+| `pnpm start`      | Serve the production build                                                                       |
+| `pnpm lint`       | ESLint                                                                                           |
+| `pnpm typecheck`  | Generate route types and run `tsc`                                                               |
+| `pnpm test`       | Run the Vitest suite once (includes checking every problem example against a reference solution) |
+| `pnpm test:watch` | Vitest in watch mode                                                                             |
+| `pnpm format`     | Format with Prettier                                                                             |
 
 ## Player controls
 
@@ -48,8 +64,9 @@ automatically, and every page is statically prerendered.
 
 ## Contributing
 
-See [CLAUDE.md](./CLAUDE.md) for the architecture, the storyboard and primitive system, how to add a primitive
-or a problem, the rules for choosing an example, and the roadmap.
+See [CLAUDE.md](./CLAUDE.md) for the architecture, the content model, how to add a pattern or a problem, how to
+attach a video, the storyboard and primitive system, the rules for choosing an example, the practice-mode plan, and
+the roadmap.
 
 ## License notes
 

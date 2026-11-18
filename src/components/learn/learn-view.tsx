@@ -37,7 +37,17 @@ function isInteractive(target: EventTarget | null): boolean {
   );
 }
 
-export function LearnView({ storyboard }: { storyboard: Storyboard }) {
+/**
+ * `showTakeaway={false}` leaves out the takeaway card, for pages that hide the approach behind a spoiler toggle
+ * and render `<KeyTakeaway>` there instead.
+ */
+export function LearnView({
+  storyboard,
+  showTakeaway = true,
+}: {
+  storyboard: Storyboard;
+  showTakeaway?: boolean;
+}) {
   const stageRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -132,7 +142,7 @@ export function LearnView({ storyboard }: { storyboard: Storyboard }) {
           Scene {currentIndex + 1} of {timings.length}: {storyboard.scenes[currentIndex].caption}
         </p>
         <Transcript scenes={storyboard.scenes} timings={timings} currentIndex={currentIndex} />
-        <KeyTakeaway takeaway={storyboard.takeaway} analogy={storyboard.analogy} />
+        {showTakeaway && <KeyTakeaway takeaway={storyboard.takeaway} analogy={storyboard.analogy} />}
       </div>
       <aside className="lg:sticky lg:top-20 lg:self-start" aria-labelledby="scenes-heading">
         <h2 id="scenes-heading" className="mb-3 text-sm font-semibold text-muted-foreground">
