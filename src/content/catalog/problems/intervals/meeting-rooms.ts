@@ -54,5 +54,7 @@ Return \`true\` if one person could attend every meeting, meaning no two meeting
     "Sort the meetings by start time. If any two meetings overlap, then some meeting overlaps the one immediately before it in this order, so a single pass checking `current.start < previous.end` is enough.",
   complexity: { time: "O(n log n)", space: "O(1) beyond the sort" },
   tags: ["array", "sorting"],
-  externalRefs: [{ label: "LeetCode 252", url: "https://leetcode.com/problems/meeting-rooms/" }],
+  externalRefs: [
+    { label: "LeetCode 252", url: "https://leetcode.com/problems/meeting-rooms/", premium: true },
+  ],
 });

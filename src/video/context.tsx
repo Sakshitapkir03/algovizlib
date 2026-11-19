@@ -1,13 +1,23 @@
 import { createContext, useContext } from "react";
 
-import type { RowLayout } from "./layout";
+import type { Element } from "@/lib/storyboard";
+
+import type { Region, RowLayout } from "./layout";
+import type { TextMetrics } from "./text";
 import type { VideoPalette } from "./theme";
 
 export type SceneContextValue = {
   rows: Record<string, RowLayout>;
+  /** Every element in the scene (for labels that make room for their neighbors). */
+  elements: readonly Element[];
+  /** Top of the bottom stack (see `layoutScene`). */
+  bottomTop: number;
+  heapRegion: Region;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;
+  /** Font sizes for the player's rendered width (see `video/text.ts`). */
+  text: TextMetrics;
 };
 
 export const SceneContext = createContext<SceneContextValue | null>(null);

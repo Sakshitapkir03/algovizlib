@@ -4,7 +4,9 @@ import type { PartitionElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
-import { CANVAS } from "../layout";
+import { cardRoom, firstFitting, PILL_PADDING } from "../labels";
+import { CANVAS, sizes } from "../layout";
+import { TEXT } from "../text";
 import { FONT_SANS } from "../theme";
 
 /**
@@ -13,7 +15,7 @@ import { FONT_SANS } from "../theme";
  * partitioned are dimmed. Glyphs and words carry every state; color only reinforces them.
  */
 export function Partition({ element }: { element: PartitionElement }) {
-  const { rows, palette, reducedMotion } = useScene();
+  const { rows, palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const layout = rows[element.rowId];
@@ -28,7 +30,22 @@ export function Partition({ element }: { element: PartitionElement }) {
     element.boundary === element.from
       ? layout.lefts[element.from] - 10
       : (layout.lefts[element.boundary - 1] + layout.cardWidth + layout.lefts[element.boundary]) / 2;
-  const tagWidth = Math.max(layout.cardWidth + 24, 104);
+  const tagSize = text.size(TEXT.pivotTag);
+  // The tag has the strip above the bars to itself (on a phone "◀ smaller" is hidden), so it only needs to stay on
+  // the stage; with "◀ smaller" showing it keeps near its bar. The ◆ glyph always stays.
+  const x = layout.centers[element.pivot];
+  const tagRoom = text.compact
+    ? 2 * Math.min(x - 8, CANVAS.width - 8 - x) - PILL_PADDING
+    : cardRoom(layout) * 1.4 - PILL_PADDING;
+  const tagText = firstFitting([`◆ ${element.label}`], tagSize, tagRoom, text) ?? "◆";
+  const tagWidth = Math.max(layout.cardWidth + 24, text.width(tagText, tagSize) + PILL_PADDING);
+  const tagLeft = layout.centers[element.pivot] - tagWidth / 2;
+  const boundarySize = text.size(TEXT.boundary);
+  // "◀ smaller" reads left from the line; drop it if it would run into the pivot tag or off the stage.
+  const showSmaller =
+    !text.compact &&
+    (tagLeft > lineX + 4 || tagLeft + tagWidth < lineX - 8 - text.width("◀ smaller", boundarySize)) &&
+    lineX - 8 - text.width("◀ smaller", boundarySize) > 0;
   // Wait for the bars to settle (moves start around frame 18) before the line jumps in.
   const lineIn = enterProgress(frame, fps, reducedMotion, 10);
 
@@ -53,16 +70,16 @@ export function Partition({ element }: { element: PartitionElement }) {
       <div
         style={{
           position: "absolute",
-          left: layout.centers[element.pivot] - tagWidth / 2,
+          left: tagLeft,
           width: tagWidth,
           top: stripTop + 4,
-          height: 32,
+          height: sizes.pivotTag(text),
           borderRadius: 999,
           border: `2px solid ${palette.secondary}`,
           background: palette.surface,
           color: palette.text,
           fontFamily: FONT_SANS,
-          fontSize: 17,
+          fontSize: tagSize,
           fontWeight: 700,
           display: "flex",
           alignItems: "center",
@@ -72,8 +89,8 @@ export function Partition({ element }: { element: PartitionElement }) {
           transform: `translateY(${motion((1 - p) * -8, reducedMotion)}px)`,
         }}
       >
-        <span style={{ color: palette.secondary, marginRight: 6 }}>◆</span>
-        {element.label}
+        <span style={{ color: palette.secondary }}>{tagText.slice(0, 1)}</span>
+        {tagText.length > 1 ? <span style={{ marginLeft: 6 }}>{tagText.slice(2)}</span> : null}
       </div>
       <div
         style={{
@@ -87,11 +104,12 @@ export function Partition({ element }: { element: PartitionElement }) {
       />
       <div
         style={{
+          display: showSmaller ? undefined : "none",
           position: "absolute",
           right: CANVAS.width - lineX + 8,
           top: stripTop + 10,
           fontFamily: FONT_SANS,
-          fontSize: 16,
+          fontSize: boundarySize,
           fontWeight: 700,
           color: palette.textMuted,
           whiteSpace: "nowrap",

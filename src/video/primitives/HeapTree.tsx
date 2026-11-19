@@ -4,7 +4,9 @@ import type { HeapTreeElement } from "@/lib/storyboard";
 
 import { enterProgress } from "../animation";
 import { useScene } from "../context";
-import { CANVAS, HEAP_TREE_REGION } from "../layout";
+import { firstFitting } from "../labels";
+import { CANVAS } from "../layout";
+import { TEXT } from "../text";
 import { FONT_MONO, FONT_SANS } from "../theme";
 
 const NODE = 96;
@@ -18,13 +20,22 @@ const LABEL_SPACE = 26;
  * nodes past the heap are dashed and faded with a "✓" (already in their final place).
  */
 export function HeapTree({ element }: { element: HeapTreeElement }) {
-  const { palette, reducedMotion } = useScene();
+  const { palette, reducedMotion, text, heapRegion } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const p = enterProgress(frame, fps, reducedMotion);
   const n = element.values.length;
   const levels = Math.floor(Math.log2(n)) + 1;
-  const region = HEAP_TREE_REGION;
+  const region = heapRegion;
+  const sizeLabelSize = text.size(TEXT.heapSize);
+  // The size pill shares the top row with the root: it keeps to the space right of the root node.
+  const sizeLabel = firstFitting(
+    [`heap: ${element.heapSize} ${element.heapSize === 1 ? "value" : "values"}`, `heap: ${element.heapSize}`],
+    sizeLabelSize,
+    (region.right - region.left) / 2 - NODE / 2 - 24 - 24,
+    text,
+  );
+  const labelSize = text.size(TEXT.heapLabel);
   const width = region.right - region.left;
   const rowGap = levels > 1 ? (region.bottom - region.top - NODE - LABEL_SPACE) / (levels - 1) : 0;
   const pos = (i: number) => {
@@ -48,6 +59,7 @@ export function HeapTree({ element }: { element: HeapTreeElement }) {
     <div style={{ opacity: p }}>
       <div
         style={{
+          display: sizeLabel ? undefined : "none",
           position: "absolute",
           right: CANVAS.width - region.right,
           top: region.top,
@@ -56,13 +68,13 @@ export function HeapTree({ element }: { element: HeapTreeElement }) {
           border: `2px solid ${palette.border}`,
           background: palette.surface,
           fontFamily: FONT_SANS,
-          fontSize: 17,
+          fontSize: sizeLabelSize,
           fontWeight: 700,
           color: palette.textMuted,
           whiteSpace: "nowrap",
         }}
       >
-        heap: {element.heapSize} {element.heapSize === 1 ? "value" : "values"}
+        {sizeLabel}
       </div>
       <svg
         width={CANVAS.width}
@@ -120,7 +132,7 @@ export function HeapTree({ element }: { element: HeapTreeElement }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontFamily: FONT_MONO,
-                fontSize: 40,
+                fontSize: text.size(TEXT.heapNode),
                 fontWeight: 700,
                 color: live ? palette.text : palette.textMuted,
               }}
@@ -129,16 +141,20 @@ export function HeapTree({ element }: { element: HeapTreeElement }) {
             </div>
             <div
               style={{
+                // Position and role labels are extras on a phone: the ring and the thick edge mark the pair.
+                display: text.compact ? "none" : undefined,
                 position: "absolute",
                 left: home.x,
                 transform: "translateX(-50%)",
                 top: home.y + NODE / 2 + 2,
                 padding: "0 6px",
                 borderRadius: 6,
-                // Edges to the children pass under the label; the background keeps it legible.
+                // Edges to the children pass under the label; the background keeps it legible, and it draws over
+                // neighboring nodes rather than under them.
                 background: palette.background,
+                zIndex: 1,
                 fontFamily: FONT_MONO,
-                fontSize: 19,
+                fontSize: labelSize,
                 fontWeight: role ? 700 : 500,
                 color: role ? palette.text : palette.textMuted,
                 whiteSpace: "nowrap",

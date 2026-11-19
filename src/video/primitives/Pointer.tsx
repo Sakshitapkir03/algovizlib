@@ -4,17 +4,21 @@ import type { PointerElement } from "@/lib/storyboard";
 
 import { enterProgress } from "../animation";
 import { useScene } from "../context";
+import { PILL_PADDING, pointerLabel } from "../labels";
+import { TEXT } from "../text";
 import { FONT_SANS } from "../theme";
 
 const ARROW = 14;
-const LABEL_HEIGHT = 36;
 
 export function Pointer({ element }: { element: PointerElement }) {
-  const { rows, palette, reducedMotion } = useScene();
+  const { rows, palette, reducedMotion, text, elements } = useScene();
+  const pointers = elements.filter((el): el is PointerElement => el.type === "pointer");
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const layout = rows[element.rowId];
   if (!layout) return null;
+  const fontSize = text.size(TEXT.pointer);
+  const labelHeight = fontSize + 18;
 
   const to = layout.centers[element.index];
   const from = layout.centers[element.fromIndex ?? element.index];
@@ -28,7 +32,7 @@ export function Pointer({ element }: { element: PointerElement }) {
   const color = element.tone === "primary" ? palette.primary : palette.secondary;
   const textColor = element.tone === "primary" ? palette.primaryText : palette.secondaryText;
   const below = element.placement === "below";
-  const top = below ? layout.pointerTop : layout.top - 8 - ARROW - LABEL_HEIGHT;
+  const top = below ? layout.pointerTop : layout.top - 8 - ARROW - labelHeight;
 
   const arrow = (
     <div
@@ -46,20 +50,20 @@ export function Pointer({ element }: { element: PointerElement }) {
   const label = (
     <div
       style={{
-        height: LABEL_HEIGHT,
-        padding: "0 16px",
+        height: labelHeight,
+        padding: `0 ${PILL_PADDING / 2}px`,
         borderRadius: 999,
         background: color,
         color: textColor,
         fontFamily: FONT_SANS,
-        fontSize: 18,
+        fontSize,
         fontWeight: 700,
         display: "flex",
         alignItems: "center",
         whiteSpace: "nowrap",
       }}
     >
-      {element.label}
+      {pointerLabel(element, layout, text, pointers)}
     </div>
   );
 

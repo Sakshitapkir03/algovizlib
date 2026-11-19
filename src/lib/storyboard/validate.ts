@@ -1,4 +1,4 @@
-import { runTrace, type Trace, type TraceStep } from "@/lib/traces";
+import { finalPositions, runTrace, type Trace, type TraceStep } from "@/lib/traces";
 
 import type { ComparisonOp, Element, EquationElement } from "./elements";
 import type { ValidationIssue, ValidationResult } from "./issues";
@@ -20,6 +20,19 @@ const sameList = <T>(a: readonly T[], b: readonly T[]) =>
 
 /** Structural equality for small trace-shaped values (key order matches: both come from the same schemas). */
 const sameJson = (a: unknown, b: unknown) => b !== undefined && JSON.stringify(a) === JSON.stringify(b);
+
+/** A set of positions as compact runs, e.g. "0–2, 5". */
+const positions = (indices: readonly number[]) => {
+  const sorted = [...new Set(indices)].sort((a, b) => a - b);
+  const runs: string[] = [];
+  for (let k = 0; k < sorted.length;) {
+    let end = k;
+    while (end + 1 < sorted.length && sorted[end + 1] === sorted[end] + 1) end++;
+    runs.push(end === k ? `${sorted[k]}` : `${sorted[k]}–${sorted[end]}`);
+    k = end + 1;
+  }
+  return runs.join(", ");
+};
 
 const ranges = (groups: readonly { from: number; to: number }[]) =>
   groups.map((g) => (g.from === g.to ? `${g.from}` : `${g.from}–${g.to}`)).join(" | ");
@@ -301,12 +314,12 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           break;
         case "sorted-region": {
           checkRow(el.rowId);
-          const expected = step.sorted;
-          if (!expected) push(`Trace step ${stepIndex} has no sorted region yet`, el.id, "from");
-          else if (el.from !== expected.from || el.to !== expected.to) {
-            push(`Sorted region doesn't match trace step ${stepIndex}`, el.id, "from", {
-              expected: `${expected.from}–${expected.to}`,
-              actual: `${el.from}–${el.to}`,
+          const expected = finalPositions(step);
+          if (!expected) push(`Trace step ${stepIndex} has no sorted positions yet`, el.id, "indices");
+          else if (!sameSet(el.indices, expected)) {
+            push(`Sorted positions don't match trace step ${stepIndex}`, el.id, "indices", {
+              expected: positions(expected),
+              actual: positions(el.indices),
             });
           }
           break;

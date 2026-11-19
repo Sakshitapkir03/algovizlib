@@ -4,6 +4,7 @@ import type { CounterElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
+import { TEXT } from "../text";
 import { FONT_MONO, FONT_SANS } from "../theme";
 
 /**
@@ -11,7 +12,7 @@ import { FONT_MONO, FONT_SANS } from "../theme";
  * count a trace keeps (inversions, swaps, comparisons). A zero change is shown as "+0" in muted text.
  */
 export function Counter({ element }: { element: CounterElement }) {
-  const { palette, reducedMotion } = useScene();
+  const { palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const p = enterProgress(frame, fps, reducedMotion);
@@ -33,17 +34,31 @@ export function Counter({ element }: { element: CounterElement }) {
         transform: `translateY(${motion((1 - p) * 10, reducedMotion)}px)`,
       }}
     >
-      <span style={{ fontFamily: FONT_SANS, fontSize: 22, fontWeight: 700, color: palette.textMuted }}>
+      <span
+        style={{
+          fontFamily: FONT_SANS,
+          fontSize: text.size(TEXT.counterLabel),
+          fontWeight: 700,
+          color: palette.textMuted,
+        }}
+      >
         {element.label}
       </span>
-      <span style={{ fontFamily: FONT_MONO, fontSize: 40, fontWeight: 700, color: palette.text }}>
+      <span
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: text.size(TEXT.counterValue),
+          fontWeight: 700,
+          color: palette.text,
+        }}
+      >
         {element.value}
       </span>
       {element.delta !== undefined ? (
         <span
           style={{
             fontFamily: FONT_MONO,
-            fontSize: 26,
+            fontSize: text.size(TEXT.counterDelta),
             fontWeight: 700,
             padding: "2px 12px",
             borderRadius: 999,

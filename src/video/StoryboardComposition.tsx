@@ -6,16 +6,30 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { getSceneTimeline, sceneIndexAtFrame, TRANSITION_FRAMES, type Storyboard } from "@/lib/storyboard";
 
 import { SceneView } from "./SceneView";
+import { TEXT, textMetrics, type TextMetrics } from "./text";
 import { FONT_SANS, palettes, type VideoPalette, type VideoThemeName } from "./theme";
 
 export type StoryboardCompositionProps = {
   storyboard: Storyboard;
   theme: VideoThemeName;
   reducedMotion: boolean;
+  /** The player's rendered width in CSS px; text is sized so it stays readable (see `video/text.ts`). */
+  displayWidth?: number;
 };
 
-/** Persistent chrome that does not cross-fade: concept label + progress. */
-function Chrome({ storyboard, palette }: { storyboard: Storyboard; palette: VideoPalette }) {
+/**
+ * Persistent chrome that does not cross-fade: concept label + progress. On a phone-sized player only the progress
+ * dots remain; the page around the player already names the video and the scene.
+ */
+function Chrome({
+  storyboard,
+  palette,
+  text,
+}: {
+  storyboard: Storyboard;
+  palette: VideoPalette;
+  text: TextMetrics;
+}) {
   const frame = useCurrentFrame();
   const { timings } = getSceneTimeline(storyboard.scenes);
   const current = sceneIndexAtFrame(timings, frame);
@@ -30,13 +44,17 @@ function Chrome({ storyboard, palette }: { storyboard: Storyboard; palette: Vide
         justifyContent: "space-between",
         alignItems: "center",
         fontFamily: FONT_SANS,
-        fontSize: 16,
+        fontSize: text.size(TEXT.chrome),
         fontWeight: 600,
         color: palette.textMuted,
       }}
     >
       <span>
-        <span style={{ color: palette.primary }}>algovizlib</span> · {storyboard.concept}
+        {text.compact ? null : (
+          <>
+            <span style={{ color: palette.primary }}>algovizlib</span> · {storyboard.concept}
+          </>
+        )}
       </span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {storyboard.scenes.map((s, i) => (
@@ -50,16 +68,24 @@ function Chrome({ storyboard, palette }: { storyboard: Storyboard; palette: Vide
             }}
           />
         ))}
-        <span style={{ marginLeft: 8 }}>
-          {current + 1}/{storyboard.scenes.length}
-        </span>
+        {text.compact ? null : (
+          <span style={{ marginLeft: 8 }}>
+            {current + 1}/{storyboard.scenes.length}
+          </span>
+        )}
       </span>
     </div>
   );
 }
 
-export function StoryboardComposition({ storyboard, theme, reducedMotion }: StoryboardCompositionProps) {
+export function StoryboardComposition({
+  storyboard,
+  theme,
+  reducedMotion,
+  displayWidth,
+}: StoryboardCompositionProps) {
   const palette = palettes[theme];
+  const text = textMetrics(displayWidth);
   const last = storyboard.scenes.length - 1;
 
   return (
@@ -68,7 +94,7 @@ export function StoryboardComposition({ storyboard, theme, reducedMotion }: Stor
         {storyboard.scenes.map((scene, i) => (
           <Fragment key={scene.id}>
             <TransitionSeries.Sequence durationInFrames={scene.durationInFrames} name={scene.id}>
-              <SceneView scene={scene} palette={palette} reducedMotion={reducedMotion} />
+              <SceneView scene={scene} palette={palette} reducedMotion={reducedMotion} text={text} />
             </TransitionSeries.Sequence>
             {i < last ? (
               <TransitionSeries.Transition
@@ -79,7 +105,7 @@ export function StoryboardComposition({ storyboard, theme, reducedMotion }: Stor
           </Fragment>
         ))}
       </TransitionSeries>
-      <Chrome storyboard={storyboard} palette={palette} />
+      <Chrome storyboard={storyboard} palette={palette} text={text} />
     </AbsoluteFill>
   );
 }

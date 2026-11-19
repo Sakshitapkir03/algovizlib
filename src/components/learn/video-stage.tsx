@@ -1,7 +1,7 @@
 "use client";
 
 import { Player, type PlayerRef } from "@remotion/player";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { FPS, VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 import { usePlayerStore } from "@/store/player-store";
@@ -22,6 +22,19 @@ export default function VideoStage({
   label: string;
 }) {
   const playerRef = useRef<PlayerRef>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  // The composition sizes its text from the player's rendered width, so labels stay readable on a phone.
+  const [displayWidth, setDisplayWidth] = useState<number | undefined>(undefined);
+  useLayoutEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () => setDisplayWidth(Math.round(el.getBoundingClientRect().width) || undefined);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const props = useMemo(() => ({ ...inputProps, displayWidth }), [inputProps, displayWidth]);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
 
   // Mirror player events into the store so controls/scene list can react.
@@ -49,21 +62,23 @@ export default function VideoStage({
   }, []);
 
   return (
-    <Player
-      ref={playerRef}
-      component={StoryboardComposition}
-      inputProps={inputProps}
-      durationInFrames={durationInFrames}
-      fps={FPS}
-      compositionWidth={VIDEO_WIDTH}
-      compositionHeight={VIDEO_HEIGHT}
-      playbackRate={playbackRate}
-      controls={false}
-      clickToPlay
-      spaceKeyToPlayOrPause={false}
-      acknowledgeRemotionLicense
-      style={{ width: "100%", aspectRatio: `${VIDEO_WIDTH} / ${VIDEO_HEIGHT}` }}
-      aria-label={label}
-    />
+    <div ref={frameRef}>
+      <Player
+        ref={playerRef}
+        component={StoryboardComposition}
+        inputProps={props}
+        durationInFrames={durationInFrames}
+        fps={FPS}
+        compositionWidth={VIDEO_WIDTH}
+        compositionHeight={VIDEO_HEIGHT}
+        playbackRate={playbackRate}
+        controls={false}
+        clickToPlay
+        spaceKeyToPlayOrPause={false}
+        acknowledgeRemotionLicense
+        style={{ width: "100%", aspectRatio: `${VIDEO_WIDTH} / ${VIDEO_HEIGHT}` }}
+        aria-label={label}
+      />
+    </div>
   );
 }

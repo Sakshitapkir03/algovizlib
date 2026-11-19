@@ -101,15 +101,16 @@ const sortedRegionShape = {
   ...baseElement,
   type: z.literal("sorted-region"),
   rowId: nonEmpty,
-  /** First and last position already in final order (inclusive). */
-  from: index,
-  to: index,
+  /** Positions already in their final order (any set: a sorted prefix, a suffix, or placed pivots). */
+  indices: z.array(index).min(1),
   label: nonEmpty.max(16).default("sorted"),
 };
 export const sortedRegionElementSchema = z.object(sortedRegionShape);
 export const sortedRegionSourceSchema = z.object({
   ...sortedRegionShape,
-  /** Omit both to take the bound step's sorted range. */
+  /** Omit to take the bound step's final positions. */
+  indices: sortedRegionShape.indices.optional(),
+  /** Shorthand for a contiguous range (inclusive); becomes `indices`. */
   from: index.optional(),
   to: index.optional(),
 });

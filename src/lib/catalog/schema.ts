@@ -80,7 +80,12 @@ export const exampleSchema = z.object({
  */
 export const judgeSchema = z.enum(["exact", "unordered", "unordered-nested", "float"]);
 
-export const externalRefSchema = z.object({ label: nonEmpty, url: z.url() });
+export const externalRefSchema = z.object({
+  label: nonEmpty,
+  url: z.url(),
+  /** The linked problem needs a paid subscription (e.g. LeetCode Premium); the page labels it "Premium". */
+  premium: z.boolean().default(false),
+});
 
 export const problemSchema = z.object({
   slug,

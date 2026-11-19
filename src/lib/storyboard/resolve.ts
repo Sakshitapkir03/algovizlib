@@ -1,4 +1,4 @@
-import { runTrace, type Trace, type TraceStep } from "@/lib/traces";
+import { finalPositions, runTrace, type Trace, type TraceStep } from "@/lib/traces";
 
 import type { Element, ElementSource } from "./elements";
 import { zodIssues, type ValidationIssue } from "./issues";
@@ -175,19 +175,26 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
         case "callout":
           return el;
         case "sorted-region": {
-          if (el.from !== undefined && el.to !== undefined) return el;
-          if (!step?.sorted) {
+          const { from, to, ...rest } = el;
+          if (rest.indices) return rest;
+          if (from !== undefined && to !== undefined)
+            return {
+              ...rest,
+              indices: Array.from({ length: Math.max(0, to - from + 1) }, (_, k) => from + k),
+            };
+          const indices = step && finalPositions(step);
+          if (!indices) {
             issues.push({
               sceneId: scene.id,
               elementId: el.id,
-              field: "from",
+              field: "indices",
               message: step
-                ? `Trace step ${scene.traceStep} has no sorted region yet; remove the sorted-region or bind another step`
-                : "A sorted-region without from/to needs a scene.traceStep",
+                ? `Trace step ${scene.traceStep} has no sorted positions yet; remove the sorted-region or bind another step`
+                : "A sorted-region without indices needs a scene.traceStep",
             });
             return el;
           }
-          return { ...el, from: el.from ?? step.sorted.from, to: el.to ?? step.sorted.to };
+          return { ...rest, indices };
         }
         case "held-value": {
           if (el.value !== undefined && el.index !== undefined) return el;

@@ -5,8 +5,9 @@ import type { Element, Scene } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "./animation";
 import { SceneContext, type SceneContextValue } from "./context";
-import { layoutRows } from "./layout";
+import { layoutScene } from "./layout";
 import { primitiveRegistry } from "./primitives/registry";
+import { TEXT, type TextMetrics } from "./text";
 import { FONT_SANS, type VideoPalette } from "./theme";
 
 function ElementView({ element, sceneDuration }: { element: Element; sceneDuration: number }) {
@@ -23,10 +24,12 @@ function ElementView({ element, sceneDuration }: { element: Element; sceneDurati
 
 function Caption({
   text,
+  metrics,
   palette,
   reducedMotion,
 }: {
   text: string;
+  metrics: TextMetrics;
   palette: VideoPalette;
   reducedMotion: boolean;
 }) {
@@ -42,7 +45,7 @@ function Caption({
         right: 80,
         textAlign: "center",
         fontFamily: FONT_SANS,
-        fontSize: 44,
+        fontSize: metrics.size(TEXT.caption),
         fontWeight: 700,
         letterSpacing: -0.5,
         color: palette.text,
@@ -59,13 +62,18 @@ export function SceneView({
   scene,
   palette,
   reducedMotion,
+  text,
 }: {
   scene: Scene;
   palette: VideoPalette;
   reducedMotion: boolean;
+  text: TextMetrics;
 }) {
+  const layout = layoutScene(scene.elements, text);
   const ctx: SceneContextValue = {
-    rows: layoutRows(scene.elements),
+    ...layout,
+    elements: scene.elements,
+    text,
     palette,
     reducedMotion,
     sceneDurationInFrames: scene.durationInFrames,
@@ -78,14 +86,14 @@ export function SceneView({
   return (
     <SceneContext.Provider value={ctx}>
       <AbsoluteFill style={{ background: palette.background }}>
-        <Caption text={scene.caption} palette={palette} reducedMotion={reducedMotion} />
+        <Caption text={scene.caption} metrics={text} palette={palette} reducedMotion={reducedMotion} />
         {canvas.map((el) => (
           <ElementView key={el.id} element={el} sceneDuration={scene.durationInFrames} />
         ))}
         <div
           style={{
             position: "absolute",
-            top: 500,
+            top: layout.bottomTop,
             left: 0,
             right: 0,
             bottom: 24,

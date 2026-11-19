@@ -187,6 +187,39 @@ describe("catalog integrity", () => {
     const text = JSON.stringify([patterns, problems]);
     expect(text).not.toMatch(/\bTODO\b/);
   });
+
+  it("labels links to LeetCode Premium-only problems, and only those", () => {
+    // Premium-only problems this catalog could plausibly link to; extend when adding refs to others.
+    const premiumOnly = new Set([
+      "meeting-rooms",
+      "meeting-rooms-ii",
+      "alien-dictionary",
+      "graph-valid-tree",
+      "number-of-connected-components-in-an-undirected-graph",
+      "walls-and-gates",
+      "encode-and-decode-strings",
+      "missing-ranges",
+      "paint-house",
+      "design-hit-counter",
+      "longest-substring-with-at-most-k-distinct-characters",
+      "max-consecutive-ones-ii",
+      "two-sum-iii-data-structure-design",
+      "closest-binary-search-tree-value",
+      "find-the-celebrity",
+      "shortest-word-distance",
+      "the-maze",
+    ]);
+    const refs = problems.flatMap((p) => p.externalRefs.map((ref) => ({ problem: p.slug, ...ref })));
+    const slugOf = (url: string) => url.match(/leetcode\.com\/problems\/([^/]+)/)?.[1];
+    const wrong = refs.filter((ref) => ref.premium !== premiumOnly.has(slugOf(ref.url) ?? ""));
+    expect(wrong.map((ref) => `${ref.problem}: ${ref.url} premium=${ref.premium}`)).toEqual([]);
+    expect(
+      refs
+        .filter((ref) => ref.premium)
+        .map((ref) => ref.problem)
+        .sort(),
+    ).toEqual(["alien-dictionary", "meeting-rooms"]);
+  });
 });
 
 describe("catalog repository", () => {

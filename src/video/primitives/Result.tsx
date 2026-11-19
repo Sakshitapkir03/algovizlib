@@ -4,10 +4,12 @@ import type { ResultElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
+import { TEXT } from "../text";
 import { FONT_SANS } from "../theme";
 
 export function Result({ element }: { element: ResultElement }) {
-  const { palette, reducedMotion } = useScene();
+  const { palette, reducedMotion, text } = useScene();
+  const iconSize = text.size(TEXT.resultIcon);
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const p = enterProgress(frame, fps, reducedMotion);
@@ -33,15 +35,15 @@ export function Result({ element }: { element: ResultElement }) {
       <div
         aria-hidden
         style={{
-          width: 44,
-          height: 44,
+          width: iconSize + 18,
+          height: iconSize + 18,
           borderRadius: 999,
           background: accent,
           color: palette.background,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 26,
+          fontSize: iconSize,
           fontWeight: 800,
         }}
       >
@@ -50,7 +52,7 @@ export function Result({ element }: { element: ResultElement }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <div
           style={{
-            fontSize: 16,
+            fontSize: text.size(TEXT.resultTitle),
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: 1,
@@ -59,9 +61,11 @@ export function Result({ element }: { element: ResultElement }) {
         >
           {element.title}
         </div>
-        <div style={{ fontSize: 28, fontWeight: 700 }}>{element.value}</div>
-        {element.detail ? (
-          <div style={{ fontSize: 17, color: palette.textMuted }}>{element.detail}</div>
+        <div style={{ fontSize: text.size(TEXT.resultValue), fontWeight: 700 }}>{element.value}</div>
+        {element.detail && !text.compact ? (
+          <div style={{ fontSize: text.size(TEXT.resultDetail), color: palette.textMuted }}>
+            {element.detail}
+          </div>
         ) : null}
       </div>
     </div>

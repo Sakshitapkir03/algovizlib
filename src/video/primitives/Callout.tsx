@@ -5,6 +5,7 @@ import type { CalloutElement } from "@/lib/storyboard";
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
 import { CANVAS } from "../layout";
+import { TEXT } from "../text";
 import { FONT_SANS } from "../theme";
 
 const MAX_WIDTH = 360;
@@ -12,10 +13,12 @@ const FLOATING_TOP = 158;
 const EDGE = 24;
 
 export function Callout({ element }: { element: CalloutElement }) {
-  const { rows, palette, reducedMotion } = useScene();
+  const { rows, palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const p = enterProgress(frame, fps, reducedMotion);
+  // A sentence at a phone-readable size would cover the row; the caption and narration carry the reasoning there.
+  if (text.compact) return null;
 
   const layout = element.anchor ? rows[element.anchor.rowId] : undefined;
   const anchorX = layout && element.anchor ? layout.centers[element.anchor.index] : CANVAS.width / 2;
@@ -32,7 +35,7 @@ export function Callout({ element }: { element: CalloutElement }) {
         padding: "12px 18px",
         color: palette.text,
         fontFamily: FONT_SANS,
-        fontSize: 21,
+        fontSize: text.size(TEXT.callout),
         fontWeight: 500,
         lineHeight: 1.3,
         textAlign: "center",
@@ -40,7 +43,14 @@ export function Callout({ element }: { element: CalloutElement }) {
       }}
     >
       {element.speaker ? (
-        <div style={{ fontSize: 14, fontWeight: 700, color: palette.textMuted, marginBottom: 2 }}>
+        <div
+          style={{
+            fontSize: text.size(TEXT.calloutSpeaker),
+            fontWeight: 700,
+            color: palette.textMuted,
+            marginBottom: 2,
+          }}
+        >
           {element.speaker}
         </div>
       ) : null}

@@ -161,7 +161,7 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
                 <Section title="Practice elsewhere">
                   <ul className="flex flex-wrap gap-3 text-sm">
                     {problem.externalRefs.map((ref) => (
-                      <li key={ref.url}>
+                      <li key={ref.url} className="inline-flex items-center gap-2">
                         <a
                           href={ref.url}
                           target="_blank"
@@ -172,6 +172,14 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
                           <ExternalLink aria-hidden className="size-3" />
                           <span className="sr-only">(opens in a new tab)</span>
                         </a>
+                        {ref.premium && (
+                          <span
+                            className="rounded-sm border px-1.5 py-px font-mono text-[11px] leading-4 text-muted-foreground"
+                            title="Needs a LeetCode Premium subscription"
+                          >
+                            Premium
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>

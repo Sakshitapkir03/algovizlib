@@ -4,14 +4,20 @@ import type { ItemRowElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
+import { TEXT } from "../text";
 import { FONT_MONO, FONT_SANS } from "../theme";
 
 export function ItemRow({ element }: { element: ItemRowElement }) {
-  const { rows, palette, reducedMotion } = useScene();
+  const { rows, palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const layout = rows[element.id];
   if (!layout) return null;
+  const labelSize = text.size(TEXT.itemLabel);
+  const valueSize = text.size(TEXT.itemValue);
+  const sublabelSize = text.size(TEXT.itemSublabel);
+  // Names are secondary to values: drop any that wouldn't fit the card at a readable size.
+  const room = layout.cardWidth - 12;
 
   return (
     <>
@@ -42,7 +48,8 @@ export function ItemRow({ element }: { element: ItemRowElement }) {
           >
             <div
               style={{
-                fontSize: 17,
+                display: text.fits(item.label, labelSize, room) ? undefined : "none",
+                fontSize: labelSize,
                 fontWeight: 600,
                 color: palette.textMuted,
                 textAlign: "center",
@@ -51,12 +58,12 @@ export function ItemRow({ element }: { element: ItemRowElement }) {
             >
               {item.label}
             </div>
-            <div style={{ fontSize: 34, fontWeight: 700, color: palette.text, fontFamily: FONT_MONO }}>
+            <div style={{ fontSize: valueSize, fontWeight: 700, color: palette.text, fontFamily: FONT_MONO }}>
               {element.unit}
               {item.value}
             </div>
-            {item.sublabel ? (
-              <div style={{ fontSize: 14, color: palette.textMuted }}>{item.sublabel}</div>
+            {item.sublabel && !text.compact && text.fits(item.sublabel, sublabelSize, room) ? (
+              <div style={{ fontSize: sublabelSize, color: palette.textMuted }}>{item.sublabel}</div>
             ) : null}
           </div>
         );

@@ -18,7 +18,7 @@ export const primitiveCatalog: Record<ElementType, string> = {
   equation:
     'The arithmetic of the step, e.g. 4 + 45 = 49 < 50. In a bound scene omit terms/operator/result/comparison to take them from the step; add `unit` (e.g. "$") and a 1–3 word `verdict` ("too low", "new best"). `verdictTone` ("positive" | "negative" | "neutral") colors the verdict: when the step lists a tone, omit it and write a verdict that reads that way. Only use it when the step has arithmetic.',
   "sorted-region":
-    'Marks positions already in their final order with a shaded band and a "✓ sorted" label beside the row. Set `rowId`; in a bound scene omit `from`/`to` to take the step\'s sorted range. Only use it when the step lists a sorted range.',
+    'Marks positions already in their final order (a range, or scattered positions such as placed pivots) with a shaded band and a "✓ sorted" label beside the row. Set `rowId`; in a bound scene omit `indices` to take the step\'s sorted range or final positions. Only use it when the step lists one.',
   "held-value":
     'A value lifted out of the row (e.g. the card in your hand in insertion sort), drawn above its gap. Set `rowId` and optionally `label` (e.g. "in hand"); omit `value`/`index` to take them from the step. Only use it when the step is holding a value.',
   "count-array":

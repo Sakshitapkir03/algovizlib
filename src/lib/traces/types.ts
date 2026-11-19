@@ -56,6 +56,11 @@ export type TraceStep = {
   empty?: number[];
   /** Positions already in their final place (inclusive range), e.g. the sorted tail in bubble sort. */
   sorted?: { from: number; to: number };
+  /**
+   * Positions already in their final place when they don't form one range (quick sort places pivots anywhere).
+   * Takes precedence over `sorted`.
+   */
+  final?: number[];
   /** A value lifted out of the array (insertion sort's key), waiting above slot `index`. */
   held?: { value: number; index: number };
   /** A tally per value (counting sort): `counts[i]` is how many times `keys[i]` has been seen. */
@@ -114,6 +119,13 @@ export type TraceDefinition<A extends unknown[] = unknown[]> = {
 
 export function compare(a: number, b: number): TraceComparisonOp {
   return a < b ? "<" : a > b ? ">" : "=";
+}
+
+/** The positions a step marks as final: its `final` set, else its `sorted` range. */
+export function finalPositions(step: TraceStep): number[] | undefined {
+  if (step.final) return step.final;
+  if (!step.sorted) return undefined;
+  return Array.from({ length: step.sorted.to - step.sorted.from + 1 }, (_, k) => step.sorted!.from + k);
 }
 
 /** Numbers in this list, ascending (for set-like index lists). */

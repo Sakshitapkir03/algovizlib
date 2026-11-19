@@ -4,6 +4,8 @@ import type { BarRowElement } from "@/lib/storyboard";
 
 import { enterProgress } from "../animation";
 import { useScene } from "../context";
+import { sizes } from "../layout";
+import { TEXT } from "../text";
 import { FONT_MONO, FONT_SANS } from "../theme";
 
 const EMPTY_HEIGHT = 40;
@@ -15,7 +17,7 @@ const EMPTY_HEIGHT = 40;
  * (two bars trading places arc past each other), and `empty` slots are dashed outlines with no value.
  */
 export function BarRow({ element }: { element: BarRowElement }) {
-  const { rows, palette, reducedMotion } = useScene();
+  const { rows, palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const layout = rows[element.id];
@@ -27,7 +29,12 @@ export function BarRow({ element }: { element: BarRowElement }) {
     ...element.bars.map((b, i) => b.value + (element.water?.[i] ?? 0)),
     element.fill?.level ?? 0,
   );
-  const unitHeight = (layout.cardHeight - 28) / max;
+  const labelSize = text.size(TEXT.barValue);
+  // The value label sits inside the column, above the tallest bar.
+  const unitHeight = Math.max(0, layout.cardHeight - sizes.barLabel(text)) / max;
+  // Standing water's "+n" and the container's "water" word are extras: the wave pattern already marks water.
+  const waterSize = text.size(TEXT.barWater);
+  const showWaterText = !text.compact;
   const baseline = layout.top + layout.cardHeight;
   const waterStyle = {
     background: `repeating-linear-gradient(0deg, ${palette.info}55 0 6px, ${palette.info}33 6px 12px)`,
@@ -122,10 +129,11 @@ export function BarRow({ element }: { element: BarRowElement }) {
                 position: "absolute",
                 left: layout.lefts[i],
                 width: layout.cardWidth,
-                top: baseline - height - water - 30,
+                top: baseline - height - water - labelSize - 8,
                 textAlign: "center",
                 fontFamily: FONT_MONO,
-                fontSize: 22,
+                fontSize: labelSize,
+                lineHeight: 1,
                 fontWeight: 700,
                 color: palette.text,
                 opacity: grow,
@@ -133,8 +141,8 @@ export function BarRow({ element }: { element: BarRowElement }) {
             >
               {element.unit}
               {bar.value}
-              {element.water?.[i] ? (
-                <span style={{ color: palette.info, fontSize: 16 }}> +{element.water[i]}</span>
+              {element.water?.[i] && showWaterText ? (
+                <span style={{ color: palette.info, fontSize: waterSize }}> +{element.water[i]}</span>
               ) : null}
             </div>
           </div>
@@ -156,12 +164,13 @@ export function BarRow({ element }: { element: BarRowElement }) {
         >
           <span
             style={{
+              display: showWaterText ? undefined : "none",
               position: "absolute",
               top: 6,
               left: "50%",
               transform: "translateX(-50%)",
               fontFamily: FONT_SANS,
-              fontSize: 16,
+              fontSize: waterSize,
               fontWeight: 700,
               color: palette.text,
               background: palette.surface,

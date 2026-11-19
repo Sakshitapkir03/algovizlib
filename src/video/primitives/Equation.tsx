@@ -4,12 +4,13 @@ import type { EquationElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
+import { TEXT } from "../text";
 import { FONT_MONO, FONT_SANS, verdictColor } from "../theme";
 
 const STAGGER = 4;
 
 export function Equation({ element }: { element: EquationElement }) {
-  const { palette, reducedMotion } = useScene();
+  const { palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const fmt = (n: number) => `${element.unit}${n}`;
@@ -40,7 +41,7 @@ export function Equation({ element }: { element: EquationElement }) {
             key={i}
             style={{
               fontFamily: FONT_MONO,
-              fontSize: 46,
+              fontSize: text.size(TEXT.equation),
               fontWeight: tok.kind === "op" ? 500 : 700,
               color: tok.kind === "op" ? palette.textMuted : palette.text,
               opacity: p,
@@ -68,7 +69,7 @@ export function Equation({ element }: { element: EquationElement }) {
             border: `2px solid ${verdictTone}`,
             color: verdictTone,
             fontFamily: FONT_SANS,
-            fontSize: 22,
+            fontSize: text.size(TEXT.verdict),
             fontWeight: 700,
             opacity: enterProgress(frame, fps, reducedMotion, tokens.length * STAGGER + 4),
           }}

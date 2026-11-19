@@ -49,5 +49,7 @@ If no order can make the list sorted (the comparisons contradict each other, or 
     "Comparing each pair of neighboring words yields at most one ordering fact: the first differing letters. Those facts form a directed graph over the letters, and a valid alphabet is a topological order of it. Kahn's algorithm finds one, and choosing the smallest available letter at each step makes the result unique. A cycle (letters left over) or a word followed by its own prefix means the list can't be sorted.",
   complexity: { time: "O(C + U log U), C = total characters, U = distinct letters", space: "O(U²)" },
   tags: ["graph", "topological sort", "string"],
-  externalRefs: [{ label: "LeetCode 269", url: "https://leetcode.com/problems/alien-dictionary/" }],
+  externalRefs: [
+    { label: "LeetCode 269", url: "https://leetcode.com/problems/alien-dictionary/", premium: true },
+  ],
 });

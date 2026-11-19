@@ -80,6 +80,17 @@ Key rules:
 - **Video theme and motion are inputs.** `StoryboardComposition` takes `theme` ("light" | "dark") and `reducedMotion`
   as input props. Primitives use `useScene().palette` and the helpers in `video/animation.ts`. Under reduced motion
   springs become short fades and positional tweens are dropped. Cross-fades stay, so timing doesn't change.
+- **Text stays readable at any player size.** `VideoStage` measures the player and passes `displayWidth`; the
+  composition builds `textMetrics(displayWidth)` (`video/text.ts`) and every primitive sets font sizes with
+  `text.size(TEXT.<role>)`, which never renders below 11px on screen (on a 343px phone player that's ~42px in the
+  1280px composition). `layoutScene()` reserves room from the same sizes, stacking from the bottom stack up (brackets,
+  pointers, panels) and raising the bottom stack when its contents need it. Labels that don't fit are abbreviated or
+  dropped (`video/labels.ts`: pointer labels fall back to the bound trace name, then a letter; "✓ sorted" to "✓";
+  "◆ pivot" to "◆"). On a phone-sized player (`text.compact`) secondary text is hidden: callouts, highlight tag words
+  (border style carries the state: solid active, dashed rejected, double found), position/role labels in the heap
+  tree, "▲" markers, the chrome's title. `tests/video-text.test.ts` forbids literal `fontSize` values in `src/video`
+  and checks every scene of every video at phone width (values fit their bars, cells, and nodes; pointers don't
+  overlap; nothing runs into the bottom stack).
 
 ## Content catalog
 
@@ -99,7 +110,7 @@ Problem  = {
   constraints[], hints[] (ordered, progressive), keyIdea, complexity: { time, space },
   storyboardId?,                   // links a video from content/storyboards
   tags[], relatedPatterns: string[],   // cross-listing (below)
-  externalRefs: { label, url }[],
+  externalRefs: { label, url, premium? }[],   // premium: LeetCode Premium-only, shown with a "Premium" label
 }
 ```
 
@@ -240,7 +251,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `callout`       | speech bubble; anchored to an item or floating at the top                                                                                                             | canvas |
 | `equation`      | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                    | bottom |
 | `result`        | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                         | bottom |
-| `sorted-region` | positions in final order: shaded band + baseline segment, "✓ sorted" label beside the row                                                                             | canvas |
+| `sorted-region` | positions in final order (`indices`: a range or a scattered set): a shaded band per run + baseline segment, "✓ sorted" beside the row                                 | canvas |
 | `held-value`    | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                         | canvas |
 | `count-array`   | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                              | canvas |
 | `segments`      | brackets under the bars for the current split (groups drawn apart); the active group gets a thick bracket, a faint band, and "▶ level d"                              | canvas |
@@ -262,13 +273,16 @@ Canvas primitives are absolutely positioned on the 1280×720 stage using `useSce
    `FooElement = ElementOf<"foo">`. Describe it in `primitive-catalog.ts` (typed: the generator prompt reads it).
 2. **Cross-references**: if it references rows or items, add a case to the `superRefine` in `schema.ts`.
 3. **Component**: create `src/video/primitives/Foo.tsx` taking `{ element: FooElement }`. Use `useScene()` for
-   palette, row layout, and `reducedMotion`, and `enterProgress()`/`motion()` for animation. `useCurrentFrame()` is
-   already local to the element's entrance (it's wrapped in a `<Sequence from={enterAt * duration}>`).
+   palette, row layout, `reducedMotion`, and `text`, and `enterProgress()`/`motion()` for animation. Every font size
+   goes through `text.size(TEXT.<role>)` (add the role to `TEXT`); hide or abbreviate labels that don't fit.
+   `useCurrentFrame()` is already local to the element's entrance (it's wrapped in a `<Sequence from={enterAt *
+duration}>`).
 4. **Register**: add `foo: { component: Foo, slot, layer }` to `primitiveRegistry` (typecheck fails until you do).
    If it needs its own region (for example a staircase replacing the row band), extend `layout.ts`.
 5. **Resolve + validate**: if it carries algorithm state, fill it from the step in `resolve.ts` and check it in
    `validate.ts` (and add the state to `TraceStep` if it's new).
-6. **Test**: add a schema test and, if validated, a "wrong storyboard fails" test.
+6. **Test**: add a schema test and, if validated, a "wrong storyboard fails" test. Add the type to the primitive list
+   in `tests/video-text.test.ts` and a phone-width fit check for its text.
 
 Existing primitives and storyboards never change when one is added.
 
@@ -285,7 +299,9 @@ value the trace ever holds. A single-term equation renders as a comparison (`7 >
 `tone` on every comparison (bubble: out of order negative, in order positive; selection: new minimum positive,
 otherwise neutral; insertion: shift neutral, found its place positive). The layout gives a held value its own strip
 above the bars (anchored callouts sit above that, via `RowLayout.reservedTop`) and shortens the bars when a scene
-has a count-array.
+has a count-array. Final positions come from a step's `sorted` range (bubble, selection, insertion) or its `final`
+set when they're scattered (quick sort marks exactly the placed pivots and one-value ranges, in any order);
+`finalPositions(step)` reads either, and a `sorted-region` binds and is validated against it.
 
 **Divide and conquer** (merge, quick, heap sort, Count Inversions) added step state for the recursion, all optional:
 `range`/`depth` (the subarray being worked on), `segments` (the current split), `splitTree` (every level, for the
@@ -310,7 +326,7 @@ input and returns a `Trace` (types in `traces/types.ts`):
 Trace = {
   problem: "pattern/slug", row: { values, display: "cards" | "bars" }, pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
-           values?, moves?, empty?, sorted?, held?, counts?,        // algorithms that rearrange the array
+           values?, moves?, empty?, sorted?, final?, held?, counts?, // algorithms that rearrange the array
            range?, depth?, segments?, splitTree?, buffer?, pivot?, boundary?, heapSize?, compare?, counter? }[],
                                                                   // divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }

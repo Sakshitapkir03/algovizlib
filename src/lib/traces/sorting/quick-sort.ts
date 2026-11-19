@@ -17,11 +17,10 @@ export function quickSort(nums: number[]): Trace {
   const n = a.length;
   const steps: TraceStep[] = [];
   const final = a.map(() => false);
-  // The sorted-region primitive is one range, so show the finished prefix (it grows left to right here).
+  // Placed pivots land anywhere, so mark exactly the positions that are final, not a prefix.
   const sorted = () => {
-    let end = 0;
-    while (end < n && final[end]) end++;
-    return end > 0 ? { sorted: { from: 0, to: end - 1 } } : {};
+    const placed = final.flatMap((done, i) => (done ? [i] : []));
+    return placed.length > 0 ? { final: placed } : {};
   };
 
   const sort = (lo: number, hi: number, depth: number) => {
@@ -127,7 +126,7 @@ export function quickSort(nums: number[]): Trace {
     key: true,
     pointers: {},
     values: [...a],
-    sorted: { from: 0, to: n - 1 },
+    final: a.map((_, i) => i),
     found: a.map((_, i) => i),
     note: `Every range is down to one value or a placed pivot, so the array is sorted: ${show(a)}.`,
   });

@@ -4,12 +4,11 @@ import type { SplitTreeElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
+import { CANVAS, sizes, SPLIT_ROW_GAP } from "../layout";
+import { TEXT } from "../text";
 import { FONT_MONO, FONT_SANS } from "../theme";
 
-const CELL = 46;
 const GROUP_GAP = 14;
-const ROW_HEIGHT = 38;
-const ROW_GAP = 8;
 const LEVEL_STAGGER = 10;
 
 /**
@@ -19,7 +18,11 @@ const LEVEL_STAGGER = 10;
  * itself is static.
  */
 export function SplitTree({ element }: { element: SplitTreeElement }) {
-  const { palette, reducedMotion } = useScene();
+  const { palette, reducedMotion, text } = useScene();
+  const CELL = sizes.splitCell(text);
+  const ROW_HEIGHT = sizes.splitRow(text);
+  const ROW_GAP = SPLIT_ROW_GAP;
+  const labelSize = text.size(TEXT.splitLabel);
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const deepest = element.levels.length - 1;
@@ -31,8 +34,12 @@ export function SplitTree({ element }: { element: SplitTreeElement }) {
     <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
       <div
         style={{
+          // The label sits left of the tree; drop it when the tree is too wide to leave room.
+          display: text.fits(element.label, labelSize, (CANVAS.width - width) / 2 - 18 - 16)
+            ? undefined
+            : "none",
           fontFamily: FONT_SANS,
-          fontSize: 20,
+          fontSize: labelSize,
           fontWeight: 700,
           color: palette.textMuted,
           paddingTop: 7,
@@ -81,7 +88,7 @@ export function SplitTree({ element }: { element: SplitTreeElement }) {
                       textAlign: "center",
                       lineHeight: `${ROW_HEIGHT - 4}px`,
                       fontFamily: FONT_MONO,
-                      fontSize: 22,
+                      fontSize: text.size(TEXT.splitValue),
                       fontWeight: 700,
                       color: palette.text,
                     }}

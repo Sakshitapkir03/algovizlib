@@ -4,10 +4,10 @@ import type { MergeBufferElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
-import { CANVAS } from "../layout";
+import { firstFitting } from "../labels";
+import { CANVAS, sizes } from "../layout";
+import { TEXT } from "../text";
 import { FONT_MONO, FONT_SANS } from "../theme";
-
-const CELL_HEIGHT = 44;
 
 /**
  * A merge in progress: one slot per position of the range being merged, lined up under those bars, filling left
@@ -15,7 +15,7 @@ const CELL_HEIGHT = 44;
  * this step drops in with a thick accent border and a "▲ new" marker, so it never depends on color alone.
  */
 export function MergeBuffer({ element }: { element: MergeBufferElement }) {
-  const { rows, palette, reducedMotion } = useScene();
+  const { rows, palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const layout = rows[element.rowId];
@@ -24,16 +24,20 @@ export function MergeBuffer({ element }: { element: MergeBufferElement }) {
   const p = enterProgress(frame, fps, reducedMotion);
   const drop = enterProgress(frame, fps, reducedMotion, 12);
   const top = layout.panelTop;
+  const CELL_HEIGHT = sizes.cell(text);
+  const labelSize = text.size(TEXT.panelLabel);
+  const label = firstFitting([element.label], labelSize, layout.lefts[element.from] - 18 - 16, text);
 
   return (
     <div style={{ opacity: p }}>
       <div
         style={{
+          display: label ? undefined : "none",
           position: "absolute",
           right: CANVAS.width - (layout.lefts[element.from] - 18),
-          top: top + 10,
+          top: top + (CELL_HEIGHT - labelSize) / 2,
           fontFamily: FONT_SANS,
-          fontSize: 18,
+          fontSize: labelSize,
           fontWeight: 700,
           color: palette.textMuted,
           whiteSpace: "nowrap",
@@ -65,7 +69,7 @@ export function MergeBuffer({ element }: { element: MergeBufferElement }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontFamily: FONT_MONO,
-                fontSize: 24,
+                fontSize: text.size(TEXT.countCell),
                 fontWeight: 700,
                 color: palette.text,
                 opacity: isNew ? drop : 1,
@@ -74,7 +78,7 @@ export function MergeBuffer({ element }: { element: MergeBufferElement }) {
             >
               {filled ? value : ""}
             </div>
-            {isNew ? (
+            {isNew && !text.compact ? (
               <div
                 style={{
                   position: "absolute",
@@ -83,7 +87,7 @@ export function MergeBuffer({ element }: { element: MergeBufferElement }) {
                   top: top + CELL_HEIGHT + 2,
                   textAlign: "center",
                   fontFamily: FONT_SANS,
-                  fontSize: 14,
+                  fontSize: text.size(TEXT.marker),
                   fontWeight: 700,
                   lineHeight: 1,
                   color: palette.primary,

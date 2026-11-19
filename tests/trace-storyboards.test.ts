@@ -17,7 +17,7 @@ import {
   type BarRowElement,
   type Storyboard,
 } from "@/lib/storyboard";
-import { getTraceDefinition, traceRegistry } from "@/lib/traces";
+import { getTraceDefinition, runTrace, traceRegistry } from "@/lib/traces";
 import { palettes, verdictColor } from "@/video/theme";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
@@ -288,7 +288,7 @@ describe("sorting primitives", () => {
       ],
     });
     const passEnd = storyboard!.scenes.find((s) => s.traceStep === 4)!;
-    expect(passEnd.elements.find((e) => e.id === "sorted")).toMatchObject({ from: 4, to: 4 });
+    expect(passEnd.elements.find((e) => e.id === "sorted")).toMatchObject({ indices: [4] });
     const eq = first.elements.find((e) => e.id === "eq");
     expect(eq).toMatchObject({ terms: [7], comparison: { op: ">", target: 3 }, verdictTone: "negative" });
   });
@@ -307,7 +307,7 @@ describe("sorting primitives", () => {
       messages(bubble, replace(buildDraft(bubble), 0, "row", { moves: [{ from: 0, to: 2 }] })).join("\n"),
     ).toMatch(/Bar moves don't match trace step 0/);
     expect(messages(bubble, replace(buildDraft(bubble), 4, "sorted", { from: 3, to: 4 })).join("\n")).toMatch(
-      /Sorted region doesn't match trace step 4 \(expected 4–4, got 3–4\)/,
+      /Sorted positions don't match trace step 4 \(expected 4, got 3–4\)/,
     );
     const insertion = "sorting/insertion-sort";
     expect(
@@ -480,7 +480,7 @@ describe("divide-and-conquer primitives", () => {
   });
 
   it("checks layout room: groups spread apart, the heap gets its own region, the buffer clears the pointers", async () => {
-    const { layoutRows, HEAP_TREE_REGION } = await import("@/video/layout");
+    const { layoutRows, layoutScene } = await import("@/video/layout");
     const bars: BarRowElement = {
       id: "row",
       type: "bar-row",
@@ -515,13 +515,84 @@ describe("divide-and-conquer primitives", () => {
         label: "merged",
         enterAt: 0,
       },
+      {
+        id: "p",
+        type: "pointer",
+        rowId: "row",
+        label: "i",
+        index: 0,
+        placement: "below",
+        tone: "primary",
+        enterAt: 0,
+      },
     ]).row;
     expect(buffered.panelTop).toBeGreaterThanOrEqual(buffered.pointerTop + 50);
     expect(buffered.panelTop + 44).toBeLessThan(500);
-    const heaped = layoutRows([
+    const heapScene = layoutScene([
       bars,
       { id: "t", type: "heap-tree", values: [3, 1, 4, 1, 5, 9], heapSize: 6, enterAt: 0 },
-    ]).row;
-    expect(heaped.lefts.at(-1)! + heaped.cardWidth).toBeLessThan(HEAP_TREE_REGION.left);
+    ]);
+    const heaped = heapScene.rows.row;
+    expect(heaped.lefts.at(-1)! + heaped.cardWidth).toBeLessThan(heapScene.heapRegion.left);
+  });
+});
+
+describe("sorted-region with scattered final positions", () => {
+  const storyboardFor = (sorted: Record<string, unknown>, step: number) =>
+    storyboardSourceSchema.parse({
+      id: "quick-sort-out-of-order",
+      title: "Quick sort",
+      concept: "Sorting",
+      category: "dsa",
+      summary: "Out-of-order final positions.",
+      exampleSource: "analogy",
+      analogy: { scenario: "Books.", mapping: [{ real: "book", abstract: "value" }] },
+      takeaway: {
+        pattern: "Quick sort",
+        summary: "Partition.",
+        timeComplexity: "O(n log n)",
+        spaceComplexity: "O(log n)",
+      },
+      trace: { problem: "sorting/quick-sort", args: [[3, 1, 2]] },
+      scenes: [
+        {
+          id: "placed",
+          caption: "The pivot lands in the middle",
+          narration: "The pivot lands in the middle.",
+          durationInFrames: 90,
+          traceStep: step,
+          elements: [
+            { id: "row", type: "bar-row" },
+            { id: "sorted", type: "sorted-region", rowId: "row", ...sorted },
+          ],
+        },
+      ],
+    });
+
+  it("binds exactly the positions the trace has finalized, even when they aren't a prefix", () => {
+    const trace = runTrace("sorting/quick-sort", [[3, 1, 2]]);
+    const place = trace.steps.findIndex((s) => s.kind === "place");
+    // The pivot 2 lands at position 1 before either side is sorted: the middle is final, the ends are not.
+    expect(trace.steps[place].final).toEqual([1]);
+    const { storyboard, issues } = resolveStoryboard(storyboardFor({}, place));
+    expect(issues).toEqual([]);
+    expect(storyboard!.scenes[0].elements.find((e) => e.id === "sorted")).toMatchObject({ indices: [1] });
+    expect(validateStoryboard(storyboard!).issues.map(formatIssue).join("\n")).not.toMatch(
+      /Sorted positions/,
+    );
+  });
+
+  it("rejects a prefix where the trace has scattered positions", () => {
+    const trace = runTrace("sorting/quick-sort", [[3, 1, 2]]);
+    const place = trace.steps.findIndex((s) => s.kind === "place");
+    const { storyboard } = resolveStoryboard(storyboardFor({ indices: [0, 1] }, place));
+    expect(validateStoryboard(storyboard!).issues.map(formatIssue).join("\n")).toMatch(
+      new RegExp(`Sorted positions don't match trace step ${place} \\(expected 1, got 0–1\\)`),
+    );
+  });
+
+  it("still accepts a contiguous from/to shorthand (bubble sort's sorted tail)", () => {
+    const { storyboard } = resolveStoryboard(storyboardFor({ from: 1, to: 2 }, 0));
+    expect(storyboard?.scenes[0].elements.find((e) => e.id === "sorted")).toMatchObject({ indices: [1, 2] });
   });
 });

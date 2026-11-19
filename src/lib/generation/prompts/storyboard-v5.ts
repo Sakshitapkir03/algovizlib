@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v4";
+export const PROMPT_VERSION = "storyboard-v5";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -51,7 +51,7 @@ ${ELEMENT_GUIDE}
 - Pointers: set binds to a pointer name the step actually has, set rowId, and OMIT index/fromIndex. A step that lists no pointers gets no bound pointers.
 - Equations: only in scenes whose step has arithmetic. OMIT terms/operator/result/comparison; add unit and a short verdict. If the step lists a tone, OMIT verdictTone and make the verdict read that way (positive: "new best"; neutral: "not better").
 - Highlights: OMIT indices in bound scenes. Only use a state the step lists (active/rejected/found).
-- sorted-region / held-value / count-array: only in scenes whose step lists a sorted range / held value / tally; OMIT their from/to, value/index, and keys/counts/active.
+- sorted-region / held-value / count-array: only in scenes whose step lists a sorted range or final positions / held value / tally; OMIT their indices, value/index, and keys/counts/active.
 - segments / split-tree / merge-buffer / partition / counter: only in scenes whose step lists groups / a split tree / a buffer / a pivot / a count; OMIT their state fields. heap-tree: in every scene of a heap trace that shows the bars (bound or not); OMIT its state fields, and anchor callouts to the bars rather than floating them over the tree.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
@@ -76,7 +76,8 @@ function describeStep(step: TraceStep, index: number): string {
   if (step.values) parts.push(`array: [${step.values.join(", ")}]`);
   if (step.moves) parts.push(`moves: ${step.moves.map((m) => `${m.from}→${m.to}`).join(", ")}`);
   if (step.empty) parts.push(`empty slots: [${step.empty.join(", ")}]`);
-  if (step.sorted) parts.push(`sorted: ${step.sorted.from}–${step.sorted.to}`);
+  if (step.final) parts.push(`final positions: [${step.final.join(", ")}]`);
+  else if (step.sorted) parts.push(`sorted: ${step.sorted.from}–${step.sorted.to}`);
   if (step.held) parts.push(`holding ${step.held.value} above slot ${step.held.index}`);
   if (step.range)
     parts.push(
@@ -159,4 +160,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV4 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV5 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

@@ -132,10 +132,9 @@ export const sceneSchema = z
           }
           break;
         case "sorted-region":
-          checkIndex(el.rowId, el.from, [...path, "from"]);
-          checkIndex(el.rowId, el.to, [...path, "to"]);
-          if (el.from > el.to)
-            ctx.addIssue({ code: "custom", path: [...path, "from"], message: "from must not be after to" });
+          el.indices.forEach((idx) => checkIndex(el.rowId, idx, [...path, "indices"]));
+          if (new Set(el.indices).size !== el.indices.length)
+            ctx.addIssue({ code: "custom", path: [...path, "indices"], message: "indices must not repeat" });
           break;
         case "held-value":
           checkIndex(el.rowId, el.index, [...path, "index"]);
