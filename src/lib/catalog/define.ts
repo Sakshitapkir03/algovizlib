@@ -2,11 +2,13 @@ import type { z } from "zod";
 
 import {
   categorySchema,
+  patternGroupSchema,
   patternSchema,
   problemSchema,
   type Category,
   type CategoryInput,
   type Pattern,
+  type PatternGroup,
   type PatternInput,
   type Problem,
   type ProblemInput,
@@ -26,6 +28,11 @@ function parse<S extends z.ZodType>(schema: S, input: z.input<S>, label: string)
 /** Parse an authored category, applying defaults. Throws a readable error if invalid. */
 export function defineCategory(input: CategoryInput): Category {
   return parse(categorySchema, input, `category "${input.slug}"`);
+}
+
+/** Parse an authored pattern group. Throws a readable error if invalid. */
+export function definePatternGroup(input: z.input<typeof patternGroupSchema>): PatternGroup {
+  return parse(patternGroupSchema, input, `pattern group "${input.slug}"`);
 }
 
 /** Parse an authored pattern. Throws a readable error if invalid. */

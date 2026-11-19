@@ -48,5 +48,6 @@ Lists are written as arrays from head to tail. Either list may be empty (\`[]\`)
     "Keep a dummy head and a `tail` pointer. At each step, compare the fronts of both lists, link the smaller node after `tail`, and advance that list. When one list is exhausted, the remainder of the other is already sorted, so attach it whole.",
   complexity: { time: "O(n + m)", space: "O(1)" },
   tags: ["linked-list", "merge", "sorted"],
+  relatedPatterns: ["sorting"],
   externalRefs: [{ label: "LeetCode 21", url: "https://leetcode.com/problems/merge-two-sorted-lists/" }],
 });

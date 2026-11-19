@@ -61,6 +61,16 @@ function FilterSelect<T extends string>({
   );
 }
 
+/** For rows cross-listed from another pattern: where the problem lives. */
+function AlsoIn({ home }: { home?: string }) {
+  if (!home) return null;
+  return (
+    <span className="ml-2 rounded border px-1.5 py-0.5 font-mono text-[11px] font-normal whitespace-nowrap text-muted-foreground">
+      also in {home}
+    </span>
+  );
+}
+
 function VideoLabel({ hasVideo }: { hasVideo: boolean }) {
   return (
     <span className={hasVideo ? "font-mono text-xs" : "font-mono text-xs text-muted-foreground"}>
@@ -92,6 +102,8 @@ export function ProblemTable({ problems }: { problems: ProblemSummary[] }) {
   }, [problems, snapshot, filters]);
 
   const filtered = rows.length !== problems.length;
+  const related = problems.filter((p) => p.homePatternName).length;
+  const total = `${problems.length - related} problems${related ? ` + ${related} related` : ""}`;
 
   return (
     <div className="space-y-4">
@@ -146,7 +158,7 @@ export function ProblemTable({ problems }: { problems: ProblemSummary[] }) {
       </div>
 
       <p className="font-mono text-xs text-muted-foreground" aria-live="polite">
-        {filtered ? `${rows.length} of ${problems.length} problems` : `${problems.length} problems`}
+        {filtered ? `${rows.length} of ${problems.length} problems` : total}
         {filtered && (
           <>
             {" · "}
@@ -195,6 +207,7 @@ export function ProblemTable({ problems }: { problems: ProblemSummary[] }) {
                     <Link href={p.href} prefetch={true} className="rounded-sm font-medium hover:text-primary">
                       {p.title}
                     </Link>
+                    <AlsoIn home={p.homePatternName} />
                   </td>
                   <td className="py-3 pr-4">
                     <DifficultyBadge difficulty={p.difficulty} />
@@ -220,6 +233,11 @@ export function ProblemTable({ problems }: { problems: ProblemSummary[] }) {
                 </Link>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                   <DifficultyBadge difficulty={p.difficulty} />
+                  {p.homePatternName && (
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      also in {p.homePatternName}
+                    </span>
+                  )}
                   <StatusLabel status={p.status} />
                   <VideoLabel hasVideo={p.hasVideo} />
                 </div>

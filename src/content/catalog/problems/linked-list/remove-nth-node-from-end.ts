@@ -44,6 +44,7 @@ Try to do it in a single pass over the list.`,
     "Start two pointers at a dummy node in front of the head and give the front one an `n`-node head start. Move both together until the front pointer reaches the last node; the back pointer then sits just before the target, so `slow.next = slow.next.next` removes it. The dummy makes deleting the head the same as any other case.",
   complexity: { time: "O(n)", space: "O(1)" },
   tags: ["linked-list", "two-pointers"],
+  relatedPatterns: ["two-pointers"],
   externalRefs: [
     { label: "LeetCode 19", url: "https://leetcode.com/problems/remove-nth-node-from-end-of-list/" },
   ],

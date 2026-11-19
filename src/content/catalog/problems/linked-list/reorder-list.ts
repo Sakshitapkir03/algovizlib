@@ -42,5 +42,6 @@ Move the nodes themselves rather than rewriting their values. Lists are written 
     "Find the middle with slow and fast pointers and split the list into two halves. Reverse the second half so its nodes come in back-to-front order, then interleave the two halves node by node. All three steps are linear and only rewire pointers.",
   complexity: { time: "O(n)", space: "O(1)" },
   tags: ["linked-list", "two-pointers", "in-place"],
+  relatedPatterns: ["fast-slow-pointers"],
   externalRefs: [{ label: "LeetCode 143", url: "https://leetcode.com/problems/reorder-list/" }],
 });

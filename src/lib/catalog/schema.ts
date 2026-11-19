@@ -27,11 +27,24 @@ export const categorySchema = z.object({
   plannedTopics: z.array(z.object({ name: nonEmpty, summary: nonEmpty })).default([]),
 });
 
+/** The four sections of the /dsa page, in display order. Group names and blurbs live in content/catalog/groups.ts. */
+export const patternGroupSlugSchema = z.enum(["foundations", "core", "trees-graphs", "advanced"]);
+
+export const patternGroupSchema = z.object({
+  slug: patternGroupSlugSchema,
+  name: nonEmpty,
+  /** One sentence under the group heading. */
+  summary: nonEmpty,
+  order: z.number().int().min(0),
+});
+
 export const complexitySchema = z.object({ time: nonEmpty, space: nonEmpty });
 
 export const patternSchema = z.object({
   slug,
   categorySlug: categorySlugSchema,
+  /** Section of the /dsa page this pattern appears in. */
+  group: patternGroupSlugSchema,
   name: nonEmpty,
   /** One or two sentences for the pattern card. */
   summary: nonEmpty,
@@ -79,6 +92,13 @@ export const problemSchema = z.object({
   /** Original wording. Paragraphs are separated by blank lines; `backticks` render as inline code. */
   statement: nonEmpty,
   examples: z.array(exampleSchema).min(2),
+  /**
+   * How `args`/`expected` are shaped. "call": `solve(...args)` returns `expected`. "operations" (data structure
+   * design): `args` is `[operations, arguments]`, e.g. `[["MinStack", "push", "getMin"], [[], [3], []]]`, where the
+   * first operation constructs the object, and `expected` lists each operation's return value (`null` for void).
+   * The problem page renders these as an operation → output table.
+   */
+  exampleFormat: z.enum(["call", "operations"]).default("call"),
   judge: judgeSchema.default("exact"),
   constraints: z.array(nonEmpty).min(1),
   /** Ordered from gentle nudge to near-solution; revealed one at a time. */
@@ -88,12 +108,19 @@ export const problemSchema = z.object({
   /** Links to a video when one exists (see content/storyboards). */
   storyboardId: nonEmpty.optional(),
   tags: z.array(nonEmpty).default([]),
+  /**
+   * Other patterns this problem also belongs to. It keeps one home (`patternSlug`: its URL and progress key) and is
+   * listed in each related pattern's table with an "also in <home>" label.
+   */
+  relatedPatterns: z.array(slug).default([]),
   externalRefs: z.array(externalRefSchema).default([]),
 });
 
 export type Category = z.infer<typeof categorySchema>;
 export type CategoryInput = z.input<typeof categorySchema>;
 export type CategorySlug = z.infer<typeof categorySlugSchema>;
+export type PatternGroupSlug = z.infer<typeof patternGroupSlugSchema>;
+export type PatternGroup = z.infer<typeof patternGroupSchema>;
 export type Pattern = z.infer<typeof patternSchema>;
 export type PatternInput = z.input<typeof patternSchema>;
 export type Difficulty = z.infer<typeof difficultySchema>;

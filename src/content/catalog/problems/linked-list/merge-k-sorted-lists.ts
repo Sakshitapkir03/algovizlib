@@ -52,5 +52,6 @@ Each list is written as an array from head to tail. Any of the lists may be empt
     "Merging one list at a time re-scans the growing result and costs O(N·k). Instead, merge in pairs: each round merges list 0 with 1, 2 with 3, and so on, halving the count, so every node is touched in only log k rounds. A min-heap of the k current front nodes gives the same O(N log k) bound.",
   complexity: { time: "O(N log k)", space: "O(log k) for pairwise merging, O(k) with a heap" },
   tags: ["linked-list", "heap", "divide-and-conquer", "merge"],
+  relatedPatterns: ["heap"],
   externalRefs: [{ label: "LeetCode 23", url: "https://leetcode.com/problems/merge-k-sorted-lists/" }],
 });

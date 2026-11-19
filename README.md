@@ -4,11 +4,22 @@ Short animated videos that explain computer science concepts (starting with data
 system design) through real-world examples. Each video focuses on the **approach**, not a line-by-line code
 walkthrough.
 
-The library is organized by **category → pattern → problem**. Data Structures & Algorithms has 8 patterns (Two
-Pointers, Sliding Window, Binary Search, Stack, Linked List, Trees (DFS), Graphs (BFS), Dynamic Programming), each
-with 5 problems across easy, medium, and hard. Every problem has an original statement, examples, progressive hints,
-and the approach behind a spoiler toggle. Problems with a video play it inline; the first is **Pair with Target
-Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
+The library is organized by **category → pattern → problem**. Data Structures & Algorithms has 20 patterns in four
+groups, with 103 problems across easy, medium, and hard:
+
+| Group          | Patterns                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| Foundations    | Arrays & Hashing, Prefix Sum, Sorting Algorithms, Bit Manipulation                                       |
+| Core patterns  | Two Pointers, Fast & Slow Pointers, Sliding Window, Binary Search, Stack, Linked List, Intervals, Greedy |
+| Trees & Graphs | Trees (DFS), Graphs (BFS), Heap / Priority Queue, Trie, Advanced Graphs                                  |
+| Advanced       | Backtracking, Dynamic Programming, Data Structure Design                                                 |
+
+Most patterns have 5 problems; Sorting Algorithms has one per algorithm (bubble, selection, insertion, merge, quick,
+heap, counting) plus Count Inversions. Problems that teach more than one pattern are cross-listed with an "also in"
+label. Every problem has an original statement, examples (design problems show an operation → output table),
+progressive hints, and the approach behind a spoiler toggle, and every example is checked against a reference
+solution. Problems with a video play it inline; the first is **Pair with Target Sum**, told as a price-sorted shelf
+where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 You can mark each problem Not started / Learning / Done. Progress is saved in your browser.
 
@@ -35,12 +46,12 @@ Open http://localhost:3000. Routes:
 | Route                   | Page                                                 |
 | ----------------------- | ---------------------------------------------------- |
 | `/`                     | Landing                                              |
-| `/dsa`                  | Pattern grid with per-pattern progress               |
+| `/dsa`                  | Patterns grouped in four sections, with progress     |
 | `/dsa/<pattern>`        | Pattern intro and a filterable problem table         |
 | `/dsa/<pattern>/<slug>` | Problem: statement, examples, video, hints, approach |
 | `/system-design`        | Coming soon, with planned topics                     |
 
-Press **Cmd/Ctrl + K** anywhere to jump to a pattern or problem. Old `/learn/two-pointers` links redirect permanently
+Press **Cmd/Ctrl + K** anywhere to jump to a pattern group, pattern, or problem. Old `/learn/two-pointers` links redirect permanently
 to `/dsa/two-pointers/pair-with-target-sum`.
 
 ## Scripts

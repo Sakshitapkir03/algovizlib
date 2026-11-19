@@ -9,10 +9,10 @@ import { PatternProgress } from "@/components/catalog/progress-status";
 import { InlineText, RichText } from "@/components/catalog/rich-text";
 import {
   getPattern,
+  getPatternListing,
   getPatterns,
   getProblems,
   patternHref,
-  toProblemSummary,
 } from "@/lib/catalog/repository";
 
 import { loadPattern } from "../load";
@@ -97,7 +97,7 @@ async function PatternContent({ params }: { params: PageProps<"/dsa/[pattern]">[
         <h2 id="problems-heading" className="mb-4 text-xl font-semibold tracking-tight">
           Problems
         </h2>
-        <ProblemTable problems={problems.map(toProblemSummary)} />
+        <ProblemTable problems={getPatternListing(pattern.slug)} />
       </section>
     </>
   );

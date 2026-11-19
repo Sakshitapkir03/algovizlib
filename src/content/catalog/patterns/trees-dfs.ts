@@ -3,6 +3,7 @@ import { definePattern } from "@/lib/catalog";
 export const treesDfsPattern = definePattern({
   slug: "trees-dfs",
   categorySlug: "dsa",
+  group: "trees-graphs",
   name: "Trees (DFS)",
   summary:
     "Solve a tree problem by recursing into each child, then combining what the children report with the current node. Information can flow down (from root to leaves) or up (from leaves to root).",
@@ -15,5 +16,5 @@ export const treesDfsPattern = definePattern({
   coreIdea:
     "A tree is a node plus two smaller trees, so most questions split the same way: solve the left subtree, solve the right subtree, and combine. Depth-first search visits each node once, either passing state down as arguments (a running sum, the largest value seen, the allowed range) or returning a summary up from each child (a height, a best gain). Because each node is handled exactly once and the recursion only remembers the current path, the work is linear and the extra memory is the tree's height.",
   typicalComplexity: { time: "O(n)", space: "O(h), h = tree height" },
-  order: 5,
+  order: 12,
 });

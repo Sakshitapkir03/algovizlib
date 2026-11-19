@@ -42,6 +42,7 @@ An empty string has no characters, so the answer for it is \`0\`.`,
     "Keep a window with no duplicates and a map from each character to its most recent index. Extend the right edge one character at a time; if that character was last seen inside the window, move the left edge just past it. The window length after each step is a candidate answer.",
   complexity: { time: "O(n)", space: "O(min(n, alphabet size))" },
   tags: ["string", "hash-map", "variable-window"],
+  relatedPatterns: ["arrays-hashing"],
   externalRefs: [
     {
       label: "LeetCode 3",

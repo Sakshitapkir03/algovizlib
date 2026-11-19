@@ -3,6 +3,7 @@ import { definePattern } from "@/lib/catalog";
 export const dynamicProgrammingPattern = definePattern({
   slug: "dynamic-programming",
   categorySlug: "dsa",
+  group: "advanced",
   name: "Dynamic Programming",
   summary:
     "Break a problem into smaller overlapping subproblems, solve each one once, and build the final answer from a table of stored results.",
@@ -18,5 +19,5 @@ export const dynamicProgrammingPattern = definePattern({
     time: "O(number of states × choices per state)",
     space: "O(number of states), often reducible",
   },
-  order: 7,
+  order: 18,
 });

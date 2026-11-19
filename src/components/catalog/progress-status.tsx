@@ -76,7 +76,16 @@ export function StatusPicker({ problem }: { problem: ProblemRef }) {
 }
 
 /** "3 / 5 done" with a bar. Learning counts as in progress but not done. */
-export function PatternProgress({ problems, className }: { problems: ProblemRef[]; className?: string }) {
+export function PatternProgress({
+  problems,
+  label = "Problems done",
+  className,
+}: {
+  problems: ProblemRef[];
+  /** Accessible name for the progress bar; must be unique when several bars share a page. */
+  label?: string;
+  className?: string;
+}) {
   const { snapshot } = useProgress();
   const statuses = problems.map((p) => statusOf(snapshot, progressKey(p)));
   const done = statuses.filter((s) => s === "done").length;
@@ -94,7 +103,7 @@ export function PatternProgress({ problems, className }: { problems: ProblemRef[
       </div>
       <div
         role="progressbar"
-        aria-label="Problems done"
+        aria-label={label}
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={done}

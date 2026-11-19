@@ -31,7 +31,7 @@ Run `lint`, `typecheck`, `test`, and `build` before committing.
 src/
   app/                       Next.js App Router (Cache Components + Partial Prefetching are on)
     page.tsx                 landing: value prop, category cards, "Start with Two Pointers"
-    dsa/page.tsx             pattern grid
+    dsa/page.tsx             pattern grid, grouped (Foundations / Core / Trees & Graphs / Advanced) with progress
     dsa/[pattern]/page.tsx   pattern intro + filterable problem table
     dsa/[pattern]/[problem]/ problem page (tabs: Explanation; Practice later)
     dsa/load.ts              loadPattern/loadProblem: resolve URL slugs or notFound()
@@ -83,19 +83,23 @@ Key rules:
 
 ## Content catalog
 
-Three levels, each a Zod schema in `src/lib/catalog/schema.ts` (types via `z.infer`):
+Three levels (plus pattern groups), each a Zod schema in `src/lib/catalog/schema.ts` (types via `z.infer`):
 
 ```ts
 Category = { slug: "dsa" | "system-design", name, description, status: "available" | "coming-soon", plannedTopics[] }
-Pattern  = { slug, categorySlug, name, summary, whenToUse[] (recognition signals), coreIdea, typicalComplexity, order }
+Group    = { slug: "foundations" | "core" | "trees-graphs" | "advanced", name, summary, order }   // content/catalog/groups.ts
+Pattern  = { slug, categorySlug, group, name, summary, whenToUse[] (recognition signals), coreIdea, typicalComplexity,
+             order }                                                // order is global: the /dsa numbering
 Problem  = {
   slug, patternSlug, title, difficulty: "easy" | "medium" | "hard", order,
   statement,                       // paragraphs split by blank lines; "- " lines → bullets; `code` → inline code
   examples: { input, output, explanation?, args: Json[], expected: Json }[],   // display text + machine-readable
   judge: "exact" | "unordered" | "unordered-nested" | "float",                 // how outputs are compared
+  exampleFormat: "call" | "operations",                                        // "operations" for design problems
   constraints[], hints[] (ordered, progressive), keyIdea, complexity: { time, space },
   storyboardId?,                   // links a video from content/storyboards
-  tags[], externalRefs: { label, url }[],
+  tags[], relatedPatterns: string[],   // cross-listing (below)
+  externalRefs: { label, url }[],
 }
 ```
 
@@ -104,7 +108,30 @@ Problem  = {
   parse and throw a readable error. Content never lives in one giant file.
 - **Original wording only.** Statements, examples, and hints are written for this project; never copy LeetCode or
   other sites. Well-known titles are fine, and `externalRefs` may link to the original.
-- Each pattern has 4–5 problems with at least one easy, one medium, and one hard (tested).
+- Each pattern has 4–5 problems with at least one easy, one medium, and one hard (tested). **Exception: Sorting** has
+  one problem per algorithm ("Sort an Array with Merge Sort", …) plus Count Inversions, up to 8. Its statements
+  require the named algorithm and its reference solutions implement it (tests only see outputs).
+- **20 patterns in 4 groups**, in `/dsa` order:
+  - Foundations: Arrays & Hashing, Prefix Sum, Sorting Algorithms, Bit Manipulation
+  - Core patterns: Two Pointers, Fast & Slow Pointers, Sliding Window, Binary Search, Stack (incl. monotonic), Linked
+    List, Intervals, Greedy
+  - Trees & Graphs: Trees (DFS), Graphs (BFS), Heap / Priority Queue, Trie, Advanced Graphs (topological sort,
+    Dijkstra, union-find)
+  - Advanced: Backtracking, Dynamic Programming, Data Structure Design
+
+  Folded in rather than separate: top-K (Heap), monotonic queue (Sliding Window), cyclic sort (Arrays & Hashing),
+  matrix/grid traversal (Graphs), level-order (Trees). A test pins the list of 20.
+
+- **Cross-listing.** A problem has one home (`patternSlug`: its URL and its progress key) and may list other patterns
+  in `relatedPatterns`. Related patterns show it after their own problems with an "also in <home>" label, linking to
+  the home URL; the problem page shows "also in …" links back. Stats and the E/M/H rule count own problems only
+  (`getPatternStats().related` counts the rest). `getPatternListing()` builds a pattern's table. If a problem ever
+  moves to a better home, add a permanent redirect from its old URL in `content/legacy-redirects.ts` (the routing
+  test checks redirects land on live pages); progress for the old key is lost, so prefer `relatedPatterns`.
+- **Design problems** (`exampleFormat: "operations"`): `args` is `[operations, arguments]`, e.g.
+  `[["MinStack", "push", "getMin"], [[], [3], []]]`, the first operation constructs the object, and `expected` lists
+  each return value (`null` for the constructor and void methods). `solve(operations, args)` replays them. The
+  problem page renders an operation → output table (`components/catalog/examples.tsx`).
 - Example data formats: linked lists are arrays (`[1, 2, 3]`); binary trees are level order with `null` for gaps and
   trailing nulls trimmed (`[3, 9, 20, null, null, 15, 7]`). Helpers: `tests/reference-solutions/_shared/`.
 
@@ -117,9 +144,12 @@ hand-computed example fails the suite. Reference solutions are test-only: nothin
 
 ### How to add a pattern
 
-1. Create `src/content/catalog/patterns/<slug>.ts` with `definePattern({...})` (pick the next `order`).
+1. Create `src/content/catalog/patterns/<slug>.ts` with `definePattern({...})`: pick its `group` and an `order`
+   that places it inside that group (orders are global and unique; renumber neighbours if needed).
 2. Create `src/content/catalog/problems/<slug>/index.ts` exporting `<camel>Problems = [...]`, plus 4–5 problems.
 3. Register both in `src/content/catalog/index.ts`. `/dsa`, `/dsa/<slug>`, the palette, and static params pick it up.
+4. Add the slug to the "covers the planned 20 patterns" test in `tests/catalog.test.ts`.
+5. Cross-list existing problems that also teach it (`relatedPatterns`), and tag its new problems the same way.
 
 ### How to add a problem
 
@@ -413,7 +443,8 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
   mode" (set after hydration, since the server doesn't know the stored theme); the palette has a "Toggle theme"
   action using the same `useThemeSwitch()`. The video gets the theme as an input prop from `LearnView`. Text must pass
   4.5:1 in both themes, including muted text on `--muted` surfaces (checked with axe on every page).
-- Cmd/Ctrl+K opens the command palette (`site/command-palette.tsx`, cmdk with a custom word-substring filter).
+- Cmd/Ctrl+K opens the command palette (`site/command-palette.tsx`, cmdk with a custom word-substring filter): pattern
+  groups (jump to `/dsa#<group>`), patterns (with their group), problems, and the "Toggle theme" action.
 - shadcn/ui components live in `src/components/ui`. They import `cn` from the `cn` package (shadcn's own) via
   `@/lib/utils`.
 - Accessibility: every icon button has an `aria-label` (and `aria-keyshortcuts` when there's a shortcut). The

@@ -49,5 +49,6 @@ Return the number of islands.`,
     "Walk every cell. Each unvisited land cell starts a new island: count it, then breadth-first search outward to mark the whole island visited. Every cell is enqueued at most once, so the total work is linear in the grid size.",
   complexity: { time: "O(rows × columns)", space: "O(rows × columns)" },
   tags: ["grid", "bfs", "connected-components"],
+  relatedPatterns: ["advanced-graphs"],
   externalRefs: [{ label: "LeetCode 200", url: "https://leetcode.com/problems/number-of-islands/" }],
 });

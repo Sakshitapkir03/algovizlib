@@ -19,6 +19,7 @@ import { LearnView } from "@/components/learn/learn-view";
 import type { Problem } from "@/lib/catalog";
 import {
   getAdjacentProblems,
+  getRelatedPatterns,
   getAllProblems,
   getProblem,
   getProblemStoryboard,
@@ -66,6 +67,7 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
   const { pattern, problem } = loadProblem(patternSlug, slug);
   const storyboard = getProblemStoryboard(problem);
   const { previous, next } = getAdjacentProblems(problem);
+  const related = getRelatedPatterns(problem);
 
   return (
     <>
@@ -87,6 +89,23 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
               </span>
             ))}
           </div>
+          {related.length > 0 && (
+            <p className="mt-2 font-mono text-[11px] text-muted-foreground">
+              also in{" "}
+              {related.map((p, i) => (
+                <span key={p.slug}>
+                  {i > 0 && ", "}
+                  <Link
+                    href={patternHref(p)}
+                    prefetch={true}
+                    className="rounded-sm underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    {p.name}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          )}
         </div>
         <StatusPicker problem={{ patternSlug: problem.patternSlug, slug: problem.slug }} />
       </header>
@@ -99,7 +118,7 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
                 <RichText text={problem.statement} className="space-y-3 leading-relaxed" />
               </Section>
               <Section title="Examples">
-                <Examples examples={problem.examples} />
+                <Examples examples={problem.examples} format={problem.exampleFormat} />
               </Section>
               <Section title="Constraints">
                 <ul className="space-y-1 font-mono text-[13px]">

@@ -42,5 +42,6 @@ Return a list with the largest value in each window position, from left to right
     "Maintain a deque of indices whose values strictly decrease from front to back. Each new element evicts smaller values from the back, the front is removed once it slides out of the window, and the front is always the current maximum. Every index is pushed and popped at most once.",
   complexity: { time: "O(n)", space: "O(k)" },
   tags: ["array", "deque", "monotonic-queue"],
+  relatedPatterns: ["heap"],
   externalRefs: [{ label: "LeetCode 239", url: "https://leetcode.com/problems/sliding-window-maximum/" }],
 });

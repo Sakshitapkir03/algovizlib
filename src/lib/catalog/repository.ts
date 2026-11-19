@@ -1,4 +1,4 @@
-import { categories, patterns, problems } from "@/content/catalog";
+import { categories, patternGroups, patterns, problems } from "@/content/catalog";
 import { getGeneratedStoryboard, getStoryboard } from "@/content/storyboards";
 
 import {
@@ -7,6 +7,8 @@ import {
   type CategorySlug,
   type Difficulty,
   type Pattern,
+  type PatternGroup,
+  type PatternGroupSlug,
   type Problem,
 } from "./schema";
 
@@ -37,8 +39,48 @@ export function getPattern(slug: string): Pattern | undefined {
   return patterns.find((p) => p.slug === slug);
 }
 
+export function getPatternGroups(): PatternGroup[] {
+  return [...patternGroups].sort(byOrder);
+}
+
+export function getPatternGroup(slug: PatternGroupSlug): PatternGroup | undefined {
+  return patternGroups.find((g) => g.slug === slug);
+}
+
+/** The /dsa page's sections: every group with its patterns, both in order. */
+export function getPatternsByGroup(
+  categorySlug: CategorySlug = "dsa",
+): { group: PatternGroup; patterns: Pattern[] }[] {
+  const list = getPatterns(categorySlug);
+  return getPatternGroups()
+    .map((group) => ({ group, patterns: list.filter((p) => p.group === group.slug) }))
+    .filter((section) => section.patterns.length > 0);
+}
+
+export function groupHref(group: Pick<PatternGroup, "slug">): string {
+  return `/dsa#${group.slug}`;
+}
+
+/** A pattern's own problems (the ones whose URL lives under it), in order. */
 export function getProblems(patternSlug: string): Problem[] {
   return problems.filter((p) => p.patternSlug === patternSlug).sort(byOrder);
+}
+
+const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, medium: 1, hard: 2 };
+
+/** Problems homed elsewhere that list this pattern in `relatedPatterns`, easiest first. */
+export function getRelatedProblems(patternSlug: string): Problem[] {
+  return problems
+    .filter((p) => p.relatedPatterns.includes(patternSlug))
+    .sort(
+      (a, b) =>
+        DIFFICULTY_RANK[a.difficulty] - DIFFICULTY_RANK[b.difficulty] || a.title.localeCompare(b.title),
+    );
+}
+
+/** The other patterns a problem is cross-listed in, in catalog order. */
+export function getRelatedPatterns(problem: Problem): Pattern[] {
+  return patterns.filter((p) => problem.relatedPatterns.includes(p.slug)).sort(byOrder);
 }
 
 export function getAllProblems(): readonly Problem[] {
@@ -78,16 +120,23 @@ export function getAdjacentProblems(problem: Problem): { previous?: Problem; nex
 }
 
 export type PatternStats = {
+  /** Own problems only; cross-listed ones are counted in `related`. */
   total: number;
   byDifficulty: Record<Difficulty, number>;
   videos: number;
+  related: number;
 };
 
 export function getPatternStats(patternSlug: string): PatternStats {
   const list = getProblems(patternSlug);
   const byDifficulty = Object.fromEntries(DIFFICULTIES.map((d) => [d, 0])) as Record<Difficulty, number>;
   for (const p of list) byDifficulty[p.difficulty]++;
-  return { total: list.length, byDifficulty, videos: list.filter(hasVideo).length };
+  return {
+    total: list.length,
+    byDifficulty,
+    videos: list.filter(hasVideo).length,
+    related: getRelatedProblems(patternSlug).length,
+  };
 }
 
 /** Compact, serializable rows for client-side lists (the command palette, the problem table). */
@@ -99,6 +148,8 @@ export type ProblemSummary = {
   hasVideo: boolean;
   tags: string[];
   href: string;
+  /** Set when the row is listed outside its home pattern: the home pattern's name, for an "also in" label. */
+  homePatternName?: string;
 };
 
 export function toProblemSummary(problem: Problem): ProblemSummary {
@@ -113,8 +164,20 @@ export function toProblemSummary(problem: Problem): ProblemSummary {
   };
 }
 
+/** A pattern's table: its own problems in order, then problems cross-listed from other patterns. */
+export function getPatternListing(patternSlug: string): ProblemSummary[] {
+  return [
+    ...getProblems(patternSlug).map(toProblemSummary),
+    ...getRelatedProblems(patternSlug).map((problem) => ({
+      ...toProblemSummary(problem),
+      homePatternName: getPattern(problem.patternSlug)?.name ?? problem.patternSlug,
+    })),
+  ];
+}
+
 export type SearchIndex = {
-  patterns: { slug: string; name: string; href: string; problemCount: number }[];
+  groups: { slug: string; name: string; href: string; patternCount: number }[];
+  patterns: { slug: string; name: string; groupName: string; href: string; problemCount: number }[];
   problems: (ProblemSummary & { patternName: string })[];
 };
 
@@ -122,9 +185,16 @@ export type SearchIndex = {
 export function getSearchIndex(): SearchIndex {
   const dsa = getPatterns("dsa");
   return {
+    groups: getPatternsByGroup("dsa").map(({ group, patterns: list }) => ({
+      slug: group.slug,
+      name: group.name,
+      href: groupHref(group),
+      patternCount: list.length,
+    })),
     patterns: dsa.map((p) => ({
       slug: p.slug,
       name: p.name,
+      groupName: getPatternGroup(p.group)?.name ?? p.group,
       href: patternHref(p),
       problemCount: getProblems(p.slug).length,
     })),

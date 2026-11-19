@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCode2, Layers, Search, SunMoon } from "lucide-react";
+import { FileCode2, FolderTree, Layers, Search, SunMoon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -74,20 +74,41 @@ export function CommandPalette({ index }: { index: SearchIndex }) {
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
-        title="Jump to a pattern or problem"
+        title="Jump to a pattern group, pattern, or problem"
         description="Type a pattern or problem name, or an action like Toggle theme, then press Enter."
       >
         <Command filter={filter}>
           <CommandInput placeholder="Type a pattern or problem…" />
           <CommandList>
             <CommandEmpty>No matches.</CommandEmpty>
+            <CommandGroup heading="Pattern groups">
+              {index.groups.map((g) => (
+                <CommandItem
+                  key={g.slug}
+                  value={g.name}
+                  keywords={["group", "section"]}
+                  onSelect={() => go(g.href)}
+                >
+                  <FolderTree aria-hidden className="text-muted-foreground" />
+                  {g.name}
+                  <CommandShortcut className="shrink-0 font-mono whitespace-nowrap">
+                    {g.patternCount} patterns
+                  </CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
             <CommandGroup heading="Patterns">
               {index.patterns.map((p) => (
-                <CommandItem key={p.slug} value={p.name} keywords={["pattern"]} onSelect={() => go(p.href)}>
+                <CommandItem
+                  key={p.slug}
+                  value={p.name}
+                  keywords={["pattern", p.groupName]}
+                  onSelect={() => go(p.href)}
+                >
                   <Layers aria-hidden className="text-muted-foreground" />
                   {p.name}
                   <CommandShortcut className="shrink-0 font-mono whitespace-nowrap">
-                    {p.problemCount} problems
+                    {p.groupName} · {p.problemCount} problems
                   </CommandShortcut>
                 </CommandItem>
               ))}

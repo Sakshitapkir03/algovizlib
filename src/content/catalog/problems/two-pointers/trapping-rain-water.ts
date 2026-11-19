@@ -44,5 +44,6 @@ After a heavy rainstorm, water collects in the dips between taller bars; anythin
     "Water above a bar is capped by the lower of the tallest walls on its two sides. Walk inward from both ends tracking the tallest wall seen on each side: the side with the lower maximum is guaranteed to be the cap for its current bar, because the other side already has something at least as tall. Settle that bar's water and move inward, finishing in one pass.",
   complexity: { time: "O(n)", space: "O(1)" },
   tags: ["array", "simulation"],
+  relatedPatterns: ["stack"],
   externalRefs: [{ label: "LeetCode 42", url: "https://leetcode.com/problems/trapping-rain-water/" }],
 });
