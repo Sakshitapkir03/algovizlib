@@ -69,6 +69,16 @@ function checkEquation(
       actual: String(el.result),
     });
   }
+  if (expected.tone && el.verdictTone !== expected.tone) {
+    push(
+      "verdictTone",
+      `Trace step ${stepIndex} reads as ${expected.tone}; omit verdictTone to take it from the step`,
+      {
+        expected: expected.tone,
+        actual: String(el.verdictTone),
+      },
+    );
+  }
   if (el.comparison && !expected.comparison) {
     push("comparison", `Trace step ${stepIndex} doesn't compare against anything; omit comparison`);
   }

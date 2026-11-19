@@ -1,3 +1,5 @@
+import type { ComparisonOp, EquationElement, VerdictTone } from "@/lib/storyboard";
+
 export type VideoThemeName = "light" | "dark";
 
 export type VideoPalette = {
@@ -57,6 +59,23 @@ export const palettes: Record<VideoThemeName, VideoPalette> = {
     infoSoft: "#0c4a6e",
   },
 };
+
+const SIGN_COLOR: Record<ComparisonOp, keyof VideoPalette> = { "<": "info", ">": "danger", "=": "success" };
+const TONE_COLOR: Record<VerdictTone, keyof VideoPalette> = {
+  positive: "success",
+  negative: "danger",
+  neutral: "textMuted",
+};
+
+/** The verdict pill's color: its explicit tone, else the comparison sign (the pair-sum convention), else muted. */
+export function verdictColor(
+  element: Pick<EquationElement, "verdictTone" | "comparison">,
+  palette: VideoPalette,
+): string {
+  if (element.verdictTone) return palette[TONE_COLOR[element.verdictTone]];
+  if (element.comparison) return palette[SIGN_COLOR[element.comparison.op]];
+  return palette.textMuted;
+}
 
 export const FONT_SANS = "var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif";
 export const FONT_MONO = "var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace";

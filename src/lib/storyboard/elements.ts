@@ -129,6 +129,8 @@ export const calloutElementSchema = z.object({
 
 export const comparisonOpSchema = z.enum(["<", "=", ">"]);
 export const operatorSchema = z.enum(["+", "-", "×"]);
+/** How the verdict reads: good news, bad news, or just information. */
+export const verdictToneSchema = z.enum(["positive", "negative", "neutral"]);
 
 const equationShape = {
   ...baseElement,
@@ -141,6 +143,11 @@ const equationShape = {
   unit: z.string().default(""),
   /** Short verdict rendered after the equation, e.g. "too high". */
   verdict: z.string().optional(),
+  /**
+   * Colors the verdict. Bound equations take it from the trace step when the step sets one. Without a tone the
+   * comparison sign decides (`<` info, `>` danger, `=` success), which suits "too low / too high / found".
+   */
+  verdictTone: verdictToneSchema.optional(),
 };
 export const equationElementSchema = z.object(equationShape);
 export const equationSourceSchema = z.object({
@@ -206,4 +213,5 @@ export type CalloutElement = ElementOf<"callout">;
 export type EquationElement = ElementOf<"equation">;
 export type ResultElement = ElementOf<"result">;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
+export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

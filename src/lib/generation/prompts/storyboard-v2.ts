@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v1";
+export const PROMPT_VERSION = "storyboard-v2";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -49,7 +49,7 @@ ${ELEMENT_GUIDE}
 - traceStep values never decrease from one scene to the next.
 - Every scene that shows data starts with the row element (same id in every scene, e.g. "row"); omit its values so they come from the trace, and give labels that fit the story (one per value).
 - Pointers: set binds to a pointer name the step actually has, set rowId, and OMIT index/fromIndex. A step that lists no pointers gets no bound pointers.
-- Equations: only in scenes whose step has arithmetic. OMIT terms/operator/result/comparison; add unit and a short verdict.
+- Equations: only in scenes whose step has arithmetic. OMIT terms/operator/result/comparison; add unit and a short verdict. If the step lists a tone, OMIT verdictTone and make the verdict read that way (positive: "new best"; neutral: "not better").
 - Highlights: OMIT indices in bound scenes. Only use a state the step lists (active/rejected/found).
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
@@ -63,7 +63,7 @@ function describeStep(step: TraceStep, index: number): string {
   if (step.equation) {
     const e = step.equation;
     parts.push(
-      `equation: ${e.terms.join(` ${e.operator} `)} = ${e.result}${e.comparison ? ` ${e.comparison.op} ${e.comparison.target}` : ""}`,
+      `equation: ${e.terms.join(` ${e.operator} `)} = ${e.result}${e.comparison ? ` ${e.comparison.op} ${e.comparison.target}` : ""}${e.tone ? ` (tone: ${e.tone})` : ""}`,
     );
   }
   for (const state of ["active", "rejected", "found"] as const) {
@@ -122,4 +122,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV1 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV2 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

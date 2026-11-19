@@ -2,7 +2,7 @@ import { APICallError } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
 
-import { getPattern, getPatterns, getProblems } from "@/lib/catalog/repository";
+import { getPattern, getPatterns, getProblem, getProblems } from "@/lib/catalog/repository";
 import type { CacheEntry, GenerationCache } from "@/lib/generation/cache";
 import { parseCli, selectTargets, type CatalogAccess } from "@/lib/generation/cli";
 import { readGenerationConfig } from "@/lib/generation/config";
@@ -27,7 +27,7 @@ import { exitStatus } from "@/lib/generation/report";
 import { renderRegistry, type StoryboardWriter } from "@/lib/generation/writer";
 import type { StoryboardSource } from "@/lib/storyboard";
 
-import { buildDraft } from "./fixtures/drafts";
+import { buildDraft, traceFor } from "./fixtures/drafts";
 
 // ── test doubles ────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -517,5 +517,23 @@ describe("renderRegistry", () => {
     );
     expect(code).toMatch(/"two-pointers\/three-sum": loadStoryboard\(twoPointersThreeSum\),/);
     expect(renderRegistry([])).toMatch(/Record<string, Storyboard>> = \{\};/);
+  });
+});
+
+describe("prompt", () => {
+  it("tells the model the step's tone and to omit verdictTone", () => {
+    const { trace } = traceFor("two-pointers/container-with-most-water");
+    const prompt = currentPrompts.generatePrompt({
+      problem: getProblem("two-pointers", "container-with-most-water")!,
+      patternName: "Two Pointers",
+      patternCoreIdea: "x",
+      exampleSource: "analogy",
+      trace,
+      exampleIndex: 0,
+    });
+    expect(currentPrompts.version).toBe("storyboard-v2");
+    expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
+    expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
+    expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);
   });
 });

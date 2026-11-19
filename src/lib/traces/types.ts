@@ -1,5 +1,7 @@
 import type { z } from "zod";
 
+import type { VerdictTone } from "@/lib/storyboard/elements";
+
 /**
  * A trace is the exact sequence of decisions an algorithm makes on one input, with a state snapshot at every
  * step. Storyboards bind scenes to steps (`scene.traceStep`), and `validateStoryboard` checks every pointer,
@@ -16,6 +18,11 @@ export type TraceEquation = {
   result: number;
   /** How `result` compares with `target` (e.g. sum vs target, area vs best so far). */
   comparison?: { op: TraceComparisonOp; target: number };
+  /**
+   * How this step's outcome reads, when the sign alone would mislead (a "new best" is `>` but good news). Bound
+   * equations inherit it as `verdictTone`. Omit it to keep the sign-based colors.
+   */
+  tone?: VerdictTone;
 };
 
 export type TraceStep = {

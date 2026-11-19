@@ -16,7 +16,7 @@ export const primitiveCatalog: Record<ElementType, string> = {
   callout:
     "A speech bubble with one short sentence, anchored to an item ({ rowId, index }) or floating at the top. Use for the reasoning behind a move. Never put numbers in a callout that contradict the trace.",
   equation:
-    'The arithmetic of the step, e.g. 4 + 45 = 49 < 50. In a bound scene omit terms/operator/result/comparison to take them from the step; add `unit` (e.g. "$") and a 1–3 word `verdict` ("too low", "new best"). Only use it when the step has arithmetic.',
+    'The arithmetic of the step, e.g. 4 + 45 = 49 < 50. In a bound scene omit terms/operator/result/comparison to take them from the step; add `unit` (e.g. "$") and a 1–3 word `verdict` ("too low", "new best"). `verdictTone` ("positive" | "negative" | "neutral") colors the verdict: when the step lists a tone, omit it and write a verdict that reads that way. Only use it when the step has arithmetic.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

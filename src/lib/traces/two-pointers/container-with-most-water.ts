@@ -25,7 +25,14 @@ export function containerWithMostWater(heights: number[]): Trace {
       kind: moveLeft ? "move-left" : "move-right",
       key: improved || !sawWorse,
       pointers: { left, right },
-      equation: { terms: [width, height], operator: "×", result: area, comparison: { op, target: best } },
+      equation: {
+        terms: [width, height],
+        operator: "×",
+        result: area,
+        comparison: { op, target: best },
+        // Beating the best is good news even though the sign is ">"; falling short is just information.
+        tone: improved ? "positive" : "neutral",
+      },
       active: [left, right],
       fill: { from: left, to: right, level: height },
       note:

@@ -36,7 +36,12 @@ export function trappingRainWater(heights: number[]): Trace {
       kind: side === "left" ? "fill-left" : "fill-right",
       key: steps.length === 0 || firstOnSide || (switched && steps.every((s) => s.kind === steps[0].kind)),
       pointers: { left, right },
-      equation: { terms: [max, height], operator: "-", result: amount },
+      equation: {
+        terms: [max, height],
+        operator: "-",
+        result: amount,
+        tone: amount > 0 ? "positive" : "neutral",
+      },
       active: [index],
       water: [...water],
       note:

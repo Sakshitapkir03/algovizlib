@@ -185,7 +185,7 @@ Two forms of the same schema:
 - **Source** (`storyboardSourceSchema`, `StoryboardInput`): what files and the model write. With a trace, the
   state-carrying values may be **omitted** and come from the scene's bound step: row values (`item-row.items` /
   `bar-row.bars`, with optional `labels`), pointer `index` (and `fromIndex`, from the previous bound step), equation
-  `terms`/`operator`/`result`/`comparison`, highlight `indices`, bar `fill`/`water`, and a `result`'s `value` when
+  `terms`/`operator`/`result`/`comparison`/`verdictTone`, highlight `indices`, bar `fill`/`water`, and a `result`'s `value` when
   `showsAnswer: true`. Any value that _is_ written is kept and checked against the trace.
 - **Resolved** (`storyboardSchema`, `Storyboard`): every value present. `resolveStoryboard()` produces it;
   renderers and the validator only see this form.
@@ -201,15 +201,15 @@ Two forms of the same schema:
 `Element` is a Zod discriminated union on `type`. Every element has `id` and `enterAt` (0–1, a **fraction** of the
 scene's duration, so timing survives the switch to audio-driven lengths).
 
-| type        | purpose                                                                                           | slot   |
-| ----------- | ------------------------------------------------------------------------------------------------- | ------ |
-| `item-row`  | labeled cards with values (product + price, `a[i]` + value, a character)                          | canvas |
-| `bar-row`   | vertical bars on a baseline; optional container `fill` and per-bar `water` (wave pattern + label) | canvas |
-| `pointer`   | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer           | canvas |
-| `highlight` | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone) | canvas |
-| `callout`   | speech bubble; anchored to an item or floating at the top                                         | canvas |
-| `equation`  | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` word           | bottom |
-| `result`    | final answer / stat card; `showsAnswer` / `indices` checked against the trace                     | bottom |
+| type        | purpose                                                                                            | slot   |
+| ----------- | -------------------------------------------------------------------------------------------------- | ------ |
+| `item-row`  | labeled cards with values (product + price, `a[i]` + value, a character)                           | canvas |
+| `bar-row`   | vertical bars on a baseline; optional container `fill` and per-bar `water` (wave pattern + label)  | canvas |
+| `pointer`   | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer            | canvas |
+| `highlight` | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)  | canvas |
+| `callout`   | speech bubble; anchored to an item or floating at the top                                          | canvas |
+| `equation`  | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone` | bottom |
+| `result`    | final answer / stat card; `showsAnswer` / `indices` checked against the trace                      | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -233,6 +233,13 @@ Canvas primitives are absolutely positioned on the 1280×720 stage using `useSce
 
 Existing primitives and storyboards never change when one is added.
 
+**Verdict colors.** An equation's `verdict` pill is colored by `verdictTone` (positive → success, negative →
+danger, neutral → muted). Without a tone it falls back to the comparison sign (`<` info, `>` danger, `=` success),
+the "too low / too high / found" convention of the pair-sum and Three Sum videos. When the sign would mislead, the
+trace sets `equation.tone` and bound equations inherit it (Container With Most Water: a new best is `>` but positive,
+a worse area is neutral; Trapping Rain Water: water held is positive, none is neutral). Logic: `verdictColor()` in
+`video/theme.ts`.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -245,6 +252,7 @@ input and returns a `Trace` (types in `traces/types.ts`):
 Trace = {
   problem: "pattern/slug", row: { values, display: "cards" | "bars" }, pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water? }[],
+  //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
   answerIndices?,     // when the answer is a set of positions
@@ -264,7 +272,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
 - Always: every equation's arithmetic (with its operator) and comparison must be true.
 - With `trace`: every `traceStep` exists and they never decrease; every key step is bound by some scene; rows used
   by bound pointers/highlights hold the trace's values; bound pointers sit where the step says (and slide from where
-  the previous bound step left them); pointers only bind names the step has; equations equal the step's equation;
+  the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 

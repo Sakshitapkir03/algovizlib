@@ -125,9 +125,10 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
           return { ...el, indices };
         }
         case "equation": {
+          const verdictTone = el.verdictTone ?? step?.equation?.tone;
           if (el.terms) {
             const operator = el.operator ?? "+";
-            return { ...el, operator, result: el.result ?? applyOperator(operator, el.terms) };
+            return { ...el, operator, result: el.result ?? applyOperator(operator, el.terms), verdictTone };
           }
           if (!step?.equation) {
             issues.push({
@@ -141,7 +142,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             return el;
           }
           const { terms, operator, result, comparison } = step.equation;
-          return { ...el, terms, operator, result, comparison: el.comparison ?? comparison };
+          return { ...el, terms, operator, result, comparison: el.comparison ?? comparison, verdictTone };
         }
         case "result": {
           if (el.value !== undefined) return el;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { getGeneratedStoryboard } from "@/content/storyboards";
+import { twoPointersStoryboard } from "@/content/storyboards/two-pointers";
 import { getProblem } from "@/lib/catalog/repository";
 import {
   assembleStoryboard,
@@ -7,8 +9,15 @@ import {
   type Draft,
   type GenerationContext,
 } from "@/lib/generation/draft";
-import { formatIssue, resolveStoryboard, storyboardSourceSchema, validateStoryboard } from "@/lib/storyboard";
+import {
+  formatIssue,
+  resolveStoryboard,
+  storyboardSourceSchema,
+  validateStoryboard,
+  type Storyboard,
+} from "@/lib/storyboard";
 import { getTraceDefinition, traceRegistry } from "@/lib/traces";
+import { palettes, verdictColor } from "@/video/theme";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
 
@@ -172,5 +181,83 @@ describe("validateStoryboard on a resolved storyboard", () => {
     const result = evaluate(key, buildDraft(key));
     expect(result.ok).toBe(true);
     if (result.ok) expect(validateStoryboard(result.storyboard).issues).toEqual([]);
+  });
+});
+
+describe("verdict tone", () => {
+  const containerKey = "two-pointers/container-with-most-water";
+  const sumKey = "two-pointers/pair-with-target-sum";
+  const equationsOf = (storyboard: Storyboard) =>
+    storyboard.scenes.flatMap((scene) =>
+      scene.elements.flatMap((e) => (e.type === "equation" ? [{ step: scene.traceStep, e }] : [])),
+    );
+
+  it("comes from the trace step: a new best is positive, a worse area is neutral", () => {
+    const result = evaluate(containerKey, buildDraft(containerKey));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const tones = equationsOf(result.storyboard).map(({ e }) => [e.comparison?.op, e.verdictTone]);
+    expect(tones).toContainEqual([">", "positive"]);
+    expect(tones).toContainEqual(["<", "neutral"]);
+  });
+
+  it("stays unset where the trace gives none, so the pair-sum signs keep their colors", () => {
+    const result = evaluate(sumKey, buildDraft(sumKey));
+    expect(result.ok).toBe(true);
+    if (result.ok)
+      expect(equationsOf(result.storyboard).every(({ e }) => e.verdictTone === undefined)).toBe(true);
+    expect(equationsOf(twoPointersStoryboard).every(({ e }) => e.verdictTone === undefined)).toBe(true);
+  });
+
+  it("is rejected when it contradicts the step", () => {
+    const draft = buildDraft(containerKey);
+    const scene = draft.scenes.find((s) => s.traceStep === 1)!;
+    scene.elements = scene.elements.map((e) =>
+      e.type === "equation" ? { ...e, verdictTone: "negative" } : e,
+    );
+    expect(messages(containerKey, draft).join("\n")).toMatch(
+      /verdictTone: Trace step 1 reads as positive.*\(expected positive, got negative\)/,
+    );
+  });
+
+  it("can be set by hand where the step has no tone", () => {
+    const draft = buildDraft(sumKey);
+    const scene = draft.scenes.find((s) => s.traceStep === 0)!;
+    scene.elements = scene.elements.map((e) =>
+      e.type === "equation" ? { ...e, verdictTone: "neutral" } : e,
+    );
+    const result = evaluate(sumKey, draft);
+    expect(result.ok).toBe(true);
+    if (result.ok)
+      expect(equationsOf(result.storyboard).find(({ step }) => step === 0)?.e.verdictTone).toBe("neutral");
+  });
+
+  it("colors the pill by tone, falling back to the comparison sign", () => {
+    const palette = palettes.light;
+    const lt = { comparison: { op: "<" as const, target: 50 } };
+    const gt = { comparison: { op: ">" as const, target: 50 } };
+    const eq = { comparison: { op: "=" as const, target: 50 } };
+    expect([lt, gt, eq, {}].map((e) => verdictColor(e, palette))).toEqual([
+      palette.info,
+      palette.danger,
+      palette.success,
+      palette.textMuted,
+    ]);
+    expect(verdictColor({ ...gt, verdictTone: "positive" }, palette)).toBe(palette.success);
+    expect(verdictColor({ ...lt, verdictTone: "neutral" }, palette)).toBe(palette.textMuted);
+    expect(verdictColor({ ...eq, verdictTone: "negative" }, palette)).toBe(palette.danger);
+  });
+
+  it("is derived for the saved Container With Most Water and Trapping Rain Water videos", () => {
+    const byVerdict = (problemKey: string) =>
+      Object.fromEntries(
+        equationsOf(getGeneratedStoryboard(problemKey)!).map(({ e }) => [e.verdict, e.verdictTone]),
+      );
+    expect(byVerdict(containerKey)).toEqual({ "new best": "positive", "not better": "neutral" });
+    expect(byVerdict("two-pointers/trapping-rain-water")).toEqual({
+      "no water": "neutral",
+      "2 units": "positive",
+      "3 units": "positive",
+    });
   });
 });

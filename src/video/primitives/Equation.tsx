@@ -1,10 +1,10 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
 
-import type { ComparisonOp, EquationElement } from "@/lib/storyboard";
+import type { EquationElement } from "@/lib/storyboard";
 
 import { enterProgress, motion } from "../animation";
 import { useScene } from "../context";
-import { FONT_MONO, FONT_SANS } from "../theme";
+import { FONT_MONO, FONT_SANS, verdictColor } from "../theme";
 
 const STAGGER = 4;
 
@@ -27,12 +27,7 @@ export function Equation({ element }: { element: EquationElement }) {
     );
   }
 
-  const verdictColor: Record<ComparisonOp, string> = {
-    "<": palette.info,
-    ">": palette.danger,
-    "=": palette.success,
-  };
-  const verdictTone = element.comparison ? verdictColor[element.comparison.op] : palette.textMuted;
+  const verdictTone = verdictColor(element, palette);
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
