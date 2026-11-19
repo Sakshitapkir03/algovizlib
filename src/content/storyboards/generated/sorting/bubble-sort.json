@@ -1,0 +1,457 @@
+{
+  "id": "sorting-bubble-sort",
+  "title": "Bubble Sort: Cousins Lining Up by Age",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Neighbors compare ages and trade places until a full pass needs no swaps, so the oldest drifts to the end each pass.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Five cousins aged 7, 3, 9, 1, and 4 line up for a family photo, youngest on the left. The only move allowed is for two cousins standing side by side to trade places when the one on the left is older.",
+    "mapping": [
+      {
+        "real": "A cousin's age",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "Two cousins side by side",
+        "abstract": "a[j] and a[j + 1]"
+      },
+      {
+        "real": "Trading places",
+        "abstract": "swap(a[j], a[j + 1])"
+      },
+      {
+        "real": "One walk down the line",
+        "abstract": "one pass of the outer loop"
+      },
+      {
+        "real": "Cousins already in their photo spot",
+        "abstract": "the sorted suffix"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "in-place"
+  ],
+  "takeaway": {
+    "pattern": "Bubble sort (compare and swap neighbors)",
+    "summary": "Walk the array swapping any neighbor pair that is out of order. Each pass carries the largest unsorted value to the end, so the sorted part grows from the right. A pass with no swaps means the array is sorted, so stop early.",
+    "timeComplexity": "O(n²), O(n) if already sorted",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Learning how comparisons and swaps create order",
+      "Tiny or nearly sorted inputs where simplicity matters most",
+      "You may only swap adjacent items"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/bubble-sort",
+    "args": [
+      [
+        7,
+        3,
+        9,
+        1,
+        4
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v3",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T14:35:24.421Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Five cousins aged 7, 3, 9, 1, and 4 are lining up for a family photo, and the photographer wants the youngest on the left. The catch: two cousins may only trade places with the person standing right next to them.",
+      "caption": "Five cousins need to line up by age for a family photo",
+      "durationInFrames": 528,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Youngest on the left, oldest on the right"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "You could try every possible lineup until one is in order, but five cousins can stand in 120 different orders, and ten cousins in over three million. Neighbor swaps fix the line far more directly.",
+      "caption": "Trying every possible lineup means 120 arrangements",
+      "durationInFrames": 456,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Every lineup",
+          "value": "120 orders for 5 cousins",
+          "detail": "10 cousins → 3,628,800 orders",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "first-swap",
+      "narration": "Here's the idea: walk down the line and compare each pair of neighbors. The first pair is 7 and 3. The older cousin is on the left, so they trade places.",
+      "caption": "Compare neighbors: 7 is older than 3, so they trade places",
+      "durationInFrames": 408,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "this",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "this cousin",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "next",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "neighbor",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "next"
+        },
+        {
+          "id": "pair",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "swap"
+        }
+      ]
+    },
+    {
+      "id": "in-order",
+      "narration": "Next, 7 stands beside 9. The younger cousin is already on the left, so this pair stays put and we step one place down the line.",
+      "caption": "7 and 9 are already in order, so nobody moves",
+      "durationInFrames": 348,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "this",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "this cousin",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "next",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "neighbor",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "next"
+        },
+        {
+          "id": "pair",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "in order"
+        }
+      ]
+    },
+    {
+      "id": "first-pass",
+      "narration": "Nine keeps trading places with every younger cousin it meets, first 1 and then 4, so by the end of the first pass the oldest cousin is standing in the last spot. That spot is final: nobody will ever need to swap with 9 again.",
+      "caption": "After one pass, the oldest cousin, 9, has bubbled to the end",
+      "durationInFrames": 576,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "done",
+          "enterAt": 0.15,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in place"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "The oldest always ends up last after one pass"
+        }
+      ]
+    },
+    {
+      "id": "second-pass",
+      "narration": "The second pass works the same way but can stop one spot earlier. Seven trades places with 1 and then with 4, and settles beside 9. Now the last two spots are final.",
+      "caption": "Pass two carries 7 to its spot right next to 9",
+      "durationInFrames": 432,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "done",
+          "enterAt": 0.15,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in place"
+        }
+      ]
+    },
+    {
+      "id": "last-pass",
+      "narration": "Pass three swapped 3 and 1, so the line now reads 1, 3, 4, 7, 9. In pass four the only pair left to check is 1 and 3, and they're already in order.",
+      "caption": "Pass four: 1 and 3 are already in order",
+      "durationInFrames": 444,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "this",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "this cousin",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "next",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "neighbor",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "next"
+        },
+        {
+          "id": "pair",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "done",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in place"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "in order"
+        }
+      ]
+    },
+    {
+      "id": "early-exit",
+      "narration": "Pass four made no swaps at all, which proves every neighbor pair is in order, so the photographer can stop right there. The cousins stand at ages 1, 3, 4, 7, and 9.",
+      "caption": "A pass with no swaps means the whole line is in order",
+      "durationInFrames": 432,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "done",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in place"
+        },
+        {
+          "id": "all",
+          "enterAt": 0.2,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Photo lineup",
+          "detail": "4 passes, early exit",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Without the photo, the cousins are the array, each pair of neighbors is a[j] and a[j + 1], and each walk down the line is one pass. Every pass bubbles the largest unsorted value to the end, so at most n minus 1 passes are needed, and a pass with no swaps ends it early.",
+      "caption": "The pattern: bubble sort, O(n²) time, O(1) space",
+      "durationInFrames": 696,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]"
+          ]
+        },
+        {
+          "id": "done",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "sorted"
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.25,
+          "type": "callout",
+          "text": "if a[j] > a[j + 1]: swap · no swaps in a pass → stop"
+        },
+        {
+          "id": "complexity",
+          "enterAt": 0.55,
+          "type": "result",
+          "title": "Bubble sort",
+          "value": "O(n²) time · O(1) space",
+          "detail": "O(n) when the input is already sorted",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    }
+  ]
+}

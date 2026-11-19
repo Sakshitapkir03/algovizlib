@@ -17,9 +17,11 @@ export function Equation({ element }: { element: EquationElement }) {
   const tokens: { text: string; kind: "num" | "op" | "result" }[] = [];
   element.terms.forEach((t, i) => {
     if (i > 0) tokens.push({ text: element.operator === "-" ? "−" : element.operator, kind: "op" });
-    tokens.push({ text: fmt(t), kind: "num" });
+    tokens.push({ text: fmt(t), kind: element.terms.length === 1 ? "result" : "num" });
   });
-  tokens.push({ text: "=", kind: "op" }, { text: fmt(element.result), kind: "result" });
+  // A single term is a comparison ("7 > 3"), not arithmetic, so "= 7" would only add noise.
+  if (element.terms.length > 1)
+    tokens.push({ text: "=", kind: "op" }, { text: fmt(element.result), kind: "result" });
   if (element.comparison) {
     tokens.push(
       { text: element.comparison.op, kind: "op" },

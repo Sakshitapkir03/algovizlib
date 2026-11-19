@@ -13,6 +13,7 @@ import { z } from "zod";
  * The registry and the catalog are typed so a missing entry is a compile error.
  *
  * Planned (not built yet): "staircase", "house-row", "coin-set", "box-arrow".
+ * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`.
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -57,6 +58,8 @@ export const barSchema = z.object({
   value: z.number().finite().nonnegative(),
 });
 
+const moveSchema = z.object({ from: index, to: index });
+
 const fillSchema = z.object({ from: index, to: index, level: z.number().finite().nonnegative() });
 
 const barRowShape = {
@@ -69,13 +72,81 @@ const barRowShape = {
   fill: fillSchema.optional(),
   /** Water standing on top of each bar (same length as `bars`). */
   water: z.array(z.number().finite().nonnegative()).optional(),
+  /**
+   * Bars that just moved into their slots: each slides from `from` to `to` as the scene starts. A swap is two
+   * moves (the bars arc past each other), a shift is one.
+   */
+  moves: z.array(moveSchema).optional(),
+  /** Slots drawn as empty dashed outlines: a lifted value's gap, or output not written yet. */
+  empty: z.array(index).optional(),
+  /**
+   * The value that reaches full height. Defaults to the tallest bar in this scene; a trace that rearranges its array
+   * sets it to the largest value it ever holds, so bar heights stay comparable from scene to scene.
+   */
+  maxValue: z.number().finite().positive().optional(),
 };
 export const barRowElementSchema = z.object(barRowShape);
 export const barRowSourceSchema = z.object({
   ...barRowShape,
-  /** Omit to take heights from the trace's row; `fill`/`water` default to the bound step's. */
+  /**
+   * Omit to take heights from the trace: the bound step's array (`values`) when the algorithm rearranges it,
+   * otherwise the trace's row. `fill`/`water`/`moves`/`empty` default to the bound step's.
+   */
   bars: barRowShape.bars.optional(),
   labels: z.array(z.string()).optional(),
+});
+
+const sortedRegionShape = {
+  ...baseElement,
+  type: z.literal("sorted-region"),
+  rowId: nonEmpty,
+  /** First and last position already in final order (inclusive). */
+  from: index,
+  to: index,
+  label: nonEmpty.max(16).default("sorted"),
+};
+export const sortedRegionElementSchema = z.object(sortedRegionShape);
+export const sortedRegionSourceSchema = z.object({
+  ...sortedRegionShape,
+  /** Omit both to take the bound step's sorted range. */
+  from: index.optional(),
+  to: index.optional(),
+});
+
+const heldValueShape = {
+  ...baseElement,
+  type: z.literal("held-value"),
+  rowId: nonEmpty,
+  /** The value lifted out of the row, drawn above slot `index` (its gap). */
+  value: z.number().finite().nonnegative(),
+  index,
+  label: nonEmpty.max(16).default("holding"),
+};
+export const heldValueElementSchema = z.object(heldValueShape);
+export const heldValueSourceSchema = z.object({
+  ...heldValueShape,
+  /** Omit both to take the bound step's held value. */
+  value: heldValueShape.value.optional(),
+  index: index.optional(),
+});
+
+const countArrayShape = {
+  ...baseElement,
+  type: z.literal("count-array"),
+  /** The value each cell counts, e.g. [0, 1, 2, 3, 4]. */
+  keys: z.array(z.number().finite()).min(1).max(10),
+  /** How many times each key has been seen (same length as `keys`). */
+  counts: z.array(z.number().int().nonnegative()).min(1).max(10),
+  /** The cell that just changed. */
+  active: index.optional(),
+  label: nonEmpty.max(16).default("count"),
+};
+export const countArrayElementSchema = z.object(countArrayShape);
+export const countArraySourceSchema = z.object({
+  ...countArrayShape,
+  /** Omit keys/counts (and active) to take the bound step's tally. */
+  keys: countArrayShape.keys.optional(),
+  counts: countArrayShape.counts.optional(),
 });
 
 const pointerShape = {
@@ -185,6 +256,9 @@ export const elementSchemas = [
   calloutElementSchema,
   equationElementSchema,
   resultElementSchema,
+  sortedRegionElementSchema,
+  heldValueElementSchema,
+  countArrayElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -195,6 +269,9 @@ export const elementSourceSchemas = [
   calloutElementSchema,
   equationSourceSchema,
   resultSourceSchema,
+  sortedRegionSourceSchema,
+  heldValueSourceSchema,
+  countArraySourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -212,6 +289,9 @@ export type HighlightState = z.infer<typeof highlightStateSchema>;
 export type CalloutElement = ElementOf<"callout">;
 export type EquationElement = ElementOf<"equation">;
 export type ResultElement = ElementOf<"result">;
+export type SortedRegionElement = ElementOf<"sorted-region">;
+export type HeldValueElement = ElementOf<"held-value">;
+export type CountArrayElement = ElementOf<"count-array">;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
 export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

@@ -11,6 +11,14 @@ export const selectionSort = defineProblem({
 This problem is about learning the algorithm, so implement selection sort yourself and don't call a built-in sort. Selection sort grows a sorted prefix from the left: on each step it scans the unsorted part for its smallest value and swaps that value into the first unsorted position.`,
   examples: [
     {
+      input: "nums = [5, 2, 8, 1, 6]",
+      output: "[1, 2, 5, 6, 8]",
+      explanation:
+        "Round 1 scans for the smallest value, 1, and swaps it with 5. Round 2 finds 2 already in place. Round 3 swaps 5 into index 2, and round 4 swaps 6 into index 3.",
+      args: [[5, 2, 8, 1, 6]],
+      expected: [1, 2, 5, 6, 8],
+    },
+    {
       input: "nums = [12, -4, 0, 7, 3]",
       output: "[-4, 0, 3, 7, 12]",
       explanation:

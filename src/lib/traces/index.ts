@@ -1,3 +1,7 @@
+import { bubbleSortTrace } from "./sorting/bubble-sort";
+import { countingSortTrace } from "./sorting/counting-sort";
+import { insertionSortTrace } from "./sorting/insertion-sort";
+import { selectionSortTrace } from "./sorting/selection-sort";
 import { containerWithMostWaterTrace } from "./two-pointers/container-with-most-water";
 import { pairWithTargetSumTrace } from "./two-pointers/pair-with-target-sum";
 import { threeSumTrace } from "./two-pointers/three-sum";
@@ -17,6 +21,10 @@ const definitions = [
   containerWithMostWaterTrace,
   threeSumTrace,
   trappingRainWaterTrace,
+  bubbleSortTrace,
+  selectionSortTrace,
+  insertionSortTrace,
+  countingSortTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

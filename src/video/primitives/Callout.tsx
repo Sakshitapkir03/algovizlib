@@ -73,7 +73,7 @@ export function Callout({ element }: { element: CalloutElement }) {
         position: "absolute",
         left,
         width: MAX_WIDTH,
-        bottom: CANVAS.height - (layout.top - 26),
+        bottom: CANVAS.height - (layout.reservedTop - 26),
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

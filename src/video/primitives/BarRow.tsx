@@ -1,4 +1,4 @@
-import { useCurrentFrame, useVideoConfig } from "remotion";
+import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
 import type { BarRowElement } from "@/lib/storyboard";
 
@@ -6,10 +6,13 @@ import { enterProgress } from "../animation";
 import { useScene } from "../context";
 import { FONT_MONO, FONT_SANS } from "../theme";
 
+const EMPTY_HEIGHT = 40;
+
 /**
- * Vertical bars on a shared baseline (walls, terrain). Optional `fill` shades the container between two bars up
- * to a level; optional `water` stacks standing water on each bar. Water is always drawn with a wave pattern and a
- * "water" label, so it never depends on color alone.
+ * Vertical bars on a shared baseline (walls, terrain, values being sorted). Optional `fill` shades the container
+ * between two bars up to a level; optional `water` stacks standing water on each bar. Water is always drawn with a
+ * wave pattern and a "water" label, so it never depends on color alone. `moves` slide bars from their old slots
+ * (two bars trading places arc past each other), and `empty` slots are dashed outlines with no value.
  */
 export function BarRow({ element }: { element: BarRowElement }) {
   const { rows, palette, reducedMotion } = useScene();
@@ -20,6 +23,7 @@ export function BarRow({ element }: { element: BarRowElement }) {
 
   const max = Math.max(
     1,
+    element.maxValue ?? 0,
     ...element.bars.map((b, i) => b.value + (element.water?.[i] ?? 0)),
     element.fill?.level ?? 0,
   );
@@ -31,6 +35,16 @@ export function BarRow({ element }: { element: BarRowElement }) {
   };
   const p = enterProgress(frame, fps, reducedMotion);
   const fill = element.fill;
+  const empty = new Set(element.empty ?? []);
+  const movedFrom = new Map((element.moves ?? []).map((m) => [m.to, m.from]));
+  const swapped = (i: number) => {
+    const from = movedFrom.get(i);
+    return from !== undefined && movedFrom.get(from) === i;
+  };
+  // Under reduced motion bars appear in their new slots; the cross-fade between scenes still shows the change.
+  const travel = reducedMotion
+    ? 1
+    : spring({ frame: frame - 18, fps, config: { damping: 26, stiffness: 40, mass: 1 } });
 
   return (
     <>
@@ -45,11 +59,38 @@ export function BarRow({ element }: { element: BarRowElement }) {
         }}
       />
       {element.bars.map((bar, i) => {
-        const grow = enterProgress(frame, fps, reducedMotion, i * 2);
+        if (empty.has(i)) {
+          return (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: layout.lefts[i],
+                width: layout.cardWidth,
+                top: baseline - EMPTY_HEIGHT,
+                height: EMPTY_HEIGHT,
+                borderRadius: "6px 6px 0 0",
+                border: `2px dashed ${palette.textMuted}`,
+                borderBottom: "none",
+                opacity: p,
+              }}
+            />
+          );
+        }
+        const from = movedFrom.get(i);
+        const moving = from !== undefined;
+        // A moved bar is already full height; it slides instead of growing.
+        const grow = moving ? 1 : enterProgress(frame, fps, reducedMotion, i * 2);
         const height = bar.value * unitHeight * grow;
         const water = (element.water?.[i] ?? 0) * unitHeight;
+        const dx = moving ? interpolate(travel, [0, 1], [layout.lefts[from] - layout.lefts[i], 0]) : 0;
+        // In a swap the bar heading right lifts over the one heading left, so they never overlap mid-move.
+        const dy = moving && swapped(i) && from < i ? -Math.sin(Math.PI * Math.min(1, travel)) * 48 : 0;
         return (
-          <div key={i}>
+          <div
+            key={i}
+            style={{ position: "absolute", left: 0, top: 0, transform: `translate(${dx}px, ${dy}px)` }}
+          >
             {water > 0 ? (
               <div
                 style={{

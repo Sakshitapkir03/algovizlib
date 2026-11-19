@@ -14,6 +14,7 @@ import {
   resolveStoryboard,
   storyboardSourceSchema,
   validateStoryboard,
+  type BarRowElement,
   type Storyboard,
 } from "@/lib/storyboard";
 import { getTraceDefinition, traceRegistry } from "@/lib/traces";
@@ -259,5 +260,101 @@ describe("verdict tone", () => {
       "2 units": "positive",
       "3 units": "positive",
     });
+  });
+});
+
+describe("sorting primitives", () => {
+  const bubble = "sorting/bubble-sort";
+  const resolveDraft = (key: string, draft: Draft) => {
+    const source = storyboardSourceSchema.parse(assembleStoryboard(draft, context(key), META));
+    return resolveStoryboard(source);
+  };
+  const sceneAt = (draft: Draft, step: number) => draft.scenes.find((s) => s.traceStep === step)!;
+  const replace = (draft: Draft, step: number, id: string, patch: Record<string, unknown>) => {
+    const scene = sceneAt(draft, step);
+    scene.elements = scene.elements.map((e) => (e.id === id ? ({ ...e, ...patch } as typeof e) : e));
+    return draft;
+  };
+
+  it("draws each bound scene's bars from that step's array, with its moves and sorted range", () => {
+    const { storyboard, issues } = resolveDraft(bubble, buildDraft(bubble));
+    expect(issues).toEqual([]);
+    const first = storyboard!.scenes.find((s) => s.traceStep === 0)!;
+    expect(first.elements.find((e) => e.id === "row")).toMatchObject({
+      bars: [3, 7, 9, 1, 4].map((value) => expect.objectContaining({ value })),
+      moves: [
+        { from: 0, to: 1 },
+        { from: 1, to: 0 },
+      ],
+    });
+    const passEnd = storyboard!.scenes.find((s) => s.traceStep === 4)!;
+    expect(passEnd.elements.find((e) => e.id === "sorted")).toMatchObject({ from: 4, to: 4 });
+    const eq = first.elements.find((e) => e.id === "eq");
+    expect(eq).toMatchObject({ terms: [7], comparison: { op: ">", target: 3 }, verdictTone: "negative" });
+  });
+
+  it("rejects bars that don't match the step's array", () => {
+    const draft = replace(buildDraft(bubble), 0, "row", {
+      bars: [7, 3, 9, 1, 4].map((value) => ({ value })),
+    });
+    expect(messages(bubble, draft).join("\n")).toMatch(
+      /Row "row" must hold the array as it is after trace step 0.*expected \[3, 7, 9, 1, 4\], got \[7, 3, 9, 1, 4\]/,
+    );
+  });
+
+  it("rejects wrong moves, a wrong sorted range, a wrong held value, and a wrong tally", () => {
+    expect(
+      messages(bubble, replace(buildDraft(bubble), 0, "row", { moves: [{ from: 0, to: 2 }] })).join("\n"),
+    ).toMatch(/Bar moves don't match trace step 0/);
+    expect(messages(bubble, replace(buildDraft(bubble), 4, "sorted", { from: 3, to: 4 })).join("\n")).toMatch(
+      /Sorted region doesn't match trace step 4 \(expected 4–4, got 3–4\)/,
+    );
+    const insertion = "sorting/insertion-sort";
+    expect(
+      messages(insertion, replace(buildDraft(insertion), 1, "held", { value: 6, index: 0 })).join("\n"),
+    ).toMatch(/Held value doesn't match trace step 1 \(expected 2 above slot 0, got 6 above slot 0\)/);
+    const counting = "sorting/counting-sort";
+    expect(
+      messages(
+        counting,
+        replace(buildDraft(counting), 3, "tally", { keys: [0, 1, 2, 3, 4], counts: [0, 1, 0, 1, 1] }),
+      ).join("\n"),
+    ).toMatch(/Tally counts don't match trace step 3 \(expected \[0, 2, 0, 1, 1\], got \[0, 1, 0, 1, 1\]\)/);
+  });
+
+  it("says when a step has no state for a primitive", () => {
+    const draft = buildDraft(bubble);
+    sceneAt(draft, 0).elements.push({
+      id: "extra",
+      type: "held-value",
+      rowId: "row",
+      label: "x",
+      enterAt: 0,
+    });
+    expect(messages(bubble, draft).join("\n")).toMatch(/Trace step 0 isn't holding a value/);
+  });
+
+  it("checks layout room: a held value lowers the bars and a tally shortens them", async () => {
+    const { layoutRows } = await import("@/video/layout");
+    const bars: BarRowElement = {
+      id: "row",
+      type: "bar-row",
+      enterAt: 0,
+      unit: "",
+      bars: [{ value: 3 }, { value: 1 }],
+    };
+    const plain = layoutRows([bars]).row;
+    const held = layoutRows([
+      bars,
+      { id: "h", type: "held-value", rowId: "row", value: 2, index: 0, label: "x", enterAt: 0 },
+    ]).row;
+    const counted = layoutRows([
+      bars,
+      { id: "c", type: "count-array", keys: [0], counts: [1], label: "count", enterAt: 0 },
+    ]).row;
+    expect(held.top).toBeGreaterThan(plain.top);
+    expect(held.reservedTop).toBe(plain.top);
+    expect(held.top + held.cardHeight).toBe(plain.top + plain.cardHeight);
+    expect(counted.top + counted.cardHeight).toBeLessThan(plain.top + plain.cardHeight);
   });
 });

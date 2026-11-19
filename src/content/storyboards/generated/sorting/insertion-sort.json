@@ -1,0 +1,506 @@
+{
+  "id": "sorting-insertion-sort",
+  "title": "Insertion Sort: Sorting a Hand of Playing Cards",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Pick up one card at a time and slide it left past every bigger card until it sits in the right place.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "You're dealt five cards, 6, 2, 10, 4, and 8, and you sort them in your hand the way most card players do: take the next card, slide the bigger cards to its left one place right, and drop it into the gap.",
+    "mapping": [
+      {
+        "real": "A card's rank",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "The card you pick up",
+        "abstract": "key = a[i]"
+      },
+      {
+        "real": "The card you compare it with",
+        "abstract": "a[j]"
+      },
+      {
+        "real": "Sliding a card one place right",
+        "abstract": "a[j + 1] = a[j]"
+      },
+      {
+        "real": "Cards to the left, already in order",
+        "abstract": "the sorted prefix a[0..i-1]"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "in-place",
+    "stable"
+  ],
+  "takeaway": {
+    "pattern": "Insertion sort (insert each value into the sorted prefix)",
+    "summary": "Keep the left part sorted. Lift out the next value, shift every larger value in the sorted part one slot right, and drop the value into the gap. Work depends on how far values move, so nearly sorted input is fast.",
+    "timeComplexity": "O(n²), O(n) if nearly sorted",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Small or nearly sorted inputs",
+      "Values arrive one at a time and must stay sorted",
+      "You need a stable, in-place sort with very little code"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/insertion-sort",
+    "args": [
+      [
+        6,
+        2,
+        10,
+        4,
+        8
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v3",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T14:39:01.614Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "You've been dealt five cards: 6, 2, 10, 4, and 8. You want them in order from lowest to highest, using only the hand itself, with no table to spread them out on.",
+      "caption": "You're dealt 6, 2, 10, 4, 8: put them in order in your hand",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Lowest card on the left, highest on the right"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Five cards can be held in 120 different orders, so shuffling until they happen to line up is hopeless. Card players do something smarter without thinking about it: they sort as they go.",
+      "caption": "Shuffling until the order is right could take 120 tries",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Every order",
+          "value": "120 orders for 5 cards",
+          "detail": "sorting as you go needs no luck",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "lift",
+      "narration": "Here's the idea: a single card is already in order, so the 6 on its own counts as sorted. Pick up the next card, the 2, leaving a gap where it was.",
+      "caption": "The 6 alone is sorted. Pick up the next card, the 2",
+      "durationInFrames": 420,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in order"
+        },
+        {
+          "id": "hand",
+          "enterAt": 0.25,
+          "type": "held-value",
+          "rowId": "row",
+          "label": "in hand"
+        },
+        {
+          "id": "picked",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "picked up",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        }
+      ]
+    },
+    {
+      "id": "shift",
+      "narration": "Compare the 2 in your hand with the card to the gap's left. The 6 is bigger, so slide it one place right. The gap moves left with it.",
+      "caption": "6 is bigger than 2, so slide the 6 one place right",
+      "durationInFrames": 384,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "hand",
+          "enterAt": 0,
+          "type": "held-value",
+          "rowId": "row",
+          "label": "in hand"
+        },
+        {
+          "id": "compare",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "compare",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.05,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "slide right"
+        }
+      ]
+    },
+    {
+      "id": "insert-front",
+      "narration": "There are no more cards to the left of the gap, so the 2 must be the lowest so far. It drops into the gap at the front, and the first two cards are now in order.",
+      "caption": "Nothing is left to compare, so the 2 drops in at the front",
+      "durationInFrames": 480,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0.15,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in order"
+        }
+      ]
+    },
+    {
+      "id": "in-place",
+      "narration": "Next you pick up the 10. The card to its left is the 6, which is smaller, so the 10 already belongs where it was. Nothing slides, and three cards are in order.",
+      "caption": "The 10 is bigger than 6, so it stays right where it is",
+      "durationInFrames": 432,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "compare",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "compare",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.05,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in order"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "stays put"
+        }
+      ]
+    },
+    {
+      "id": "long-shift",
+      "narration": "Now pick up the 4. The 10 is bigger, so it slides right, and the 6 is bigger too, so it follows. The gap has moved two places to the left.",
+      "caption": "For the 4, both the 10 and the 6 slide right",
+      "durationInFrames": 408,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "hand",
+          "enterAt": 0,
+          "type": "held-value",
+          "rowId": "row",
+          "label": "in hand"
+        },
+        {
+          "id": "compare",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "compare",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.05,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "slide right"
+        }
+      ]
+    },
+    {
+      "id": "insert-middle",
+      "narration": "The next card to the left is the 2, which is smaller than the 4 in your hand. So the 4 drops into the gap just after the 2, and the first four cards are in order.",
+      "caption": "2 is smaller than 4, so the 4 drops into the gap",
+      "durationInFrames": 480,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "compare",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "compare",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.05,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in order"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "drop it here"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "The last card, the 8, only needs the 10 to slide right before it drops into place next to the 6. Your hand now reads 2, 4, 6, 8, 10.",
+      "caption": "The 8 slides in before the 10, and the hand is sorted",
+      "durationInFrames": 396,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "card 1",
+            "card 2",
+            "card 3",
+            "card 4",
+            "card 5"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "in order"
+        },
+        {
+          "id": "all",
+          "enterAt": 0.2,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Your hand",
+          "detail": "4 slides in total",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Without the cards, your hand is the array, the card you pick up is the key a[i], and sliding a card right is copying a[j] into a[j + 1]. The work depends on how far values have to slide, so it's O(n squared) in the worst case but close to O(n) when the input is nearly sorted.",
+      "caption": "The pattern: insertion sort, O(n²) time, O(1) space",
+      "durationInFrames": 720,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "sorted"
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.25,
+          "type": "callout",
+          "text": "key = a[i]; while a[j] > key: a[j + 1] = a[j]; then a[j + 1] = key"
+        },
+        {
+          "id": "complexity",
+          "enterAt": 0.55,
+          "type": "result",
+          "title": "Insertion sort",
+          "value": "O(n²) time · O(1) space",
+          "detail": "close to O(n) on nearly sorted input",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    }
+  ]
+}

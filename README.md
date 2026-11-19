@@ -18,7 +18,8 @@ Most patterns have 5 problems; Sorting Algorithms has one per algorithm (bubble,
 heap, counting) plus Count Inversions. Problems that teach more than one pattern are cross-listed with an "also in"
 label. Every problem has an original statement, examples (design problems show an operation → output table),
 progressive hints, and the approach behind a spoiler toggle, and every example is checked against a reference
-solution. Problems with a video play it inline; the first is **Pair with Target Sum**, told as a price-sorted shelf
+solution. Problems with a video play it inline: five Two Pointers problems and four sorting algorithms (bubble, selection,
+insertion, counting). The first is **Pair with Target Sum**, told as a price-sorted shelf
 where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 You can mark each problem Not started / Learning / Done. Progress is saved in your browser.

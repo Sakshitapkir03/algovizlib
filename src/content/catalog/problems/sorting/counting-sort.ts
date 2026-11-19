@@ -11,6 +11,14 @@ export const countingSort = defineProblem({
 This problem is about learning the algorithm, so implement counting sort yourself and don't call a built-in sort or compare elements with each other. Counting sort tallies how many times each possible value occurs, then writes the values back out in order, each repeated as many times as it was counted. Because values can be negative, shift each value by an offset to get its tally index.`,
   examples: [
     {
+      input: "nums = [3, 1, 4, 1, 0, 3]",
+      output: "[0, 1, 1, 3, 3, 4]",
+      explanation:
+        "The tallies are 0: 1, 1: 2, 2: 0, 3: 2, 4: 1. Writing each value as many times as it was counted gives 0, 1, 1, 3, 3, 4.",
+      args: [[3, 1, 4, 1, 0, 3]],
+      expected: [0, 1, 1, 3, 3, 4],
+    },
+    {
       input: "nums = [3, -1, 4, 1, -1, 0]",
       output: "[-1, -1, 0, 1, 3, 4]",
       explanation:

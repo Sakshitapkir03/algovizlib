@@ -1,0 +1,476 @@
+{
+  "id": "sorting-counting-sort",
+  "title": "Counting Sort: Tallying Star Ratings",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Tally how many reviews gave each star rating, then write the ratings back out from 0 stars up, with no comparisons at all.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A café owner has six customer reviews rated 3, 1, 4, 1, 0, and 3 stars and wants them listed from lowest to highest. Ratings only go from 0 to 4 stars, so instead of comparing reviews, they keep one tally box per rating and then read the boxes in order.",
+    "mapping": [
+      {
+        "real": "A review's star rating",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "One tally box per rating (0–4 stars)",
+        "abstract": "the count array, count[v]"
+      },
+      {
+        "real": "Adding a mark to a box",
+        "abstract": "count[a[i]] += 1"
+      },
+      {
+        "real": "Writing ratings back out from 0 stars up",
+        "abstract": "filling the output from the counts"
+      },
+      {
+        "real": "The next line on the output list",
+        "abstract": "index out"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "counting",
+    "non-comparison sort"
+  ],
+  "takeaway": {
+    "pattern": "Counting sort (tally, then write out in order)",
+    "summary": "When values come from a small known range, count how many times each value appears, then write each value out as many times as it was counted, from smallest to largest. No element is ever compared with another.",
+    "timeComplexity": "O(n + k), k = range size",
+    "spaceComplexity": "O(k)",
+    "whenToUse": [
+      "Integer values from a small, known range",
+      "Many repeated values, like ratings, ages, or grades",
+      "You need to beat O(n log n) and can afford one counter per possible value"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/counting-sort",
+    "args": [
+      [
+        3,
+        1,
+        4,
+        1,
+        0,
+        3
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v3",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T14:35:24.429Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A café owner has six reviews rated 3, 1, 4, 1, 0, and 3 stars, and wants them listed from the lowest rating to the highest. Ratings can only be 0, 1, 2, 3, or 4 stars.",
+      "caption": "Six reviews, rated 0 to 4 stars, need listing from lowest up",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "review 1",
+            "review 2",
+            "review 3",
+            "review 4",
+            "review 5",
+            "review 6"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Only five possible ratings: 0, 1, 2, 3, or 4 stars"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Any sort that works by comparing two reviews at a time needs on the order of n log n comparisons in general. But with only five possible ratings, the owner can skip comparisons entirely and just count.",
+      "caption": "Comparison sorts can't beat about n log n comparisons",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "review 1",
+            "review 2",
+            "review 3",
+            "review 4",
+            "review 5",
+            "review 6"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Comparison sorts",
+          "value": "about n log n comparisons",
+          "detail": "counting needs none",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "first-tally",
+      "narration": "Here's the idea: set out one tally box for each rating, from 0 to 4 stars. Read the reviews in order. The first is 3 stars, so the 3 box goes from 0 to 1.",
+      "caption": "Keep one tally box per rating: the first review adds a mark to 3",
+      "durationInFrames": 456,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "review 1",
+            "review 2",
+            "review 3",
+            "review 4",
+            "review 5",
+            "review 6"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "reading",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.05,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0.15,
+          "type": "count-array",
+          "label": "stars"
+        },
+        {
+          "id": "add",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "one mark"
+        }
+      ]
+    },
+    {
+      "id": "repeat",
+      "narration": "Reviews 2 and 3 added marks to the 1 and 4 boxes. Review 4 is another 1-star review, so the 1 box goes from 1 to 2. Repeated ratings just make a bigger tally.",
+      "caption": "A second 1-star review: the 1 box goes up to 2",
+      "durationInFrames": 444,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "review 1",
+            "review 2",
+            "review 3",
+            "review 4",
+            "review 5",
+            "review 6"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "reading",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.05,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "count-array",
+          "label": "stars"
+        },
+        {
+          "id": "add",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "seen again"
+        }
+      ]
+    },
+    {
+      "id": "tallied",
+      "narration": "After the last two reviews, the tally reads one 0-star review, two 1-star, none with 2 stars, two 3-star, and one 4-star. Now start a fresh, empty list and fill it from the boxes.",
+      "caption": "All counted: one 0, two 1s, no 2s, two 3s, one 4",
+      "durationInFrames": 444,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "line 1",
+            "line 2",
+            "line 3",
+            "line 4",
+            "line 5",
+            "line 6"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "count-array",
+          "label": "stars"
+        },
+        {
+          "id": "why",
+          "enterAt": 0.4,
+          "type": "callout",
+          "text": "The tally holds everything you need to rebuild the list"
+        }
+      ]
+    },
+    {
+      "id": "first-write",
+      "narration": "Go through the boxes from 0 stars up. The 0 box has one mark, so write a 0 on the first line of the list and take that mark off.",
+      "caption": "Start from 0 stars: write one 0 and take its mark off",
+      "durationInFrames": 396,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "line 1",
+            "line 2",
+            "line 3",
+            "line 4",
+            "line 5",
+            "line 6"
+          ]
+        },
+        {
+          "id": "writing",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "writing",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "out"
+        },
+        {
+          "id": "written",
+          "enterAt": 0.2,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "written"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "count-array",
+          "label": "stars"
+        },
+        {
+          "id": "take",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "one used"
+        }
+      ]
+    },
+    {
+      "id": "second-copy",
+      "narration": "The 1 box holds two marks, so 1 goes on the list twice, once for each mark. After the second one, that box is empty and the list reads 0, 1, 1 so far.",
+      "caption": "The 1 box had two marks, so 1 is written twice",
+      "durationInFrames": 444,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "line 1",
+            "line 2",
+            "line 3",
+            "line 4",
+            "line 5",
+            "line 6"
+          ]
+        },
+        {
+          "id": "writing",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "writing",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "out"
+        },
+        {
+          "id": "written",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "written"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "count-array",
+          "label": "stars"
+        },
+        {
+          "id": "take",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "box empty"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "The 2 box is empty, so nothing is written for it. The two 3s and the single 4 follow, and every mark has been used. The reviews are listed as 0, 1, 1, 3, 3, and 4 stars.",
+      "caption": "Every mark is used: the list reads 0, 1, 1, 3, 3, 4",
+      "durationInFrames": 492,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "line 1",
+            "line 2",
+            "line 3",
+            "line 4",
+            "line 5",
+            "line 6"
+          ]
+        },
+        {
+          "id": "written",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "written"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "count-array",
+          "label": "stars"
+        },
+        {
+          "id": "all",
+          "enterAt": 0.2,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Ratings, lowest first",
+          "detail": "no two reviews were ever compared",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Without the café, the reviews are the array, the tally boxes are the count array with one slot per possible value, and the list is the output. Counting takes one pass over n values and writing takes one pass over k slots, so it runs in O(n plus k). With negative values, like the -50 to 50 range here, you add an offset to find each value's slot.",
+      "caption": "The pattern: counting sort, O(n + k) time, O(k) space",
+      "durationInFrames": 852,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "out[0]",
+            "out[1]",
+            "out[2]",
+            "out[3]",
+            "out[4]",
+            "out[5]"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "count-array",
+          "label": "count"
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.25,
+          "type": "callout",
+          "text": "count[a[i]]++ for every i, then write each v count[v] times, smallest v first"
+        },
+        {
+          "id": "complexity",
+          "enterAt": 0.55,
+          "type": "result",
+          "title": "Counting sort",
+          "value": "O(n + k) time · O(k) space",
+          "detail": "k = number of possible values",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    }
+  ]
+}

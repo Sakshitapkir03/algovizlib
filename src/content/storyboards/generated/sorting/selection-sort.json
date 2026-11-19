@@ -1,0 +1,487 @@
+{
+  "id": "sorting-selection-sort",
+  "title": "Selection Sort: Loading Parcels Lightest First",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Scan the waiting parcels for the lightest one, load it into the next spot, and repeat until the van is in order.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A courier has five parcels weighing 5, 2, 8, 1, and 6 kg in a row of loading spots and wants them ordered lightest first. Each round they scan the parcels not yet placed for the lightest, then swap it into the next loading spot.",
+    "mapping": [
+      {
+        "real": "A parcel's weight",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "The next loading spot",
+        "abstract": "index i"
+      },
+      {
+        "real": "The parcel being weighed",
+        "abstract": "index j"
+      },
+      {
+        "real": "The lightest parcel so far",
+        "abstract": "index min"
+      },
+      {
+        "real": "Parcels already loaded",
+        "abstract": "the sorted prefix a[0..i-1]"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "in-place"
+  ],
+  "takeaway": {
+    "pattern": "Selection sort (select the minimum, swap it into place)",
+    "summary": "For each position from the left, scan the unsorted part for its smallest value and swap it into that position. The sorted prefix grows by one value per round and never changes again.",
+    "timeComplexity": "O(n²)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Learning how a sorted prefix grows one element at a time",
+      "Writes (swaps) are expensive: it makes at most n − 1 swaps",
+      "Small inputs where simplicity matters more than speed"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/selection-sort",
+    "args": [
+      [
+        5,
+        2,
+        8,
+        1,
+        6
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v3",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T14:35:24.426Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A courier has five parcels in a row, weighing 5, 2, 8, 1, and 6 kilograms. They need to go into the van in order, lightest first, using the same five loading spots.",
+      "caption": "Five parcels need loading into the van, lightest first",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Lightest parcel in spot 1, heaviest in spot 5"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Rearranging the parcels until the order happens to be right could mean checking 120 different orders for just five parcels. Instead, the courier asks one simple question per spot: which parcel is lightest?",
+      "caption": "Shuffling parcels at random could take 120 tries",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Every order",
+          "value": "120 orders for 5 parcels",
+          "detail": "one scan per spot is enough",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "new-min",
+      "narration": "Start with spot 1. Keep the first parcel, 5 kilograms, as the lightest so far, then weigh the others one by one. The 2 kilogram parcel is lighter, so it becomes the new lightest.",
+      "caption": "Scan for the lightest: 2 kg beats 5 kg",
+      "durationInFrames": 444,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "spot",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "next spot",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "lightest",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "lightest",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "min"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new lightest"
+        }
+      ]
+    },
+    {
+      "id": "not-smaller",
+      "narration": "The 8 kilogram parcel is heavier than the 2 kilogram one, so the lightest so far doesn't change. The scan just moves on.",
+      "caption": "8 kg isn't lighter than 2 kg, so the lightest stays put",
+      "durationInFrames": 312,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "spot",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "next spot",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "weigh",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "weighing",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "lightest",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "lightest",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "min"
+        },
+        {
+          "id": "checking",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not lighter"
+        }
+      ]
+    },
+    {
+      "id": "first-swap",
+      "narration": "By the end of the scan, the 1 kilogram parcel has beaten the 2, and the 6 couldn't beat it. It trades places with the 5 kilogram parcel in spot 1, and spot 1 is now final.",
+      "caption": "The lightest is 1 kg: swap it into spot 1",
+      "durationInFrames": 480,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "spot",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "next spot",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "lightest",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "lightest",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "min"
+        },
+        {
+          "id": "loaded",
+          "enterAt": 0.3,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "loaded"
+        }
+      ]
+    },
+    {
+      "id": "in-place",
+      "narration": "Round two scans spots 2 through 5. The 8, 5, and 6 kilogram parcels are all heavier than the 2, so the lightest is already sitting in spot 2. No swap is needed.",
+      "caption": "Spot 2 already holds the lightest remaining parcel",
+      "durationInFrames": 432,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "spot",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "next spot",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "lightest",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "lightest",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "min"
+        },
+        {
+          "id": "loaded",
+          "enterAt": 0.2,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "loaded"
+        }
+      ]
+    },
+    {
+      "id": "third-swap",
+      "narration": "In round three the lightest remaining parcel is 5 kilograms, sitting in spot 4. It trades places with the 8 kilogram parcel, and the loaded section grows to three spots.",
+      "caption": "Round three: 5 kg is the lightest left, so it swaps with 8 kg",
+      "durationInFrames": 396,
+      "traceStep": 11,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "spot",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "next spot",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "lightest",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "lightest",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "min"
+        },
+        {
+          "id": "loaded",
+          "enterAt": 0.3,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "loaded"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "Round four swaps the 6 kilogram parcel ahead of the 8, and then only the heaviest parcel is left, already in the last spot. The van is loaded as 1, 2, 5, 6, and 8 kilograms.",
+      "caption": "Four rounds later, the parcels go from lightest to heaviest",
+      "durationInFrames": 468,
+      "traceStep": 14,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "spot 1",
+            "spot 2",
+            "spot 3",
+            "spot 4",
+            "spot 5"
+          ]
+        },
+        {
+          "id": "loaded",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "loaded"
+        },
+        {
+          "id": "all",
+          "enterAt": 0.2,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Loading order (kg)",
+          "detail": "3 swaps for 5 parcels",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Without the van, the parcels are the array, the next loading spot is index i, and the lightest parcel found so far is index min. Each round scans the rest of the array once and makes at most one swap, so it takes about n squared over 2 comparisons but never more than n minus 1 swaps.",
+      "caption": "The pattern: selection sort, O(n²) time, O(1) space",
+      "durationInFrames": 720,
+      "traceStep": 14,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]"
+          ]
+        },
+        {
+          "id": "loaded",
+          "enterAt": 0.1,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "sorted"
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.25,
+          "type": "callout",
+          "text": "for each i: find min in a[i..n-1], swap it into a[i]"
+        },
+        {
+          "id": "complexity",
+          "enterAt": 0.55,
+          "type": "result",
+          "title": "Selection sort",
+          "value": "O(n²) time · O(1) space",
+          "detail": "at most n − 1 swaps",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    }
+  ]
+}

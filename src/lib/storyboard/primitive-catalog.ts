@@ -8,7 +8,7 @@ export const primitiveCatalog: Record<ElementType, string> = {
   "item-row":
     "A row of labeled cards (item + value), e.g. products with prices or a[i] with values. With a trace, omit `items` to show the trace's values and give `labels` (one per value) to name them in the story. Place it first in every scene that shows data.",
   "bar-row":
-    "Vertical bars on a shared baseline, e.g. walls or terrain heights. With a trace, omit `bars` to use the trace's values; in a bound scene the container fill / standing water come from the step automatically.",
+    "Vertical bars on a shared baseline, e.g. walls, terrain heights, or values being sorted. With a trace, omit `bars` to use the trace's values (in a bound scene, the array as it stands after that step); the container fill, standing water, bar moves (a swap slides two bars past each other, a shift slides one), and empty slots come from the step automatically.",
   pointer:
     'A named marker under one card or bar (e.g. "You", "left"). Set `binds` to a trace pointer name and omit `index`; the position comes from the scene\'s trace step and it slides from where the previous bound scene left it. Only bind pointers the step actually has.',
   highlight:
@@ -17,6 +17,12 @@ export const primitiveCatalog: Record<ElementType, string> = {
     "A speech bubble with one short sentence, anchored to an item ({ rowId, index }) or floating at the top. Use for the reasoning behind a move. Never put numbers in a callout that contradict the trace.",
   equation:
     'The arithmetic of the step, e.g. 4 + 45 = 49 < 50. In a bound scene omit terms/operator/result/comparison to take them from the step; add `unit` (e.g. "$") and a 1–3 word `verdict` ("too low", "new best"). `verdictTone` ("positive" | "negative" | "neutral") colors the verdict: when the step lists a tone, omit it and write a verdict that reads that way. Only use it when the step has arithmetic.',
+  "sorted-region":
+    'Marks positions already in their final order with a shaded band and a "✓ sorted" label beside the row. Set `rowId`; in a bound scene omit `from`/`to` to take the step\'s sorted range. Only use it when the step lists a sorted range.',
+  "held-value":
+    'A value lifted out of the row (e.g. the card in your hand in insertion sort), drawn above its gap. Set `rowId` and optionally `label` (e.g. "in hand"); omit `value`/`index` to take them from the step. Only use it when the step is holding a value.',
+  "count-array":
+    'A panel of tally cells under the bars, one per value (e.g. 0–4 with how many of each). Omit `keys`/`counts`/`active` to take the step\'s tally; set `label` (e.g. "tally"). Only use it when the step has a tally.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

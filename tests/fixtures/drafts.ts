@@ -49,6 +49,11 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "active", type: "highlight", rowId: "row", state: "active", enterAt: 0 });
     if (step.found)
       elements.push({ id: "found", type: "highlight", rowId: "row", state: "found", enterAt: 0 });
+    if (step.sorted)
+      elements.push({ id: "sorted", type: "sorted-region", rowId: "row", label: "sorted", enterAt: 0 });
+    if (step.held)
+      elements.push({ id: "held", type: "held-value", rowId: "row", label: "holding", enterAt: 0 });
+    if (step.counts) elements.push({ id: "tally", type: "count-array", label: "count", enterAt: 0 });
     if (step.equation)
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });

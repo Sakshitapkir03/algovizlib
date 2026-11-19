@@ -118,6 +118,11 @@ export const sceneSchema = z
             checkIndex(el.id, el.fill.from, [...path, "fill", "from"]);
             checkIndex(el.id, el.fill.to, [...path, "fill", "to"]);
           }
+          el.moves?.forEach((m, k) => {
+            checkIndex(el.id, m.from, [...path, "moves", k, "from"]);
+            checkIndex(el.id, m.to, [...path, "moves", k, "to"]);
+          });
+          el.empty?.forEach((idx) => checkIndex(el.id, idx, [...path, "empty"]));
           if (el.water && el.water.length !== el.bars.length) {
             ctx.addIssue({
               code: "custom",
@@ -125,6 +130,27 @@ export const sceneSchema = z
               message: `water has ${el.water.length} entries but there are ${el.bars.length} bars`,
             });
           }
+          break;
+        case "sorted-region":
+          checkIndex(el.rowId, el.from, [...path, "from"]);
+          checkIndex(el.rowId, el.to, [...path, "to"]);
+          if (el.from > el.to)
+            ctx.addIssue({ code: "custom", path: [...path, "from"], message: "from must not be after to" });
+          break;
+        case "held-value":
+          checkIndex(el.rowId, el.index, [...path, "index"]);
+          break;
+        case "count-array":
+          if (el.keys.length !== el.counts.length)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "counts"],
+              message: `counts has ${el.counts.length} entries but there are ${el.keys.length} keys`,
+            });
+          if (el.active !== undefined && el.active >= el.keys.length)
+            ctx.addIssue({ code: "custom", path: [...path, "active"], message: "active is out of range" });
+          if (scene.elements.filter((e) => e.type === "count-array").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one count-array" });
           break;
         default:
           break;

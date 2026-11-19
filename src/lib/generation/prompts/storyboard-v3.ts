@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v2";
+export const PROMPT_VERSION = "storyboard-v3";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -47,10 +47,11 @@ ${ELEMENT_GUIDE}
 ## Binding rules (these are checked by a validator; violations are sent back to you)
 - Every trace step marked KEY must be shown by a scene whose traceStep is that step's index. Other steps may be skipped.
 - traceStep values never decrease from one scene to the next.
-- Every scene that shows data starts with the row element (same id in every scene, e.g. "row"); omit its values so they come from the trace, and give labels that fit the story (one per value).
+- Every scene that shows data starts with the row element (same id in every scene, e.g. "row"); omit its values so they come from the trace, and give labels that fit the story (one per value). When steps list an array, a bound scene's row shows that step's array, and its moves and empty slots appear automatically.
 - Pointers: set binds to a pointer name the step actually has, set rowId, and OMIT index/fromIndex. A step that lists no pointers gets no bound pointers.
 - Equations: only in scenes whose step has arithmetic. OMIT terms/operator/result/comparison; add unit and a short verdict. If the step lists a tone, OMIT verdictTone and make the verdict read that way (positive: "new best"; neutral: "not better").
 - Highlights: OMIT indices in bound scenes. Only use a state the step lists (active/rejected/found).
+- sorted-region / held-value / count-array: only in scenes whose step lists a sorted range / held value / tally; OMIT their from/to, value/index, and keys/counts/active.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -63,7 +64,7 @@ function describeStep(step: TraceStep, index: number): string {
   if (step.equation) {
     const e = step.equation;
     parts.push(
-      `equation: ${e.terms.join(` ${e.operator} `)} = ${e.result}${e.comparison ? ` ${e.comparison.op} ${e.comparison.target}` : ""}${e.tone ? ` (tone: ${e.tone})` : ""}`,
+      `equation: ${e.terms.length > 1 ? `${e.terms.join(` ${e.operator} `)} = ${e.result}` : e.result}${e.comparison ? ` ${e.comparison.op} ${e.comparison.target}` : ""}${e.tone ? ` (tone: ${e.tone})` : ""}`,
     );
   }
   for (const state of ["active", "rejected", "found"] as const) {
@@ -71,6 +72,15 @@ function describeStep(step: TraceStep, index: number): string {
   }
   if (step.fill) parts.push(`container: bars ${step.fill.from}–${step.fill.to} filled to ${step.fill.level}`);
   if (step.water) parts.push(`water: [${step.water.join(", ")}]`);
+  if (step.values) parts.push(`array: [${step.values.join(", ")}]`);
+  if (step.moves) parts.push(`moves: ${step.moves.map((m) => `${m.from}→${m.to}`).join(", ")}`);
+  if (step.empty) parts.push(`empty slots: [${step.empty.join(", ")}]`);
+  if (step.sorted) parts.push(`sorted: ${step.sorted.from}–${step.sorted.to}`);
+  if (step.held) parts.push(`holding ${step.held.value} above slot ${step.held.index}`);
+  if (step.counts)
+    parts.push(
+      `tally: ${step.counts.keys.map((k, i) => `${k}:${step.counts!.counts[i]}`).join(" ")}${step.counts.active !== undefined ? ` (changed: ${step.counts.keys[step.counts.active]})` : ""}`,
+    );
   return `${parts.join(" | ")}\n   ${step.note}`;
 }
 
@@ -122,4 +132,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV2 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV3 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

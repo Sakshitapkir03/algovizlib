@@ -120,14 +120,24 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
     ) => issues.push({ sceneId: scene.id, elementId, field, message, ...values });
     const list = (values: readonly unknown[]) => `[${values.join(", ")}]`;
     const rows = new Map(scene.elements.flatMap((el) => (rowValues(el) ? [[el.id, el] as const] : [])));
+    const boundStep = scene.traceStep !== undefined ? trace.steps[scene.traceStep] : undefined;
+    // The array as it stands at this scene's step (sorting rearranges it), else the trace's starting row.
+    const expectedValues = boundStep?.values ?? trace.row.values;
+    const checkedRows = new Set<string>();
     const checkRow = (rowId: string) => {
+      if (checkedRows.has(rowId)) return;
+      checkedRows.add(rowId);
       const row = rows.get(rowId);
       const values = row && rowValues(row);
-      if (values && !sameList(values, trace.row.values)) {
-        push(`Row "${rowId}" must hold the trace's values`, rowId, "items", {
-          expected: list(trace.row.values),
-          actual: list(values),
-        });
+      if (values && !sameList(values, expectedValues)) {
+        push(
+          boundStep?.values
+            ? `Row "${rowId}" must hold the array as it is after trace step ${scene.traceStep}`
+            : `Row "${rowId}" must hold the trace's values`,
+          rowId,
+          "items",
+          { expected: list(expectedValues), actual: list(values) },
+        );
       }
     };
 
@@ -249,6 +259,19 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           break;
         }
         case "bar-row":
+          if (step.values) checkRow(el.id);
+          if (el.moves && JSON.stringify(el.moves) !== JSON.stringify(step.moves ?? [])) {
+            push(`Bar moves don't match trace step ${stepIndex}`, el.id, "moves", {
+              expected: JSON.stringify(step.moves ?? []),
+              actual: JSON.stringify(el.moves),
+            });
+          }
+          if (el.empty && !sameSet(el.empty, step.empty ?? [])) {
+            push(`Empty slots don't match trace step ${stepIndex}`, el.id, "empty", {
+              expected: list(step.empty ?? []),
+              actual: list(el.empty),
+            });
+          }
           if (
             el.fill &&
             !(
@@ -270,6 +293,52 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             });
           }
           break;
+        case "sorted-region": {
+          checkRow(el.rowId);
+          const expected = step.sorted;
+          if (!expected) push(`Trace step ${stepIndex} has no sorted region yet`, el.id, "from");
+          else if (el.from !== expected.from || el.to !== expected.to) {
+            push(`Sorted region doesn't match trace step ${stepIndex}`, el.id, "from", {
+              expected: `${expected.from}–${expected.to}`,
+              actual: `${el.from}–${el.to}`,
+            });
+          }
+          break;
+        }
+        case "held-value": {
+          checkRow(el.rowId);
+          const expected = step.held;
+          if (!expected) push(`Trace step ${stepIndex} isn't holding a value`, el.id, "value");
+          else if (el.value !== expected.value || el.index !== expected.index) {
+            push(`Held value doesn't match trace step ${stepIndex}`, el.id, "value", {
+              expected: `${expected.value} above slot ${expected.index}`,
+              actual: `${el.value} above slot ${el.index}`,
+            });
+          }
+          break;
+        }
+        case "count-array": {
+          const expected = step.counts;
+          if (!expected) push(`Trace step ${stepIndex} has no tally`, el.id, "counts");
+          else {
+            if (!sameList(el.keys, expected.keys))
+              push(`Tally keys don't match trace step ${stepIndex}`, el.id, "keys", {
+                expected: list(expected.keys),
+                actual: list(el.keys),
+              });
+            if (!sameList(el.counts, expected.counts))
+              push(`Tally counts don't match trace step ${stepIndex}`, el.id, "counts", {
+                expected: list(expected.counts),
+                actual: list(el.counts),
+              });
+            if (el.active !== undefined && el.active !== expected.active)
+              push(`The active tally cell doesn't match trace step ${stepIndex}`, el.id, "active", {
+                expected: String(expected.active ?? "none"),
+                actual: String(el.active),
+              });
+          }
+          break;
+        }
         default:
           break;
       }
@@ -292,8 +361,9 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
 
 /**
  * Check a resolved storyboard. Always: equation arithmetic. With a `trace` binding: bound steps exist and never
- * go backwards, every key step is shown, rows hold the trace's values, bound pointers, equations, highlights, and
- * fills match their step, and the answer is revealed correctly. Hand-written and generated storyboards both pass
+ * go backwards, every key step is shown, rows hold the trace's values (the step's own array when the algorithm
+ * rearranges it), and bound pointers, equations, highlights, fills, moves, sorted regions, held values, and tallies
+ * match their step, and the answer is revealed correctly. Hand-written and generated storyboards both pass
  * through this before they are shown.
  */
 export function validateStoryboard(storyboard: Storyboard): ValidationResult {

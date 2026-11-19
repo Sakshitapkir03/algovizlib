@@ -231,15 +231,18 @@ Two forms of the same schema:
 `Element` is a Zod discriminated union on `type`. Every element has `id` and `enterAt` (0–1, a **fraction** of the
 scene's duration, so timing survives the switch to audio-driven lengths).
 
-| type        | purpose                                                                                            | slot   |
-| ----------- | -------------------------------------------------------------------------------------------------- | ------ |
-| `item-row`  | labeled cards with values (product + price, `a[i]` + value, a character)                           | canvas |
-| `bar-row`   | vertical bars on a baseline; optional container `fill` and per-bar `water` (wave pattern + label)  | canvas |
-| `pointer`   | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer            | canvas |
-| `highlight` | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)  | canvas |
-| `callout`   | speech bubble; anchored to an item or floating at the top                                          | canvas |
-| `equation`  | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone` | bottom |
-| `result`    | final answer / stat card; `showsAnswer` / `indices` checked against the trace                      | bottom |
+| type            | purpose                                                                                                                                                              | slot   |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `item-row`      | labeled cards with values (product + price, `a[i]` + value, a character)                                                                                             | canvas |
+| `bar-row`       | vertical bars on a baseline; optional container `fill`, per-bar `water`, `moves` (bars slide; a swap arcs), `empty` (dashed slots), `maxValue` (one scale per video) | canvas |
+| `pointer`       | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer                                                                              | canvas |
+| `highlight`     | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)                                                                    | canvas |
+| `callout`       | speech bubble; anchored to an item or floating at the top                                                                                                            | canvas |
+| `equation`      | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                   | bottom |
+| `result`        | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                        | bottom |
+| `sorted-region` | positions in final order: shaded band + baseline segment, "✓ sorted" label beside the row                                                                            | canvas |
+| `held-value`    | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                        | canvas |
+| `count-array`   | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                             | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -270,6 +273,14 @@ trace sets `equation.tone` and bound equations inherit it (Container With Most W
 a worse area is neutral; Trapping Rain Water: water held is positive, none is neutral). Logic: `verdictColor()` in
 `video/theme.ts`.
 
+**Sorting** (bubble, selection, insertion, counting) extended this: steps carry `values` (the array after the step),
+and the resolver draws a bound scene's bars from it; every bar-row in those videos shares `maxValue`, the largest
+value the trace ever holds. A single-term equation renders as a comparison (`7 > 3`, no `= 7`); sorting traces set
+`tone` on every comparison (bubble: out of order negative, in order positive; selection: new minimum positive,
+otherwise neutral; insertion: shift neutral, found its place positive). The layout gives a held value its own strip
+above the bars (anchored callouts sit above that, via `RowLayout.reservedTop`) and shortens the bars when a scene
+has a count-array.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -281,7 +292,8 @@ input and returns a `Trace` (types in `traces/types.ts`):
 ```ts
 Trace = {
   problem: "pattern/slug", row: { values, display: "cards" | "bars" }, pointerNames,
-  steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water? }[],
+  steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
+           values?, moves?, empty?, sorted?, held?, counts? }[],   // the last six: algorithms that rearrange the array
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
@@ -303,7 +315,9 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
 - With `trace`: every `traceStep` exists and they never decrease; every key step is bound by some scene; rows used
   by bound pointers/highlights hold the trace's values; bound pointers sit where the step says (and slide from where
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
-  highlights equal the step's active/rejected/found items; bar fills and water match; `result.indices` equal
+  highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
+  step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, and tallies
+  match the step; `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -421,7 +435,9 @@ The script fails fast, naming the missing variable, if the selected provider's k
   analogy, describe it in `analogy.scenario` and `analogy.mapping`, and make the **closing scene map it back** to the
   abstract problem (e.g. relabel items as `a[i]`, pointers as `left`/`right`).
 
-Two Pointers is `"analogy"`: a price-sorted shelf where you and a friend spend a $50 gift card exactly.
+Two Pointers is `"analogy"`: a price-sorted shelf where you and a friend spend a $50 gift card exactly. The sorting
+videos each use a different analogy: cousins lining up by age (bubble), parcels loaded lightest first (selection), a
+hand of playing cards (insertion), and tallying star ratings (counting).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

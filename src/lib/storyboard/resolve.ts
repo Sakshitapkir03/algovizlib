@@ -12,14 +12,23 @@ const OPERATORS = {
   "×": (a: number, b: number) => a * b,
 } as const;
 
+/** For traces whose steps carry their own arrays: the largest number the array ever holds, so bars keep one scale. */
+function traceMaxValue(trace: Trace): number | undefined {
+  if (!trace.steps.some((step) => step.values)) return undefined;
+  const all = [trace.row.values, ...trace.steps.map((step) => step.values ?? [])].flat();
+  const max = Math.max(...all.filter((v): v is number => typeof v === "number"));
+  return max > 0 ? max : undefined;
+}
+
 export function applyOperator(operator: keyof typeof OPERATORS, terms: readonly number[]): number {
   return terms.slice(1).reduce(OPERATORS[operator], terms[0]);
 }
 
 /**
  * Turn an authored (or model-written) storyboard into the fully specified form the renderer and validator use.
- * Values the author omitted are taken from the trace: rows from `trace.row`, and pointers, equations, highlights,
- * fills, and water from the scene's bound step. Values the author did write are kept as written; the validator
+ * Values the author omitted are taken from the trace: rows from the bound step's `values` (else `trace.row`), and
+ * pointers, equations, highlights, fills, water, moves, empty slots, sorted regions, held values, and tallies from
+ * the scene's bound step. Values the author did write are kept as written; the validator
  * checks them against the trace. Returns issues instead of throwing, so the generator can send them back.
  */
 export function resolveStoryboard(source: StoryboardSource): ResolveResult {
@@ -65,8 +74,10 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
         case "bar-row": {
           const { labels, ...rest } = el;
           let bars = el.bars;
-          if (!bars && trace) {
-            if (trace.row.values.some((v) => typeof v !== "number")) {
+          // Sorting rearranges the array, so a bound step's own snapshot wins over the trace's starting row.
+          const values = step?.values ?? trace?.row.values;
+          if (!bars && values) {
+            if (values.some((v) => typeof v !== "number")) {
               issues.push({
                 sceneId: scene.id,
                 elementId: el.id,
@@ -74,7 +85,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
                 message: "This trace's values can't be drawn as bars",
               });
             } else {
-              bars = trace.row.values.map((value, i) => ({
+              bars = values.map((value, i) => ({
                 label: labels?.[i] ?? String(i),
                 value: value as number,
               }));
@@ -86,6 +97,9 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             bars,
             fill: el.fill ?? step?.fill,
             water: el.water ?? step?.water,
+            moves: el.moves ?? step?.moves,
+            empty: el.empty ?? step?.empty,
+            maxValue: el.maxValue ?? (trace ? traceMaxValue(trace) : undefined),
           } as ElementSource;
         }
         case "pointer": {
@@ -151,6 +165,56 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
         }
         case "callout":
           return el;
+        case "sorted-region": {
+          if (el.from !== undefined && el.to !== undefined) return el;
+          if (!step?.sorted) {
+            issues.push({
+              sceneId: scene.id,
+              elementId: el.id,
+              field: "from",
+              message: step
+                ? `Trace step ${scene.traceStep} has no sorted region yet; remove the sorted-region or bind another step`
+                : "A sorted-region without from/to needs a scene.traceStep",
+            });
+            return el;
+          }
+          return { ...el, from: el.from ?? step.sorted.from, to: el.to ?? step.sorted.to };
+        }
+        case "held-value": {
+          if (el.value !== undefined && el.index !== undefined) return el;
+          if (!step?.held) {
+            issues.push({
+              sceneId: scene.id,
+              elementId: el.id,
+              field: "value",
+              message: step
+                ? `Trace step ${scene.traceStep} isn't holding a value; remove the held-value or bind another step`
+                : "A held-value without value/index needs a scene.traceStep",
+            });
+            return el;
+          }
+          return { ...el, value: el.value ?? step.held.value, index: el.index ?? step.held.index };
+        }
+        case "count-array": {
+          if (el.keys && el.counts) return el;
+          if (!step?.counts) {
+            issues.push({
+              sceneId: scene.id,
+              elementId: el.id,
+              field: "counts",
+              message: step
+                ? `Trace step ${scene.traceStep} has no tally; remove the count-array or bind another step`
+                : "A count-array without keys/counts needs a scene.traceStep",
+            });
+            return el;
+          }
+          return {
+            ...el,
+            keys: el.keys ?? step.counts.keys,
+            counts: el.counts ?? step.counts.counts,
+            active: el.active ?? step.counts.active,
+          };
+        }
       }
     });
 

@@ -45,6 +45,21 @@ export type TraceStep = {
   fill?: { from: number; to: number; level: number };
   /** Water standing on each bar so far (bar-row only). */
   water?: number[];
+  /**
+   * The array as it stands after this step, for algorithms that rearrange it (sorting). Omit when the array never
+   * changes; rows then show `trace.row.values`.
+   */
+  values?: TraceValue[];
+  /** Bars that moved into new slots during this step (a swap is two moves, a shift is one). */
+  moves?: { from: number; to: number }[];
+  /** Slots drawn as empty outlines: the gap left by a held value, or output not written yet. */
+  empty?: number[];
+  /** Positions already in their final place (inclusive range), e.g. the sorted tail in bubble sort. */
+  sorted?: { from: number; to: number };
+  /** A value lifted out of the array (insertion sort's key), waiting above slot `index`. */
+  held?: { value: number; index: number };
+  /** A tally per value (counting sort): `counts[i]` is how many times `keys[i]` has been seen. */
+  counts?: { keys: number[]; counts: number[]; active?: number };
 };
 
 export type Trace = {
