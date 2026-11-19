@@ -59,7 +59,7 @@ export function LearnView({
   const currentIndex = sceneIndexAtFrame(timings, frame);
 
   const inputProps = useMemo<StoryboardCompositionProps>(
-    () => ({ storyboard, theme: resolvedTheme === "dark" ? "dark" : "light", reducedMotion }),
+    () => ({ storyboard, theme: resolvedTheme === "light" ? "light" : "dark", reducedMotion }),
     [storyboard, resolvedTheme, reducedMotion],
   );
 

@@ -406,6 +406,13 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 - Render content strings with `<InlineText>` / `<RichText>` (`components/catalog/rich-text.tsx`) so `backticks`
   become code. Content never contains HTML.
 - Tables become stacked cards below `md`. Visible focus rings everywhere (`:focus-visible` in `globals.css`).
+- **Theme: dark by default** for first-time visitors, whatever the OS prefers (`site/theme-provider.tsx`,
+  next-themes with `defaultTheme="dark"`, `enableSystem={false}`). The choice is stored in localStorage (`theme`) and
+  applied by next-themes' blocking script before first paint, so there's no flash. The header toggle
+  (`site/theme-toggle.tsx`) shows on every page and screen size, with an aria-label and tooltip "Switch to light/dark
+  mode" (set after hydration, since the server doesn't know the stored theme); the palette has a "Toggle theme"
+  action using the same `useThemeSwitch()`. The video gets the theme as an input prop from `LearnView`. Text must pass
+  4.5:1 in both themes, including muted text on `--muted` surfaces (checked with axe on every page).
 - Cmd/Ctrl+K opens the command palette (`site/command-palette.tsx`, cmdk with a custom word-substring filter).
 - shadcn/ui components live in `src/components/ui`. They import `cn` from the `cn` package (shadcn's own) via
   `@/lib/utils`.

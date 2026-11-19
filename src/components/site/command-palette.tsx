@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCode2, Layers, Search } from "lucide-react";
+import { FileCode2, Layers, Search, SunMoon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/command";
 import type { SearchIndex } from "@/lib/catalog/repository";
 
+import { useThemeSwitch } from "./theme-toggle";
+
 /**
  * Every typed word must appear in the item's text; title matches rank above tag/pattern matches. (cmdk's default
  * fuzzy matching treats "islan" as a scattered subsequence and matches most of the catalog.)
@@ -31,10 +33,11 @@ function filter(value: string, search: string, keywords: string[] = []): number 
   return words.every((w) => title.includes(w)) ? 0.8 : 0.4;
 }
 
-/** Cmd/Ctrl+K: jump to any pattern or problem by name. */
+/** Cmd/Ctrl+K: jump to any pattern or problem by name, or run an action (toggle theme). */
 export function CommandPalette({ index }: { index: SearchIndex }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const theme = useThemeSwitch();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -72,7 +75,7 @@ export function CommandPalette({ index }: { index: SearchIndex }) {
         open={open}
         onOpenChange={setOpen}
         title="Jump to a pattern or problem"
-        description="Type a pattern or problem name, then press Enter."
+        description="Type a pattern or problem name, or an action like Toggle theme, then press Enter."
       >
         <Command filter={filter}>
           <CommandInput placeholder="Type a pattern or problem…" />
@@ -104,6 +107,22 @@ export function CommandPalette({ index }: { index: SearchIndex }) {
                   </CommandShortcut>
                 </CommandItem>
               ))}
+            </CommandGroup>
+            <CommandGroup heading="Actions">
+              <CommandItem
+                value="Toggle theme"
+                keywords={["dark", "light", "mode", "theme", theme.label]}
+                onSelect={() => {
+                  theme.toggle();
+                  setOpen(false);
+                }}
+              >
+                <SunMoon aria-hidden className="text-muted-foreground" />
+                Toggle theme
+                <CommandShortcut className="shrink-0 font-mono whitespace-nowrap">
+                  {theme.label}
+                </CommandShortcut>
+              </CommandItem>
             </CommandGroup>
           </CommandList>
         </Command>
