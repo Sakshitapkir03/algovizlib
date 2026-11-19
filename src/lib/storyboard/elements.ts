@@ -13,7 +13,8 @@ import { z } from "zod";
  * The registry and the catalog are typed so a missing entry is a compile error.
  *
  * Planned (not built yet): "staircase", "house-row", "coin-set", "box-arrow".
- * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`.
+ * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`; divide and conquer adds
+ * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter".
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -149,6 +150,122 @@ export const countArraySourceSchema = z.object({
   counts: countArrayShape.counts.optional(),
 });
 
+const rangeSchema = z.object({ from: index, to: index });
+
+const segmentsShape = {
+  ...baseElement,
+  type: z.literal("segments"),
+  rowId: nonEmpty,
+  /** How the row is split right now: inclusive ranges covering every position, left to right. */
+  groups: z.array(rangeSchema).min(1),
+  /** The group being worked on, drawn emphasized. */
+  active: rangeSchema.optional(),
+  /** Recursion depth of the active group (0 = the whole array), shown as "level d". */
+  depth: z.number().int().nonnegative().optional(),
+};
+export const segmentsElementSchema = z.object(segmentsShape);
+export const segmentsSourceSchema = z.object({
+  ...segmentsShape,
+  /** Omit groups (and active/depth) to take the bound step's split. */
+  groups: segmentsShape.groups.optional(),
+});
+
+const splitTreeShape = {
+  ...baseElement,
+  type: z.literal("split-tree"),
+  /** Every recursion level at once: `levels[d]` lists the groups' values at depth d, whole array first. */
+  levels: z
+    .array(z.array(z.array(z.number().finite()).min(1)).min(1))
+    .min(1)
+    .max(5),
+  label: nonEmpty.max(16).default("split"),
+};
+export const splitTreeElementSchema = z.object(splitTreeShape);
+export const splitTreeSourceSchema = z.object({
+  ...splitTreeShape,
+  /** Omit to take the bound step's split tree. */
+  levels: splitTreeShape.levels.optional(),
+});
+
+const mergeBufferShape = {
+  ...baseElement,
+  type: z.literal("merge-buffer"),
+  rowId: nonEmpty,
+  /** First row position the buffer lines up under; it covers `values.length` positions. */
+  from: index,
+  /** The merged output so far; `null` slots are not written yet. */
+  values: z.array(z.number().finite().nullable()).min(1),
+  /** The slot written by this step. */
+  taken: index.optional(),
+  label: nonEmpty.max(16).default("merged"),
+};
+export const mergeBufferElementSchema = z.object(mergeBufferShape);
+export const mergeBufferSourceSchema = z.object({
+  ...mergeBufferShape,
+  /** Omit from/values (and taken) to take the bound step's buffer. */
+  from: index.optional(),
+  values: mergeBufferShape.values.optional(),
+});
+
+const partitionShape = {
+  ...baseElement,
+  type: z.literal("partition"),
+  rowId: nonEmpty,
+  /** The pivot's position. */
+  pivot: index,
+  /** The partition line sits just before this position (positions `from`…boundary-1 are smaller than the pivot). */
+  boundary: index,
+  /** The range being partitioned (inclusive); bars outside it are dimmed. */
+  from: index,
+  to: index,
+  label: nonEmpty.max(16).default("pivot"),
+};
+export const partitionElementSchema = z.object(partitionShape);
+export const partitionSourceSchema = z.object({
+  ...partitionShape,
+  /** Omit pivot/boundary/from/to to take them from the bound step. */
+  pivot: index.optional(),
+  boundary: index.optional(),
+  from: index.optional(),
+  to: index.optional(),
+});
+
+const heapTreeShape = {
+  ...baseElement,
+  type: z.literal("heap-tree"),
+  /** The array drawn as a binary tree (children of i at 2i + 1 and 2i + 2): the same values as the bar-row. */
+  values: z.array(z.number().finite()).min(1).max(7),
+  /** Positions 0…heapSize-1 are in the heap; the rest are faded (already sorted). */
+  heapSize: z.number().int().nonnegative(),
+  /** The parent and child being compared, in that order. */
+  compare: z.tuple([index, index]).optional(),
+  /** Nodes that just traded places (same moves as the bars). */
+  moves: z.array(moveSchema).optional(),
+};
+export const heapTreeElementSchema = z.object(heapTreeShape);
+export const heapTreeSourceSchema = z.object({
+  ...heapTreeShape,
+  /** Omit values/heapSize (and compare/moves) to take them from the bound step, or the trace's row if unbound. */
+  values: heapTreeShape.values.optional(),
+  heapSize: heapTreeShape.heapSize.optional(),
+});
+
+const counterShape = {
+  ...baseElement,
+  type: z.literal("counter"),
+  /** What is being counted, e.g. "inversions". */
+  label: nonEmpty.max(24),
+  value: z.number().int(),
+  /** How much this step added, shown as "+3". */
+  delta: z.number().int().optional(),
+};
+export const counterElementSchema = z.object(counterShape);
+export const counterSourceSchema = z.object({
+  ...counterShape,
+  /** Omit value/delta to take the bound step's running total. */
+  value: counterShape.value.optional(),
+});
+
 const pointerShape = {
   ...baseElement,
   type: z.literal("pointer"),
@@ -259,6 +376,12 @@ export const elementSchemas = [
   sortedRegionElementSchema,
   heldValueElementSchema,
   countArrayElementSchema,
+  segmentsElementSchema,
+  splitTreeElementSchema,
+  mergeBufferElementSchema,
+  partitionElementSchema,
+  heapTreeElementSchema,
+  counterElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -272,6 +395,12 @@ export const elementSourceSchemas = [
   sortedRegionSourceSchema,
   heldValueSourceSchema,
   countArraySourceSchema,
+  segmentsSourceSchema,
+  splitTreeSourceSchema,
+  mergeBufferSourceSchema,
+  partitionSourceSchema,
+  heapTreeSourceSchema,
+  counterSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -292,6 +421,12 @@ export type ResultElement = ElementOf<"result">;
 export type SortedRegionElement = ElementOf<"sorted-region">;
 export type HeldValueElement = ElementOf<"held-value">;
 export type CountArrayElement = ElementOf<"count-array">;
+export type SegmentsElement = ElementOf<"segments">;
+export type SplitTreeElement = ElementOf<"split-tree">;
+export type MergeBufferElement = ElementOf<"merge-buffer">;
+export type PartitionElement = ElementOf<"partition">;
+export type HeapTreeElement = ElementOf<"heap-tree">;
+export type CounterElement = ElementOf<"counter">;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
 export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

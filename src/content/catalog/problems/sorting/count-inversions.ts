@@ -13,6 +13,14 @@ Return the number of inversions in \`nums\`. Equal values do not form an inversi
 Checking every pair is O(n²). This problem is about learning to piggyback on merge sort: count the inversions while merging, in O(n log n).`,
   examples: [
     {
+      input: "nums = [5, 2, 8, 1, 6, 3]",
+      output: "8",
+      explanation:
+        "The inverted pairs are (5, 2), (5, 1), (5, 3), (2, 1), (8, 1), (8, 6), (8, 3), and (6, 3).",
+      args: [[5, 2, 8, 1, 6, 3]],
+      expected: 8,
+    },
+    {
       input: "nums = [4, 1, 3, 2, 5]",
       output: "4",
       explanation: "The inverted pairs are (4, 1), (4, 3), (4, 2), and (3, 2).",

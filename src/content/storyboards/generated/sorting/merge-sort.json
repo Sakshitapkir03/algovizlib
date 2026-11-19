@@ -1,0 +1,507 @@
+{
+  "id": "sorting-merge-sort",
+  "title": "Merge Sort: Stacking Exam Papers by Score",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Split the pile until every paper stands alone, then merge sorted piles by always taking the lower top paper.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A teacher has six marked quizzes scoring 15, 3, 11, 8, 1, and 6 points and wants one pile, lowest score first. She splits the pile in half again and again until every paper is on its own, then merges small sorted piles into bigger ones by looking only at the top paper of each and taking the lower.",
+    "mapping": [
+      {
+        "real": "A quiz paper's score",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "Splitting a pile in half",
+        "abstract": "mid = (lo + hi) / 2, recurse on both halves"
+      },
+      {
+        "real": "The top paper of each sorted pile",
+        "abstract": "the fronts a[i] and a[j] of the two halves"
+      },
+      {
+        "real": "The new merged pile",
+        "abstract": "the merge buffer, copied back into a[lo..hi]"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "divide and conquer",
+    "recursion",
+    "stable"
+  ],
+  "takeaway": {
+    "pattern": "Merge sort (divide and conquer)",
+    "summary": "Split the array in half until every piece has one value, then merge sorted halves back together by repeatedly taking the smaller of the two front values. There are about log n levels of splitting and each level's merges touch every value once.",
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "You need a guaranteed O(n log n) sort, even in the worst case",
+      "Equal values must keep their original order (merge sort is stable)",
+      "Sorting linked lists or data too big for memory, merged in sorted runs"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/merge-sort",
+    "args": [
+      [
+        15,
+        3,
+        11,
+        8,
+        1,
+        6
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v4",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T17:15:19.369Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A teacher has six marked quizzes scoring 15, 3, 11, 8, 1, and 6 points. She wants them in one pile with the lowest score first, and she'd like to do it without comparing every paper against every other one.",
+      "caption": "Six marked quizzes need to go in one pile, lowest score first",
+      "durationInFrames": 516,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Lowest score first, highest last"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Holding each paper up against every other one means 15 comparisons for six papers. For a class of 100 that grows to 4,950, because the work grows with the square of the pile.",
+      "caption": "Checking every pair takes 15 comparisons here, and 4,950 for 100 papers",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Every pair, 100 papers",
+          "value": "4,950 comparisons",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "split",
+      "narration": "Instead, she splits the pile in half, then splits each half again, until every paper sits on its own. One paper on its own is already a sorted pile, so the real work is putting sorted piles back together.",
+      "caption": "Split the pile in half, and again, until every paper stands alone",
+      "durationInFrames": 504,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "overview",
+          "enterAt": 0.15,
+          "type": "split-tree",
+          "label": "splits"
+        }
+      ]
+    },
+    {
+      "id": "merge-detail",
+      "narration": "15 and 3 have already merged into a little pile, 3 then 15. Now that pile merges with the 11. She only ever looks at the top paper of each pile: 3 against 11, and 3 is lower, so 3 goes onto the new pile first.",
+      "caption": "Merge two sorted piles: compare the top papers, take the lower",
+      "durationInFrames": 588,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "fronts",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left top",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right top",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "buffer",
+          "enterAt": 0.3,
+          "type": "merge-buffer",
+          "rowId": "row",
+          "label": "new pile"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "take 3"
+        }
+      ]
+    },
+    {
+      "id": "merge-next",
+      "narration": "The left pile's top paper is now 15. Against 11 it loses, so 11 goes next. Each comparison places one paper for good, and nobody ever looks below the top of a pile.",
+      "caption": "15 is higher than 11, so 11 goes on the new pile next",
+      "durationInFrames": 432,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "fronts",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left top",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right top",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "buffer",
+          "enterAt": 0.3,
+          "type": "merge-buffer",
+          "rowId": "row",
+          "label": "new pile"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "take 11"
+        }
+      ]
+    },
+    {
+      "id": "left-merged",
+      "narration": "The right pile is empty, so the 15 simply goes last without another comparison. The new pile replaces the old papers: the left half now reads 3, 11, 15.",
+      "caption": "The left half is one sorted pile: 3, 11, 15",
+      "durationInFrames": 384,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "note",
+          "enterAt": 0.5,
+          "type": "callout",
+          "text": "One sorted pile of three",
+          "anchor": {
+            "rowId": "row",
+            "index": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "right-merged",
+      "narration": "The right half goes through exactly the same steps: 8 and 1 merge into 1 then 8, and that pile merges with the 6. Now there are just two sorted piles of three papers each.",
+      "caption": "The right half gets the same treatment and becomes 1, 6, 8",
+      "durationInFrames": 456,
+      "traceStep": 14,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        }
+      ]
+    },
+    {
+      "id": "final-merge",
+      "narration": "The last merge works the same way on the two big piles. The tops are 3 and 1, so the 1 point quiz goes first. Every comparison after this one also places exactly one paper.",
+      "caption": "The final merge: 3 against 1, and the 1 goes first",
+      "durationInFrames": 456,
+      "traceStep": 15,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "fronts",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left top",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right top",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "buffer",
+          "enterAt": 0.3,
+          "type": "merge-buffer",
+          "rowId": "row",
+          "label": "new pile"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "take 1"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "She keeps taking the lower top paper: 3, then 6 and 8, and when the right pile runs out, 11 and 15 follow. The whole pile is in order, lowest score first.",
+      "caption": "The pile is sorted: 1, 3, 6, 8, 11, 15",
+      "durationInFrames": 420,
+      "traceStep": 20,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Quiz A",
+            "Quiz B",
+            "Quiz C",
+            "Quiz D",
+            "Quiz E",
+            "Quiz F"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "sorted"
+        },
+        {
+          "id": "result",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Sorted pile",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Back to arrays: each paper is a value a[i], a pile is a subarray, and the top papers are the fronts a[i] and a[j] of two sorted halves. Halving gives about log n levels, and each level's merges touch every value once, so merge sort takes O(n log n) time with an O(n) buffer.",
+      "caption": "The pattern: merge sort, O(n log n) time, O(n) extra space",
+      "durationInFrames": 684,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]",
+            "a[5]"
+          ]
+        },
+        {
+          "id": "map",
+          "enterAt": 0.3,
+          "type": "callout",
+          "text": "Pile = subarray, top paper = front of a half, new pile = merge buffer"
+        }
+      ]
+    }
+  ]
+}

@@ -54,6 +54,14 @@ export function buildDraft(problemKey: string): Draft {
     if (step.held)
       elements.push({ id: "held", type: "held-value", rowId: "row", label: "holding", enterAt: 0 });
     if (step.counts) elements.push({ id: "tally", type: "count-array", label: "count", enterAt: 0 });
+    if (step.segments) elements.push({ id: "groups", type: "segments", rowId: "row", enterAt: 0 });
+    if (step.splitTree) elements.push({ id: "overview", type: "split-tree", label: "split", enterAt: 0 });
+    if (step.buffer)
+      elements.push({ id: "buffer", type: "merge-buffer", rowId: "row", label: "merged", enterAt: 0 });
+    if (step.pivot !== undefined)
+      elements.push({ id: "partition", type: "partition", rowId: "row", label: "pivot", enterAt: 0 });
+    if (step.heapSize !== undefined) elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
+    if (step.counter) elements.push({ id: "count", type: "counter", label: "inversions", enterAt: 0 });
     if (step.equation)
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });

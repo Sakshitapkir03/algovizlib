@@ -152,6 +152,86 @@ export const sceneSchema = z
           if (scene.elements.filter((e) => e.type === "count-array").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one count-array" });
           break;
+        case "segments": {
+          let next = 0;
+          el.groups.forEach((g, k) => {
+            checkIndex(el.rowId, g.to, [...path, "groups", k, "to"]);
+            if (g.from !== next || g.from > g.to)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "groups", k],
+                message: "groups must be in order, without gaps or overlaps, each with from ≤ to",
+              });
+            next = g.to + 1;
+          });
+          if (rows.get(el.rowId) !== undefined && next !== rows.get(el.rowId))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "groups"],
+              message: "groups must cover the whole row",
+            });
+          if (el.active) {
+            checkIndex(el.rowId, el.active.to, [...path, "active", "to"]);
+            if (el.active.from > el.active.to)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "active"],
+                message: "from must not be after to",
+              });
+          }
+          break;
+        }
+        case "merge-buffer":
+          checkIndex(el.rowId, el.from + el.values.length - 1, [...path, "values"]);
+          if (el.taken !== undefined && el.taken >= el.values.length)
+            ctx.addIssue({ code: "custom", path: [...path, "taken"], message: "taken is out of range" });
+          break;
+        case "partition":
+          checkIndex(el.rowId, el.pivot, [...path, "pivot"]);
+          checkIndex(el.rowId, el.to, [...path, "to"]);
+          if (
+            el.from > el.to ||
+            el.boundary < el.from ||
+            el.boundary > el.to ||
+            el.pivot < el.from ||
+            el.pivot > el.to
+          )
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: "from ≤ boundary ≤ to and from ≤ pivot ≤ to must hold",
+            });
+          break;
+        case "heap-tree": {
+          const n = el.values.length;
+          if (el.heapSize > n)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "heapSize"],
+              message: `heapSize is more than ${n}`,
+            });
+          if (
+            el.compare &&
+            (el.compare[0] >= n ||
+              el.compare[1] >= n ||
+              el.compare[1] < 2 * el.compare[0] + 1 ||
+              el.compare[1] > 2 * el.compare[0] + 2)
+          )
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "compare"],
+              message: "compare must be a parent and one of its children, both in range",
+            });
+          if (el.moves?.some((m) => m.from >= n || m.to >= n))
+            ctx.addIssue({ code: "custom", path: [...path, "moves"], message: "moves are out of range" });
+          if (scene.elements.filter((e) => e.type === "heap-tree").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one heap-tree" });
+          break;
+        }
+        case "split-tree":
+          if (scene.elements.filter((e) => e.type === "split-tree").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one split-tree" });
+          break;
         default:
           break;
       }

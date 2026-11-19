@@ -2,8 +2,12 @@
 import { loadStoryboard, type Storyboard } from "@/lib/storyboard";
 
 import sortingBubbleSort from "./sorting/bubble-sort.json";
+import sortingCountInversions from "./sorting/count-inversions.json";
 import sortingCountingSort from "./sorting/counting-sort.json";
+import sortingHeapSort from "./sorting/heap-sort.json";
 import sortingInsertionSort from "./sorting/insertion-sort.json";
+import sortingMergeSort from "./sorting/merge-sort.json";
+import sortingQuickSort from "./sorting/quick-sort.json";
 import sortingSelectionSort from "./sorting/selection-sort.json";
 import twoPointersContainerWithMostWater from "./two-pointers/container-with-most-water.json";
 import twoPointersThreeSum from "./two-pointers/three-sum.json";
@@ -13,8 +17,12 @@ import twoPointersValidPalindrome from "./two-pointers/valid-palindrome.json";
 /** Generated storyboards keyed by catalog problem ("pattern/slug"). */
 export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "sorting/bubble-sort": loadStoryboard(sortingBubbleSort),
+  "sorting/count-inversions": loadStoryboard(sortingCountInversions),
   "sorting/counting-sort": loadStoryboard(sortingCountingSort),
+  "sorting/heap-sort": loadStoryboard(sortingHeapSort),
   "sorting/insertion-sort": loadStoryboard(sortingInsertionSort),
+  "sorting/merge-sort": loadStoryboard(sortingMergeSort),
+  "sorting/quick-sort": loadStoryboard(sortingQuickSort),
   "sorting/selection-sort": loadStoryboard(sortingSelectionSort),
   "two-pointers/container-with-most-water": loadStoryboard(twoPointersContainerWithMostWater),
   "two-pointers/three-sum": loadStoryboard(twoPointersThreeSum),

@@ -1,0 +1,508 @@
+{
+  "id": "sorting-count-inversions",
+  "title": "Count Inversions: Where Two Movie Rankings Disagree",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Count every pair two friends rank in opposite order by merge sorting, adding a whole batch of disagreements each time a value jumps ahead of the left half.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Maya lists six movies from her favorite down. Next to each one is where Leo placed it on his own top-ten list: 5, 2, 8, 1, 6, and 3, where a lower number means Leo likes it more. Every pair where Maya prefers the first movie but Leo prefers the second is a disagreement, and we want to count them all.",
+    "mapping": [
+      {
+        "real": "Leo's place for the movie in Maya's spot i",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "A pair the friends rank in opposite order",
+        "abstract": "an inversion: i < j and a[i] > a[j]"
+      },
+      {
+        "real": "Splitting Maya's list into halves",
+        "abstract": "merge sort's recursive split"
+      },
+      {
+        "real": "Movies still waiting in the left half",
+        "abstract": "mid - i + 1 values, all larger than a[j]"
+      },
+      {
+        "real": "The disagreement tally",
+        "abstract": "the running inversion count"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "merge sort",
+    "divide and conquer",
+    "counting"
+  ],
+  "takeaway": {
+    "pattern": "Count inversions with merge sort",
+    "summary": "Merge sort the array and count while merging: when a value from the right half is taken before the left half is used up, every value still waiting on the left is bigger and came earlier, so add that many inversions at once. The halves' own inversions are counted the same way, one level down.",
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Measuring how far a list is from sorted",
+      "Comparing two rankings of the same items (how much they disagree)",
+      "Any count of pairs i < j with a[i] > a[j], or a similar pair condition"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/count-inversions",
+    "args": [
+      [
+        5,
+        2,
+        8,
+        1,
+        6,
+        3
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v4",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T17:15:19.374Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Maya lists six movies from her favorite down. Next to each is where Leo placed it on his own top-ten list: 5, 2, 8, 1, 6, and 3, lower meaning he likes it more. Whenever Maya prefers one movie but Leo prefers the other, that pair is a disagreement.",
+      "caption": "Two friends rank the same six movies: how often do they disagree?",
+      "durationInFrames": 624,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "rule",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "A bigger number before a smaller one is a disagreement"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "We could check every pair of movies one by one: 15 checks for six movies, but 4,950 for a hundred. Counting disagreements in bunches, instead of one pair at a time, needs a smarter approach.",
+      "caption": "Checking every pair: 15 checks here, 4,950 for 100 movies",
+      "durationInFrames": 456,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Every pair, 100 movies",
+          "value": "4,950 checks",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "split",
+      "narration": "We'll sort Leo's numbers with merge sort and count as we go. First the list splits in half, and each half splits again, until every movie stands alone. A single movie can't disagree with itself, so the tally starts at zero.",
+      "caption": "Split Maya's list in half, and again, down to single movies",
+      "durationInFrames": 528,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "overview",
+          "enterAt": 0.15,
+          "type": "split-tree",
+          "label": "splits"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0.3,
+          "type": "counter",
+          "label": "disagreements"
+        }
+      ]
+    },
+    {
+      "id": "halves",
+      "narration": "Sorting each half counts the disagreements inside it: 5 came before 2 in the left half, and 6 came before 3 in the right half. That's 2 so far, and both halves are now sorted: 2, 5, 8 and 1, 3, 6.",
+      "caption": "Sorting each half finds 2 disagreements: 5 before 2, and 6 before 3",
+      "durationInFrames": 540,
+      "traceStep": 14,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0.3,
+          "type": "counter",
+          "label": "disagreements"
+        }
+      ]
+    },
+    {
+      "id": "count-many",
+      "narration": "Now merge the halves. The fronts are 2 and 1, and 1 is smaller, so it goes first. But 2, 5, and 8 are all still waiting on the left: each is bigger and came earlier, so that's 3 disagreements counted in a single step, without checking them one by one.",
+      "caption": "1 is taken before all three left values: 3 disagreements at once",
+      "durationInFrames": 648,
+      "traceStep": 15,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "fronts",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left front",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right front",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "buffer",
+          "enterAt": 0.3,
+          "type": "merge-buffer",
+          "rowId": "row",
+          "label": "merged"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "+3 at once"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0.4,
+          "type": "counter",
+          "label": "disagreements"
+        }
+      ]
+    },
+    {
+      "id": "take-left",
+      "narration": "Next the fronts are 2 and 3. The left value is smaller, so 2 goes next, and it jumps ahead of nothing: no new disagreements. Taking from the left never adds to the tally.",
+      "caption": "2 against 3: the left value is smaller, so nothing is added",
+      "durationInFrames": 444,
+      "traceStep": 16,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "fronts",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left front",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right front",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "buffer",
+          "enterAt": 0.3,
+          "type": "merge-buffer",
+          "rowId": "row",
+          "label": "merged"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "in order"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0.4,
+          "type": "counter",
+          "label": "disagreements"
+        }
+      ]
+    },
+    {
+      "id": "count-two",
+      "narration": "Now 5 faces 3. The 3 from the right is smaller, and the left still holds 5 and 8, so it jumps ahead of both: 2 more disagreements, 7 in total.",
+      "caption": "3 jumps ahead of 5 and 8: two more disagreements",
+      "durationInFrames": 408,
+      "traceStep": 17,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "segments",
+          "rowId": "row"
+        },
+        {
+          "id": "fronts",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "left front",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "right front",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "j"
+        },
+        {
+          "id": "buffer",
+          "enterAt": 0.3,
+          "type": "merge-buffer",
+          "rowId": "row",
+          "label": "merged"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "+2 at once"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0.4,
+          "type": "counter",
+          "label": "disagreements"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "5 goes in with nothing added, then 6 jumps ahead of the 8 for one last disagreement, and the 8 follows. Maya and Leo disagree on 8 pairs of movies, and Leo's numbers come out sorted as a bonus.",
+      "caption": "The merge finishes with 6 jumping the 8: 8 disagreements in all",
+      "durationInFrames": 504,
+      "traceStep": 21,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "movie 1",
+            "movie 2",
+            "movie 3",
+            "movie 4",
+            "movie 5",
+            "movie 6"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "sorted"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0.2,
+          "type": "counter",
+          "label": "disagreements"
+        },
+        {
+          "id": "result",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Disagreements",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Back to arrays: each disagreement is an inversion, a pair with i before j but a[i] greater than a[j]. When a merge takes a[j] from the right half, the mid minus i plus 1 values still waiting on the left are all inversions with it, counted at once. That keeps the whole count at merge sort's O(n log n).",
+      "caption": "The pattern: count inversions during merge sort, O(n log n)",
+      "durationInFrames": 744,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]",
+            "a[5]"
+          ]
+        },
+        {
+          "id": "map",
+          "enterAt": 0.3,
+          "type": "callout",
+          "text": "Disagreement = inversion; taking from the right adds mid - i + 1 at once"
+        }
+      ]
+    }
+  ]
+}

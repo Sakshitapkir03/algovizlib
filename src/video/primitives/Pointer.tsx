@@ -28,7 +28,7 @@ export function Pointer({ element }: { element: PointerElement }) {
   const color = element.tone === "primary" ? palette.primary : palette.secondary;
   const textColor = element.tone === "primary" ? palette.primaryText : palette.secondaryText;
   const below = element.placement === "below";
-  const top = below ? layout.top + layout.cardHeight + 8 : layout.top - 8 - ARROW - LABEL_HEIGHT;
+  const top = below ? layout.pointerTop : layout.top - 8 - ARROW - LABEL_HEIGHT;
 
   const arrow = (
     <div

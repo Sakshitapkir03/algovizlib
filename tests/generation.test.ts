@@ -337,7 +337,11 @@ describe("selectTargets", () => {
       "sorting/bubble-sort",
       "sorting/selection-sort",
       "sorting/insertion-sort",
+      "sorting/merge-sort",
+      "sorting/quick-sort",
+      "sorting/heap-sort",
       "sorting/counting-sort",
+      "sorting/count-inversions",
       "two-pointers/valid-palindrome",
       "two-pointers/container-with-most-water",
       "two-pointers/trapping-rain-water",
@@ -535,7 +539,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v3");
+    expect(currentPrompts.version).toBe("storyboard-v4");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

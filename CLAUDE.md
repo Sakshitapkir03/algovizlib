@@ -215,8 +215,8 @@ Two forms of the same schema:
 - **Source** (`storyboardSourceSchema`, `StoryboardInput`): what files and the model write. With a trace, the
   state-carrying values may be **omitted** and come from the scene's bound step: row values (`item-row.items` /
   `bar-row.bars`, with optional `labels`), pointer `index` (and `fromIndex`, from the previous bound step), equation
-  `terms`/`operator`/`result`/`comparison`/`verdictTone`, highlight `indices`, bar `fill`/`water`, and a `result`'s `value` when
-  `showsAnswer: true`. Any value that _is_ written is kept and checked against the trace.
+  `terms`/`operator`/`result`/`comparison`/`verdictTone`, highlight `indices`, bar `fill`/`water`, the sorting and divide-and-conquer
+  primitives' state (see Primitives), and a `result`'s `value` when `showsAnswer: true`. Any value that _is_ written is kept and checked against the trace.
 - **Resolved** (`storyboardSchema`, `Storyboard`): every value present. `resolveStoryboard()` produces it;
   renderers and the validator only see this form.
 
@@ -231,18 +231,24 @@ Two forms of the same schema:
 `Element` is a Zod discriminated union on `type`. Every element has `id` and `enterAt` (0–1, a **fraction** of the
 scene's duration, so timing survives the switch to audio-driven lengths).
 
-| type            | purpose                                                                                                                                                              | slot   |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `item-row`      | labeled cards with values (product + price, `a[i]` + value, a character)                                                                                             | canvas |
-| `bar-row`       | vertical bars on a baseline; optional container `fill`, per-bar `water`, `moves` (bars slide; a swap arcs), `empty` (dashed slots), `maxValue` (one scale per video) | canvas |
-| `pointer`       | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer                                                                              | canvas |
-| `highlight`     | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)                                                                    | canvas |
-| `callout`       | speech bubble; anchored to an item or floating at the top                                                                                                            | canvas |
-| `equation`      | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                   | bottom |
-| `result`        | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                        | bottom |
-| `sorted-region` | positions in final order: shaded band + baseline segment, "✓ sorted" label beside the row                                                                            | canvas |
-| `held-value`    | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                        | canvas |
-| `count-array`   | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                             | canvas |
+| type            | purpose                                                                                                                                                               | slot   |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `item-row`      | labeled cards with values (product + price, `a[i]` + value, a character)                                                                                              | canvas |
+| `bar-row`       | vertical bars on a baseline; optional container `fill`, per-bar `water`, `moves` (bars slide; a swap arcs), `empty` (dashed slots), `maxValue` (one scale per video)  | canvas |
+| `pointer`       | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer                                                                               | canvas |
+| `highlight`     | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)                                                                     | canvas |
+| `callout`       | speech bubble; anchored to an item or floating at the top                                                                                                             | canvas |
+| `equation`      | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                    | bottom |
+| `result`        | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                         | bottom |
+| `sorted-region` | positions in final order: shaded band + baseline segment, "✓ sorted" label beside the row                                                                             | canvas |
+| `held-value`    | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                         | canvas |
+| `count-array`   | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                              | canvas |
+| `segments`      | brackets under the bars for the current split (groups drawn apart); the active group gets a thick bracket, a faint band, and "▶ level d"                              | canvas |
+| `split-tree`    | static overview of every split level at once (whole array → single values), each group a small box of its values                                                      | bottom |
+| `merge-buffer`  | merge output so far, one slot per position under the range being merged; the slot just written gets a thick border and "▲ new"                                        | canvas |
+| `partition`     | quick sort: "◆ pivot" tag above the pivot bar, dashed boundary with "◀ smaller", bars outside the range dimmed                                                        | canvas |
+| `heap-tree`     | the same array as a binary tree (children 2i+1, 2i+2) on the right; compared parent/child ringed and labeled, nodes past the heap dashed with ✓, moves match the bars | canvas |
+| `counter`       | a labeled running total with this step's "+N" (inversions here; reusable for swaps, comparisons…)                                                                     | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -281,6 +287,17 @@ otherwise neutral; insertion: shift neutral, found its place positive). The layo
 above the bars (anchored callouts sit above that, via `RowLayout.reservedTop`) and shortens the bars when a scene
 has a count-array.
 
+**Divide and conquer** (merge, quick, heap sort, Count Inversions) added step state for the recursion, all optional:
+`range`/`depth` (the subarray being worked on), `segments` (the current split), `splitTree` (every level, for the
+overview), `buffer` (a merge in progress), `pivot`/`boundary`, `heapSize`/`compare`, and `counter`. Merge sort and
+Count Inversions share one runner (`traces/sorting/merge-steps.ts`): a taken front stays visible in its own step and
+leaves its slot (dashed) from the next; the merged step's `moves` slide every value to its new slot. The layout
+spreads groups apart and lowers the pointers under the brackets (`RowLayout.pointerTop`), puts the merge buffer under
+the pointers (`panelTop`), reserves a strip above the bars for the pivot tag, and with a `heap-tree` gives the bars a
+narrow left column (`HEAP_BARS`) so the tree gets most of the stage (`HEAP_TREE_REGION`) and stays readable when the
+player is phone-sized. Floating callouts overlap the tree, so heap scenes anchor callouts to the bars. Each video fit
+the 10-scene limit, so `MAX_SCENES` is unchanged.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -293,7 +310,9 @@ input and returns a `Trace` (types in `traces/types.ts`):
 Trace = {
   problem: "pattern/slug", row: { values, display: "cards" | "bars" }, pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
-           values?, moves?, empty?, sorted?, held?, counts? }[],   // the last six: algorithms that rearrange the array
+           values?, moves?, empty?, sorted?, held?, counts?,        // algorithms that rearrange the array
+           range?, depth?, segments?, splitTree?, buffer?, pivot?, boundary?, heapSize?, compare?, counter? }[],
+                                                                  // divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
@@ -316,8 +335,8 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   by bound pointers/highlights hold the trace's values; bound pointers sit where the step says (and slide from where
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
-  step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, and tallies
-  match the step; `result.indices` equal
+  step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), and counters match the step; `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -437,7 +456,9 @@ The script fails fast, naming the missing variable, if the selected provider's k
 
 Two Pointers is `"analogy"`: a price-sorted shelf where you and a friend spend a $50 gift card exactly. The sorting
 videos each use a different analogy: cousins lining up by age (bubble), parcels loaded lightest first (selection), a
-hand of playing cards (insertion), and tallying star ratings (counting).
+hand of playing cards (insertion), tallying star ratings (counting), merging stacks of marked quizzes (merge), a
+librarian shelving a series around one volume (quick), an org chart whose top person retires (heap), and two
+friends' movie rankings (Count Inversions).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

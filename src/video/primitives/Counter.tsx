@@ -1,0 +1,61 @@
+import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+
+import type { CounterElement } from "@/lib/storyboard";
+
+import { enterProgress, motion } from "../animation";
+import { useScene } from "../context";
+import { FONT_MONO, FONT_SANS } from "../theme";
+
+/**
+ * A running total: label, value, and what this step added ("+3"), which pops in after the card. Reusable for any
+ * count a trace keeps (inversions, swaps, comparisons). A zero change is shown as "+0" in muted text.
+ */
+export function Counter({ element }: { element: CounterElement }) {
+  const { palette, reducedMotion } = useScene();
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const p = enterProgress(frame, fps, reducedMotion);
+  const pop = enterProgress(frame, fps, reducedMotion, 14);
+  const added = element.delta !== undefined && element.delta !== 0;
+  const scale = reducedMotion ? 1 : interpolate(pop, [0, 0.6, 1], [0.6, 1.15, 1]);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        padding: "8px 22px",
+        borderRadius: 14,
+        border: `2px solid ${palette.border}`,
+        background: palette.surface,
+        opacity: p,
+        transform: `translateY(${motion((1 - p) * 10, reducedMotion)}px)`,
+      }}
+    >
+      <span style={{ fontFamily: FONT_SANS, fontSize: 22, fontWeight: 700, color: palette.textMuted }}>
+        {element.label}
+      </span>
+      <span style={{ fontFamily: FONT_MONO, fontSize: 40, fontWeight: 700, color: palette.text }}>
+        {element.value}
+      </span>
+      {element.delta !== undefined ? (
+        <span
+          style={{
+            fontFamily: FONT_MONO,
+            fontSize: 26,
+            fontWeight: 700,
+            padding: "2px 12px",
+            borderRadius: 999,
+            border: `2px solid ${added ? palette.primary : palette.border}`,
+            color: added ? palette.primary : palette.textMuted,
+            opacity: pop,
+            transform: `scale(${scale})`,
+          }}
+        >
+          +{element.delta}
+        </span>
+      ) : null}
+    </div>
+  );
+}

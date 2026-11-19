@@ -27,8 +27,8 @@ export function applyOperator(operator: keyof typeof OPERATORS, terms: readonly 
 /**
  * Turn an authored (or model-written) storyboard into the fully specified form the renderer and validator use.
  * Values the author omitted are taken from the trace: rows from the bound step's `values` (else `trace.row`), and
- * pointers, equations, highlights, fills, water, moves, empty slots, sorted regions, held values, and tallies from
- * the scene's bound step. Values the author did write are kept as written; the validator
+ * pointers, equations, highlights, fills, water, moves, empty slots, sorted regions, held values, tallies, groups,
+ * split trees, merge buffers, partitions, heaps, and counters from the scene's bound step. Values the author did write are kept as written; the validator
  * checks them against the trace. Returns issues instead of throwing, so the generator can send them back.
  */
 export function resolveStoryboard(source: StoryboardSource): ResolveResult {
@@ -58,6 +58,15 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
         elementId: el.id,
         field: what,
         message: `${what} is missing and can't be taken from the trace${step ? "" : " (the scene has no traceStep)"}`,
+      });
+    const noState = (el: ElementSource, field: string, state: string) =>
+      issues.push({
+        sceneId: scene.id,
+        elementId: el.id,
+        field,
+        message: step
+          ? `Trace step ${scene.traceStep} has no ${state}; remove the ${el.type} or bind another step`
+          : `A ${el.type} without ${field} needs a scene.traceStep`,
       });
 
     const elements = scene.elements.map((el): ElementSource | Element => {
@@ -214,6 +223,73 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             counts: el.counts ?? step.counts.counts,
             active: el.active ?? step.counts.active,
           };
+        }
+        case "segments": {
+          if (el.groups) return el;
+          if (!step?.segments) return (noState(el, "groups", "split into groups"), el);
+          return {
+            ...el,
+            groups: step.segments,
+            active: el.active ?? step.range,
+            depth: el.depth ?? step.depth,
+          };
+        }
+        case "split-tree": {
+          if (el.levels) return el;
+          if (!step?.splitTree) return (noState(el, "levels", "split tree"), el);
+          return { ...el, levels: step.splitTree };
+        }
+        case "merge-buffer": {
+          if (el.from !== undefined && el.values) return el;
+          if (!step?.buffer) return (noState(el, "values", "merge buffer"), el);
+          return {
+            ...el,
+            from: el.from ?? step.buffer.from,
+            values: el.values ?? step.buffer.values,
+            taken: el.taken ?? step.buffer.taken,
+          };
+        }
+        case "partition": {
+          if (
+            el.pivot !== undefined &&
+            el.boundary !== undefined &&
+            el.from !== undefined &&
+            el.to !== undefined
+          )
+            return el;
+          if (step?.pivot === undefined || !step.range) return (noState(el, "pivot", "pivot"), el);
+          return {
+            ...el,
+            pivot: el.pivot ?? step.pivot,
+            boundary: el.boundary ?? step.boundary ?? step.pivot,
+            from: el.from ?? step.range.from,
+            to: el.to ?? step.range.to,
+          };
+        }
+        case "heap-tree": {
+          const values = el.values ?? step?.values ?? trace?.row.values;
+          if (!values) return (missing(el, "values"), el);
+          if (values.some((v) => typeof v !== "number")) {
+            issues.push({
+              sceneId: scene.id,
+              elementId: el.id,
+              field: "values",
+              message: "This trace's values can't be drawn as a heap",
+            });
+            return el;
+          }
+          return {
+            ...el,
+            values: values as number[],
+            heapSize: el.heapSize ?? step?.heapSize ?? values.length,
+            compare: el.compare ?? step?.compare,
+            moves: el.moves ?? step?.moves,
+          };
+        }
+        case "counter": {
+          if (el.value !== undefined) return el;
+          if (!step?.counter) return (noState(el, "value", "running total"), el);
+          return { ...el, value: step.counter.value, delta: el.delta ?? step.counter.delta };
         }
       }
     });

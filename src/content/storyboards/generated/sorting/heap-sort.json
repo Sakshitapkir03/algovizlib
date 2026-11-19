@@ -1,0 +1,431 @@
+{
+  "id": "sorting-heap-sort",
+  "title": "Heap Sort: The Org Chart Where the Top Retires",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Arrange the list as an org chart where every manager outranks their reports, then retire the top person to the back of the line and repair the chart, again and again.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Six staff members with 5, 13, 2, 25, 7, and 17 years at a company stand in a line. The same line doubles as an org chart: the person in spot i manages the people in spots 2i + 1 and 2i + 2. Once every manager has more years than their reports, the most senior person is at the top. They retire to the back of the line, the chart shrinks by one, and it is repaired so the next most senior rises to the top.",
+    "mapping": [
+      {
+        "real": "Years at the company",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "The org chart",
+        "abstract": "the array viewed as a binary tree (children 2i + 1, 2i + 2)"
+      },
+      {
+        "real": "Every manager outranks their reports",
+        "abstract": "the max-heap property"
+      },
+      {
+        "real": "Retiring the top person to the back",
+        "abstract": "swap a[0] with a[end], shrink the heap"
+      },
+      {
+        "real": "A manager stepping down below a senior report",
+        "abstract": "sift-down: swap with the larger child"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "heap",
+    "in-place"
+  ],
+  "takeaway": {
+    "pattern": "Heap sort (max-heap, then extract the max)",
+    "summary": "Treat the array as a binary tree and sift parents down until every parent is at least as big as its children: a max-heap. Then repeatedly swap the root to the end of the heap, shrink the heap by one, and sift the new root down. Each sift-down climbs at most the tree's height, log n.",
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "You need O(n log n) in the worst case without any extra array",
+      "You need the largest (or smallest) items one at a time, like a priority queue",
+      "Memory is tight and stability doesn't matter"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/heap-sort",
+    "args": [
+      [
+        5,
+        13,
+        2,
+        25,
+        7,
+        17
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v4",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T16:53:51.937Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Six staff members with 5, 13, 2, 25, 7, and 17 years at the company stand in a line, and we want the line ordered by seniority. The trick is to read the same line as an org chart: whoever stands in spot i manages the people in spots 2i plus 1 and 2i plus 2.",
+      "caption": "Six staff, one line, and the same line read as an org chart",
+      "durationInFrames": 708,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0.2,
+          "type": "heap-tree"
+        },
+        {
+          "id": "same",
+          "enterAt": 0.5,
+          "type": "callout",
+          "text": "Same six people, two views",
+          "anchor": {
+            "rowId": "row",
+            "index": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "The simple way is to scan the whole line for the most senior person, move them out, and scan again. That's 21 looks for six people and 5,050 for a hundred. An org chart where every manager outranks their reports keeps the most senior person at the top instead.",
+      "caption": "Scanning everyone for the most senior each time: 21 looks, 5,050 for 100",
+      "durationInFrames": 624,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Scan every time, 100 people",
+          "value": "5,050 looks",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "sift-root",
+      "narration": "We fix the chart from the lowest managers up. The two small teams were already repaired: 17 moved above 2, and 25 moved above 13. Now the top: 5 years against a report with 25, so they trade places.",
+      "caption": "Fix the chart from the bottom up: 5 at the top is outranked by 25",
+      "durationInFrames": 504,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "pair",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "swap"
+        }
+      ]
+    },
+    {
+      "id": "sift-down",
+      "narration": "The 5 has moved down one level, but one of its new reports has 13 years, so it is still out of place. They trade again, and the 5 settles at the bottom where nobody reports to it.",
+      "caption": "5 keeps sinking: its new report, 13, outranks it too",
+      "durationInFrames": 492,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "pair",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "swap"
+        }
+      ]
+    },
+    {
+      "id": "heap-built",
+      "narration": "Now every manager has more years than the people reporting to them. That rule guarantees the most senior person, 25 years, sits at the very top, which is spot 0 in the line.",
+      "caption": "Every manager now outranks their reports: 25 is at the top",
+      "durationInFrames": 432,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "top",
+          "enterAt": 0.4,
+          "type": "callout",
+          "text": "Most senior, always at spot 0",
+          "anchor": {
+            "rowId": "row",
+            "index": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "retire",
+      "narration": "The top person retires: 25 swaps with the last person in the chart and takes the final spot in the line for good. The chart now has five people, and the 2 that moved up to the top is clearly out of place.",
+      "caption": "25 retires to the back of the line, and the chart shrinks by one",
+      "durationInFrames": 552,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "retired"
+        }
+      ]
+    },
+    {
+      "id": "repair",
+      "narration": "One sift down repairs the chart. The new top has 2 years, and its more senior report has 17, so they trade. The 2 has no reports below it now, so the chart is fixed and 17 is at the top.",
+      "caption": "Repair the top: 2 is outranked by 17, so they trade places",
+      "durationInFrames": 528,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "pair",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "retired"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "swap"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "The same two moves repeat: 17 retires, then 13, 7, and 5, each time followed by a quick repair. When the chart is empty, the line runs from least to most senior.",
+      "caption": "Retire, repair, repeat: 17, 13, 7, and 5 follow, and the line is sorted",
+      "durationInFrames": 420,
+      "traceStep": 15,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "Ana",
+            "Ben",
+            "Cal",
+            "Dee",
+            "Eli",
+            "Fay"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "sorted"
+        },
+        {
+          "id": "result",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Line by seniority",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Back to arrays: the org chart is the array read as a binary tree, with children at 2i plus 1 and 2i plus 2, and the rule that managers outrank their reports is a max-heap. Building it and then swapping the root to the end n times, each repair climbing at most log n levels, sorts in O(n log n) time with no extra array.",
+      "caption": "The pattern: heap sort, O(n log n) time, O(1) extra space",
+      "durationInFrames": 816,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]",
+            "a[5]"
+          ]
+        },
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "heap-tree"
+        },
+        {
+          "id": "map",
+          "enterAt": 0.3,
+          "type": "callout",
+          "text": "Org chart = array as a tree, manager outranks reports = max-heap",
+          "anchor": {
+            "rowId": "row",
+            "index": 2
+          }
+        }
+      ]
+    }
+  ]
+}

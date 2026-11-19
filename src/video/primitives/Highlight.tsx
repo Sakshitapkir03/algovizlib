@@ -8,6 +8,7 @@ import type { VideoPalette } from "../theme";
 import { FONT_SANS } from "../theme";
 
 /** Every state has a glyph + word, so state never depends on color alone. */
+const TAG_WIDTH = 104;
 const STATE_STYLE: Record<
   HighlightState,
   { glyph: string; word: string; color: (p: VideoPalette) => string }
@@ -27,6 +28,11 @@ export function Highlight({ element }: { element: HighlightElement }) {
   const p = enterProgress(frame, fps, reducedMotion);
   const style = STATE_STYLE[element.state];
   const color = style.color(palette);
+  // On narrow cards (the heap scenes' bars) neighboring tags would overlap: spell the word on the first card only
+  // and give the rest the glyph, so every card still carries a glyph and the state is named once.
+  const crowded = element.indices.some(
+    (idx, k) => k > 0 && Math.abs(layout.centers[idx] - layout.centers[element.indices[k - 1]]) < TAG_WIDTH,
+  );
 
   return (
     <>
@@ -68,7 +74,7 @@ export function Highlight({ element }: { element: HighlightElement }) {
               whiteSpace: "nowrap",
             }}
           >
-            {style.glyph} {style.word}
+            {crowded && i !== element.indices[0] ? style.glyph : `${style.glyph} ${style.word}`}
           </div>
         </div>
       ))}

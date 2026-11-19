@@ -1,7 +1,7 @@
-import { storyboardPromptV3 } from "./storyboard-v3";
+import { storyboardPromptV4 } from "./storyboard-v4";
 
-export type { StoryboardPromptInput } from "./storyboard-v3";
+export type { StoryboardPromptInput } from "./storyboard-v4";
 
 /** The prompt set the generator uses. Switching versions invalidates cached results automatically. */
-export const currentPrompts = storyboardPromptV3;
+export const currentPrompts = storyboardPromptV4;
 export type PromptSet = typeof currentPrompts;

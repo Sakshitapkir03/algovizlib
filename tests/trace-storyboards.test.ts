@@ -358,3 +358,170 @@ describe("sorting primitives", () => {
     expect(counted.top + counted.cardHeight).toBeLessThan(plain.top + plain.cardHeight);
   });
 });
+
+describe("divide-and-conquer primitives", () => {
+  const merge = "sorting/merge-sort";
+  const quick = "sorting/quick-sort";
+  const heap = "sorting/heap-sort";
+  const inversions = "sorting/count-inversions";
+  const resolveDraft = (key: string, draft: Draft) => {
+    const source = storyboardSourceSchema.parse(assembleStoryboard(draft, context(key), META));
+    return resolveStoryboard(source);
+  };
+  const sceneAt = (draft: Draft, step: number) => draft.scenes.find((s) => s.traceStep === step)!;
+  const replace = (draft: Draft, step: number, id: string, patch: Record<string, unknown>) => {
+    const scene = sceneAt(draft, step);
+    scene.elements = scene.elements.map((e) => (e.id === id ? ({ ...e, ...patch } as typeof e) : e));
+    return draft;
+  };
+  const element = (storyboard: Storyboard | undefined, step: number, id: string) =>
+    storyboard!.scenes.find((s) => s.traceStep === step)!.elements.find((e) => e.id === id);
+
+  it("resolves the split overview, the groups, and the merge buffer from the step", () => {
+    const { storyboard, issues } = resolveDraft(merge, buildDraft(merge));
+    expect(issues).toEqual([]);
+    expect(element(storyboard, 0, "overview")).toMatchObject({
+      levels: [
+        [[15, 3, 11, 8, 1, 6]],
+        [
+          [15, 3, 11],
+          [8, 1, 6],
+        ],
+        [[15, 3], [11], [8, 1], [6]],
+        [[15], [3], [11], [8], [1], [6]],
+      ],
+    });
+    // Step 4: merging [3, 15] with [11]; 3 is taken first.
+    expect(element(storyboard, 4, "buffer")).toMatchObject({ from: 0, values: [3, null, null], taken: 0 });
+    expect(element(storyboard, 4, "groups")).toMatchObject({
+      groups: [
+        { from: 0, to: 1 },
+        { from: 2, to: 2 },
+        { from: 3, to: 3 },
+        { from: 4, to: 4 },
+        { from: 5, to: 5 },
+      ],
+      active: { from: 0, to: 2 },
+      depth: 1,
+    });
+  });
+
+  it("rejects a wrong buffer, wrong groups, a wrong partition, a wrong heap, and a wrong count", () => {
+    const text = (key: string, draft: Draft) => messages(key, draft).join("\n");
+    expect(
+      text(merge, replace(buildDraft(merge), 4, "buffer", { from: 0, values: [11, null, null] })),
+    ).toMatch(
+      /Merge buffer doesn't match trace step 4 \(expected \[3, _, _\] from 0, got \[11, _, _\] from 0\)/,
+    );
+    expect(
+      text(
+        merge,
+        replace(buildDraft(merge), 4, "groups", {
+          groups: [
+            { from: 0, to: 2 },
+            { from: 3, to: 5 },
+          ],
+        }),
+      ),
+    ).toMatch(/Groups don't match trace step 4/);
+    expect(
+      text(quick, replace(buildDraft(quick), 6, "partition", { pivot: 5, boundary: 1, from: 0, to: 5 })),
+    ).toMatch(
+      /Partition doesn't match trace step 6 \(expected pivot 1, boundary 1, range 0–5, got pivot 5, boundary 1, range 0–5\)/,
+    );
+    expect(text(heap, replace(buildDraft(heap), 2, "heap", { heapSize: 5 }))).toMatch(
+      /Heap size doesn't match trace step 2 \(expected 6, got 5\)/,
+    );
+    expect(text(heap, replace(buildDraft(heap), 2, "heap", { compare: [1, 3] }))).toMatch(
+      /Compared nodes don't match trace step 2/,
+    );
+    expect(text(inversions, replace(buildDraft(inversions), 15, "count", { value: 3 }))).toMatch(
+      /Counter doesn't match trace step 15 \(expected 5, got 3\)/,
+    );
+  });
+
+  it("gives the count-many-at-once take its own key step", async () => {
+    const { trace } = traceFor(inversions);
+    const big = trace.steps.filter((s) => (s.counter?.delta ?? 0) > 1);
+    expect(big.length).toBeGreaterThan(0);
+    expect(big.every((s) => s.key && s.kind === "take-right")).toBe(true);
+    expect(trace.steps[15].counter).toEqual({ value: 5, delta: 3 });
+  });
+
+  it("draws an unbound heap-tree from the trace's row, the whole array as the heap", () => {
+    const draft = buildDraft(heap);
+    draft.scenes[0].elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
+    const { storyboard, issues } = resolveDraft(heap, draft);
+    expect(issues).toEqual([]);
+    expect(storyboard!.scenes[0].elements.find((e) => e.id === "heap")).toMatchObject({
+      values: [5, 13, 2, 25, 7, 17],
+      heapSize: 6,
+    });
+  });
+
+  it("rejects malformed groups, compares, and partitions in the schema", () => {
+    const draft = buildDraft(merge);
+    replace(draft, 4, "groups", {
+      groups: [
+        { from: 0, to: 1 },
+        { from: 3, to: 5 },
+      ],
+    });
+    expect(messages(merge, draft).join("\n")).toMatch(/groups must be in order, without gaps or overlaps/);
+    expect(messages(heap, replace(buildDraft(heap), 2, "heap", { compare: [0, 3] })).join("\n")).toMatch(
+      /compare must be a parent and one of its children/,
+    );
+    expect(
+      messages(
+        quick,
+        replace(buildDraft(quick), 6, "partition", { pivot: 1, boundary: 1, from: 2, to: 5 }),
+      ).join("\n"),
+    ).toMatch(/from ≤ boundary ≤ to and from ≤ pivot ≤ to must hold/);
+  });
+
+  it("checks layout room: groups spread apart, the heap gets its own region, the buffer clears the pointers", async () => {
+    const { layoutRows, HEAP_TREE_REGION } = await import("@/video/layout");
+    const bars: BarRowElement = {
+      id: "row",
+      type: "bar-row",
+      enterAt: 0,
+      unit: "",
+      bars: [3, 1, 4, 1, 5, 9].map((value) => ({ value })),
+    };
+    const plain = layoutRows([bars]).row;
+    const grouped = layoutRows([
+      bars,
+      {
+        id: "g",
+        type: "segments",
+        rowId: "row",
+        groups: [
+          { from: 0, to: 2 },
+          { from: 3, to: 5 },
+        ],
+        enterAt: 0,
+      },
+    ]).row;
+    expect(grouped.lefts[3] - grouped.lefts[2]).toBeGreaterThan(plain.lefts[3] - plain.lefts[2]);
+    expect(grouped.pointerTop).toBeGreaterThan(plain.pointerTop);
+    const buffered = layoutRows([
+      bars,
+      {
+        id: "b",
+        type: "merge-buffer",
+        rowId: "row",
+        from: 0,
+        values: [1, null],
+        label: "merged",
+        enterAt: 0,
+      },
+    ]).row;
+    expect(buffered.panelTop).toBeGreaterThanOrEqual(buffered.pointerTop + 50);
+    expect(buffered.panelTop + 44).toBeLessThan(500);
+    const heaped = layoutRows([
+      bars,
+      { id: "t", type: "heap-tree", values: [3, 1, 4, 1, 5, 9], heapSize: 6, enterAt: 0 },
+    ]).row;
+    expect(heaped.lefts.at(-1)! + heaped.cardWidth).toBeLessThan(HEAP_TREE_REGION.left);
+  });
+});

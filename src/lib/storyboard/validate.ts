@@ -18,6 +18,12 @@ const sameSet = (a: readonly number[] | undefined, b: readonly number[] | undefi
 const sameList = <T>(a: readonly T[], b: readonly T[]) =>
   a.length === b.length && a.every((v, i) => v === b[i]);
 
+/** Structural equality for small trace-shaped values (key order matches: both come from the same schemas). */
+const sameJson = (a: unknown, b: unknown) => b !== undefined && JSON.stringify(a) === JSON.stringify(b);
+
+const ranges = (groups: readonly { from: number; to: number }[]) =>
+  groups.map((g) => (g.from === g.to ? `${g.from}` : `${g.from}–${g.to}`)).join(" | ");
+
 /** Engine-independent checks: every equation's arithmetic must be true. */
 function validateArithmetic(scene: Scene, issues: ValidationIssue[]) {
   for (const el of scene.elements) {
@@ -339,6 +345,105 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           }
           break;
         }
+        case "segments": {
+          checkRow(el.rowId);
+          if (!step.segments) push(`Trace step ${stepIndex} has no split into groups`, el.id, "groups");
+          else {
+            if (!sameJson(el.groups, step.segments))
+              push(`Groups don't match trace step ${stepIndex}`, el.id, "groups", {
+                expected: ranges(step.segments),
+                actual: ranges(el.groups),
+              });
+            if (el.active && !sameJson(el.active, step.range))
+              push(`The active group doesn't match trace step ${stepIndex}`, el.id, "active", {
+                expected: step.range ? ranges([step.range]) : "none",
+                actual: ranges([el.active]),
+              });
+            if (el.depth !== undefined && el.depth !== step.depth)
+              push(`The level doesn't match trace step ${stepIndex}`, el.id, "depth", {
+                expected: String(step.depth ?? "none"),
+                actual: String(el.depth),
+              });
+          }
+          break;
+        }
+        case "split-tree":
+          if (!step.splitTree) push(`Trace step ${stepIndex} has no split tree`, el.id, "levels");
+          else if (!sameJson(el.levels, step.splitTree))
+            push(`Split levels don't match trace step ${stepIndex}`, el.id, "levels", {
+              expected: JSON.stringify(step.splitTree),
+              actual: JSON.stringify(el.levels),
+            });
+          break;
+        case "merge-buffer": {
+          checkRow(el.rowId);
+          const expected = step.buffer;
+          if (!expected) push(`Trace step ${stepIndex} has no merge buffer`, el.id, "values");
+          else {
+            if (el.from !== expected.from || !sameJson(el.values, expected.values))
+              push(`Merge buffer doesn't match trace step ${stepIndex}`, el.id, "values", {
+                expected: `${list(expected.values.map((v) => v ?? "_"))} from ${expected.from}`,
+                actual: `${list(el.values.map((v) => v ?? "_"))} from ${el.from}`,
+              });
+            if (el.taken !== undefined && el.taken !== expected.taken)
+              push(`The slot just written doesn't match trace step ${stepIndex}`, el.id, "taken", {
+                expected: String(expected.taken ?? "none"),
+                actual: String(el.taken),
+              });
+          }
+          break;
+        }
+        case "partition": {
+          checkRow(el.rowId);
+          if (step.pivot === undefined || !step.range)
+            push(`Trace step ${stepIndex} has no pivot`, el.id, "pivot");
+          else {
+            const expected = `pivot ${step.pivot}, boundary ${step.boundary ?? step.pivot}, range ${step.range.from}–${step.range.to}`;
+            const actual = `pivot ${el.pivot}, boundary ${el.boundary}, range ${el.from}–${el.to}`;
+            if (expected !== actual)
+              push(`Partition doesn't match trace step ${stepIndex}`, el.id, "pivot", { expected, actual });
+          }
+          break;
+        }
+        case "heap-tree": {
+          if (!sameList(el.values, expectedValues))
+            push(`The heap must show the array as it is after trace step ${stepIndex}`, el.id, "values", {
+              expected: list(expectedValues),
+              actual: list(el.values),
+            });
+          const heapSize = step.heapSize ?? expectedValues.length;
+          if (el.heapSize !== heapSize)
+            push(`Heap size doesn't match trace step ${stepIndex}`, el.id, "heapSize", {
+              expected: String(heapSize),
+              actual: String(el.heapSize),
+            });
+          if (el.compare && !sameJson(el.compare, step.compare))
+            push(`Compared nodes don't match trace step ${stepIndex}`, el.id, "compare", {
+              expected: JSON.stringify(step.compare ?? null),
+              actual: JSON.stringify(el.compare),
+            });
+          if (el.moves && !sameJson(el.moves, step.moves ?? []))
+            push(`Node moves don't match trace step ${stepIndex}`, el.id, "moves", {
+              expected: JSON.stringify(step.moves ?? []),
+              actual: JSON.stringify(el.moves),
+            });
+          break;
+        }
+        case "counter":
+          if (!step.counter) push(`Trace step ${stepIndex} has no running total`, el.id, "value");
+          else {
+            if (el.value !== step.counter.value)
+              push(`Counter doesn't match trace step ${stepIndex}`, el.id, "value", {
+                expected: String(step.counter.value),
+                actual: String(el.value),
+              });
+            if (el.delta !== undefined && el.delta !== step.counter.delta)
+              push(`Counter change doesn't match trace step ${stepIndex}`, el.id, "delta", {
+                expected: String(step.counter.delta ?? "none"),
+                actual: String(el.delta),
+              });
+          }
+          break;
         default:
           break;
       }
@@ -362,8 +467,8 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
 /**
  * Check a resolved storyboard. Always: equation arithmetic. With a `trace` binding: bound steps exist and never
  * go backwards, every key step is shown, rows hold the trace's values (the step's own array when the algorithm
- * rearranges it), and bound pointers, equations, highlights, fills, moves, sorted regions, held values, and tallies
- * match their step, and the answer is revealed correctly. Hand-written and generated storyboards both pass
+ * rearranges it), and bound pointers, equations, highlights, fills, moves, sorted regions, held values, tallies,
+ * groups, split trees, merge buffers, partitions, heaps, and counters match their step, and the answer is revealed correctly. Hand-written and generated storyboards both pass
  * through this before they are shown.
  */
 export function validateStoryboard(storyboard: Storyboard): ValidationResult {

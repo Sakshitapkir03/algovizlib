@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v3";
+export const PROMPT_VERSION = "storyboard-v4";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -52,6 +52,7 @@ ${ELEMENT_GUIDE}
 - Equations: only in scenes whose step has arithmetic. OMIT terms/operator/result/comparison; add unit and a short verdict. If the step lists a tone, OMIT verdictTone and make the verdict read that way (positive: "new best"; neutral: "not better").
 - Highlights: OMIT indices in bound scenes. Only use a state the step lists (active/rejected/found).
 - sorted-region / held-value / count-array: only in scenes whose step lists a sorted range / held value / tally; OMIT their from/to, value/index, and keys/counts/active.
+- segments / split-tree / merge-buffer / partition / counter: only in scenes whose step lists groups / a split tree / a buffer / a pivot / a count; OMIT their state fields. heap-tree: in every scene of a heap trace that shows the bars (bound or not); OMIT its state fields, and anchor callouts to the bars rather than floating them over the tree.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -77,6 +78,32 @@ function describeStep(step: TraceStep, index: number): string {
   if (step.empty) parts.push(`empty slots: [${step.empty.join(", ")}]`);
   if (step.sorted) parts.push(`sorted: ${step.sorted.from}–${step.sorted.to}`);
   if (step.held) parts.push(`holding ${step.held.value} above slot ${step.held.index}`);
+  if (step.range)
+    parts.push(
+      `range: ${step.range.from}–${step.range.to}${step.depth !== undefined ? ` (level ${step.depth})` : ""}`,
+    );
+  if (step.segments)
+    parts.push(
+      `groups: ${step.segments.map((g) => (g.from === g.to ? g.from : `${g.from}–${g.to}`)).join(" | ")}`,
+    );
+  if (step.splitTree)
+    parts.push(
+      `split tree: ${step.splitTree.map((level) => level.map((g) => `[${g.join(",")}]`).join(" ")).join(" / ")}`,
+    );
+  if (step.buffer)
+    parts.push(
+      `buffer from ${step.buffer.from}: [${step.buffer.values.map((v) => v ?? "_").join(", ")}]${step.buffer.taken !== undefined ? ` (just wrote slot ${step.buffer.taken})` : ""}`,
+    );
+  if (step.pivot !== undefined)
+    parts.push(
+      `pivot at ${step.pivot}${step.boundary !== undefined ? `, boundary before ${step.boundary}` : ""}`,
+    );
+  if (step.heapSize !== undefined) parts.push(`heap size: ${step.heapSize}`);
+  if (step.compare) parts.push(`comparing parent ${step.compare[0]} with child ${step.compare[1]}`);
+  if (step.counter)
+    parts.push(
+      `count: ${step.counter.value}${step.counter.delta !== undefined ? ` (+${step.counter.delta})` : ""}`,
+    );
   if (step.counts)
     parts.push(
       `tally: ${step.counts.keys.map((k, i) => `${k}:${step.counts!.counts[i]}`).join(" ")}${step.counts.active !== undefined ? ` (changed: ${step.counts.keys[step.counts.active]})` : ""}`,
@@ -132,4 +159,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV3 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV4 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

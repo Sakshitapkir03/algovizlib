@@ -1,6 +1,10 @@
 import { bubbleSortTrace } from "./sorting/bubble-sort";
+import { countInversionsTrace } from "./sorting/count-inversions";
 import { countingSortTrace } from "./sorting/counting-sort";
+import { heapSortTrace } from "./sorting/heap-sort";
 import { insertionSortTrace } from "./sorting/insertion-sort";
+import { mergeSortTrace } from "./sorting/merge-sort";
+import { quickSortTrace } from "./sorting/quick-sort";
 import { selectionSortTrace } from "./sorting/selection-sort";
 import { containerWithMostWaterTrace } from "./two-pointers/container-with-most-water";
 import { pairWithTargetSumTrace } from "./two-pointers/pair-with-target-sum";
@@ -25,6 +29,10 @@ const definitions = [
   selectionSortTrace,
   insertionSortTrace,
   countingSortTrace,
+  mergeSortTrace,
+  quickSortTrace,
+  heapSortTrace,
+  countInversionsTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

@@ -1,0 +1,460 @@
+{
+  "id": "sorting-quick-sort",
+  "title": "Quick Sort: Shelving Books Around One Volume",
+  "concept": "Sorting Algorithms",
+  "category": "dsa",
+  "summary": "Pick one volume, move every lower-numbered book to its left in one sweep, and that volume is shelved for good; then repeat on each side.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A librarian gets six returned volumes of a book series on a cart, numbered 9, 4, 7, 1, 8, and 2, and must shelve them in order. She picks the last book as a reference volume, sweeps along the cart once moving every lower-numbered book to the left of a boundary, then drops the reference volume at the boundary, where it stays for good. Each side is then shelved the same way.",
+    "mapping": [
+      {
+        "real": "A volume number",
+        "abstract": "a[i]"
+      },
+      {
+        "real": "The reference volume",
+        "abstract": "the pivot, a[hi]"
+      },
+      {
+        "real": "The boundary on the cart",
+        "abstract": "i: everything before it is smaller than the pivot"
+      },
+      {
+        "real": "The book being checked",
+        "abstract": "j, scanning lo..hi-1"
+      },
+      {
+        "real": "Shelving each side the same way",
+        "abstract": "recursing on lo..p-1 and p+1..hi"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "divide and conquer",
+    "partition",
+    "in-place"
+  ],
+  "takeaway": {
+    "pattern": "Quick sort (partition around a pivot)",
+    "summary": "Choose a pivot, sweep the range once so smaller values end up left of a boundary, and swap the pivot onto the boundary: it is now in its final place. Sort the two sides the same way. Balanced splits give about log n levels of linear work.",
+    "timeComplexity": "O(n log n) expected, O(n²) worst case",
+    "spaceComplexity": "O(log n) for the recursion",
+    "whenToUse": [
+      "Fast in-place sorting with no extra array",
+      "Average-case speed matters more than a worst-case guarantee (pick the pivot at random)",
+      "The partition step alone answers questions like the k-th smallest value"
+    ]
+  },
+  "trace": {
+    "problem": "sorting/quick-sort",
+    "args": [
+      [
+        9,
+        4,
+        7,
+        1,
+        8,
+        2
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v4",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-19T17:15:19.373Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A librarian has six returned volumes of a book series on her cart: 9, 4, 7, 1, 8, and 2. They have to go back on the shelf in order, and she wants to do it without shuffling the whole cart over and over.",
+      "caption": "Six returned volumes of a series need to go back on the shelf in order",
+      "durationInFrames": 564,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 9",
+            "vol. 4",
+            "vol. 7",
+            "vol. 1",
+            "vol. 8",
+            "vol. 2"
+          ]
+        },
+        {
+          "id": "goal",
+          "enterAt": 0.45,
+          "type": "callout",
+          "text": "Volume 1 on the left, the highest on the right"
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Comparing every book with every other book means 15 checks for six volumes, and 4,950 for a hundred. She needs a way to put many books on the correct side of the shelf in one sweep.",
+      "caption": "Comparing every pair of books takes 15 checks here, 4,950 for 100",
+      "durationInFrames": 468,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 9",
+            "vol. 4",
+            "vol. 7",
+            "vol. 1",
+            "vol. 8",
+            "vol. 2"
+          ]
+        },
+        {
+          "id": "cost",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Every pair, 100 books",
+          "value": "4,950 checks",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "pivot",
+      "narration": "She picks the last book on the cart, volume 2, as her reference. In one sweep she will move every lower-numbered book to the left of a boundary. The boundary starts at the very beginning, because nothing has been moved yet.",
+      "caption": "Pick the last book, volume 2, as the reference volume",
+      "durationInFrames": 528,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 9",
+            "vol. 4",
+            "vol. 7",
+            "vol. 1",
+            "vol. 8",
+            "vol. 2"
+          ]
+        },
+        {
+          "id": "split",
+          "enterAt": 0,
+          "type": "partition",
+          "rowId": "row",
+          "label": "pivot"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "checking",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        }
+      ]
+    },
+    {
+      "id": "stays-right",
+      "narration": "Volume 9 is higher than 2, so it belongs on the right side and stays where it is. The boundary doesn't move. Volumes 4 and 7 get the same answer.",
+      "caption": "Volume 9 is higher than 2, so it stays on the right side",
+      "durationInFrames": 396,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 9",
+            "vol. 4",
+            "vol. 7",
+            "vol. 1",
+            "vol. 8",
+            "vol. 2"
+          ]
+        },
+        {
+          "id": "split",
+          "enterAt": 0,
+          "type": "partition",
+          "rowId": "row",
+          "label": "pivot"
+        },
+        {
+          "id": "check",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "checking",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "stays right"
+        }
+      ]
+    },
+    {
+      "id": "moves-left",
+      "narration": "Volume 1 is lower than 2, so it belongs on the left. She swaps it with the book sitting at the boundary, volume 9, and moves the boundary one place right. Volume 8 then stays right too.",
+      "caption": "Volume 1 is lower than 2: swap it to the boundary, which moves right",
+      "durationInFrames": 480,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 1",
+            "vol. 4",
+            "vol. 7",
+            "vol. 9",
+            "vol. 8",
+            "vol. 2"
+          ]
+        },
+        {
+          "id": "split",
+          "enterAt": 0,
+          "type": "partition",
+          "rowId": "row",
+          "label": "pivot"
+        },
+        {
+          "id": "check",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "j",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "checking",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "goes left"
+        }
+      ]
+    },
+    {
+      "id": "pivot-lands",
+      "narration": "The sweep is done, so she swaps volume 2 onto the boundary. Everything to its left is lower and everything to its right is higher, so volume 2 is in its final spot and never moves again.",
+      "caption": "Volume 2 lands on the boundary for good",
+      "durationInFrames": 480,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 1",
+            "vol. 2",
+            "vol. 7",
+            "vol. 9",
+            "vol. 8",
+            "vol. 4"
+          ]
+        },
+        {
+          "id": "split",
+          "enterAt": 0,
+          "type": "partition",
+          "rowId": "row",
+          "label": "pivot"
+        },
+        {
+          "id": "note",
+          "enterAt": 0.5,
+          "type": "callout",
+          "text": "Final spot: it never moves again",
+          "anchor": {
+            "rowId": "row",
+            "index": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "left-side",
+      "narration": "Now each side gets the same treatment. The left side holds only volume 1, and a single book is already in order, so the first two spots are done.",
+      "caption": "The left side is just volume 1, which is already in place",
+      "durationInFrames": 384,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 1",
+            "vol. 2",
+            "vol. 7",
+            "vol. 9",
+            "vol. 8",
+            "vol. 4"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "shelved"
+        },
+        {
+          "id": "check",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        }
+      ]
+    },
+    {
+      "id": "right-side",
+      "narration": "On the right side, volume 4 is the new reference. Volumes 7, 9, and 8 are all higher, so they stay right, and 4 swaps onto the boundary. Three spots are now final.",
+      "caption": "The right side repeats it: reference volume 4 lands in its spot",
+      "durationInFrames": 432,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 1",
+            "vol. 2",
+            "vol. 4",
+            "vol. 9",
+            "vol. 8",
+            "vol. 7"
+          ]
+        },
+        {
+          "id": "split",
+          "enterAt": 0,
+          "type": "partition",
+          "rowId": "row",
+          "label": "pivot"
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "shelved"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "The same move finishes the job: volume 7 lands in its spot, then volume 9, and the 8 is left on its own. Every book is now shelved in order.",
+      "caption": "Two more rounds shelve 7, then 9 and 8: the series is in order",
+      "durationInFrames": 396,
+      "traceStep": 21,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "vol. 1",
+            "vol. 2",
+            "vol. 4",
+            "vol. 7",
+            "vol. 8",
+            "vol. 9"
+          ]
+        },
+        {
+          "id": "sorted",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "row",
+          "label": "shelved"
+        },
+        {
+          "id": "result",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Shelved in order",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Back to arrays: the reference volume is the pivot, the boundary is the index i, and the book being checked is j. One partition pass puts the pivot in its final position, and recursing on both sides sorts the array in O(n log n) expected time with no extra array. A random pivot avoids the O(n²) worst case.",
+      "caption": "The pattern: quick sort, O(n log n) expected time, in place",
+      "durationInFrames": 732,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]",
+            "a[5]"
+          ]
+        },
+        {
+          "id": "map",
+          "enterAt": 0.3,
+          "type": "callout",
+          "text": "Reference volume = pivot, boundary = i, book being checked = j"
+        }
+      ]
+    }
+  ]
+}

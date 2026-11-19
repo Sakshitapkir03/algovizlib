@@ -60,6 +60,27 @@ export type TraceStep = {
   held?: { value: number; index: number };
   /** A tally per value (counting sort): `counts[i]` is how many times `keys[i]` has been seen. */
   counts?: { keys: number[]; counts: number[]; active?: number };
+  /** Divide and conquer: the subarray this step works on (inclusive). */
+  range?: { from: number; to: number };
+  /** Recursion depth of `range` (0 = the whole array). */
+  depth?: number;
+  /** How the array is currently split into groups (inclusive ranges covering every position, in order). */
+  segments?: { from: number; to: number }[];
+  /**
+   * Every level of the recursion at once, for an overview: `splitTree[level]` lists the groups' values at that
+   * depth, from the whole array down to single values.
+   */
+  splitTree?: number[][][];
+  /** A merge in progress: the output written so far (`null` = not yet), lined up under positions `from`…. */
+  buffer?: { from: number; values: (number | null)[]; taken?: number };
+  /** Quick sort: the pivot's position and the partition line (positions in `range` before it are < the pivot). */
+  pivot?: number;
+  boundary?: number;
+  /** Heap sort: positions 0…heapSize-1 are the heap (the rest are sorted), and the pair compared in a sift-down. */
+  heapSize?: number;
+  compare?: [number, number];
+  /** A running total (e.g. inversions found so far) and how much this step added. */
+  counter?: { value: number; delta?: number };
 };
 
 export type Trace = {
