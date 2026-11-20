@@ -22,9 +22,15 @@ export function operationRows(example: Pick<ProblemExample, "args" | "expected">
   });
 }
 
-function OperationsTable({ example }: { example: ProblemExample }) {
+function OperationsTable({ example, number }: { example: ProblemExample; number: number }) {
   return (
-    <div className="overflow-x-auto rounded-lg border bg-muted/40">
+    // Scrolls sideways on a phone, so it takes keyboard focus (arrow keys scroll it) and names itself uniquely.
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label={`Example ${number}: operations and outputs`}
+      className="overflow-x-auto rounded-lg border bg-muted/40"
+    >
       <table className="w-full border-collapse font-mono text-[13px] leading-6">
         <thead>
           <tr className="border-b text-left text-xs text-muted-foreground">
@@ -76,7 +82,7 @@ export function Examples({
         <li key={i}>
           <p className="mb-1.5 text-sm font-medium">Example {i + 1}</p>
           {format === "operations" ? (
-            <OperationsTable example={example} />
+            <OperationsTable example={example} number={i + 1} />
           ) : (
             <div className="overflow-x-auto rounded-lg border bg-muted/40 px-4 py-3 font-mono text-[13px] leading-6">
               <dl className="grid grid-cols-[auto_1fr] gap-x-3">

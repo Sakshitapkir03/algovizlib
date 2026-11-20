@@ -199,7 +199,7 @@ export function ProblemTable({ problems }: { problems: ProblemSummary[] }) {
             </thead>
             <tbody>
               {rows.map((p) => (
-                <tr key={p.slug} className="group border-b last:border-0 hover:bg-muted/40">
+                <tr key={p.slug} className="glow-box group border-b last:border-0 hover:bg-muted/40">
                   <td className="py-3 pr-4">
                     <StatusLabel status={p.status} />
                   </td>
@@ -223,7 +223,7 @@ export function ProblemTable({ problems }: { problems: ProblemSummary[] }) {
           {/* Mobile: stacked cards. */}
           <ul className="space-y-2 md:hidden">
             {rows.map((p) => (
-              <li key={p.slug} className="relative rounded-lg border p-3 hover:bg-muted/40">
+              <li key={p.slug} className="glow-box relative rounded-lg border p-3 hover:bg-muted/40">
                 <Link
                   href={p.href}
                   prefetch={true}

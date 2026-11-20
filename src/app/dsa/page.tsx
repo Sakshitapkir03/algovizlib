@@ -78,7 +78,7 @@ export default function DsaPage() {
                   return (
                     <li
                       key={pattern.slug}
-                      className="group relative flex flex-col rounded-xl border p-5 hover:bg-muted/30"
+                      className="glow-box group relative flex flex-col rounded-xl border p-5 hover:bg-muted/30"
                     >
                       <p className="font-mono text-[11px] text-muted-foreground">
                         {String(numberOf.get(pattern.slug)).padStart(2, "0")}

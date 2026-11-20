@@ -216,7 +216,7 @@ function ProblemPager({ previous, next }: { previous?: Problem; next?: Problem }
         <Link
           href={problemHref(previous)}
           prefetch={true}
-          className="group rounded-lg border px-4 py-3 hover:bg-muted/40"
+          className="glow-box group rounded-lg border px-4 py-3 hover:bg-muted/40"
         >
           <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
             <ArrowLeft aria-hidden className="size-3" /> previous
@@ -230,7 +230,7 @@ function ProblemPager({ previous, next }: { previous?: Problem; next?: Problem }
         <Link
           href={problemHref(next)}
           prefetch={true}
-          className="group rounded-lg border px-4 py-3 text-right hover:bg-muted/40"
+          className="glow-box group rounded-lg border px-4 py-3 text-right hover:bg-muted/40"
         >
           <span className="flex items-center justify-end gap-1 font-mono text-[11px] text-muted-foreground">
             next <ArrowRight aria-hidden className="size-3" />

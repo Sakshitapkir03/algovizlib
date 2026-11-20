@@ -66,7 +66,7 @@ export default function Home() {
           {categories.map((c) => {
             const available = c.status === "available";
             return (
-              <li key={c.slug} className="group relative rounded-xl border p-6 hover:bg-muted/30">
+              <li key={c.slug} className="glow-box group relative rounded-xl border p-6 hover:bg-muted/30">
                 <div className="flex items-center justify-between gap-4">
                   <h3 className="text-lg font-semibold">
                     <Link href={`/${c.slug}`} className="after:absolute after:inset-0 after:rounded-xl">

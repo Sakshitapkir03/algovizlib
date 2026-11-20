@@ -29,7 +29,9 @@ export function SceneList({
                 className={cn(
                   "group flex w-full items-start gap-3 rounded-lg border p-3 text-left text-sm transition-colors motion-reduce:transition-none",
                   "hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-                  active ? "border-primary bg-primary/5" : "border-transparent",
+                  active
+                    ? "border-primary bg-primary/5 shadow-[0_0_14px_-6px_var(--glow)]"
+                    : "border-transparent",
                 )}
               >
                 <span

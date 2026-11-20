@@ -586,15 +586,27 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 
 ## UI conventions
 
-- **Look: a calm developer tool.** Neutral palette, thin borders, generous whitespace, no gradients or emoji. One
-  accent: **indigo** (`--primary`/`--ring` in `globals.css`, `primary` in `video/theme.ts`). Don't add a second hue.
+- **Look: a black-and-orange ("fiery") developer tool.** Warm near-black backgrounds (never pure `#000`) and charcoal
+  surfaces in dark mode, warm off-white in light; thin borders, generous whitespace, monospace metadata, no gradients
+  or emoji. One accent: **orange** (`--primary`/`--ring` in `globals.css`, `primary`/`active` in `video/theme.ts`) for
+  buttons, links, active states, focus rings, progress bars, the active scene, and the videos' pointers, brackets, and
+  "mid" markers. Light mode uses a darker burnt orange so orange text passes 4.5:1. A soft glow (`--glow`) is allowed
+  on key accents only (hover/focus boxes, the active scene). Don't add a second hue.
+- **Keep meaning colors away from the accent.** Verdicts: green (good news), sky (information), and **rose/crimson**
+  for bad news (`danger` in the video palette, `--destructive` in the UI), never red-orange, always next to a glyph or
+  a word. Secondary video pointers are neutral (stone), not orange. Difficulty badges are neutral (no color at all).
+- **Hover and keyboard focus box:** interactive cards and rows (category, pattern, problem rows and mobile cards,
+  previous/next) carry `glow-box`: a 1px orange outline plus soft glow on hover, and the same box when the card or any
+  link inside it has keyboard focus (the inner link's own ring is dropped). 150ms transition, off under reduced motion.
+  Command palette results get the same box when selected (hover or arrow keys).
 - **Type:** Geist Sans for prose; Geist Mono for labels, metadata, breadcrumbs (`dsa / two-pointers / …`),
   complexity, examples, and shortcut hints (`<Kbd>`). Section labels are lowercase mono (`core idea`, `examples`).
 - **Difficulty** is a muted badge: the word plus a 1–3 bar meter, never color alone. **Status** is a glyph plus a word
   (○ Not started, ◐ Learning, ● Done).
 - Render content strings with `<InlineText>` / `<RichText>` (`components/catalog/rich-text.tsx`) so `backticks`
   become code. Content never contains HTML.
-- Tables become stacked cards below `md`. Visible focus rings everywhere (`:focus-visible` in `globals.css`).
+- Tables become stacked cards below `md`. Visible focus rings everywhere (`:focus-visible` in `globals.css`). A
+  region that scrolls sideways (the design problems' operation tables) is focusable with a unique `aria-label`.
 - **Theme: dark by default** for first-time visitors, whatever the OS prefers (`site/theme-provider.tsx`,
   next-themes with `defaultTheme="dark"`, `enableSystem={false}`). The choice is stored in localStorage (`theme`) and
   applied by next-themes' blocking script before first paint, so there's no flash. The header toggle
