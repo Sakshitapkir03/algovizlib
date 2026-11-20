@@ -138,7 +138,7 @@ export function LearnView({
               durationInFrames={durationInFrames}
               timings={timings}
               currentIndex={currentIndex}
-              hasAudio={storyboard.scenes[currentIndex].audio !== undefined}
+              hasTrack={storyboard.narrationTrack !== undefined}
               onToggleFullscreen={toggleFullscreen}
             />
           </div>

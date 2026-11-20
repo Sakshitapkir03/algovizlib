@@ -5,14 +5,19 @@ import { useEffect, type RefObject } from "react";
 
 import { createAudioElement, createBrowserSpeech } from "@/lib/narration/browser";
 import { NarrationEngine, type PlaybackState } from "@/lib/narration/engine";
-import { FPS, getSceneTimeline, type Scene } from "@/lib/storyboard";
+import { FPS, getSceneTimeline, type Storyboard } from "@/lib/storyboard";
 import { usePlayerStore } from "@/store/player-store";
 
 /**
- * Plays the narration alongside the Player: ElevenLabs clips where a scene has them, the browser's voice otherwise
- * (see `NarrationEngine`). Player events and store changes (speed, volume, mute, hold) drive the engine.
+ * Plays the narration alongside the Player: the video's stitched ElevenLabs track when it has one, the browser's
+ * voice otherwise (see `NarrationEngine`). Player events and store changes (speed, volume, mute, hold) drive the
+ * engine.
  */
-export function useNarration(playerRef: RefObject<PlayerRef | null>, scenes: readonly Scene[]) {
+export function useNarration(
+  playerRef: RefObject<PlayerRef | null>,
+  storyboard: Pick<Storyboard, "scenes" | "narrationTrack">,
+) {
+  const { scenes, narrationTrack } = storyboard;
   useEffect(() => {
     const player = playerRef.current;
     if (!player) return;
@@ -28,6 +33,7 @@ export function useNarration(playerRef: RefObject<PlayerRef | null>, scenes: rea
       scenes,
       timings: getSceneTimeline(scenes).timings,
       fps: FPS,
+      track: narrationTrack ? { src: narrationTrack.src, durationMs: narrationTrack.durationMs } : null,
       createAudio: createAudioElement,
       speech,
       onHold: (frame) => {
@@ -93,5 +99,5 @@ export function useNarration(playerRef: RefObject<PlayerRef | null>, scenes: rea
       unsubscribe();
       engine.dispose();
     };
-  }, [playerRef, scenes]);
+  }, [playerRef, scenes, narrationTrack]);
 }

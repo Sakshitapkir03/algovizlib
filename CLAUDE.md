@@ -4,8 +4,8 @@
 
 A web app that teaches computer science concepts (DSA first, then system design) through a curated **catalog**
 (category → pattern → problem) and short animated videos. Each video explains the **approach** through a concrete
-real-world example, not a line-by-line code walkthrough. Narration is voiced offline with ElevenLabs where the budget
-allows and read by the browser's own voice everywhere else (see "Narration").
+real-world example, not a line-by-line code walkthrough. Narration is voiced offline with ElevenLabs (stitched into one continuous
+track per video) where the budget allows and read by the browser's own voice everywhere else (see "Narration").
 
 Every video is driven by a **storyboard**: plain, typed data bound to a **trace** (the exact steps an algorithm takes
 on one example). Storyboards are hand-written or generated offline by a model (`pnpm generate:storyboards`). Either
@@ -47,7 +47,7 @@ src/
     catalog/                 categories, patterns/<slug>.ts, problems/<pattern>/<slug>.ts, index.ts
     storyboards/             hand-written storyboards + registry (index.ts)
       generated/             <pattern>/<slug>.json written by the generator + index.ts (regenerated, don't edit)
-    narration/manifest.json  voiced clips per storyboard/scene (hash, file, measured length), written by the script
+    narration/manifest.json  per storyboard: clips (per scene) + the stitched track and scene offsets, by the script
     legacy-redirects.ts      old /learn/<id> URLs (imported by next.config.ts)
   lib/
     catalog/                 Zod schemas, define*(), judgeOutput(), repository.ts (the only way pages read content)
@@ -58,13 +58,14 @@ src/
     narration/               app side of narration: hash, manifest + withNarration(), NarrationEngine (sync),
                              browser speech/audio adapters
     generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
-      narration/             OFFLINE ONLY: ElevenLabs client, MP3 duration, narration pipeline, CLI, file store
+      narration/             OFFLINE ONLY: ElevenLabs client, stitching (+ ffmpeg), MP3 duration, pipeline, CLI, store
   video/                     Remotion composition, scene renderer, primitives + registry, theme
   store/player-store.ts      Zustand: mirrors PlayerRef events, exposes toggle/seekTo, volume/mute (remembered), hold
   hooks/                     useReducedMotion
 scripts/generate-storyboards.ts   the generator CLI (tsx)
 scripts/generate-narration.ts     the narration CLI (tsx)
-public/audio/<storyboard>/        narration MP3s, <scene>-<hash>.mp3
+public/audio/<storyboard>/        the stitched narration track, narration-<hash>.mp3 (served)
+narration/clips/<storyboard>/      per-scene ElevenLabs clips, <scene>-<hash>.mp3 (stitching source, not served)
 tests/                       Vitest specs (fixtures/drafts.ts builds a correct draft from any trace)
   reference-solutions/       test-only solve() per problem; never imported by src/ (a test enforces it)
 ```
@@ -498,8 +499,14 @@ The script fails fast, naming the missing variable, if the selected provider's k
 
 ## Narration
 
-Every scene's `narration` is spoken: by an ElevenLabs clip when the scene has one, otherwise by the browser's
-built-in voice (Web Speech API), otherwise not at all (captions and the transcript carry it, as before).
+Every video's narration is spoken: by its stitched ElevenLabs track when it has a current one, otherwise by the
+browser's built-in voice (Web Speech API), otherwise not at all (captions and the transcript carry it).
+
+**One continuous track per video.** The player plays ONE audio element per video whose position is the video's time.
+Scene changes never touch it (no new source, no restart, no pause), so visual transitions (cross-fade, highlights)
+happen on top of continuous narration. Per-scene clips that switched source at every boundary used to start
+0.1–0.44 s late over the network, and the old drift correction then skipped the first ~0.33 s (a cut-off first word)
+or played 8% fast for seconds to catch up; a single track removes the switch altogether.
 
 **Pipeline (offline, `pnpm generate:narration`).** `scripts/generate-narration.ts` → `src/lib/generation/narration/`
 (covered by the same ESLint rule and test that keep generation code out of the app):
@@ -507,58 +514,82 @@ built-in voice (Web Speech API), otherwise not at all (captions and the transcri
 ```bash
 pnpm generate:narration --storyboard two-pointers/pair-with-target-sum --storyboard sorting/heap-sort --dry-run
 pnpm generate:narration --pattern sorting          # every sorting video
-pnpm generate:narration --missing                  # every video with a scene not voiced yet
+pnpm generate:narration --missing                  # every video with a scene not voiced yet, or a stale track
+pnpm generate:narration --stitch-only              # rebuild stale tracks from existing clips: no requests, no key
 #   --storyboard <id or pattern/slug>   repeatable    --max-chars <n>   default 9000    --dry-run   call nothing
 ```
 
-- One request per scene: `POST /v1/text-to-speech/{voice_id}?output_format=mp3_44100_64` with `model_id`, over
-  plain `fetch` (`elevenlabs.ts`). Model `eleven_flash_v2_5` (Flash is the cheapest per character; the Turbo models
-  are deprecated in its favor), voice "Sarah" (`EXAVITQu4vr4xnSDxMaL`, a default voice the free plan can use through
-  the API; Voice Library voices return 402). One voice for every video.
-- Clips go to `public/audio/<storyboard>/<scene>-<hash>.mp3`, where `hash = narrationHash(narration, voice)` covers
-  the text, voice, model, and format (`lib/narration/hash.ts`, the same function in Node and the browser). A scene
-  whose hash matches the manifest and whose file exists is skipped, so unchanged narration is never paid for twice;
-  edited narration gets a new file and the old one is deleted. The length is measured from the MP3 frames
-  (`mp3.ts`, no ffprobe) and written to `src/content/narration/manifest.json` after every clip.
-- **Budget.** The free plan is ~10k credits/month ≈ 20k characters on Flash; a video is ~1,500–1,950 characters, all
-  13 about 22.6k. `--max-chars` (default 9000) is checked before each video (a video is voiced whole or not at all)
-  and before each request. A dry run prints characters per video and the total, and if a selection is over budget
-  names the one video to drop (`suggestDrop`). Only successful requests count.
-- **Errors.** Quota exhausted (`quota_exceeded`) and 402 (paid plan needed) stop the run without retrying; 429
-  (`too_many_concurrent_requests`, `system_busy`), 5xx, timeouts, and dropped connections retry with backoff (5s,
-  15s, 45s, or `retry-after`), then stop as "unavailable"; a bad key (401) aborts; a refused request (400/422) fails
-  that video and the run continues. Exit codes as for the other scripts (0 / 1 / 2, `narrationExitStatus()`). What
-  was saved before a stop is kept, and the summary lists what remains and the `--missing` command to resume.
-- Config (`.env.local`, never printed or committed): `ELEVENLABS_API_KEY` (not needed for `--dry-run`), optional
-  `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`, `ELEVENLABS_DELAY_MS` (500), `ELEVENLABS_TIMEOUT_MS` (60000).
+1. **Clips.** One request per scene: `POST /v1/text-to-speech/{voice_id}?output_format=mp3_44100_64` with `model_id`,
+   over plain `fetch` (`elevenlabs.ts`). Model `eleven_flash_v2_5` (cheapest per character), voice "Sarah"
+   (`EXAVITQu4vr4xnSDxMaL`, a default voice the free plan can use through the API). For continuity each request sends
+   ElevenLabs' request-stitching context: `next_text` (the next scene's narration) and either
+   `previous_request_ids` (the `request-id` headers of up to 3 adjacent scenes voiced just before it in this run;
+   ElevenLabs keeps them 2 hours) or, when there are none, `previous_text`. Clips are saved to
+   `narration/clips/<storyboard>/<scene>-<hash>.mp3` (committed, **not** served: they're the stitching source), where
+   `hash = narrationHash(narration, voice)` (`lib/narration/hash.ts`). Unchanged narration is never paid for twice;
+   an edited scene gets a new clip and the old one is deleted. What ElevenLabs bills (`character-cost` header, else
+   the text length) counts against the budget.
+2. **Stitching** (`stitch.ts`, pure functions over PCM; `ffmpeg.ts` decodes and encodes). Each clip is decoded,
+   trimmed of true silence only at its edges (below −50 dBFS, keeping a 30 ms margin, so speech is never cut), and
+   joined: `TRACK_LEAD_MS` (300 ms = `NARRATION_LEAD_FRAMES`) of silence, clip 1, a 600 ms pause, clip 2, …, a 600 ms
+   tail. It's encoded once (96 kbps, through a temp file so the LAME header records the encoder delay; through a pipe
+   every offset came out 25 ms late) to `public/audio/<storyboard>/narration-<hash>.mp3` (the hash covers every clip's
+   hash and the stitch settings, `STITCH_VERSION`). The result is decoded again and checked (`checkTrack`): its
+   length must equal lead + speech + pauses + tail, and every clip must be found whole, where it was placed (±2 ms),
+   by cross-correlation (≥ 0.97). A track that fails isn't recorded. Needs ffmpeg (`brew install ffmpeg`, or
+   `FFMPEG_PATH`); builds don't, since tracks are committed.
+3. **Manifest** (`src/content/narration/manifest.json`, version 2): per storyboard, `clips` (scene → hash, file,
+   length, characters, voice) and `track` (file, hash, length, and per scene its id, clip hash, `startMs`, `speechMs`).
+   Written after every clip and every track, so a stopped run keeps what it saved.
 
-**Timing.** `content/storyboards/index.ts` passes every storyboard through `withNarration(storyboard, manifest)`: a
-scene whose manifest entry matches its current narration gets `audio: { src, durationMs }` and
-`durationInFrames = narrationDurationInFrames(durationMs)`. Stale or missing entries keep the estimate. Each scene's
-narration starts at `timings[i].narrationStart` (`NARRATION_LEAD_FRAMES` into it, past the cross-fade's midpoint),
-which is also where scene jumps land; the 0.7 s pause after a clip outlasts the cross-fade, so clips never overlap.
+- **Budget.** The free plan is ~10k credits/month ≈ 20k characters on Flash; a video is ~900–1,950 characters.
+  `--max-chars` (default 9000) is checked before each video (voiced whole or not at all) and each request. A dry run
+  prints characters per video and which tracks need stitching, and names the one video to drop if over budget.
+- **Errors.** Quota exhausted and 402 stop the run; 429, 5xx, timeouts, and dropped connections retry with backoff
+  (5s, 15s, 45s, or `retry-after`), then stop as "unavailable"; a bad key (401) aborts; a refused request (400/422)
+  or a failed track check fails that video. Exit codes 0 / 1 / 2 (`narrationExitStatus()`).
+- Config (`.env.local`, never printed or committed): `ELEVENLABS_API_KEY` (not needed for `--dry-run` or
+  `--stitch-only`), optional `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`, `ELEVENLABS_DELAY_MS` (500),
+  `ELEVENLABS_TIMEOUT_MS` (60000), `FFMPEG_PATH`.
+
+**Timing: the video follows the audio.** `content/storyboards/index.ts` passes every storyboard through
+`withNarration(storyboard, manifest)`. When the track covers exactly the storyboard's scenes, in order, each voiced
+from its current narration (`currentTrack`), the storyboard gets `narrationTrack: { src, durationMs, sceneStartsMs }`
+and scene lengths from `trackSceneDurations()`: scene i's narration start (`timings[i].narrationStart`, also where
+scene jumps land) is exactly its speech start in the track, and the video ends with the track. Any change (a scene
+reworded, added, removed, reordered) drops the whole video to the browser voice with estimated lengths until it's
+restitched; there's no partial voicing.
 
 **Playback (`NarrationEngine`, `lib/narration/engine.ts`; wired by `components/learn/use-narration.ts`).** The
 Player is the clock. Frame updates, seeks, play/pause, and store changes (speed, volume, mute, hold) call
 `engine.update()`:
 
-- ElevenLabs: one `<audio>`; on a scene change or seek its `currentTime` is set from the frame, and it's corrected
-  whenever it drifts more than `DRIFT_SECONDS` (0.3 s). Speed sets `playbackRate` with `preservesPitch`.
-- Browser voice: the narration is split into sentences, one utterance each (long utterances stall in Chrome). A seek
-  restarts from the sentence at that point, estimated at the narration pace; pause remembers the sentence being
-  spoken and play restarts it; a speed change restarts it at the new rate; mute stops the voice without holding.
-  If the voice is still speaking two frames before the scene ends, the engine **holds**: the player pauses there
-  (`holding` in the store, shown as playing) and resumes when the last sentence ends (a watchdog releases it if the
-  voice never reports back). Pressing pause or seeking during a hold ends it.
-- Nothing sounds until the viewer presses play (autoplay rules). Volume and mute live in the player store and are
-  saved to localStorage (`algovizlib:audio`), read after hydration.
-- `chooseVoice()` picks per scene; the controls show "Narrated by ElevenLabs" (linked) or "Browser voice", and the
-  footer always shows "Voice by ElevenLabs" (the free plan requires attribution and has no commercial license: fine
-  for a portfolio).
+- ElevenLabs track: the source is set once. The target position is `frame / fps`. On play, resume, a seek or scene
+  jump, a stall (`readyState < 3`), or drift past `DRIFT_SECONDS` (0.5 s, e.g. a background tab), the engine sets
+  `currentTime` and **holds the video on that frame until the audio is really playing** (polled every 40 ms, given
+  up after 4 s), so they start together and nothing has to catch up. Remaining drift (rarely more than a frame) is
+  closed by playing ±3% faster or slower (`NUDGE`, pitch preserved, inaudible) from 0.1 s until within 0.03 s. Speed
+  sets `playbackRate` with `preservesPitch`. In the track's silent tail (`END_GUARD_SECONDS`) a finished track is
+  never restarted. An autoplay refusal lets the video go on silently until the next pause or seek.
+- Browser voice: each scene's narration is split into sentences, one utterance each (long ones stall in Chrome),
+  queued at the scene's narration start. A scene change never cancels it: if the voice is still speaking two frames
+  before the scene ends (or a fast frame already crossed into the next scene), the engine **holds** there (`holding`
+  in the store, shown as playing) until the last sentence ends (a watchdog releases it). Only a seek or scene jump
+  interrupts speech (restarting from the sentence at that point); pause/resume and speed changes restart the current
+  sentence; mute stops it without holding.
+- Nothing sounds until the viewer presses play (autoplay rules). Volume and mute live in the player store, saved to
+  localStorage (`algovizlib:audio`).
+- `chooseVoice(hasTrack, speechAvailable)`; the controls show "Narrated by ElevenLabs" (linked) or "Browser voice",
+  and the footer always shows "Voice by ElevenLabs" (free-plan attribution; no commercial license: fine for a
+  portfolio).
 
-Tests: `tests/narration-generation.test.ts` (hashing and caching, budget, dry run, quota/limit handling, the
-ElevenLabs client and error mapping, MP3 length, CLI) and `tests/narration-player.test.ts` (manifest timing, voice
-choice, the engine against mocked audio and speech: seeks, scene jumps, pause/resume, speed, drift, hold).
+Tests: `tests/narration-generation.test.ts` (hashing and caching, stitching runs, continuity context, billing, budget,
+dry run, quota/limit handling, the ElevenLabs client, MP3 length, CLI), `tests/narration-stitch.test.ts` (trimming
+never cuts speech, stitched length and offsets, the check catches a shift or lost samples, and, where ffmpeg is
+installed, every committed track decoded and checked against its clips), and `tests/narration-player.test.ts` (track
+timing, voice choice, the engine against a mocked audio element: one source, nothing touched at any boundary,
+seeks/jumps/pause/speed/drift/stalls/autoplay, and the browser voice never cancelled at a boundary). Browser checks
+(silent, see Gotchas) play every voiced video through at 1x and 2x.
 
 ## Choosing the example
 

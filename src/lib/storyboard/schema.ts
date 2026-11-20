@@ -55,15 +55,10 @@ const sceneShape = {
   narration: nonEmpty,
   /** Short on-screen text. */
   caption: nonEmpty.max(80),
-  /** Estimated from the narration, or from the voiced clip's length when the scene has `audio`. */
+  /** Estimated from the narration, or set from the stitched track's offsets when the video has `narrationTrack`. */
   durationInFrames: z.number().int().min(45),
   /** Index of the trace step this scene shows. Bound pointers, equations, and highlights follow that step. */
   traceStep: z.number().int().nonnegative().optional(),
-  /**
-   * Voiced narration, attached by `withNarration()` from the narration manifest (never written in storyboard files).
-   * It plays from `NARRATION_LEAD_FRAMES` into the scene.
-   */
-  audio: z.object({ src: z.string().min(1), durationMs: z.number().positive() }).optional(),
 };
 
 type SceneLike = { id: string; elements: readonly { id: string }[] };
@@ -366,6 +361,17 @@ const storyboardShape = {
   takeaway: takeawaySchema,
   trace: traceBindingSchema.optional(),
   generation: generationMetaSchema.optional(),
+  /**
+   * The whole video's voiced narration as one track, attached by `withNarration()` from the narration manifest (never
+   * written in storyboard files). `sceneStartsMs[i]` is where scene i's speech starts; scene lengths follow it.
+   */
+  narrationTrack: z
+    .object({
+      src: z.string().min(1),
+      durationMs: z.number().positive(),
+      sceneStartsMs: z.array(z.number().nonnegative()),
+    })
+    .optional(),
 };
 
 type StoryboardLike = {

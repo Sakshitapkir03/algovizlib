@@ -26,7 +26,30 @@ export class SynthesisRequestError extends Error {
   }
 }
 
-export type Synthesize = (text: string, voice: VoiceSpec) => Promise<Uint8Array>;
+/**
+ * Context for continuity between adjacent scenes (ElevenLabs "request stitching"): the neighbors' text, and the ids
+ * of the requests just before this one (at most 3, newest last, less than two hours old). When ids are sent,
+ * ElevenLabs ignores `previous_text`, so it's left out.
+ */
+export type SynthesisContext = {
+  previousText?: string;
+  nextText?: string;
+  previousRequestIds?: readonly string[];
+};
+
+export type SynthesisResult = {
+  bytes: Uint8Array;
+  /** The `request-id` response header, for the next scene's `previous_request_ids`. */
+  requestId?: string;
+  /** The `character-cost` response header: what ElevenLabs billed. */
+  characterCost?: number;
+};
+
+export type Synthesize = (
+  text: string,
+  voice: VoiceSpec,
+  context?: SynthesisContext,
+) => Promise<SynthesisResult>;
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 
 const API = "https://api.elevenlabs.io/v1/text-to-speech";
@@ -89,7 +112,18 @@ export function createElevenLabs({
   timeoutMs: number;
   fetch?: FetchLike;
 }): Synthesize {
-  return async (text, voice) => {
+  return async (text, voice, context = {}) => {
+    const ids = context.previousRequestIds?.slice(-3) ?? [];
+    const body = {
+      text,
+      model_id: voice.modelId,
+      ...(ids.length > 0
+        ? { previous_request_ids: ids }
+        : context.previousText
+          ? { previous_text: context.previousText }
+          : {}),
+      ...(context.nextText ? { next_text: context.nextText } : {}),
+    };
     let response: Response;
     try {
       response = await fetchImpl(
@@ -97,7 +131,7 @@ export function createElevenLabs({
         {
           method: "POST",
           headers: { "xi-api-key": apiKey, "content-type": "application/json", accept: "audio/mpeg" },
-          body: JSON.stringify({ text, model_id: voice.modelId }),
+          body: JSON.stringify(body),
           signal: AbortSignal.timeout(timeoutMs),
         },
       );
@@ -109,6 +143,11 @@ export function createElevenLabs({
     if (!response.ok) throw await classifyResponse(response);
     const bytes = new Uint8Array(await response.arrayBuffer());
     if (bytes.length === 0) throw new SynthesisRequestError("ElevenLabs returned an empty file.");
-    return bytes;
+    const cost = Number(response.headers.get("character-cost"));
+    return {
+      bytes,
+      requestId: response.headers.get("request-id") ?? undefined,
+      characterCost: Number.isFinite(cost) && cost > 0 ? cost : undefined,
+    };
   };
 }

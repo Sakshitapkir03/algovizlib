@@ -4,14 +4,17 @@ import { countWords, sceneIndexAtFrame, type SceneTiming } from "@/lib/storyboar
  * Keeps narration in step with the video. The Player is the clock: every frame update, seek, play/pause, speed or
  * volume change calls `update()`, and the engine makes the voice match.
  *
- * - **ElevenLabs** (a scene with `audio`): one audio element plays the scene's clip from `narrationStart`. Its
- *   position is set from the frame on a seek or scene change and whenever it drifts by more than `DRIFT_SECONDS`;
- *   smaller drift is closed by briefly playing it slightly faster or slower (`NUDGE`). Speed changes set
- *   `playbackRate` with `preservesPitch`, so 0.5×–2× keep a natural voice.
- * - **Browser voice** (no audio, Web Speech API available): the scene's narration is spoken sentence by sentence.
- *   A seek restarts from the sentence at that point (estimated from the narration pace); pause/resume and speed
- *   changes restart the sentence being spoken. The browser's pace varies, so if it's still speaking when the scene
- *   ends, the engine asks the player to wait there (`onHold`) and resumes it when the voice finishes.
+ * - **ElevenLabs** (the video has a stitched `track`): ONE audio element plays the whole video's narration, and its
+ *   position is simply the video's time (`frame / fps`). Its source is set once; scene changes never touch it. When
+ *   it starts (play, resume, seek, a buffering stall), the video waits on the frame until the audio is really
+ *   playing (`onHold`), so they start together and there's no gap to catch up. Slow drift is closed by playing a
+ *   few percent faster or slower (`NUDGE`, inaudible with pitch preserved); only a large jump (a background tab)
+ *   resets the position. Speed changes set `playbackRate` with `preservesPitch`.
+ * - **Browser voice** (no track, Web Speech API available): each scene's narration is queued sentence by sentence
+ *   at its narration start, and scene changes never cancel it: if it's still speaking when the scene ends, the
+ *   video waits there (`onHold`) until the last sentence finishes. Only a seek or scene jump interrupts speech
+ *   (it restarts from the sentence at that point, estimated from the narration pace); pause/resume and speed
+ *   changes restart the sentence being spoken.
  * - **Silent**: neither is available; the video plays with captions and the transcript.
  *
  * Nothing sounds until the viewer presses play, which keeps it within browser autoplay rules.
@@ -19,9 +22,9 @@ import { countWords, sceneIndexAtFrame, type SceneTiming } from "@/lib/storyboar
 
 export type VoiceKind = "elevenlabs" | "browser" | "silent";
 
-/** Which voice reads a scene. */
-export function chooseVoice(scene: { audio?: unknown }, speechAvailable: boolean): VoiceKind {
-  if (scene.audio) return "elevenlabs";
+/** Which voice reads a video: its stitched ElevenLabs track, else the browser's voice, else none. */
+export function chooseVoice(hasTrack: boolean, speechAvailable: boolean): VoiceKind {
+  if (hasTrack) return "elevenlabs";
   return speechAvailable ? "browser" : "silent";
 }
 
@@ -34,6 +37,10 @@ export interface AudioLike {
   volume: number;
   muted: boolean;
   readonly paused: boolean;
+  /** A seek is in progress. */
+  readonly seeking: boolean;
+  /** 3 (HAVE_FUTURE_DATA) or more: it can play from here. */
+  readonly readyState: number;
   play(): Promise<void>;
   pause(): void;
 }
@@ -55,11 +62,10 @@ export type SpeechAdapter = {
   createUtterance(text: string): UtteranceLike;
 };
 
-export type NarrationScene = {
-  narration: string;
-  durationInFrames: number;
-  audio?: { src: string; durationMs: number };
-};
+export type NarrationScene = { narration: string; durationInFrames: number };
+
+/** The video's stitched narration (see `withNarration`). */
+export type NarrationTrack = { src: string; durationMs: number };
 
 export type PlaybackState = {
   frame: number;
@@ -76,7 +82,9 @@ export type NarrationEngineOptions = {
   scenes: readonly NarrationScene[];
   timings: readonly SceneTiming[];
   fps: number;
-  /** Created lazily, on the first voiced scene. */
+  /** The stitched ElevenLabs track, or null when the browser voice reads the video. */
+  track: NarrationTrack | null;
+  /** Created lazily, the first time the track plays. */
   createAudio: () => AudioLike;
   /** `null` when the browser has no speech synthesis (or no voices). */
   speech: SpeechAdapter | null;
@@ -89,16 +97,24 @@ export type NarrationEngineOptions = {
   clearTimer?: (handle: unknown) => void;
 };
 
-/** Correct the clip's position when it's this far from where the frame says it should be. */
-export const DRIFT_SECONDS = 0.3;
+/** Past this much drift (a background tab, a long stall) the track's position is reset instead of nudged. */
+export const DRIFT_SECONDS = 0.5;
 /**
- * Smaller drift (an audio element takes ~0.1–0.25 s to start or resume while the video runs on) is closed smoothly:
- * the clip plays `NUDGE` faster or slower, pitch preserved, from `NUDGE_START` until it's within `NUDGE_STOP`.
- * Seeking instead would stall the element again and recreate the gap.
+ * Small drift is closed smoothly: the track plays `NUDGE` faster or slower (pitch preserved, far below what anyone
+ * notices) from `NUDGE_START` until it's within `NUDGE_STOP`. With the start-up wait, drift is rarely more than a
+ * frame or two.
  */
-export const NUDGE = 0.08;
-export const NUDGE_START = 0.08;
-export const NUDGE_STOP = 0.02;
+export const NUDGE = 0.03;
+export const NUDGE_START = 0.1;
+export const NUDGE_STOP = 0.03;
+/**
+ * The last stretch of the track is its silent tail (`TAIL_MS` in the stitcher, 0.6 s): once the video is this close
+ * to the end, a finished track stays finished rather than being restarted for a few frames.
+ */
+export const END_GUARD_SECONDS = 0.3;
+/** How often the start-up wait checks whether the audio is playing, and when it gives up and lets the video go. */
+const READY_POLL_MS = 40;
+const READY_TIMEOUT_MS = 4000;
 /** Pace the sentence estimate assumes (the same ~150 wpm as `estimateDurationInFrames`). */
 const WORDS_PER_SECOND = 2.5;
 /** Never hold longer than this per sentence still to speak (a voice that never reports "end"). */
@@ -130,7 +146,10 @@ type SpeechSession = {
 
 export class NarrationEngine {
   private audio: AudioLike | null = null;
-  private audioScene = -1;
+  /** The video is held until the audio is really playing (after a start, resume, seek, or stall). */
+  private waiting: { polls: number; timer: unknown } | null = null;
+  /** The browser refused to play (autoplay rules): the video goes on silently until the next pause or seek. */
+  private blocked = false;
   /** Catching up (+1) or easing back (−1) on small drift, 0 when in step. */
   private nudge: -1 | 0 | 1 = 0;
   private session: SpeechSession | null = null;
@@ -146,72 +165,120 @@ export class NarrationEngine {
     this.clearTimer = options.clearTimer ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>));
   }
 
-  /** The voice for the scene at `frame`. */
-  voiceAt(frame: number): VoiceKind {
-    const scene = this.options.scenes[sceneIndexAtFrame(this.options.timings, frame)];
-    return chooseVoice(scene, this.options.speech !== null);
+  /** The voice reading this video. */
+  get voice(): VoiceKind {
+    return chooseVoice(this.options.track !== null, this.options.speech !== null);
   }
 
   /** Bring the voice in line with the player. `seeked`: the frame jumped (scrub, scene jump, keyboard seek). */
   update(state: PlaybackState, seeked = false): void {
-    const { scenes, timings } = this.options;
-    const index = sceneIndexAtFrame(timings, state.frame);
-    const kind = chooseVoice(scenes[index], this.options.speech !== null);
     const playing = state.playing || state.holding;
-
+    if (this.options.track) {
+      this.syncTrack(this.options.track, playing, state, seeked);
+      return;
+    }
     if (seeked) {
       this.resumeAt = null;
       this.stopSpeech();
     }
-    this.syncAudio(kind === "elevenlabs" && playing ? index : -1, state, seeked);
-    if (kind === "browser" || this.session) this.syncSpeech(index, kind, playing, state);
+    const index = sceneIndexAtFrame(this.options.timings, state.frame);
+    if (this.voice === "browser" || this.session) this.syncSpeech(index, this.voice, playing, state, seeked);
   }
 
   dispose(): void {
     this.audio?.pause();
+    this.endWait(false);
     this.stopSpeech();
     this.resumeAt = null;
   }
 
-  // ── ElevenLabs clip ───────────────────────────────────────────────────────────────────────────────────────────
+  // ── ElevenLabs track ──────────────────────────────────────────────────────────────────────────────────────────
 
-  private syncAudio(index: number, state: PlaybackState, seeked: boolean) {
-    if (index < 0) {
-      if (this.audio && !this.audio.paused) this.audio.pause();
+  private syncTrack(track: NarrationTrack, playing: boolean, state: PlaybackState, seeked: boolean) {
+    const target = state.frame / this.options.fps;
+    const audio = this.audio;
+    if (!playing) {
+      this.endWait(false);
+      this.blocked = false;
+      if (audio && !audio.paused) audio.pause();
       return;
     }
-    const { scenes, timings, fps } = this.options;
-    const clip = scenes[index].audio!;
-    const offset = (state.frame - timings[index].narrationStart) / fps;
-    const audio = (this.audio ??= this.options.createAudio());
-    audio.volume = state.volume;
-    audio.muted = state.muted;
-    audio.preservesPitch = true;
-    if (offset < 0 || offset >= clip.durationMs / 1000) {
-      // Before the lead-in ends, or in the pause after the clip.
-      if (!audio.paused) audio.pause();
+    if (seeked) this.blocked = false;
+    if (this.blocked) return;
+    const el = (this.audio ??= this.options.createAudio());
+    if (!el.src) el.src = track.src; // the one and only time the source is set
+    el.volume = state.volume;
+    el.muted = state.muted;
+    el.preservesPitch = true;
+    // In the track's silent tail (or past it) there's nothing left to say: let it finish, never restart it.
+    if (target >= track.durationMs / 1000 - END_GUARD_SECONDS) return;
+
+    if (el.paused || seeked) {
+      // Starting, resuming, or jumping: put the track where the video is and hold the video until it plays.
+      el.currentTime = target;
+      this.nudge = 0;
+      el.playbackRate = state.rate;
+      if (el.paused)
+        el.play().catch(() => {
+          // Autoplay refused: let the video go on silently rather than retry every frame.
+          this.blocked = true;
+          this.endWait(true);
+        });
+      this.beginWait(state.frame);
       return;
     }
-    const drift = audio.currentTime - offset;
-    if (this.audioScene !== index) {
-      audio.src = clip.src;
-      this.audioScene = index;
-      audio.currentTime = offset;
-      this.nudge = 0;
-    } else if (seeked || Math.abs(drift) > DRIFT_SECONDS) {
-      audio.currentTime = offset;
-      this.nudge = 0;
-    } else if (!audio.paused) {
-      if (Math.abs(drift) > NUDGE_START) this.nudge = drift < 0 ? 1 : -1;
-      else if (Math.abs(drift) < NUDGE_STOP) this.nudge = 0;
+    if (this.waiting) return; // the video is parked until the audio catches up
+    if (el.seeking || el.readyState < 3) {
+      // Buffering mid-play: park the video rather than let them drift apart.
+      this.beginWait(state.frame);
+      return;
     }
-    audio.playbackRate = state.rate * (1 + this.nudge * NUDGE);
-    if (audio.paused) audio.play().catch(() => undefined); // autoplay refusals stay silent
+
+    const drift = el.currentTime - target;
+    if (Math.abs(drift) > DRIFT_SECONDS) {
+      el.currentTime = target;
+      this.nudge = 0;
+      this.beginWait(state.frame);
+    } else if (Math.abs(drift) > NUDGE_START) this.nudge = drift < 0 ? 1 : -1;
+    else if (Math.abs(drift) < NUDGE_STOP) this.nudge = 0;
+    el.playbackRate = state.rate * (1 + this.nudge * NUDGE);
+  }
+
+  /** Park the video on `frame` until the track is playing (checked every `READY_POLL_MS`). */
+  private beginWait(frame: number) {
+    if (this.waiting) return;
+    const poll = () => {
+      const el = this.audio;
+      if (!this.waiting || !el) return;
+      const ready = !el.paused && !el.seeking && el.readyState >= 3;
+      if (ready || ++this.waiting.polls * READY_POLL_MS >= READY_TIMEOUT_MS) this.endWait(true);
+      else this.waiting.timer = this.setTimer(poll, READY_POLL_MS);
+    };
+    this.waiting = { polls: 0, timer: this.setTimer(poll, READY_POLL_MS) };
+    this.holdRequested = true;
+    this.options.onHold(frame);
+  }
+
+  /** Stop waiting; `release` resumes the video (false when the viewer paused, so it stays paused). */
+  private endWait(release: boolean) {
+    if (!this.waiting) return;
+    this.clearTimer(this.waiting.timer);
+    this.waiting = null;
+    if (release && this.holdRequested) {
+      this.holdRequested = false;
+      this.options.onRelease();
+    } else this.holdRequested = false;
   }
 
   // ── Browser voice ─────────────────────────────────────────────────────────────────────────────────────────────
 
-  private syncSpeech(index: number, kind: VoiceKind, playing: boolean, state: PlaybackState) {
+  private syncSpeech(
+    index: number,
+    kind: VoiceKind,
+    playing: boolean,
+    state: PlaybackState,
+    seeked: boolean,
+  ) {
     const speech = this.options.speech;
     if (!speech) return;
     const session = this.session;
@@ -229,8 +296,12 @@ export class NarrationEngine {
     }
 
     if (session && session.scene !== index) {
-      // The video moved on while the voice is still going: it never cuts a sentence off (we hold), so this is a
-      // jump. Start over in the new scene.
+      if (!session.done && !seeked) {
+        // Played into the next scene while the voice is still reading this one (a fast frame skipped the hold
+        // point): never cut it off. Wait at this scene's end until it finishes.
+        this.maybeHold(session, state);
+        return;
+      }
       if (!session.done) this.stopSpeech();
       else this.session = null;
     } else if (session && !session.done) {

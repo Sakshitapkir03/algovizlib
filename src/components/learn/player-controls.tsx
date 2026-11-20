@@ -50,14 +50,14 @@ export function PlayerControls({
   durationInFrames,
   timings,
   currentIndex,
-  hasAudio,
+  hasTrack,
   onToggleFullscreen,
 }: {
   durationInFrames: number;
   timings: readonly SceneTiming[];
   currentIndex: number;
-  /** The current scene has ElevenLabs narration. */
-  hasAudio: boolean;
+  /** The video has a stitched ElevenLabs narration track. */
+  hasTrack: boolean;
   onToggleFullscreen: () => void;
 }) {
   const frame = usePlayerStore((s) => s.frame);
@@ -68,7 +68,7 @@ export function PlayerControls({
   const setVolume = usePlayerStore((s) => s.setVolume);
   const toggleMute = usePlayerStore((s) => s.toggleMute);
   const speechAvailable = usePlayerStore((s) => s.speechAvailable);
-  const voice = chooseVoice({ audio: hasAudio || undefined }, speechAvailable);
+  const voice = chooseVoice(hasTrack, speechAvailable);
   const silent = muted || volume === 0;
   const isFullscreen = usePlayerStore((s) => s.isFullscreen);
   const playbackRate = usePlayerStore((s) => s.playbackRate);

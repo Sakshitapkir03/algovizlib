@@ -23,14 +23,17 @@ import {
 } from "@/lib/generation/narration/elevenlabs";
 import { mp3DurationMs } from "@/lib/generation/narration/mp3";
 import {
-  audioFile,
+  clipFile,
   DEFAULT_MAX_CHARS,
+  needsWork,
   plannedChars,
   runNarration,
+  trackFile,
   type AudioStore,
   type NarrationDeps,
   type NarrationTarget,
 } from "@/lib/generation/narration/pipeline";
+import type { SynthesisContext } from "@/lib/generation/narration/elevenlabs";
 import { narrationCatalog } from "@/lib/generation/narration/catalog";
 import { narrationHash, type VoiceSpec } from "@/lib/narration/hash";
 import { emptyManifest, type NarrationManifest } from "@/lib/narration/manifest";
@@ -69,31 +72,60 @@ function memoryStore(manifest: NarrationManifest = emptyManifest(), files: strin
       current = structuredClone(m);
       store.writes++;
     },
-    writeAudio: (file, bytes) => void saved.set(file, bytes),
-    exists: (file) => saved.has(file),
-    remove: (file) => void saved.delete(file),
+    writeClip: (file, bytes) => void saved.set(file, bytes),
+    clipExists: (file) => saved.has(file),
+    removeClip: (file) => void saved.delete(file),
+    writeTrack: (file, bytes) => void saved.set(file, bytes),
+    trackExists: (file) => saved.has(file),
+    removeTrack: (file) => void saved.delete(file),
   };
   return store;
 }
 
-/** A synthesizer that plays back scripted results (errors are thrown) and records every text it was sent. */
-function fakeSynth(script: (Error | "ok")[] = []) {
+/**
+ * A synthesizer that plays back scripted results (errors are thrown) and records every text it was sent, with
+ * its continuity context. Each success gets a request id ("req-1", …).
+ */
+function fakeSynth(script: (Error | "ok")[] = [], { cost }: { cost?: number } = {}) {
   const queue = [...script];
   const calls: string[] = [];
-  const synthesize = async (text: string) => {
+  const contexts: (SynthesisContext | undefined)[] = [];
+  let ok = 0;
+  const synthesize: NarrationDeps["synthesize"] = async (text, _voice, context) => {
     calls.push(text);
+    contexts.push(context);
     const next = queue.shift() ?? "ok";
     if (next instanceof Error) throw next;
-    return fakeMp3(Math.max(1, Math.round(text.length / 5)));
+    return {
+      bytes: fakeMp3(Math.max(1, Math.round(text.length / 5))),
+      requestId: `req-${++ok}`,
+      characterCost: cost,
+    };
   };
-  return { synthesize, calls };
+  return { synthesize, calls, contexts };
 }
 
-function deps(store: AudioStore, synthesize: NarrationDeps["synthesize"]) {
+/** A stitcher that records the clips it joined; `problems` makes its check fail. */
+function fakeStitch(problems: string[] = []) {
+  const calls: string[][] = [];
+  const stitch: NarrationDeps["stitch"] = (files) => {
+    calls.push([...files]);
+    return {
+      bytes: new Uint8Array([9]),
+      durationMs: 300 + files.length * 1600,
+      scenes: files.map((_, i) => ({ startMs: 300 + i * 1600, speechMs: 1000 })),
+      problems,
+    };
+  };
+  return { stitch, calls };
+}
+
+function deps(store: AudioStore, synthesize: NarrationDeps["synthesize"], stitch = fakeStitch().stitch) {
   const sleeps: number[] = [];
   const lines: string[] = [];
   const d: NarrationDeps = {
     synthesize,
+    stitch,
     store,
     measureMs: mp3DurationMs,
     sleep: async (ms) => void sleeps.push(ms),
@@ -108,7 +140,7 @@ const target = (id: string, narrations: string[]): NarrationTarget => ({
   scenes: narrations.map((narration, i) => ({ id: `s${i + 1}`, narration })),
 });
 
-const options = (overrides: Partial<{ dryRun: boolean; maxChars: number }> = {}) => ({
+const options = (overrides: Partial<{ dryRun: boolean; stitchOnly: boolean; maxChars: number }> = {}) => ({
   dryRun: false,
   maxChars: DEFAULT_MAX_CHARS,
   delayMs: 0,
@@ -130,8 +162,9 @@ describe("narration hash", () => {
     expect(base).toMatch(/^[0-9a-f]{14}$/);
   });
 
-  it("names each clip after its hash", () => {
-    expect(audioFile("two-pointers", "intro", "00ab")).toBe("/audio/two-pointers/intro-00ab.mp3");
+  it("names each clip and track after its hash", () => {
+    expect(clipFile("two-pointers", "intro", "00ab")).toBe("two-pointers/intro-00ab.mp3");
+    expect(trackFile("two-pointers", "00cd")).toBe("/audio/two-pointers/narration-00cd.mp3");
   });
 });
 
@@ -145,12 +178,12 @@ describe("runNarration caching", () => {
     expect(synth.calls).toEqual(["One two three.", "Four five."]);
     expect(summary.rows[0]).toMatchObject({ status: "saved", voicedScenes: 2, chars: 24 });
     expect(summary.charsUsed).toBe(24);
-    const entry = store.manifest().storyboards.video.s1;
+    const entry = store.manifest().storyboards.video.clips.s1;
     expect(entry).toMatchObject({ hash: narrationHash("One two three.", VOICE), chars: 14, ...VOICE });
     expect(entry.durationMs).toBe(mp3DurationMs(fakeMp3(3)));
     expect(store.saved.has(entry.file)).toBe(true);
-    // The manifest is written after every clip, so a stop keeps what was saved.
-    expect(store.writes).toBe(2);
+    // The manifest is written after every clip (so a stop keeps what was saved), then once for the track.
+    expect(store.writes).toBe(3);
   });
 
   it("skips unchanged narration: a second run makes no requests and costs nothing", async () => {
@@ -178,7 +211,7 @@ describe("runNarration caching", () => {
       options(),
       deps(store, fakeSynth().synthesize).deps,
     );
-    const oldFile = store.manifest().storyboards.video.s2.file;
+    const oldFile = store.manifest().storyboards.video.clips.s2.file;
 
     const again = fakeSynth();
     const summary = await runNarration(
@@ -189,7 +222,7 @@ describe("runNarration caching", () => {
     expect(again.calls).toEqual(["Two, edited."]);
     expect(summary.charsUsed).toBe("Two, edited.".length);
     expect(store.saved.has(oldFile)).toBe(false);
-    expect(store.manifest().storyboards.video.s2.hash).toBe(narrationHash("Two, edited.", VOICE));
+    expect(store.manifest().storyboards.video.clips.s2.hash).toBe(narrationHash("Two, edited.", VOICE));
   });
 
   it("regenerates when the voice changes, and when a clip file is missing", async () => {
@@ -219,6 +252,146 @@ describe("runNarration caching", () => {
     expect(plannedChars(target("video", ["One.", "Second scene."]), store, VOICE)).toBe(
       "Second scene.".length,
     );
+  });
+});
+
+// ── stitching and continuity ────────────────────────────────────────────────────────────────────────────────
+
+describe("runNarration stitching", () => {
+  it("stitches a fully voiced video's clips, in scene order, into one recorded track", async () => {
+    const store = memoryStore();
+    const stitcher = fakeStitch();
+    const summary = await runNarration(
+      [target("video", ["One.", "Two.", "Three."])],
+      options(),
+      deps(store, fakeSynth().synthesize, stitcher.stitch).deps,
+    );
+    const { clips, track } = store.manifest().storyboards.video;
+    expect(stitcher.calls).toEqual([["s1", "s2", "s3"].map((id) => clips[id].file)]);
+    expect(summary.rows[0]).toMatchObject({ status: "saved", track: "stitched" });
+    expect(track).toMatchObject({ durationMs: 300 + 3 * 1600 });
+    expect(track!.file).toMatch(/^\/audio\/video\/narration-[0-9a-f]+\.mp3$/);
+    expect(track!.scenes).toEqual(
+      ["s1", "s2", "s3"].map((id, i) => ({
+        id,
+        hash: clips[id].hash,
+        startMs: 300 + i * 1600,
+        speechMs: 1000,
+      })),
+    );
+    expect(store.saved.has(track!.file)).toBe(true);
+  });
+
+  it("restitches only when a clip changes, and removes the old track", async () => {
+    const store = memoryStore();
+    await runNarration(
+      [target("video", ["One.", "Two."])],
+      options(),
+      deps(store, fakeSynth().synthesize).deps,
+    );
+    const first = store.manifest().storyboards.video.track!.file;
+    const unchanged = fakeStitch();
+    await runNarration(
+      [target("video", ["One.", "Two."])],
+      options(),
+      deps(store, fakeSynth().synthesize, unchanged.stitch).deps,
+    );
+    expect(unchanged.calls).toEqual([]);
+    expect(needsWork(target("video", ["One.", "Two."]), store, VOICE)).toBe(false);
+    expect(needsWork(target("video", ["One.", "Two, edited."]), store, VOICE)).toBe(true);
+    await runNarration(
+      [target("video", ["One.", "Two, edited."])],
+      options(),
+      deps(store, fakeSynth().synthesize).deps,
+    );
+    const second = store.manifest().storyboards.video.track!.file;
+    expect(second).not.toBe(first);
+    expect(store.saved.has(first)).toBe(false);
+  });
+
+  it("--stitch-only builds tracks from existing clips without a single request", async () => {
+    const store = memoryStore();
+    await runNarration(
+      [target("video", ["One.", "Two."])],
+      options(),
+      deps(store, fakeSynth().synthesize).deps,
+    );
+    const m = store.manifest();
+    delete m.storyboards.video.track;
+    store.writeManifest(m);
+    const synth = fakeSynth();
+    const summary = await runNarration(
+      [target("video", ["One.", "Two."]), target("other", ["Not voiced."])],
+      options({ stitchOnly: true }),
+      deps(store, synth.synthesize).deps,
+    );
+    expect(synth.calls).toEqual([]);
+    expect(summary.rows.map((r) => [r.status, r.track])).toEqual([
+      ["stitched", "stitched"],
+      ["not voiced", "-"],
+    ]);
+  });
+
+  it("never records a track that fails its check", async () => {
+    const store = memoryStore();
+    const summary = await runNarration(
+      [target("video", ["One.", "Two."])],
+      options(),
+      deps(store, fakeSynth().synthesize, fakeStitch(["scene 2 sits 25.1 ms off"]).stitch).deps,
+    );
+    expect(summary.rows[0]).toMatchObject({ status: "failed", track: "failed" });
+    expect(summary.rows[0].detail).toMatch(/25.1 ms off/);
+    expect(store.manifest().storyboards.video.track).toBeUndefined();
+    expect(narrationExitStatus(summary).code).toBe(1);
+  });
+
+  it("a dry run reports a missing track without stitching", async () => {
+    const store = memoryStore();
+    await runNarration([target("video", ["One."])], options(), deps(store, fakeSynth().synthesize).deps);
+    const m = store.manifest();
+    delete m.storyboards.video.track;
+    store.writeManifest(m);
+    const stitcher = fakeStitch();
+    const summary = await runNarration(
+      [target("video", ["One."])],
+      options({ dryRun: true }),
+      deps(store, fakeSynth().synthesize, stitcher.stitch).deps,
+    );
+    expect(stitcher.calls).toEqual([]);
+    expect(summary.rows[0].track).toBe("needs stitching");
+  });
+
+  it("sends each scene its neighbors' text and the ids of the adjacent requests before it", async () => {
+    const store = memoryStore();
+    const synth = fakeSynth();
+    await runNarration(
+      [target("video", ["A.", "B.", "C.", "D.", "E."])],
+      options(),
+      deps(store, synth.synthesize).deps,
+    );
+    expect(synth.contexts[0]).toEqual({ previousText: undefined, nextText: "B.", previousRequestIds: [] });
+    expect(synth.contexts[1]).toEqual({ previousText: "A.", nextText: "C.", previousRequestIds: ["req-1"] });
+    // At most 3, newest last.
+    expect(synth.contexts[4]?.previousRequestIds).toEqual(["req-2", "req-3", "req-4"]);
+
+    // Regenerating one scene in the middle: its neighbors' text, but no stale ids.
+    const again = fakeSynth();
+    await runNarration(
+      [target("video", ["A.", "B.", "C, edited.", "D.", "E."])],
+      options(),
+      deps(store, again.synthesize).deps,
+    );
+    expect(again.contexts).toEqual([{ previousText: "B.", nextText: "D.", previousRequestIds: [] }]);
+  });
+
+  it("counts what ElevenLabs billed (character-cost) when it says", async () => {
+    const store = memoryStore();
+    const summary = await runNarration(
+      [target("video", ["Hello."])],
+      options(),
+      deps(store, fakeSynth([], { cost: 9 }).synthesize).deps,
+    );
+    expect(summary.charsUsed).toBe(9);
   });
 });
 
@@ -310,7 +483,7 @@ describe("runNarration errors", () => {
     expect(summary.stoppedBy).toBe("quota");
     expect(summary.charsUsed).toBe(4);
     expect(summary.rows.map((r) => r.status)).toEqual(["partial", "not started"]);
-    expect(Object.keys(store.manifest().storyboards.a)).toEqual(["s1"]);
+    expect(Object.keys(store.manifest().storyboards.a.clips)).toEqual(["s1"]);
     expect(summary.remaining).toEqual(["a", "b"]);
     expect(narrationExitStatus(summary)).toMatchObject({ code: 2 });
     expect(narrationExitStatus(summary).reason).toMatch(/quota/);
@@ -382,7 +555,7 @@ describe("ElevenLabs client", () => {
         return new Response(new Blob([fakeMp3(2).slice().buffer as ArrayBuffer]), { status: 200 });
       },
     });
-    const bytes = await synthesize("Hello there.", VOICE);
+    const { bytes } = await synthesize("Hello there.", VOICE);
     expect(bytes.length).toBeGreaterThan(0);
     expect(requests[0].url).toBe(
       "https://api.elevenlabs.io/v1/text-to-speech/voice-a?output_format=mp3_44100_64",
@@ -392,6 +565,37 @@ describe("ElevenLabs client", () => {
       model_id: "eleven_flash_v2_5",
     });
     expect((requests[0].init.headers as Record<string, string>)["xi-api-key"]).toBe("sk-secret");
+  });
+
+  it("sends continuity context, preferring request ids over previous text, and reads the id and cost", async () => {
+    const bodies: unknown[] = [];
+    const synthesize = createElevenLabs({
+      apiKey: "sk-secret",
+      timeoutMs: 1000,
+      fetch: async (_url, init) => {
+        bodies.push(JSON.parse(String(init.body)));
+        return new Response(new Blob([fakeMp3(2).slice().buffer as ArrayBuffer]), {
+          status: 200,
+          headers: { "request-id": "abc123", "character-cost": "12" },
+        });
+      },
+    });
+    const result = await synthesize("Two.", VOICE, { previousText: "One.", nextText: "Three." });
+    expect(result).toMatchObject({ requestId: "abc123", characterCost: 12 });
+    await synthesize("Three.", VOICE, {
+      previousText: "Two.",
+      nextText: "Four.",
+      previousRequestIds: ["r1", "r2", "r3", "r4"],
+    });
+    expect(bodies).toEqual([
+      { text: "Two.", model_id: "eleven_flash_v2_5", previous_text: "One.", next_text: "Three." },
+      {
+        text: "Three.",
+        model_id: "eleven_flash_v2_5",
+        previous_request_ids: ["r2", "r3", "r4"],
+        next_text: "Four.",
+      },
+    ]);
   });
 
   it("classifies quota, auth, plan, rate-limit, overload, and validation errors", async () => {

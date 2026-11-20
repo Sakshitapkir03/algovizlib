@@ -16,8 +16,8 @@ export function countWords(text: string): number {
 }
 
 /**
- * Estimate a scene's length from its narration. Used for scenes without voiced audio (they're read by the browser
- * voice, which waits at the scene's end if it runs long); voiced scenes use `narrationDurationInFrames`.
+ * Estimate a scene's length from its narration. Used by videos without a voiced track (they're read by the browser
+ * voice, which waits at the scene's end if it runs long); voiced videos use `trackSceneDurations`.
  */
 export function estimateDurationInFrames(narration: string, fps: number = FPS): number {
   const seconds = Math.max(MIN_SECONDS, countWords(narration) / WORDS_PER_SECOND + PADDING_SECONDS);
@@ -26,12 +26,26 @@ export function estimateDurationInFrames(narration: string, fps: number = FPS): 
 
 /** Narration starts this far into a scene (inside its fade-in), so the cut never clips the first word. */
 export const NARRATION_LEAD_FRAMES = 9;
-/** Silence after a voiced clip before the scene ends. Longer than the cross-fade, so clips never overlap. */
-export const NARRATION_PAUSE_SECONDS = 0.7;
+/** A stitched narration track opens with this much silence: scene 0's speech starts at its narration start. */
+export const TRACK_LEAD_MS = (NARRATION_LEAD_FRAMES / FPS) * 1000;
 
-/** A voiced scene's length: lead-in + the measured clip + a short pause. */
-export function narrationDurationInFrames(audioMs: number, fps: number = FPS): number {
-  return Math.max(45, NARRATION_LEAD_FRAMES + Math.ceil((audioMs / 1000 + NARRATION_PAUSE_SECONDS) * fps));
+/**
+ * Scene lengths that put every scene's narration start exactly where its speech begins in the stitched track
+ * (`startsMs[i]`, ms from the track's start), so the video follows the audio. Scene i's sequence begins
+ * `NARRATION_LEAD_FRAMES` before its speech; adjacent scenes overlap by `transitionFrames` (see
+ * `getSceneTimeline`); the last scene ends with the track.
+ */
+export function trackSceneDurations(
+  startsMs: readonly number[],
+  totalMs: number,
+  fps: number = FPS,
+  transitionFrames: number = TRANSITION_FRAMES,
+): number[] {
+  const frame = (ms: number) => Math.round((ms * fps) / 1000);
+  const starts = startsMs.map((ms, i) => (i === 0 ? 0 : frame(ms) - NARRATION_LEAD_FRAMES));
+  return starts.map((start, i) =>
+    i === starts.length - 1 ? frame(totalMs) - start : starts[i + 1] - start + transitionFrames,
+  );
 }
 
 export type SceneTiming = {

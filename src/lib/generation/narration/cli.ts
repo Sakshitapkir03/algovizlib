@@ -14,6 +14,8 @@ export type NarrationCliOptions = {
   pattern?: string;
   missing: boolean;
   dryRun: boolean;
+  /** Build stitched tracks from existing clips only: no ElevenLabs requests, no key. */
+  stitchOnly: boolean;
   maxChars: number;
 };
 
@@ -23,10 +25,12 @@ Selection (at least one):
   --storyboard <id>        a storyboard id (two-pointers) or its problem (two-pointers/pair-with-target-sum);
                            repeat for several
   --pattern <slug>         every video in a pattern
-  --missing                every video with a scene that isn't voiced yet (combine with --pattern to narrow)
+  --missing                every video with a scene not voiced yet or a stale track (combine with --pattern)
 
 Flags:
   --dry-run                print characters per video and the total; call nothing, write nothing
+  --stitch-only            only stitch existing clips into each video's track (no requests, no key);
+                           every video when nothing else is selected
   --max-chars <n>          stop before a video that would take the run past n characters (default ${DEFAULT_MAX_CHARS})`;
 
 export function parseNarrationCli(argv: readonly string[]): NarrationCliOptions {
@@ -37,6 +41,7 @@ export function parseNarrationCli(argv: readonly string[]): NarrationCliOptions 
       pattern: { type: "string" },
       missing: { type: "boolean", default: false },
       "dry-run": { type: "boolean", default: false },
+      "stitch-only": { type: "boolean", default: false },
       "max-chars": { type: "string" },
     },
     strict: true,
@@ -45,13 +50,14 @@ export function parseNarrationCli(argv: readonly string[]): NarrationCliOptions 
   const maxChars = values["max-chars"] === undefined ? DEFAULT_MAX_CHARS : Number(values["max-chars"]);
   if (!Number.isInteger(maxChars) || maxChars < 1) throw new Error("--max-chars must be a positive integer");
   const storyboards = values.storyboard ?? [];
-  if (storyboards.length === 0 && !values.pattern && !values.missing)
+  if (storyboards.length === 0 && !values.pattern && !values.missing && !values["stitch-only"])
     throw new Error("Choose what to voice: --storyboard, --pattern, or --missing");
   return {
     storyboards,
     pattern: values.pattern,
     missing: values.missing,
     dryRun: values["dry-run"],
+    stitchOnly: values["stitch-only"],
     maxChars,
   };
 }
@@ -61,7 +67,7 @@ export type NarrationCatalog = readonly (NarrationTarget & { pattern: string })[
 
 /**
  * The videos to voice, in the order given (`--storyboard`) or catalog order. `--missing` keeps only videos with a
- * scene still to voice (`needsWork`).
+ * scene still to voice or a stale track (`needsWork`).
  */
 export function selectNarrationTargets(
   options: NarrationCliOptions,
@@ -90,7 +96,7 @@ export function selectNarrationTargets(
 
 export function formatNarrationTable(summary: Pick<NarrationSummary, "rows">): string {
   return formatTable([
-    ["video", "problem", "scenes", "voiced", "characters", "result", "note"],
+    ["video", "problem", "scenes", "voiced", "characters", "result", "track", "note"],
     ...summary.rows.map((r) => [
       r.storyboardId,
       r.problemKey,
@@ -98,6 +104,7 @@ export function formatNarrationTable(summary: Pick<NarrationSummary, "rows">): s
       `${r.voicedScenes}/${r.scenes}`,
       String(r.chars),
       r.status,
+      r.track,
       r.detail ?? "",
     ]),
   ]);
@@ -144,5 +151,8 @@ export function narrationExitStatus(summary: Pick<NarrationSummary, "rows" | "st
   }
   if (failed.length > 0)
     return { code: 1, reason: `${failed.length} failed: ${failed.map((r) => r.storyboardId).join(", ")}.` };
-  return { code: 0, reason: "Every targeted video is voiced, up to date, or planned (dry run)." };
+  return {
+    code: 0,
+    reason: "Every targeted video is voiced and stitched, up to date, or planned (dry run).",
+  };
 }

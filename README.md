@@ -94,22 +94,27 @@ cleanly and tells you to rerun with `--missing` the next day. Details: [CLAUDE.m
 
 ## Narration
 
-Videos are narrated. Scenes voiced with [ElevenLabs](https://elevenlabs.io) play their recorded clip and take their
-length from it; the rest are read by the browser's built-in voice (Web Speech API), which waits at a scene's end if it
-runs long. Without either, the video plays silently with captions and the transcript. A label under the player says
+Videos are narrated. Videos voiced with [ElevenLabs](https://elevenlabs.io) play one continuous recorded track and
+take their scene timing from it; the rest are read by the browser's built-in voice (Web Speech API), which never cuts
+a sentence at a scene change: the video waits for it instead. Without either, the video plays silently with captions and the transcript. A label under the player says
 which voice is active ("Narrated by ElevenLabs" / "Browser voice"), and the footer credits ElevenLabs, as its free
 plan requires.
 
-Clips are made offline and committed as small MP3s under `public/audio/`, listed in
-`src/content/narration/manifest.json`. Set `ELEVENLABS_API_KEY` in `.env.local` (see `.env.example`), then:
+Narration is made offline. Each scene is voiced once with ElevenLabs (clips kept under `narration/clips/`, not
+served), then each video's clips are stitched into **one continuous track** (`public/audio/<video>/narration-*.mp3`)
+with even pauses between scenes. The player plays that single track, so scene changes never interrupt the voice, and
+scene timing comes from where each scene's speech starts in it. Everything is listed in
+`src/content/narration/manifest.json`. Set `ELEVENLABS_API_KEY` in `.env.local` (see `.env.example`) and install
+ffmpeg (`brew install ffmpeg`, used only for stitching), then:
 
 ```bash
 pnpm generate:narration --storyboard sorting/merge-sort --storyboard sorting/heap-sort --dry-run   # characters, no calls
-pnpm generate:narration --storyboard sorting/merge-sort --storyboard sorting/heap-sort             # voice them
+pnpm generate:narration --storyboard sorting/merge-sort --storyboard sorting/heap-sort             # voice + stitch
 pnpm generate:narration --missing                                                                  # everything not voiced yet
+pnpm generate:narration --stitch-only                                                              # restitch, no requests
 ```
 
-The free plan covers about 20,000 characters a month on the Flash model; a video's narration is ~1,500–1,950. Each run
+The free plan covers about 20,000 characters a month on the Flash model; a video's narration is ~900–1,950. Each run
 stops before a video that would pass `--max-chars` (default 9,000), never re-pays for unchanged narration (clips are
 named by a hash of the text, voice, and model), and stops cleanly, keeping what's saved, when the monthly quota runs
 out. Details: [CLAUDE.md](./CLAUDE.md).

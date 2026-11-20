@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { storyboards } from "@/content/storyboards";
+import manifestJson from "@/content/narration/manifest.json";
 import {
   chooseVoice,
   DRIFT_SECONDS,
@@ -12,136 +13,194 @@ import {
   splitSentences,
   type AudioLike,
   type NarrationScene,
+  type NarrationTrack,
   type PlaybackState,
   type SpeechAdapter,
   type UtteranceLike,
 } from "@/lib/narration/engine";
 import { narrationHash } from "@/lib/narration/hash";
-import { currentAudio, withNarration, type NarrationManifest } from "@/lib/narration/manifest";
+import {
+  currentTrack,
+  narrationManifestSchema,
+  withNarration,
+  type NarrationManifest,
+} from "@/lib/narration/manifest";
 import {
   estimateDurationInFrames,
   FPS,
   getSceneTimeline,
-  NARRATION_LEAD_FRAMES,
-  NARRATION_PAUSE_SECONDS,
-  narrationDurationInFrames,
   sceneIndexAtFrame,
+  TRACK_LEAD_MS,
+  trackSceneDurations,
 } from "@/lib/storyboard";
 
-// ── timing from audio ───────────────────────────────────────────────────────────────────────────────────────
+// ── timing from the stitched track ──────────────────────────────────────────────────────────────────────────
 
 const VOICE = { voiceId: "v", modelId: "m", outputFormat: "mp3_44100_64" };
-// The real manifest voices this video, so start from an unvoiced copy (estimated durations, no audio).
+// The real manifest voices this video, so start from an unvoiced copy (estimated durations, no track).
 const voicedBase = storyboards.find((sb) => sb.id === "two-pointers")!;
+const { narrationTrack: _, ...unvoiced } = voicedBase;
 const base = {
-  ...voicedBase,
-  scenes: voicedBase.scenes.map(({ audio: _, ...scene }) => ({
+  ...unvoiced,
+  scenes: voicedBase.scenes.map((scene) => ({
     ...scene,
     durationInFrames: estimateDurationInFrames(scene.narration),
   })),
 };
 
-function manifestFor(scenes: { id: string; narration: string }[], durationMs: number): NarrationManifest {
+/** A manifest whose track gives every scene `speechMs` of speech with 600 ms pauses. */
+function manifestFor(scenes: { id: string; narration: string }[], speechMs: number): NarrationManifest {
+  const startsMs = scenes.map((_, i) => TRACK_LEAD_MS + i * (speechMs + 600));
   return {
-    version: 1,
+    version: 2,
     storyboards: {
-      [base.id]: Object.fromEntries(
-        scenes.map((s) => [
-          s.id,
-          {
+      [base.id]: {
+        clips: Object.fromEntries(
+          scenes.map((s) => [
+            s.id,
+            {
+              hash: narrationHash(s.narration, VOICE),
+              file: `${base.id}/${s.id}-0a.mp3`,
+              durationMs: speechMs + 40,
+              chars: s.narration.length,
+              ...VOICE,
+            },
+          ]),
+        ),
+        track: {
+          hash: "t",
+          file: `/audio/${base.id}/narration-t.mp3`,
+          durationMs: startsMs.at(-1)! + speechMs + 600,
+          scenes: scenes.map((s, i) => ({
+            id: s.id,
             hash: narrationHash(s.narration, VOICE),
-            file: `/audio/${base.id}/${s.id}.mp3`,
-            durationMs,
-            chars: s.narration.length,
-            ...VOICE,
-          },
-        ]),
-      ),
+            startMs: startsMs[i],
+            speechMs,
+          })),
+        },
+      },
     },
   };
 }
 
-describe("scene timing from the manifest", () => {
-  it("a voiced scene lasts lead-in + its clip + a short pause; others keep the estimate", () => {
-    const voiced = base.scenes.slice(0, 2);
-    const sb = withNarration(base, manifestFor(voiced, 8_000));
-    const expected = NARRATION_LEAD_FRAMES + Math.ceil((8 + NARRATION_PAUSE_SECONDS) * FPS);
-    expect(narrationDurationInFrames(8_000)).toBe(expected);
-    expect(sb.scenes[0]).toMatchObject({
-      durationInFrames: expected,
-      audio: { src: `/audio/${base.id}/${voiced[0].id}.mp3` },
+describe("scene timing from the stitched track", () => {
+  it("every scene's narration starts exactly where its speech starts in the track", () => {
+    const manifest = manifestFor(base.scenes, 7_000);
+    const sb = withNarration(base, manifest);
+    const track = manifest.storyboards[base.id].track!;
+    expect(sb.narrationTrack).toEqual({
+      src: track.file,
+      durationMs: track.durationMs,
+      sceneStartsMs: track.scenes.map((s) => s.startMs),
     });
-    expect(sb.scenes[1].durationInFrames).toBe(expected);
-    expect(sb.scenes[2].audio).toBeUndefined();
-    expect(sb.scenes[2].durationInFrames).toBe(base.scenes[2].durationInFrames);
-    expect(sb.scenes[2].durationInFrames).toBe(estimateDurationInFrames(base.scenes[2].narration));
-  });
-
-  it("ignores audio whose narration was edited since it was voiced", () => {
-    const manifest = manifestFor(base.scenes, 5_000);
-    const edited = { ...base.scenes[0], narration: `${base.scenes[0].narration} Edited.` };
-    expect(currentAudio(manifest, base.id, base.scenes[0])).toBeDefined();
-    expect(currentAudio(manifest, base.id, edited)).toBeUndefined();
-    const sb = withNarration({ ...base, scenes: [edited, ...base.scenes.slice(1)] }, manifest);
-    expect(sb.scenes[0].audio).toBeUndefined();
-    expect(sb.scenes[1].audio).toBeDefined();
-  });
-
-  it("a clip never overlaps the next scene's: the pause outlasts the cross-fade", () => {
-    const sb = withNarration(base, manifestFor(base.scenes, 6_000));
-    const { timings } = getSceneTimeline(sb.scenes);
-    for (let i = 0; i + 1 < timings.length; i++) {
-      const clipEnd = timings[i].narrationStart + 6 * FPS;
-      expect(clipEnd).toBeLessThan(timings[i + 1].narrationStart);
-      // Narration starts once the scene is current, and scene jumps land on it.
-      expect(sceneIndexAtFrame(timings, timings[i + 1].narrationStart)).toBe(i + 1);
-      expect(timings[i + 1].seekFrame).toBe(timings[i + 1].narrationStart);
+    const { timings, durationInFrames } = getSceneTimeline(sb.scenes);
+    track.scenes.forEach((s, i) =>
+      expect(timings[i].narrationStart).toBe(Math.round((s.startMs * FPS) / 1000)),
+    );
+    expect(durationInFrames).toBe(Math.round((track.durationMs * FPS) / 1000));
+    // Narration starts once the scene is current, and scene jumps land on it.
+    for (let i = 1; i < timings.length; i++) {
+      expect(sceneIndexAtFrame(timings, timings[i].narrationStart)).toBe(i);
+      expect(timings[i].seekFrame).toBe(timings[i].narrationStart);
     }
   });
 
-  it("every clip in the committed manifest exists and matches current narration", () => {
-    for (const sb of storyboards)
-      for (const scene of sb.scenes) {
-        if (!scene.audio) continue;
-        expect(existsSync(`public${scene.audio.src}`), scene.audio.src).toBe(true);
-        expect(scene.durationInFrames).toBe(narrationDurationInFrames(scene.audio.durationMs));
-      }
-    expect(voicedBase.scenes.every((scene) => scene.audio)).toBe(true);
+  it("trackSceneDurations lines scene starts up with any offsets", () => {
+    const starts = [TRACK_LEAD_MS, 4_123, 9_871, 15_002];
+    const durations = trackSceneDurations(starts, 20_000);
+    const { timings } = getSceneTimeline(durations.map((d, i) => ({ id: `s${i}`, durationInFrames: d })));
+    starts.forEach((ms, i) => expect(timings[i].narrationStart).toBe(Math.round((ms * FPS) / 1000)));
+  });
+
+  it("a video whose narration changed anywhere since stitching is read by the browser voice", () => {
+    const manifest = manifestFor(base.scenes, 5_000);
+    expect(currentTrack(manifest, base)).toBeDefined();
+    const edited = { ...base.scenes[3], narration: `${base.scenes[3].narration} Edited.` };
+    const changed = { ...base, scenes: base.scenes.map((s, i) => (i === 3 ? edited : s)) };
+    expect(currentTrack(manifest, changed)).toBeUndefined();
+    const sb = withNarration(changed, manifest);
+    expect(sb.narrationTrack).toBeUndefined();
+    expect(sb.scenes.map((s) => s.durationInFrames)).toEqual(changed.scenes.map((s) => s.durationInFrames));
+    // Reordered or missing scenes don't match either.
+    expect(currentTrack(manifest, { ...base, scenes: [...base.scenes].reverse() })).toBeUndefined();
+    expect(currentTrack(manifest, { ...base, scenes: base.scenes.slice(1) })).toBeUndefined();
+  });
+
+  it("every committed track exists, covers its video's current narration, and its clips are kept", () => {
+    const manifest = narrationManifestSchema.parse(manifestJson);
+    let voiced = 0;
+    for (const sb of storyboards) {
+      const entry = manifest.storyboards[sb.id];
+      if (!entry) continue;
+      voiced++;
+      expect(sb.narrationTrack, sb.id).toBeDefined();
+      expect(existsSync(`public${entry.track!.file}`), entry.track!.file).toBe(true);
+      for (const clip of Object.values(entry.clips))
+        expect(existsSync(`narration/clips/${clip.file}`), clip.file).toBe(true);
+      const { timings } = getSceneTimeline(sb.scenes);
+      entry.track!.scenes.forEach((s, i) =>
+        expect(timings[i].narrationStart).toBe(Math.round((s.startMs * FPS) / 1000)),
+      );
+    }
+    expect(voiced).toBeGreaterThanOrEqual(18);
   });
 });
 
 // ── choosing a voice ────────────────────────────────────────────────────────────────────────────────────────
 
 describe("chooseVoice", () => {
-  it("prefers ElevenLabs audio, then the browser voice, else silent", () => {
-    expect(chooseVoice({ audio: { src: "/audio/a.mp3", durationMs: 1000 } }, true)).toBe("elevenlabs");
-    expect(chooseVoice({ audio: { src: "/audio/a.mp3", durationMs: 1000 } }, false)).toBe("elevenlabs");
-    expect(chooseVoice({}, true)).toBe("browser");
-    expect(chooseVoice({}, false)).toBe("silent");
+  it("prefers the ElevenLabs track, then the browser voice, else silent", () => {
+    expect(chooseVoice(true, true)).toBe("elevenlabs");
+    expect(chooseVoice(true, false)).toBe("elevenlabs");
+    expect(chooseVoice(false, true)).toBe("browser");
+    expect(chooseVoice(false, false)).toBe("silent");
   });
 });
 
 // ── the engine, with mocked audio and speech ────────────────────────────────────────────────────────────────
 
+/** An audio element that records every source change, seek, play, and pause. */
 class FakeAudio implements AudioLike {
-  src = "";
-  currentTime = 0;
+  private _src = "";
+  private _time = 0;
+  srcSets = 0;
+  seeks: number[] = [];
   playbackRate = 1;
   preservesPitch = false;
   volume = 1;
   muted = false;
   paused = true;
+  seeking = false;
+  readyState = 4;
   plays = 0;
+  pauses = 0;
+  refuse = false;
+  get src() {
+    return this._src;
+  }
+  set src(v: string) {
+    this._src = v;
+    this.srcSets++;
+  }
+  get currentTime() {
+    return this._time;
+  }
+  set currentTime(v: number) {
+    this._time = v;
+    this.seeks.push(v);
+  }
   async play() {
-    this.paused = false;
     this.plays++;
+    if (this.refuse) throw new Error("NotAllowedError");
+    this.paused = false;
   }
   pause() {
     this.paused = true;
+    this.pauses++;
   }
-  /** Let the clip run on its own for `seconds` at its rate (what a real element does between frame updates). */
+  /** Let the track run on its own for `seconds` at its rate (what a real element does between frame updates). */
   advance(seconds: number) {
-    if (!this.paused) this.currentTime += seconds * this.playbackRate;
+    if (!this.paused) this._time += seconds * this.playbackRate;
   }
 }
 
@@ -180,40 +239,25 @@ class FakeSpeech implements SpeechAdapter {
   }
 }
 
-const CLIP_MS = 4_000;
 const scenes: (NarrationScene & { id: string })[] = [
-  {
-    id: "one",
-    narration: "Scene one is voiced.",
-    durationInFrames: narrationDurationInFrames(CLIP_MS),
-    audio: { src: "/a1.mp3", durationMs: CLIP_MS },
-  },
-  {
-    id: "two",
-    narration: "Scene two is voiced too.",
-    durationInFrames: narrationDurationInFrames(CLIP_MS),
-    audio: { src: "/a2.mp3", durationMs: CLIP_MS },
-  },
-  {
-    id: "three",
-    narration: "First sentence here. Second sentence follows. Third one ends it.",
-    durationInFrames: estimateDurationInFrames(
-      "First sentence here. Second sentence follows. Third one ends it.",
-    ),
-  },
-  { id: "four", narration: "The last scene.", durationInFrames: estimateDurationInFrames("The last scene.") },
-];
-const { timings } = getSceneTimeline(scenes);
+  "Scene one is read.",
+  "Scene two is read too.",
+  "First sentence here. Second sentence follows. Third one ends it.",
+  "The last scene.",
+].map((narration, i) => ({ id: `s${i}`, narration, durationInFrames: estimateDurationInFrames(narration) }));
+const { timings, durationInFrames: TOTAL_FRAMES } = getSceneTimeline(scenes);
+const TRACK: NarrationTrack = { src: "/audio/x/narration-1.mp3", durationMs: (TOTAL_FRAMES / FPS) * 1000 };
 
-function setup({ speech = true } = {}) {
+function setup({ speech = true, track = false } = {}) {
   const audio = new FakeAudio();
   const fakeSpeech = speech ? new FakeSpeech() : null;
   const events: string[] = [];
-  const timers: (() => void)[] = [];
+  let timers: (() => void)[] = [];
   const engine = new NarrationEngine({
     scenes,
     timings,
     fps: FPS,
+    track: track ? TRACK : null,
     createAudio: () => audio,
     speech: fakeSpeech,
     onHold: (frame) => events.push(`hold@${frame}`),
@@ -230,119 +274,172 @@ function setup({ speech = true } = {}) {
     muted: false,
     ...overrides,
   });
-  return { engine, audio, speech: fakeSpeech, events, timers, state };
+  /** Run the timers that are due (the start-up wait polls on a timer). */
+  const tick = () => {
+    const due = timers;
+    timers = [];
+    due.forEach((fire) => fire());
+  };
+  return { engine, audio, speech: fakeSpeech, events, state, tick, pending: () => timers.length };
 }
 
-/** Where scene `i`'s clip should be at `frame`. */
-const offsetAt = (i: number, frame: number) => (frame - timings[i].narrationStart) / FPS;
+/** Press play at `frame`: the track starts there and the video waits for it, then goes. */
+async function start(t: ReturnType<typeof setup>, frame: number, overrides: Partial<PlaybackState> = {}) {
+  t.engine.update(t.state(frame, overrides));
+  await Promise.resolve();
+  t.tick();
+}
 
-describe("NarrationEngine with ElevenLabs audio", () => {
-  it("stays silent until play, then starts the clip after the lead-in", () => {
-    const { engine, audio, state } = setup();
-    engine.update(state(0, { playing: false }));
-    expect(audio.plays).toBe(0);
-    engine.update(state(2));
-    expect(audio.paused).toBe(true); // still in the lead-in
-    engine.update(state(timings[0].narrationStart + 3));
-    expect(audio.paused).toBe(false);
-    expect(audio.src).toBe("/a1.mp3");
-    expect(audio.currentTime).toBeCloseTo(3 / FPS);
-    expect(audio.preservesPitch).toBe(true);
+describe("NarrationEngine with the stitched ElevenLabs track", () => {
+  it("stays silent until play, then sets the source once and starts where the video is", async () => {
+    const t = setup({ track: true });
+    t.engine.update(t.state(0, { playing: false }));
+    expect(t.audio.plays).toBe(0);
+    const f = 45;
+    await start(t, f);
+    expect(t.audio.src).toBe(TRACK.src);
+    expect(t.audio.srcSets).toBe(1);
+    expect(t.audio.seeks).toEqual([f / FPS]);
+    expect(t.audio.paused).toBe(false);
+    expect(t.audio.preservesPitch).toBe(true);
+    // The video waited on its frame until the audio was playing, then went.
+    expect(t.events).toEqual([`hold@${f}`, "release"]);
   });
 
-  it("realigns after a seek and a scene jump", () => {
-    const { engine, audio, state } = setup();
-    const f = timings[0].narrationStart + 30;
-    engine.update(state(f));
-    // Seek within the scene.
-    const seekTo = timings[0].narrationStart + 75;
-    engine.update(state(seekTo), true);
-    expect(audio.currentTime).toBeCloseTo(offsetAt(0, seekTo));
-    // Jump to the next scene: its clip, from its start.
-    engine.update(state(timings[1].seekFrame), true);
-    expect(audio.src).toBe("/a2.mp3");
-    expect(audio.currentTime).toBeCloseTo(0);
-    expect(audio.paused).toBe(false);
+  it("plays straight through every scene boundary: no new source, no pause, no seek", async () => {
+    const t = setup({ track: true });
+    await start(t, 0);
+    t.events.length = 0;
+    const seeks = t.audio.seeks.length;
+    // Every frame of the video, the audio running on its own between updates.
+    for (let frame = 1; frame < TOTAL_FRAMES - 1; frame++) {
+      t.audio.advance(1 / FPS);
+      t.engine.update(t.state(frame));
+    }
+    expect(t.audio.srcSets).toBe(1);
+    expect(t.audio.pauses).toBe(0);
+    expect(t.audio.seeks.length).toBe(seeks);
+    expect(t.audio.playbackRate).toBe(1);
+    expect(t.events).toEqual([]);
+    expect(timings.length).toBeGreaterThan(3); // it crossed every boundary
   });
 
-  it("pauses and resumes in place", () => {
-    const { engine, audio, state } = setup();
-    const f = timings[0].narrationStart + 45;
-    engine.update(state(f));
-    audio.advance(0.1);
-    engine.update(state(f + 3, { playing: false }));
-    expect(audio.paused).toBe(true);
-    const at = audio.currentTime;
-    engine.update(state(f + 3));
-    expect(audio.paused).toBe(false);
-    expect(audio.currentTime).toBeCloseTo(at); // within tolerance: not restarted
+  it("a seek or scene jump moves the one track and waits for it, never re-sourcing it", async () => {
+    const t = setup({ track: true });
+    await start(t, 30);
+    t.events.length = 0;
+    for (const frame of [timings[2].seekFrame, 200, timings[1].seekFrame]) {
+      t.audio.seeking = true;
+      t.engine.update(t.state(frame), true);
+      expect(t.audio.currentTime).toBeCloseTo(frame / FPS);
+      expect(t.events.at(-1)).toBe(`hold@${frame}`);
+      t.tick(); // still seeking: keeps waiting
+      expect(t.events.at(-1)).toBe(`hold@${frame}`);
+      t.audio.seeking = false;
+      t.tick();
+      expect(t.events.at(-1)).toBe("release");
+    }
+    expect(t.audio.srcSets).toBe(1);
+    expect(t.audio.paused).toBe(false);
   });
 
-  it("follows speed changes with pitch preserved and stays within the drift tolerance", () => {
-    const { engine, audio, state } = setup();
-    let frame = timings[0].narrationStart;
-    engine.update(state(frame));
+  it("pauses in place and resumes from the video's frame", async () => {
+    const t = setup({ track: true });
+    await start(t, 60);
+    t.audio.advance(1);
+    t.engine.update(t.state(90, { playing: false }));
+    expect(t.audio.paused).toBe(true);
+    await start(t, 90);
+    expect(t.audio.paused).toBe(false);
+    expect(t.audio.currentTime).toBeCloseTo(90 / FPS);
+    expect(t.audio.srcSets).toBe(1);
+  });
+
+  it("follows 0.5× and 2× with pitch preserved, staying in sync", async () => {
+    const t = setup({ track: true });
+    let frame = 30;
+    await start(t, frame);
     for (const rate of [2, 0.5, 1.5]) {
-      // One simulated second of wall time at this rate: the clip and the video both advance `rate` seconds.
+      // The speed control changes the player and the narration together.
+      t.engine.update(t.state(Math.round(frame), { rate }));
       for (let k = 0; k < 10; k++) {
-        audio.advance(0.1);
+        t.audio.advance(0.1);
         frame += 0.1 * rate * FPS;
-        engine.update(state(Math.round(frame), { rate }));
-        // The chosen speed, give or take the catch-up nudge.
-        expect(Math.abs(audio.playbackRate / rate - 1)).toBeLessThanOrEqual(NUDGE + 1e-9);
-        expect(audio.preservesPitch).toBe(true);
-        expect(Math.abs(audio.currentTime - offsetAt(0, Math.round(frame)))).toBeLessThanOrEqual(
-          DRIFT_SECONDS,
-        );
+        t.engine.update(t.state(Math.round(frame), { rate }));
+        expect(Math.abs(t.audio.playbackRate / rate - 1)).toBeLessThanOrEqual(NUDGE + 1e-9);
+        expect(t.audio.preservesPitch).toBe(true);
+        expect(Math.abs(t.audio.currentTime - Math.round(frame) / FPS)).toBeLessThan(0.05);
       }
     }
   });
 
-  it("closes small drift by nudging the speed (pitch preserved), never by seeking", () => {
-    const { engine, audio, state } = setup();
-    let frame = timings[0].narrationStart + 30;
-    engine.update(state(frame, { rate: 2 }));
-    // The element was slow to start: 0.15 s behind, under the seek tolerance.
-    audio.currentTime -= 0.15;
-    let position = audio.currentTime;
-    let seeks = 0;
-    Object.defineProperty(audio, "currentTime", {
-      get: () => position,
-      set: (v: number) => {
-        position = v;
-        seeks++;
-      },
-    });
-    const advance = (dt: number) => (position += dt * audio.playbackRate);
-    // 1.4 s of wall time at 2×: stays inside this 4 s clip.
-    for (let k = 0; k < 14; k++) {
-      advance(0.1);
-      frame += 0.1 * 2 * FPS;
-      engine.update(state(Math.round(frame), { rate: 2 }));
+  it("closes small drift by a gentle speed nudge, never by seeking", async () => {
+    const t = setup({ track: true });
+    let frame = 30;
+    await start(t, frame);
+    t.audio.advance(-0.2); // the element fell 0.2 s behind
+    const seeks = t.audio.seeks.length;
+    for (let k = 0; k < 120; k++) {
+      t.audio.advance(0.1);
+      frame += 0.1 * FPS;
+      t.engine.update(t.state(Math.round(frame)));
+      expect(t.audio.playbackRate).toBeLessThanOrEqual(1 + NUDGE + 1e-9);
     }
-    expect(seeks).toBe(0);
-    expect(Math.abs(audio.currentTime - offsetAt(0, Math.round(frame)))).toBeLessThan(0.05);
-    // Back in step: the clip plays at exactly the chosen speed again.
-    expect(audio.playbackRate).toBe(2);
-    expect(audio.preservesPitch).toBe(true);
+    expect(t.audio.seeks.length).toBe(seeks);
+    expect(Math.abs(t.audio.currentTime - Math.round(frame) / FPS)).toBeLessThan(0.05);
+    expect(t.audio.playbackRate).toBe(1);
   });
 
-  it("corrects drift beyond the tolerance (e.g. the clip stalled while buffering)", () => {
-    const { engine, audio, state } = setup();
-    const f = timings[0].narrationStart + 15;
-    engine.update(state(f));
-    audio.currentTime = 0; // stalled
-    engine.update(state(f + 30));
-    expect(audio.currentTime).toBeCloseTo(offsetAt(0, f + 30));
+  it("resets a large drift (a background tab) and a buffering stall by waiting, not racing", async () => {
+    const t = setup({ track: true });
+    await start(t, 30);
+    t.events.length = 0;
+    t.engine.update(t.state(30 + Math.ceil((DRIFT_SECONDS + 0.5) * FPS)));
+    expect(t.audio.currentTime).toBeCloseTo((30 + Math.ceil((DRIFT_SECONDS + 0.5) * FPS)) / FPS);
+    expect(t.events.at(-1)).toMatch(/^hold@/);
+    t.tick();
+    expect(t.events.at(-1)).toBe("release");
+    t.audio.readyState = 2; // the network can't keep up
+    t.engine.update(t.state(120));
+    expect(t.events.at(-1)).toBe("hold@120");
+    t.tick();
+    expect(t.events.at(-1)).toBe("hold@120");
+    t.audio.readyState = 4;
+    t.tick();
+    expect(t.events.at(-1)).toBe("release");
   });
 
-  it("goes quiet in the pause after the clip, and mute/volume apply to the clip", () => {
-    const { engine, audio, state } = setup();
-    engine.update(state(timings[0].narrationStart + 10, { volume: 0.4, muted: true }));
-    expect(audio.volume).toBe(0.4);
-    expect(audio.muted).toBe(true);
-    engine.update(state(timings[0].narrationStart + (CLIP_MS / 1000) * FPS + 2));
-    expect(audio.paused).toBe(true);
+  it("stops waiting after a few seconds if the audio never starts", async () => {
+    const t = setup({ track: true });
+    t.audio.readyState = 1;
+    t.engine.update(t.state(30));
+    for (let k = 0; k < 200 && t.pending(); k++) t.tick();
+    expect(t.events).toEqual(["hold@30", "release"]);
+  });
+
+  it("an autoplay refusal lets the video go on silently, without retrying every frame", async () => {
+    const t = setup({ track: true });
+    t.audio.refuse = true;
+    t.engine.update(t.state(30));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(t.events).toEqual(["hold@30", "release"]);
+    for (let f = 31; f < 60; f++) t.engine.update(t.state(f));
+    expect(t.audio.plays).toBe(1);
+  });
+
+  it("applies mute and volume, and lets the track end on its own", async () => {
+    const t = setup({ track: true });
+    await start(t, 30, { volume: 0.4, muted: true });
+    expect(t.audio.volume).toBe(0.4);
+    expect(t.audio.muted).toBe(true);
+    const pauses = t.audio.pauses;
+    const plays = t.audio.plays;
+    // The track finished (the element pauses itself) while the video shows its last frames: never restarted.
+    t.audio.paused = true;
+    for (let f = TOTAL_FRAMES - 6; f <= TOTAL_FRAMES + 5; f++) t.engine.update(t.state(f));
+    expect(t.audio.pauses).toBe(pauses);
+    expect(t.audio.plays).toBe(plays);
   });
 });
 
@@ -421,10 +518,10 @@ describe("NarrationEngine with the browser voice", () => {
   });
 
   it("a hold that never hears back from the voice gives up", () => {
-    const { engine, events, timers, state } = setup();
+    const { engine, events, tick, state } = setup();
     engine.update(state(timings[scene].narrationStart));
     engine.update(state(timings[scene].endFrame - 2));
-    timers.forEach((fire) => fire());
+    tick();
     expect(events.at(-1)).toBe("release");
   });
 
@@ -437,20 +534,34 @@ describe("NarrationEngine with the browser voice", () => {
     expect(events).toEqual([]);
   });
 
-  it("switching to a voiced scene stops the browser voice and plays the clip", () => {
-    const { engine, speech, audio, state } = setup();
+  it("never cancels speech at a scene boundary: crossing it while speaking holds the video instead", () => {
+    const { engine, speech, events, state } = setup();
+    engine.update(state(timings[scene].narrationStart));
+    // A fast frame skips the hold point and lands in the next scene while the voice is mid-sentence.
+    engine.update(state(timings[scene + 1].narrationStart + 2));
+    expect(speech!.cancels).toBe(0);
+    expect(speech!.speaking).toBe(true);
+    expect(events).toEqual([`hold@${timings[scene].endFrame - 2}`]);
+    speech!.finish();
+    speech!.finish();
+    speech!.finish();
+    expect(events.at(-1)).toBe("release");
+    expect(speech!.cancels).toBe(0);
+  });
+
+  it("only a seek or scene jump interrupts speech", () => {
+    const { engine, speech, state } = setup();
     engine.update(state(timings[scene].narrationStart));
     engine.update(state(timings[0].seekFrame + 10), true);
-    expect(speech!.speaking).toBe(false);
-    expect(audio.src).toBe("/a1.mp3");
+    expect(speech!.cancels).toBe(1);
+    expect(speech!.spoken.at(-1)?.text).toBe(scenes[0].narration);
   });
 });
 
 describe("NarrationEngine without speech synthesis", () => {
-  it("plays unvoiced scenes silently and voiced ones from their clips", () => {
+  it("plays a video without a track silently, and never holds it", () => {
     const { engine, audio, events, state } = setup({ speech: false });
-    expect(engine.voiceAt(timings[2].narrationStart)).toBe("silent");
-    expect(engine.voiceAt(timings[0].narrationStart)).toBe("elevenlabs");
+    expect(engine.voice).toBe("silent");
     engine.update(state(timings[2].narrationStart));
     engine.update(state(timings[2].endFrame - 1));
     expect(events).toEqual([]);

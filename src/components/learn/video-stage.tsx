@@ -38,7 +38,7 @@ export default function VideoStage({
   }, []);
   const props = useMemo(() => ({ ...inputProps, displayWidth }), [inputProps, displayWidth]);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
-  useNarration(playerRef, inputProps.storyboard.scenes);
+  useNarration(playerRef, inputProps.storyboard);
 
   // Mirror player events into the store so controls/scene list can react.
   useEffect(() => {

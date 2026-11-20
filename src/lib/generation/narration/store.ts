@@ -5,15 +5,24 @@ import { emptyManifest, narrationManifestSchema, type NarrationManifest } from "
 
 import type { AudioStore } from "./pipeline";
 
-/** MP3s under `<publicDir>/audio/…` and the manifest JSON the app imports. */
+/**
+ * Clips under `<clipsDir>/<storyboard>/…` (the stitching source, not served), tracks under `<publicDir>/audio/…`,
+ * and the manifest JSON the app imports.
+ */
 export function createFileAudioStore({
   publicDir,
+  clipsDir,
   manifestFile,
 }: {
   publicDir: string;
+  clipsDir: string;
   manifestFile: string;
-}): AudioStore {
-  const local = (file: string) => path.join(publicDir, ...file.split("/").filter(Boolean));
+}): AudioStore & { clipPath(file: string): string } {
+  const under = (dir: string, file: string) => path.join(dir, ...file.split("/").filter(Boolean));
+  const write = (local: string, bytes: Uint8Array) => {
+    mkdirSync(path.dirname(local), { recursive: true });
+    writeFileSync(local, bytes);
+  };
   return {
     readManifest: () =>
       existsSync(manifestFile)
@@ -28,11 +37,12 @@ export function createFileAudioStore({
       );
       writeFileSync(manifestFile, `${JSON.stringify({ ...manifest, storyboards }, null, 2)}\n`);
     },
-    writeAudio(file, bytes) {
-      mkdirSync(path.dirname(local(file)), { recursive: true });
-      writeFileSync(local(file), bytes);
-    },
-    exists: (file) => existsSync(local(file)),
-    remove: (file) => rmSync(local(file), { force: true }),
+    clipPath: (file) => under(clipsDir, file),
+    writeClip: (file, bytes) => write(under(clipsDir, file), bytes),
+    clipExists: (file) => existsSync(under(clipsDir, file)),
+    removeClip: (file) => rmSync(under(clipsDir, file), { force: true }),
+    writeTrack: (file, bytes) => write(under(publicDir, file), bytes),
+    trackExists: (file) => existsSync(under(publicDir, file)),
+    removeTrack: (file) => rmSync(under(publicDir, file), { force: true }),
   };
 }
