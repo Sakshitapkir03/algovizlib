@@ -92,7 +92,9 @@ Key rules:
   composition builds `textMetrics(displayWidth)` (`video/text.ts`) and every primitive sets font sizes with
   `text.size(TEXT.<role>)`, which never renders below 11px on screen (on a 343px phone player that's ~42px in the
   1280px composition). `layoutScene()` reserves room from the same sizes, stacking from the bottom stack up (brackets,
-  pointers, panels) and raising the bottom stack when its contents need it. Labels that don't fit are abbreviated or
+  pointers, panels) and raising the bottom stack when its contents need it; when a short bottom stack would squeeze
+  an item-row's cards, it moves down instead. Pointers under a row that share a position stack (`pointerLevel`), and
+  item labels are dropped when a card is too short for them. Labels that don't fit are abbreviated or
   dropped (`video/labels.ts`: pointer labels fall back to the bound trace name, then a letter; "✓ sorted" to "✓";
   "◆ pivot" to "◆"). On a phone-sized player (`text.compact`) secondary text is hidden: callouts, highlight tag words
   (border style carries the state: solid active, dashed rejected, double found), position/role labels in the heap
@@ -272,6 +274,9 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `window`        | sliding window: a bracket above the cards it covers plus a faint band, labeled with its value ("sum 13"); edges slide from the previous bound scene (`fromRange`)     | canvas |
 | `freq-table`    | character counts in the window, one cell per letter ("2"), or have/need ("1/1", ✓ when met); the changed letter gets a thick border and ▲                             | bottom |
 | `deque`         | Sliding Window Maximum's deque front → back (value + position); values removed this step crossed out and dashed, "◀ front" / "✕ back"; the maxima so far beside it    | bottom |
+| `search-range`  | binary search over a row: bracket over the cards still in play (notch over `mid`), dropped cards dimmed, dashed, ✕; a rotated list's sorted half tinted, "✓ sorted"   | canvas |
+| `number-line`   | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                      | bottom |
+| `cut`           | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                      | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -334,6 +339,16 @@ highlight tags) and keeps it under a two-line caption, shortening the cards when
 Tones follow the verdict convention: a new best is positive whatever the sign (Minimum Window's shorter window is
 `<`), "fits within k" is positive and "too many changes" negative (Character Replacement), not-better is neutral.
 
+**Binary search** (all five problems) added step state `search` (`from`, `to`, optional `mid`, `sorted`: the
+positions still in play; `to = from − 1` once empty, which marks the gap before `from`: Search Insert's answer),
+`answers` (`min`, `max`, `low`, `high`, `mid`: candidates below `low` are ruled out, from `high` up known to work), and
+`cuts` (`first`, `second`), plus an optional second list on the trace (`secondRow`) that an item-row shows with
+`traceRow: "second"` (Median of Two Sorted Arrays). Bounds that move past either end aren't drawn (`onRow` drops them
+from `pointers`). Tones: a candidate that fits is positive whatever the sign (Koko's `7 = 7` hours), too slow
+negative; which half is sorted is neutral, the target inside it positive; a misplaced median cut negative. Plain
+searches keep the sign colors (too low / too high / found). Two rows share the space between the caption and the
+bottom stack.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -344,11 +359,12 @@ input and returns a `Trace` (types in `traces/types.ts`):
 
 ```ts
 Trace = {
-  problem: "pattern/slug", row: { values, display: "cards" | "bars" }, pointerNames,
+  problem: "pattern/slug", row: { values, display: "cards" | "bars" }, secondRow?: { values }, pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
            values?, moves?, empty?, sorted?, final?, held?, counts?, // algorithms that rearrange the array
            range?, depth?, segments?, splitTree?, buffer?, pivot?, boundary?, heapSize?, compare?, counter?,
-           window?, freq?, deque? }[],                            // sliding window (see "Sliding window" above)
+           window?, freq?, deque?,                                // sliding window (see "Sliding window" above)
+           search?, answers?, cuts? }[],                          // binary search (see "Binary search" above)
                                                                   // divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   answer,             // same shape as the reference solution's return value (tested)
@@ -373,7 +389,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), and counters match the step; `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, and cuts match the step (a `traceRow: "second"` row holds the second list); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -562,7 +578,9 @@ librarian shelving a series around one volume (quick), an org chart whose top pe
 friends' movie rankings (Count Inversions). Sliding Window: a taco truck's best 3 days (Maximum Sum Subarray), a DJ's
 repeat-free run of songs (Longest Substring), repainting one fence board (Character Replacement), the shortest walk
 past market stalls that sell everything on a list (Minimum Window), and the highest UV index in each 3-day forecast
-stretch (Sliding Window Maximum).
+stretch (Sliding Window Maximum). Binary Search: a hotel directory with basement floors (Search a Sorted Array), a new
+bus slotted into a timetable (Search Insert Position), a community board of event dates that wraps into next month
+(Rotated), and two classes' sorted quiz scores (Median); Koko Eating Bananas is problem-native.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 
@@ -614,6 +632,13 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 7. Planned DSA primitives: `staircase`, `house-row`, `coin-set`, with their traces.
 
 ## Gotchas
+
+- **Automated browser checks must be silent.** Launch Chrome and create contexts only through
+  `scripts/browser-checks/silent.mjs` (`launchSilent(chromium)`, `silentContext(browser, options)`). It passes
+  `--mute-audio` (ElevenLabs `<audio>` still plays, so `currentTime`, `paused`, `playbackRate`, and volume checks
+  work) and replaces `speechSynthesis` / `SpeechSynthesisUtterance` with a silent fake, because the browser voice
+  goes through macOS speech, which ignores the flag. The fake fires start, word boundary, end, and cancel errors at
+  about 150 wpm times the rate, so the engine's sentence sync and scene holds behave as with a real voice.
 
 - **Next.js 16 with Cache Components**: `generateStaticParams` must return at least one param and `dynamicParams` is
   not allowed. `/dsa/[pattern]` and `/dsa/[pattern]/[problem]` export `ensureStatic = "navigation"` so unknown slugs

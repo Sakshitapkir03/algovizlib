@@ -273,6 +273,74 @@ export const sceneSchema = z
           if (scene.elements.filter((e) => e.type === "deque").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one deque" });
           break;
+        case "search-range":
+          for (const [range, at] of [
+            [el, path],
+            [el.fromRange, [...path, "fromRange"]],
+          ] as [{ from: number; to: number } | undefined, (string | number)[]][]) {
+            if (!range) continue;
+            if (range.to < range.from - 1)
+              ctx.addIssue({ code: "custom", path: at, message: "to must be at least from - 1 (empty)" });
+            else if (range.to >= range.from) {
+              checkIndex(el.rowId, range.from, [...at, "from"]);
+              checkIndex(el.rowId, range.to, [...at, "to"]);
+            } else if (rows.has(el.rowId) && range.from > rows.get(el.rowId)!)
+              ctx.addIssue({
+                code: "custom",
+                path: at,
+                message: "an empty range must sit at or before the end",
+              });
+            else if (!rows.has(el.rowId))
+              ctx.addIssue({ code: "custom", path: at, message: `Unknown row "${el.rowId}"` });
+          }
+          if (el.mid !== undefined) checkIndex(el.rowId, el.mid, [...path, "mid"]);
+          if (el.sorted) {
+            checkIndex(el.rowId, el.sorted.to, [...path, "sorted", "to"]);
+            if (el.sorted.from > el.sorted.to)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "sorted"],
+                message: "from must not be after to",
+              });
+          }
+          break;
+        case "number-line":
+          if (el.max < el.min || el.max - el.min > 15)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "max"],
+              message: "a number line shows 1–16 candidates (min ≤ max ≤ min + 15)",
+            });
+          if (!(el.min <= el.low && el.low <= el.high && el.high <= el.max))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "low"],
+              message: "min ≤ low ≤ high ≤ max must hold",
+            });
+          if (el.mid !== undefined && (el.mid < el.min || el.mid > el.max))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "mid"],
+              message: "mid must be between min and max",
+            });
+          if (scene.elements.filter((e) => e.type === "number-line").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one number-line" });
+          break;
+        case "cut":
+          for (const field of ["at", "fromAt"] as const) {
+            const at = el[field];
+            if (at === undefined) continue;
+            const len = rows.get(el.rowId);
+            if (len === undefined)
+              ctx.addIssue({ code: "custom", path: [...path, field], message: `Unknown row "${el.rowId}"` });
+            else if (at > len)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, field],
+                message: `A cut in "${el.rowId}" can be at most ${len} (after the last item)`,
+              });
+          }
+          break;
         default:
           break;
       }

@@ -30,9 +30,23 @@ export function buildDraft(problemKey: string): Draft {
           labels: trace.row.values.map((_, i) => `item ${i}`),
         };
 
+  const second = (): ElementSource[] =>
+    trace.secondRow
+      ? [
+          {
+            id: "row2",
+            type: "item-row",
+            unit: "",
+            enterAt: 0,
+            traceRow: "second",
+            labels: trace.secondRow.values.map((_, i) => `other ${i}`),
+          },
+        ]
+      : [];
+
   const stepScenes = trace.steps.flatMap((step, index) => {
     if (!step.key) return [];
-    const elements: ElementSource[] = [row()];
+    const elements: ElementSource[] = [row(), ...second()];
     for (const name of Object.keys(step.pointers)) {
       elements.push({
         id: `p-${name}`,
@@ -73,6 +87,13 @@ export function buildDraft(problemKey: string): Draft {
         outputLabel: "maxima",
         enterAt: 0,
       });
+    if (step.search)
+      elements.push({ id: "search", type: "search-range", rowId: "row", label: "", enterAt: 0 });
+    if (step.answers) elements.push({ id: "answers", type: "number-line", label: "speed", enterAt: 0 });
+    if (step.cuts) {
+      elements.push({ id: "cut", type: "cut", rowId: "row", enterAt: 0 });
+      elements.push({ id: "cut2", type: "cut", rowId: "row2", enterAt: 0 });
+    }
     if (step.equation)
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });

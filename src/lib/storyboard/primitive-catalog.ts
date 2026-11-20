@@ -6,7 +6,7 @@ import type { ElementType } from "./elements";
  */
 export const primitiveCatalog: Record<ElementType, string> = {
   "item-row":
-    "A row of labeled cards (item + value), e.g. products with prices or a[i] with values. With a trace, omit `items` to show the trace's values and give `labels` (one per value) to name them in the story. Place it first in every scene that shows data.",
+    'A row of labeled cards (item + value), e.g. products with prices or a[i] with values. With a trace, omit `items` to show the trace\'s values and give `labels` (one per value) to name them in the story. Place it first in every scene that shows data. When the trace lists a second list, add a second item-row with `traceRow: "second"` (and its own labels) under the first.',
   "bar-row":
     "Vertical bars on a shared baseline, e.g. walls, terrain heights, or values being sorted. With a trace, omit `bars` to use the trace's values (in a bound scene, the array as it stands after that step); the container fill, standing water, bar moves (a swap slides two bars past each other, a shift slides one), and empty slots come from the step automatically.",
   pointer:
@@ -41,6 +41,11 @@ export const primitiveCatalog: Record<ElementType, string> = {
     'A small panel of character counts in the window (e.g. B 2, A 1), or have/need for a target ("A 1/1"); the count that just changed is marked. Set `label` (e.g. "in window"); omit `entries`/`active`. Only use it when the step lists counts.',
   deque:
     "Sliding Window Maximum's deque: the candidate positions front → back (values decreasing; the front is the window's maximum), values removed this step shown crossed out with the end they left from, and the maxima recorded so far. Set `rowId` (and optionally `label`, `outputLabel`); omit `indices`/`output`/popped lists. Only use it when the step lists a deque.",
+  "search-range":
+    'Binary search over the row: a bracket above the cards still in play, every dropped card dimmed and dashed with ✕, the card just checked (mid) ringed, and on a rotated list the half known to be in order marked "✓ sorted". When nothing is left in play it becomes a marker in the gap where the answer goes (give it a `label` such as "insert here"). Set `rowId`; omit `from`/`to`/`mid`/`sorted`, and the bracket shrinks from where the previous bound scene left it. Only use it when the step lists a search range.',
+  "number-line":
+    'Binary search on the answer: every candidate answer (e.g. speeds 1–13) as a tick, those ruled out dashed with ✕, those known to work solid with ✓, the ones still possible plain, and the candidate just tested (mid) marked. Set `label` (e.g. "speed"); omit `min`/`max`/`low`/`high`/`mid`. Only use it when the step lists candidate answers.',
+  cut: 'A divider through a row of cards marking how many values sit on its left, with the left side shaded (Median of Two Sorted Arrays: one cut per list). Set `rowId`; omit `at`, and it slides from where the previous bound scene left it. For the second list, give that item-row `traceRow: "second"` and its own id. Only use it when the step lists cuts.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

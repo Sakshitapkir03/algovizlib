@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { storyboards } from "@/content/storyboards";
 import { primitiveRegistry } from "@/video/primitives/registry";
 import { PILL_PADDING, pointerLabel } from "@/video/labels";
-import { layoutScene, sizes } from "@/video/layout";
+import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 import { MIN_TEXT_PX, PHONE_PLAYER_WIDTH, TEXT, textMetrics } from "@/video/text";
 
 const phone = textMetrics(PHONE_PLAYER_WIDTH);
@@ -46,6 +46,7 @@ describe("video text at phone width", () => {
         "callout",
         "count-array",
         "counter",
+        "cut",
         "deque",
         "equation",
         "freq-table",
@@ -54,9 +55,11 @@ describe("video text at phone width", () => {
         "highlight",
         "item-row",
         "merge-buffer",
+        "number-line",
         "partition",
         "pointer",
         "result",
+        "search-range",
         "segments",
         "sorted-region",
         "split-tree",
@@ -102,13 +105,23 @@ describe("video text at phone width", () => {
             const x = layout.centers[el.index];
             if (x - half < 0 || x + half > 1280) fail(`pointer "${label}" runs off the stage`);
             for (const other of pointers) {
-              if (other === el || other.rowId !== el.rowId || other.placement !== el.placement) continue;
+              // Pointers on the same position stack vertically instead of competing for width.
+              if (
+                other === el ||
+                other.rowId !== el.rowId ||
+                other.placement !== el.placement ||
+                other.index === el.index
+              )
+                continue;
               const otherLabel = pointerLabel(other, layout, phone, pointers);
               const otherHalf = (phone.width(otherLabel, phone.size(TEXT.pointer)) + PILL_PADDING) / 2;
               const gap = Math.abs(layout.centers[other.index] - x) - half - otherHalf;
               if (gap < 0 && label.length > 1) fail(`pointer "${label}" overlaps "${otherLabel}"`);
             }
-            if (el.placement === "below" && layout.pointerTop + sizes.pointer(phone) > bottomTop + 2)
+            if (
+              el.placement === "below" &&
+              layout.pointerTop + pointerRoom(scene.elements, el.rowId, phone) > bottomTop + 2
+            )
               fail(`pointer "${label}" runs into the bottom stack`);
             break;
           }
@@ -177,6 +190,32 @@ describe("video text at phone width", () => {
               14 +
               phone.width(el.output.join(" ") || "—", phone.size(TEXT.countCell), "mono");
             if (width > 1280 - 32) fail(`the deque panel is wider than the stage (${Math.round(width)})`);
+            break;
+          }
+          case "search-range": {
+            const layout = rows[el.rowId];
+            const label = el.sorted ? "✓ sorted" : el.label;
+            if (label && !phone.fits(label, phone.size(TEXT.windowLabel), 1280 - 16 - 28, "mono"))
+              fail(`search label "${label}" doesn't fit the stage`);
+            const captionBottom = 70 + 2 * Math.ceil(phone.size(TEXT.caption) * 1.25);
+            if (layout.top - sizes.window(phone) < captionBottom) fail("search label runs into the caption");
+            break;
+          }
+          case "number-line": {
+            const values = Array.from({ length: el.max - el.min + 1 }, (_, k) => el.min + k);
+            const cell = sizes.numberCell(phone, values);
+            for (const v of values)
+              if (!phone.fits(String(v), phone.size(TEXT.countCell), cell - 8, "mono"))
+                fail(`candidate ${v} is wider than its cell`);
+            if (values.length * cell + (values.length - 1) * NUMBER_GAP > 1280 - 32)
+              fail("the number line is wider than the stage");
+            break;
+          }
+          case "cut": {
+            const layout = rows[el.rowId];
+            if (!layout) fail(`cut on unknown row "${el.rowId}"`);
+            else if (layout.cardHeight < 2 * phone.size(TEXT.itemValue))
+              fail(`row "${el.rowId}" is too short to read under a cut (${Math.round(layout.cardHeight)}px)`);
             break;
           }
           case "heap-tree":

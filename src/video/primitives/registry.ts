@@ -6,6 +6,7 @@ import { BarRow } from "./BarRow";
 import { Callout } from "./Callout";
 import { CountArray } from "./CountArray";
 import { Counter } from "./Counter";
+import { Cut } from "./Cut";
 import { Deque } from "./Deque";
 import { Equation } from "./Equation";
 import { FreqTable } from "./FreqTable";
@@ -14,9 +15,11 @@ import { HeldValue } from "./HeldValue";
 import { Highlight } from "./Highlight";
 import { ItemRow } from "./ItemRow";
 import { MergeBuffer } from "./MergeBuffer";
+import { NumberLine } from "./NumberLine";
 import { Partition } from "./Partition";
 import { Pointer } from "./Pointer";
 import { Result } from "./Result";
+import { SearchRange } from "./SearchRange";
 import { Segments } from "./Segments";
 import { SortedRegion } from "./SortedRegion";
 import { SplitTree } from "./SplitTree";
@@ -56,6 +59,11 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   window: { component: Window, slot: "canvas", layer: -1 },
   "freq-table": { component: FreqTable, slot: "bottom", layer: 0 },
   deque: { component: Deque, slot: "bottom", layer: 0 },
+  // Over the cards, so it can dim the dropped ones; under highlights and pointers.
+  "search-range": { component: SearchRange, slot: "canvas", layer: 0.5 },
+  "number-line": { component: NumberLine, slot: "bottom", layer: 0 },
+  // Over the cards: its shading tints the left side.
+  cut: { component: Cut, slot: "canvas", layer: 0.5 },
   highlight: { component: Highlight, slot: "canvas", layer: 1 },
   pointer: { component: Pointer, slot: "canvas", layer: 2 },
   callout: { component: Callout, slot: "canvas", layer: 3 },

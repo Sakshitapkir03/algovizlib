@@ -15,7 +15,7 @@ import { z } from "zod";
  * Planned (not built yet): "staircase", "house-row", "coin-set", "box-arrow".
  * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`; divide and conquer adds
  * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter"; sliding window adds "window",
- * "freq-table", and "deque".
+ * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`.
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -46,6 +46,8 @@ const itemRowShape = {
   items: z.array(itemSchema).min(1),
   /** Prefix used when rendering values, e.g. "$". */
   unit: z.string().default(""),
+  /** Which trace list this row shows when the trace has two (Median of Two Sorted Arrays). Default: the first. */
+  traceRow: z.enum(["first", "second"]).optional(),
 };
 export const itemRowElementSchema = z.object(itemRowShape);
 export const itemRowSourceSchema = z.object({
@@ -293,6 +295,71 @@ export const windowSourceSchema = z.object({
   to: windowShape.to.optional(),
 });
 
+const searchRangeShape = {
+  ...baseElement,
+  type: z.literal("search-range"),
+  rowId: nonEmpty,
+  /** First position still in play. */
+  from: index,
+  /** Last position still in play (inclusive); `from - 1` once nothing is left (it marks the gap before `from`). */
+  to: z.number().int().min(-1),
+  /** The position just checked. */
+  mid: index.optional(),
+  /** The half known to be in order (rotated arrays), shown with "✓ sorted". */
+  sorted: rangeSchema.optional(),
+  /** Shown above the bracket when there's no sorted half, e.g. "insert here" on an empty range. */
+  label: z.string().max(16).default(""),
+  /** The range in the previous bound scene: the bracket's edges slide from there. */
+  fromRange: windowRangeSchema.optional(),
+};
+export const searchRangeElementSchema = z.object(searchRangeShape);
+export const searchRangeSourceSchema = z.object({
+  ...searchRangeShape,
+  /** Omit from/to/mid/sorted (and fromRange) to take the bound step's range. */
+  from: index.optional(),
+  to: searchRangeShape.to.optional(),
+});
+
+const numberLineShape = {
+  ...baseElement,
+  type: z.literal("number-line"),
+  /** The smallest and largest candidate answer (at most 16 candidates). */
+  min: z.number().int(),
+  max: z.number().int(),
+  /** Candidates below `low` are ruled out; candidates from `high` up are known to work. */
+  low: z.number().int(),
+  high: z.number().int(),
+  /** The candidate just tested. */
+  mid: z.number().int().optional(),
+  /** What the candidates are, e.g. "speed". */
+  label: nonEmpty.max(16).default("answers"),
+};
+export const numberLineElementSchema = z.object(numberLineShape);
+export const numberLineSourceSchema = z.object({
+  ...numberLineShape,
+  /** Omit min/max/low/high/mid to take the bound step's candidates. */
+  min: numberLineShape.min.optional(),
+  max: numberLineShape.max.optional(),
+  low: numberLineShape.low.optional(),
+  high: numberLineShape.high.optional(),
+});
+
+const cutShape = {
+  ...baseElement,
+  type: z.literal("cut"),
+  rowId: nonEmpty,
+  /** How many values sit left of the cut (0 = before the first card, the row's length = after the last). */
+  at: index,
+  /** Where the cut was in the previous bound scene: it slides from there. */
+  fromAt: index.optional(),
+};
+export const cutElementSchema = z.object(cutShape);
+export const cutSourceSchema = z.object({
+  ...cutShape,
+  /** Omit at/fromAt to take the bound step's cut for this row's list. */
+  at: index.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -458,6 +525,9 @@ export const elementSchemas = [
   windowElementSchema,
   freqTableElementSchema,
   dequeElementSchema,
+  searchRangeElementSchema,
+  numberLineElementSchema,
+  cutElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -480,6 +550,9 @@ export const elementSourceSchemas = [
   windowSourceSchema,
   freqTableSourceSchema,
   dequeSourceSchema,
+  searchRangeSourceSchema,
+  numberLineSourceSchema,
+  cutSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -509,6 +582,9 @@ export type CounterElement = ElementOf<"counter">;
 export type WindowElement = ElementOf<"window">;
 export type FreqTableElement = ElementOf<"freq-table">;
 export type DequeElement = ElementOf<"deque">;
+export type SearchRangeElement = ElementOf<"search-range">;
+export type NumberLineElement = ElementOf<"number-line">;
+export type CutElement = ElementOf<"cut">;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
 export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

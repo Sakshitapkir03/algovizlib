@@ -1,3 +1,8 @@
+import { kokoEatingBananasTrace } from "./binary-search/koko-eating-bananas";
+import { medianOfTwoSortedArraysTrace } from "./binary-search/median-of-two-sorted-arrays";
+import { searchInRotatedSortedArrayTrace } from "./binary-search/search-in-rotated-sorted-array";
+import { searchInsertPositionTrace } from "./binary-search/search-insert-position";
+import { searchSortedArrayTrace } from "./binary-search/search-sorted-array";
 import { longestRepeatingCharacterReplacementTrace } from "./sliding-window/longest-repeating-character-replacement";
 import { longestSubstringWithoutRepeatingCharactersTrace } from "./sliding-window/longest-substring-without-repeating-characters";
 import { maximumSumSubarrayOfSizeKTrace } from "./sliding-window/maximum-sum-subarray-of-size-k";
@@ -43,6 +48,11 @@ const definitions = [
   longestRepeatingCharacterReplacementTrace,
   minimumWindowSubstringTrace,
   slidingWindowMaximumTrace,
+  searchSortedArrayTrace,
+  searchInsertPositionTrace,
+  searchInRotatedSortedArrayTrace,
+  kokoEatingBananasTrace,
+  medianOfTwoSortedArraysTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

@@ -1,0 +1,473 @@
+{
+  "id": "binary-search-search-in-rotated-sorted-array",
+  "title": "Search in Rotated Sorted Array: The Events Board",
+  "concept": "Binary Search",
+  "category": "dsa",
+  "summary": "A wrapped list still has one sorted half around any middle: check whether the target is inside it to know which half to keep.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A community board lists upcoming events by date, starting on the 22nd, so the dates run 22, 27, 31, then wrap to 3, 8, 12, 17. You want the event on the 8th.",
+    "mapping": [
+      {
+        "real": "An event's date",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "The 8th",
+        "abstract": "target"
+      },
+      {
+        "real": "The wrap from the 31st to the 3rd",
+        "abstract": "the rotation point"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "rotated",
+    "sorted"
+  ],
+  "takeaway": {
+    "pattern": "Binary search on a rotated sorted array",
+    "summary": "One half around the middle is always in order. If the target lies between that half's ends, keep it; otherwise keep the other half.",
+    "timeComplexity": "O(log n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "A sorted array rotated at an unknown point",
+      "Sorted data that wraps around, like dates or times"
+    ]
+  },
+  "trace": {
+    "problem": "binary-search/search-in-rotated-sorted-array",
+    "args": [
+      [
+        22,
+        27,
+        31,
+        3,
+        8,
+        12,
+        17
+      ],
+      8
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v7",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-20T16:36:30.748Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A community board lists upcoming events by date. It starts on the 22nd, so the dates run 22, 27, 31, then wrap to 3, 8, 12, and 17. Which event is on the 8th?",
+      "caption": "Which event is on the 8th?",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Quiz",
+            "Gig",
+            "Party",
+            "Fair",
+            "Market",
+            "Film",
+            "Talk"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Reading every date works, but slowly. And the wrap means the list isn't sorted end to end, so plain binary search can go the wrong way.",
+      "caption": "The wrap breaks a plain binary search",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Quiz",
+            "Gig",
+            "Party",
+            "Fair",
+            "Market",
+            "Film",
+            "Talk"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "all-in-play",
+      "narration": "The trick: split the list at any middle, and at least one side is still in order. Start with all seven dates in play.",
+      "caption": "The trick: one side of any middle is in order",
+      "durationInFrames": 324,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Quiz",
+            "Gig",
+            "Party",
+            "Fair",
+            "Market",
+            "Film",
+            "Talk"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        },
+        {
+          "id": "p-high",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "high",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "high"
+        }
+      ]
+    },
+    {
+      "id": "sorted-right",
+      "narration": "The middle is position 3, the 3rd. The first date, 22, is bigger than 3, so the wrap is on the left, and the right half, 3 to 17, is in order.",
+      "caption": "Middle is the 3rd: 22 > 3, so the right half is in order",
+      "durationInFrames": 420,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Quiz",
+            "Gig",
+            "Party",
+            "Fair",
+            "Market",
+            "Film",
+            "Talk"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "active",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        },
+        {
+          "id": "p-mid",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "mid",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "mid"
+        },
+        {
+          "id": "p-high",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "high",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "high"
+        },
+        {
+          "id": "check",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "wrap on left"
+        }
+      ]
+    },
+    {
+      "id": "keep-right",
+      "narration": "Is 8 inside that run? It's above 3 and at most 17, so yes. Keep positions 4 to 6 and drop the rest.",
+      "caption": "8 is inside 3 to 17: keep the right half",
+      "durationInFrames": 312,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Quiz",
+            "Gig",
+            "Party",
+            "Fair",
+            "Market",
+            "Film",
+            "Talk"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "active",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        },
+        {
+          "id": "p-mid",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "mid",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "mid"
+        },
+        {
+          "id": "p-high",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "high",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "high"
+        },
+        {
+          "id": "check",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "inside"
+        }
+      ]
+    },
+    {
+      "id": "keep-left",
+      "narration": "Now the middle is position 5, the 12th. The run from 8 to 12 is in order, and 8 is inside it, so drop the 12th and everything after.",
+      "caption": "Middle is the 12th: 8 is inside 8 to 12, keep the left",
+      "durationInFrames": 384,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Quiz",
+            "Gig",
+            "Party",
+            "Fair",
+            "Market",
+            "Film",
+            "Talk"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "active",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        },
+        {
+          "id": "p-mid",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "mid",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "mid"
+        },
+        {
+          "id": "p-high",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "high",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "high"
+        },
+        {
+          "id": "check",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "inside"
+        }
+      ]
+    },
+    {
+      "id": "found",
+      "narration": "Only position 4 is left, and it's the 8th: the market. Found in three checks.",
+      "caption": "Position 4 is the 8th: the market",
+      "durationInFrames": 216,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Quiz",
+            "Gig",
+            "Party",
+            "Fair",
+            "Market",
+            "Film",
+            "Talk"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "found",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "p-mid",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "mid",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "mid"
+        },
+        {
+          "id": "check",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "The 8th is at position",
+          "detail": "the market",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's binary search on a rotated sorted array. The dates are nums, the 8th is target, and low, mid, and high are positions. One half is always in order, so each check still halves the range: O(log n) time and O(1) space.",
+      "caption": "One half is always in order: O(log n)",
+      "durationInFrames": 540,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]",
+            "nums[4]",
+            "nums[5]",
+            "nums[6]"
+          ]
+        }
+      ]
+    }
+  ]
+}

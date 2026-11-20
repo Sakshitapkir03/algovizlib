@@ -143,12 +143,27 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
     // The array as it stands at this scene's step (sorting rearranges it), else the trace's starting row.
     const expectedValues = boundStep?.values ?? trace.row.values;
     const checkedRows = new Set<string>();
+    const isSecond = (rowId: string) => {
+      const row = rows.get(rowId);
+      return row?.type === "item-row" && row.traceRow === "second";
+    };
     const checkRow = (rowId: string) => {
       if (checkedRows.has(rowId)) return;
       checkedRows.add(rowId);
       const row = rows.get(rowId);
       const values = row && rowValues(row);
-      if (values && !sameList(values, expectedValues)) {
+      if (!values) return;
+      if (isSecond(rowId)) {
+        const second = trace.secondRow?.values;
+        if (!second) push("This trace has only one list; remove traceRow", rowId, "traceRow");
+        else if (!sameList(values, second))
+          push(`Row "${rowId}" must hold the trace's second list`, rowId, "items", {
+            expected: list(second),
+            actual: list(values),
+          });
+        return;
+      }
+      if (!sameList(values, expectedValues)) {
         push(
           boundStep?.values
             ? `Row "${rowId}" must hold the array as it is after trace step ${scene.traceStep}`
@@ -538,6 +553,84 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           }
           break;
         }
+        case "search-range": {
+          checkRow(el.rowId);
+          const expected = step.search;
+          const show = (r: { from: number; to: number }) =>
+            r.to < r.from ? `empty (before ${r.from})` : `${r.from}–${r.to}`;
+          if (!expected) push(`Trace step ${stepIndex} has no search range`, el.id, "from");
+          else {
+            if (el.from !== expected.from || el.to !== expected.to)
+              push(`Search range doesn't match trace step ${stepIndex}`, el.id, "from", {
+                expected: show(expected),
+                actual: show(el),
+              });
+            if (el.mid !== undefined && el.mid !== expected.mid)
+              push(`The middle doesn't match trace step ${stepIndex}`, el.id, "mid", {
+                expected: String(expected.mid ?? "none"),
+                actual: String(el.mid),
+              });
+            if (el.sorted && !sameJson(el.sorted, expected.sorted))
+              push(`The sorted half doesn't match trace step ${stepIndex}`, el.id, "sorted", {
+                expected: expected.sorted ? show(expected.sorted) : "none",
+                actual: show(el.sorted),
+              });
+          }
+          if (el.fromRange) {
+            const before = previous?.search;
+            if (!before)
+              push("Search range slides in from nowhere (no earlier bound range)", el.id, "fromRange");
+            else if (before.from !== el.fromRange.from || before.to !== el.fromRange.to)
+              push("Search range should shrink from where the previous scene left it", el.id, "fromRange", {
+                expected: show(before),
+                actual: show(el.fromRange),
+              });
+          }
+          break;
+        }
+        case "number-line": {
+          const expected = step.answers;
+          if (!expected) push(`Trace step ${stepIndex} has no candidate answers`, el.id, "low");
+          else {
+            const show = (a: { min: number; max: number; low: number; high: number; mid?: number }) =>
+              `${a.min}–${a.max}, low ${a.low}, high ${a.high}${a.mid !== undefined ? `, mid ${a.mid}` : ""}`;
+            const actual = { min: el.min, max: el.max, low: el.low, high: el.high, mid: el.mid };
+            if (
+              el.min !== expected.min ||
+              el.max !== expected.max ||
+              el.low !== expected.low ||
+              el.high !== expected.high ||
+              (el.mid !== undefined && el.mid !== expected.mid)
+            )
+              push(`Candidate answers don't match trace step ${stepIndex}`, el.id, "low", {
+                expected: show(expected),
+                actual: show(actual),
+              });
+          }
+          break;
+        }
+        case "cut": {
+          checkRow(el.rowId);
+          const which = isSecond(el.rowId) ? "second" : "first";
+          const expected = step.cuts?.[which];
+          if (expected === undefined) push(`Trace step ${stepIndex} has no cut`, el.id, "at");
+          else if (el.at !== expected)
+            push(`The cut in "${el.rowId}" doesn't match trace step ${stepIndex}`, el.id, "at", {
+              expected: String(expected),
+              actual: String(el.at),
+            });
+          if (el.fromAt !== undefined) {
+            const before = previous?.cuts?.[which];
+            if (before === undefined)
+              push("The cut slides in from nowhere (no earlier bound cut)", el.id, "fromAt");
+            else if (before !== el.fromAt)
+              push("The cut should slide from where the previous scene left it", el.id, "fromAt", {
+                expected: String(before),
+                actual: String(el.fromAt),
+              });
+          }
+          break;
+        }
         default:
           break;
       }
@@ -562,8 +655,8 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
  * Check a resolved storyboard. Always: equation arithmetic. With a `trace` binding: bound steps exist and never
  * go backwards, every key step is shown, rows hold the trace's values (the step's own array when the algorithm
  * rearranges it), and bound pointers, equations, highlights, fills, moves, sorted regions, held values, tallies,
- * groups, split trees, merge buffers, partitions, heaps, counters, windows, character counts, and deques match their
- * step, and the answer is revealed correctly. Hand-written and generated storyboards both pass
+ * groups, split trees, merge buffers, partitions, heaps, counters, windows, character counts, deques, search ranges,
+ * candidate answers, and cuts match their step (a `traceRow: "second"` row holds the trace's second list), and the answer is revealed correctly. Hand-written and generated storyboards both pass
  * through this before they are shown.
  */
 export function validateStoryboard(storyboard: Storyboard): ValidationResult {

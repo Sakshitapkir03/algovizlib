@@ -20,7 +20,9 @@ label. Every problem has an original statement, examples (design problems show a
 progressive hints, and the approach behind a spoiler toggle, and every example is checked against a reference
 solution. Problems with a video play it inline: five Two Pointers problems, all eight Sorting problems (merge,
 quick, and heap sort get split, partition, and heap-tree views; Count Inversions gets a running counter), and all five
-Sliding Window problems (a window bracket that grows and shrinks, character counts, and a monotonic deque). The first is
+Sliding Window problems (a window bracket that grows and shrinks, character counts, and a monotonic deque), and all five
+Binary Search problems (a shrinking search range with the dropped half dimmed, a number line of candidate answers, and
+partition cuts across two lists). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 You can mark each problem Not started / Learning / Done. Progress is saved in your browser.

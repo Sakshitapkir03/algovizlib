@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v6";
+export const PROMPT_VERSION = "storyboard-v7";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -54,6 +54,7 @@ ${ELEMENT_GUIDE}
 - sorted-region / held-value / count-array: only in scenes whose step lists a sorted range or final positions / held value / tally; OMIT their indices, value/index, and keys/counts/active.
 - segments / split-tree / merge-buffer / partition / counter: only in scenes whose step lists groups / a split tree / a buffer / a pivot / a count; OMIT their state fields. heap-tree: in every scene of a heap trace that shows the bars (bound or not); OMIT its state fields, and anchor callouts to the bars rather than floating them over the tree.
 - window / freq-table / deque: only in scenes whose step lists a window / counts / a deque; OMIT their state fields (from/to/value, entries/active, indices/output/popped). Give the window a short label for its value ("sum", "length"); its edges slide on their own between bound scenes.
+- search-range / number-line / cut: only in scenes whose step lists a search range / candidate answers / cuts; OMIT their state fields (from/to/mid/sorted, min/max/low/high/mid, at). A search range's bracket shrinks on its own between bound scenes; give an empty range a label for the gap ("insert here"). With two lists, add one cut per item-row, and give the second list's item-row traceRow: "second".
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -118,6 +119,20 @@ function describeStep(step: TraceStep, index: number): string {
     parts.push(
       `deque (front→back positions): [${step.deque.indices.join(", ")}]${step.deque.poppedBack?.length ? `, removed from back: [${step.deque.poppedBack.join(", ")}]` : ""}${step.deque.poppedFront?.length ? `, removed from front: [${step.deque.poppedFront.join(", ")}]` : ""}, output: [${step.deque.output.join(", ")}]`,
     );
+  if (step.search) {
+    const s = step.search;
+    parts.push(
+      `search range: ${s.to < s.from ? `empty (the gap before ${s.from})` : `${s.from}–${s.to}`}${s.mid !== undefined ? `, mid ${s.mid}` : ""}${s.sorted ? `, sorted half ${s.sorted.from}–${s.sorted.to}` : ""}`,
+    );
+  }
+  if (step.answers) {
+    const a = step.answers;
+    parts.push(
+      `candidate answers ${a.min}–${a.max}: ruled out below ${a.low}, known to work from ${a.high}${a.mid !== undefined ? `, tested ${a.mid}` : ""}`,
+    );
+  }
+  if (step.cuts)
+    parts.push(`cuts: first list after ${step.cuts.first}, second list after ${step.cuts.second}`);
   if (step.counts)
     parts.push(
       `tally: ${step.counts.keys.map((k, i) => `${k}:${step.counts!.counts[i]}`).join(" ")}${step.counts.active !== undefined ? ` (changed: ${step.counts.keys[step.counts.active]})` : ""}`,
@@ -145,8 +160,12 @@ Complexity: ${problem.complexity.time} time, ${problem.complexity.space} space.
 
 # Trace
 Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value
-${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}
-Pointer names: ${trace.pointerNames.join(", ")}
+${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}${
+    trace.secondRow
+      ? `\nSecond list (a second item-row with traceRow: "second"), index: value\n${trace.secondRow.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}`
+      : ""
+  }
+Pointer names: ${trace.pointerNames.join(", ") || "none"}
 Answer: ${trace.answerDisplay}
 
 Steps (${trace.steps.length} total, ${keyCount} KEY):
@@ -173,4 +192,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV6 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV7 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

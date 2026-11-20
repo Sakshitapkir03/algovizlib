@@ -1,0 +1,368 @@
+{
+  "id": "binary-search-search-insert-position",
+  "title": "Search Insert Position: Slotting In a New Bus",
+  "concept": "Binary Search",
+  "category": "dsa",
+  "summary": "Halve the possible spots until low and high meet: that's where the new value goes.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A timetable lists buses leaving at 2, 5, 9, 14, and 20 minutes past the hour. A new bus leaves at minute 7 and needs its row.",
+    "mapping": [
+      {
+        "real": "A departure minute",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "The new bus at minute 7",
+        "abstract": "target"
+      },
+      {
+        "real": "Its row in the timetable",
+        "abstract": "the insert position"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorted",
+    "lower-bound"
+  ],
+  "takeaway": {
+    "pattern": "Binary search for a position",
+    "summary": "Keep low…high as the spots still possible. A middle value smaller than the target moves low past it; otherwise high moves to it. When they meet, that's the first position whose value is at least the target.",
+    "timeComplexity": "O(log n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Where a value belongs in a sorted array",
+      "The first position whose value meets a condition"
+    ]
+  },
+  "trace": {
+    "problem": "binary-search/search-insert-position",
+    "args": [
+      [
+        2,
+        5,
+        9,
+        14,
+        20
+      ],
+      7
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v7",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-20T16:36:30.750Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A timetable lists buses leaving at 2, 5, 9, 14, and 20 minutes past the hour. A new bus leaves at minute 7. Which row does it get?",
+      "caption": "Where does the minute-7 bus go in the timetable?",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "You could read from the top until you pass 7. On a long timetable, that's a check for every row.",
+      "caption": "Reading row by row works, but slowly",
+      "durationInFrames": 276,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "all-spots",
+      "narration": "Use binary search instead. The spot is somewhere from position 0 to 5, where 5 means after the last bus.",
+      "caption": "The new bus could take any of 6 spots",
+      "durationInFrames": 276,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        }
+      ]
+    },
+    {
+      "id": "later",
+      "narration": "The middle is position 2, the minute-9 bus. That's later than 7, so the new bus goes at position 2 or before: high moves to 2.",
+      "caption": "Middle is minute 9: the spot is at 2 or before",
+      "durationInFrames": 348,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "active",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        },
+        {
+          "id": "p-mid",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "mid",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "mid"
+        },
+        {
+          "id": "p-high",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "high",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "high"
+        },
+        {
+          "id": "check",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "later"
+        }
+      ]
+    },
+    {
+      "id": "earlier",
+      "narration": "Between 0 and 2, the middle is position 1, the minute-5 bus. That's earlier than 7, so the spot comes after it: low becomes 1 plus 1, which is 2.",
+      "caption": "Middle is minute 5: the spot comes after it",
+      "durationInFrames": 396,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": ""
+        },
+        {
+          "id": "active",
+          "enterAt": 0.1,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        },
+        {
+          "id": "p-mid",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "mid",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "mid"
+        },
+        {
+          "id": "p-high",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "high",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "high"
+        },
+        {
+          "id": "check",
+          "enterAt": 0.35,
+          "type": "equation",
+          "unit": "",
+          "verdict": "earlier"
+        }
+      ]
+    },
+    {
+      "id": "meet",
+      "narration": "Low and high now meet at 2, so only one spot is left. The minute-7 bus goes at position 2, between the 5 and the 9.",
+      "caption": "Low meets high at 2: the new bus goes there",
+      "durationInFrames": 348,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": "insert here"
+        },
+        {
+          "id": "p-low",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "low",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "low"
+        },
+        {
+          "id": "p-high",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "high",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "high"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Insert at position",
+          "detail": "between minute 5 and minute 9",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's binary search for a position. The timetable is nums, 7 is target, and the answer is the first position whose value is at least the target. Each check halves the spots: O(log n) time and O(1) space.",
+      "caption": "Shrink to one spot: O(log n)",
+      "durationInFrames": 492,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]",
+            "nums[4]"
+          ]
+        }
+      ]
+    }
+  ]
+}

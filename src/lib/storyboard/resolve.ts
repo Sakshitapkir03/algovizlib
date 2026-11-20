@@ -28,8 +28,9 @@ export function applyOperator(operator: keyof typeof OPERATORS, terms: readonly 
  * Turn an authored (or model-written) storyboard into the fully specified form the renderer and validator use.
  * Values the author omitted are taken from the trace: rows from the bound step's `values` (else `trace.row`), and
  * pointers, equations, highlights, fills, water, moves, empty slots, sorted regions, held values, tallies, groups,
- * split trees, merge buffers, partitions, heaps, counters, windows, character counts, and deques from the scene's
- * bound step. Values the author did write are kept as written; the validator
+ * split trees, merge buffers, partitions, heaps, counters, windows, character counts, deques, search ranges,
+ * candidate answers, and cuts from the scene's bound step (an item-row with `traceRow: "second"` shows the trace's
+ * second list). Values the author did write are kept as written; the validator
  * checks them against the trace. Returns issues instead of throwing, so the generator can send them back.
  */
 export function resolveStoryboard(source: StoryboardSource): ResolveResult {
@@ -76,9 +77,19 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
           if (el.items) return el;
           if (!trace) return (missing(el, "items"), el);
           const { labels, ...rest } = el;
+          const values = el.traceRow === "second" ? trace.secondRow?.values : trace.row.values;
+          if (!values) {
+            issues.push({
+              sceneId: scene.id,
+              elementId: el.id,
+              field: "traceRow",
+              message: "This trace has only one list; remove traceRow",
+            });
+            return el;
+          }
           return {
             ...rest,
-            items: trace.row.values.map((value, i) => ({ label: labels?.[i] ?? `[${i}]`, value })),
+            items: values.map((value, i) => ({ label: labels?.[i] ?? `[${i}]`, value })),
           };
         }
         case "bar-row": {
@@ -310,6 +321,40 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             to: step.window.to,
             value: el.value ?? step.window.value,
             fromRange: el.fromRange ?? (moved ? { from: before.from, to: before.to } : undefined),
+          };
+        }
+        case "search-range": {
+          if (el.from !== undefined && el.to !== undefined) return el;
+          if (!step?.search) return (noState(el, "from", "search range"), el);
+          const before = previousStep && previousStep !== step ? previousStep.search : undefined;
+          const moved = before && (before.from !== step.search.from || before.to !== step.search.to);
+          return {
+            ...el,
+            from: step.search.from,
+            to: step.search.to,
+            mid: el.mid ?? step.search.mid,
+            sorted: el.sorted ?? step.search.sorted,
+            fromRange: el.fromRange ?? (moved ? { from: before.from, to: before.to } : undefined),
+          };
+        }
+        case "number-line": {
+          if (el.min !== undefined && el.max !== undefined && el.low !== undefined && el.high !== undefined)
+            return el;
+          if (!step?.answers) return (noState(el, "low", "candidate answers"), el);
+          const { min, max, low, high, mid } = step.answers;
+          return { ...el, min, max, low, high, mid: el.mid ?? mid };
+        }
+        case "cut": {
+          if (el.at !== undefined) return el;
+          if (!step?.cuts) return (noState(el, "at", "cut"), el);
+          const row = scene.elements.find((r) => r.id === el.rowId);
+          const which = row?.type === "item-row" && row.traceRow === "second" ? "second" : "first";
+          const before = previousStep && previousStep !== step ? previousStep.cuts?.[which] : undefined;
+          const at = step.cuts[which];
+          return {
+            ...el,
+            at,
+            fromAt: el.fromAt ?? (before !== undefined && before !== at ? before : undefined),
           };
         }
         case "freq-table": {

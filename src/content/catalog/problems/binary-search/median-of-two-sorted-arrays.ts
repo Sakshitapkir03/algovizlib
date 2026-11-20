@@ -13,14 +13,14 @@ The median is the middle value of the combined sorted list. When the combined le
 Aim for O(log(min(m, n))) time, where \`m\` and \`n\` are the two lengths.`,
   examples: [
     {
-      input: "nums1 = [2, 6, 11], nums2 = [4, 9]",
-      output: "6",
-      explanation: "Combined: [2, 4, 6, 9, 11]. The middle value is 6.",
+      input: "nums1 = [5, 9, 14], nums2 = [1, 4, 10, 16]",
+      output: "9",
+      explanation: "Combined: [1, 4, 5, 9, 10, 14, 16]. The middle value is 9.",
       args: [
-        [2, 6, 11],
-        [4, 9],
+        [5, 9, 14],
+        [1, 4, 10, 16],
       ],
-      expected: 6,
+      expected: 9,
     },
     {
       input: "nums1 = [1, 8], nums2 = [3, 5]",

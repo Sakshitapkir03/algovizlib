@@ -29,7 +29,14 @@ export function pointerLabel(
     x - 8,
     CANVAS_WIDTH - 8 - x,
     ...others
-      .filter((o) => o !== element && o.rowId === element.rowId && o.placement === element.placement)
+      // Pointers on the same position stack vertically, so they don't compete for width.
+      .filter(
+        (o) =>
+          o !== element &&
+          o.rowId === element.rowId &&
+          o.placement === element.placement &&
+          o.index !== element.index,
+      )
       .map((o) => Math.abs(layout.centers[o.index] - x) / 2 - 4),
   );
   const room = 2 * half - PILL_PADDING;

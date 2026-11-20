@@ -5,6 +5,7 @@ import type { PointerElement } from "@/lib/storyboard";
 import { enterProgress } from "../animation";
 import { useScene } from "../context";
 import { PILL_PADDING, pointerLabel } from "../labels";
+import { pointerLevel, sizes } from "../layout";
 import { TEXT } from "../text";
 import { FONT_SANS } from "../theme";
 
@@ -32,7 +33,11 @@ export function Pointer({ element }: { element: PointerElement }) {
   const color = element.tone === "primary" ? palette.primary : palette.secondary;
   const textColor = element.tone === "primary" ? palette.primaryText : palette.secondaryText;
   const below = element.placement === "below";
-  const top = below ? layout.pointerTop : layout.top - 8 - ARROW - labelHeight;
+  // Pointers on the same position stack: the first keeps the arrow, the rest hang under it as pills.
+  const level = below ? pointerLevel(element, elements) : 0;
+  const top = below
+    ? layout.pointerTop + (level > 0 ? ARROW + labelHeight + 6 + (level - 1) * sizes.stackedPointer(text) : 0)
+    : layout.top - 8 - ARROW - labelHeight;
 
   const arrow = (
     <div
@@ -80,7 +85,7 @@ export function Pointer({ element }: { element: PointerElement }) {
         opacity,
       }}
     >
-      {below ? arrow : label}
+      {level > 0 ? null : below ? arrow : label}
       {below ? label : arrow}
     </div>
   );

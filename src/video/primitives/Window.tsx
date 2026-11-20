@@ -13,7 +13,7 @@ const STROKE = 4;
 const PAD = 6;
 
 /** Left and right x of a window's bracket. An empty window collapses to a point just before `from`. */
-function edges(layout: RowLayout, range: { from: number; to: number }): [number, number] {
+export function edges(layout: RowLayout, range: { from: number; to: number }): [number, number] {
   const n = layout.lefts.length;
   if (range.to < range.from) {
     const x = range.from < n ? layout.lefts[range.from] - 8 : layout.lefts[n - 1] + layout.cardWidth + 8;

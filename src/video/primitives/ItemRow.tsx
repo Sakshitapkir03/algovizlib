@@ -16,8 +16,10 @@ export function ItemRow({ element }: { element: ItemRowElement }) {
   const labelSize = text.size(TEXT.itemLabel);
   const valueSize = text.size(TEXT.itemValue);
   const sublabelSize = text.size(TEXT.itemSublabel);
-  // Names are secondary to values: drop any that wouldn't fit the card at a readable size.
+  // Names are secondary to values: drop any that wouldn't fit the card at a readable size (across, or above the
+  // value when the card has been shortened).
   const room = layout.cardWidth - 12;
+  const tall = layout.cardHeight >= Math.ceil((labelSize + valueSize) * 1.2) + 6 + 16;
 
   return (
     <>
@@ -48,7 +50,7 @@ export function ItemRow({ element }: { element: ItemRowElement }) {
           >
             <div
               style={{
-                display: text.fits(item.label, labelSize, room) ? undefined : "none",
+                display: tall && text.fits(item.label, labelSize, room) ? undefined : "none",
                 fontSize: labelSize,
                 fontWeight: 600,
                 color: palette.textMuted,

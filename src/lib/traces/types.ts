@@ -101,6 +101,18 @@ export type TraceStep = {
    * the answer written so far.
    */
   deque?: { indices: number[]; poppedBack?: number[]; poppedFront?: number[]; output: number[] };
+  /**
+   * Binary search over the row: the positions still in play (inclusive; `to = from - 1` once it's empty, which marks
+   * the gap before `from`), the position just checked, and (rotated arrays) the half known to be sorted.
+   */
+  search?: { from: number; to: number; mid?: number; sorted?: { from: number; to: number } };
+  /**
+   * Binary search on the answer: candidates `min`…`max`. Everything below `low` is ruled out, everything from `high`
+   * up is known to work, and `mid` is the candidate just tested.
+   */
+  answers?: { min: number; max: number; low: number; high: number; mid?: number };
+  /** Two-list partition (Median of Two Sorted Arrays): how many values sit left of the cut in each list. */
+  cuts?: { first: number; second: number };
 };
 
 export type Trace = {
@@ -108,6 +120,8 @@ export type Trace = {
   problem: string;
   /** The values the video animates, in display order. */
   row: { values: TraceValue[]; display: "cards" | "bars" };
+  /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */
+  secondRow?: { values: TraceValue[] };
   pointerNames: string[];
   steps: TraceStep[];
   /** Same shape the reference solution returns. */
