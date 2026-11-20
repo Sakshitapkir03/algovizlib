@@ -149,12 +149,12 @@ export function LearnView({
         <Transcript scenes={storyboard.scenes} timings={timings} currentIndex={currentIndex} />
         {showTakeaway && <KeyTakeaway takeaway={storyboard.takeaway} analogy={storyboard.analogy} />}
       </div>
-      <aside className="lg:sticky lg:top-20 lg:self-start" aria-labelledby="scenes-heading">
+      <section className="lg:sticky lg:top-20 lg:self-start" aria-labelledby="scenes-heading">
         <h2 id="scenes-heading" className="mb-3 text-sm font-semibold text-muted-foreground">
           Scenes
         </h2>
         <SceneList scenes={storyboard.scenes} timings={timings} currentIndex={currentIndex} />
-      </aside>
+      </section>
     </div>
   );
 }

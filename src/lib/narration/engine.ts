@@ -5,8 +5,9 @@ import { countWords, sceneIndexAtFrame, type SceneTiming } from "@/lib/storyboar
  * volume change calls `update()`, and the engine makes the voice match.
  *
  * - **ElevenLabs** (a scene with `audio`): one audio element plays the scene's clip from `narrationStart`. Its
- *   position is set from the frame on a seek or scene change and corrected whenever it drifts by more than
- *   `DRIFT_SECONDS`; speed changes set `playbackRate` with `preservesPitch`, so 0.5×–2× keep a natural voice.
+ *   position is set from the frame on a seek or scene change and whenever it drifts by more than `DRIFT_SECONDS`;
+ *   smaller drift is closed by briefly playing it slightly faster or slower (`NUDGE`). Speed changes set
+ *   `playbackRate` with `preservesPitch`, so 0.5×–2× keep a natural voice.
  * - **Browser voice** (no audio, Web Speech API available): the scene's narration is spoken sentence by sentence.
  *   A seek restarts from the sentence at that point (estimated from the narration pace); pause/resume and speed
  *   changes restart the sentence being spoken. The browser's pace varies, so if it's still speaking when the scene
@@ -90,6 +91,14 @@ export type NarrationEngineOptions = {
 
 /** Correct the clip's position when it's this far from where the frame says it should be. */
 export const DRIFT_SECONDS = 0.3;
+/**
+ * Smaller drift (an audio element takes ~0.1–0.25 s to start or resume while the video runs on) is closed smoothly:
+ * the clip plays `NUDGE` faster or slower, pitch preserved, from `NUDGE_START` until it's within `NUDGE_STOP`.
+ * Seeking instead would stall the element again and recreate the gap.
+ */
+export const NUDGE = 0.08;
+export const NUDGE_START = 0.08;
+export const NUDGE_STOP = 0.02;
 /** Pace the sentence estimate assumes (the same ~150 wpm as `estimateDurationInFrames`). */
 const WORDS_PER_SECOND = 2.5;
 /** Never hold longer than this per sentence still to speak (a voice that never reports "end"). */
@@ -122,6 +131,8 @@ type SpeechSession = {
 export class NarrationEngine {
   private audio: AudioLike | null = null;
   private audioScene = -1;
+  /** Catching up (+1) or easing back (−1) on small drift, 0 when in step. */
+  private nudge: -1 | 0 | 1 = 0;
   private session: SpeechSession | null = null;
   /** Where a paused browser voice picks up: the sentence it was speaking. */
   private resumeAt: { scene: number; sentence: number } | null = null;
@@ -176,19 +187,25 @@ export class NarrationEngine {
     audio.volume = state.volume;
     audio.muted = state.muted;
     audio.preservesPitch = true;
-    audio.playbackRate = state.rate;
     if (offset < 0 || offset >= clip.durationMs / 1000) {
       // Before the lead-in ends, or in the pause after the clip.
       if (!audio.paused) audio.pause();
       return;
     }
+    const drift = audio.currentTime - offset;
     if (this.audioScene !== index) {
       audio.src = clip.src;
       this.audioScene = index;
       audio.currentTime = offset;
-    } else if (seeked || Math.abs(audio.currentTime - offset) > DRIFT_SECONDS) {
+      this.nudge = 0;
+    } else if (seeked || Math.abs(drift) > DRIFT_SECONDS) {
       audio.currentTime = offset;
+      this.nudge = 0;
+    } else if (!audio.paused) {
+      if (Math.abs(drift) > NUDGE_START) this.nudge = drift < 0 ? 1 : -1;
+      else if (Math.abs(drift) < NUDGE_STOP) this.nudge = 0;
     }
+    audio.playbackRate = state.rate * (1 + this.nudge * NUDGE);
     if (audio.paused) audio.play().catch(() => undefined); // autoplay refusals stay silent
   }
 

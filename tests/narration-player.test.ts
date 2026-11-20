@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { storyboards } from "@/content/storyboards";
@@ -5,6 +7,7 @@ import {
   chooseVoice,
   DRIFT_SECONDS,
   NarrationEngine,
+  NUDGE,
   sentenceStarts,
   splitSentences,
   type AudioLike,
@@ -28,7 +31,15 @@ import {
 // ── timing from audio ───────────────────────────────────────────────────────────────────────────────────────
 
 const VOICE = { voiceId: "v", modelId: "m", outputFormat: "mp3_44100_64" };
-const base = storyboards.find((sb) => sb.id === "two-pointers")!;
+// The real manifest voices this video, so start from an unvoiced copy (estimated durations, no audio).
+const voicedBase = storyboards.find((sb) => sb.id === "two-pointers")!;
+const base = {
+  ...voicedBase,
+  scenes: voicedBase.scenes.map(({ audio: _, ...scene }) => ({
+    ...scene,
+    durationInFrames: estimateDurationInFrames(scene.narration),
+  })),
+};
 
 function manifestFor(scenes: { id: string; narration: string }[], durationMs: number): NarrationManifest {
   return {
@@ -88,9 +99,14 @@ describe("scene timing from the manifest", () => {
     }
   });
 
-  it("the committed manifest only references current narration", () => {
+  it("every clip in the committed manifest exists and matches current narration", () => {
     for (const sb of storyboards)
-      for (const scene of sb.scenes) if (scene.audio) expect(scene.audio.src).toMatch(/^\/audio\//);
+      for (const scene of sb.scenes) {
+        if (!scene.audio) continue;
+        expect(existsSync(`public${scene.audio.src}`), scene.audio.src).toBe(true);
+        expect(scene.durationInFrames).toBe(narrationDurationInFrames(scene.audio.durationMs));
+      }
+    expect(voicedBase.scenes.every((scene) => scene.audio)).toBe(true);
   });
 });
 
@@ -272,13 +288,43 @@ describe("NarrationEngine with ElevenLabs audio", () => {
         audio.advance(0.1);
         frame += 0.1 * rate * FPS;
         engine.update(state(Math.round(frame), { rate }));
-        expect(audio.playbackRate).toBe(rate);
+        // The chosen speed, give or take the catch-up nudge.
+        expect(Math.abs(audio.playbackRate / rate - 1)).toBeLessThanOrEqual(NUDGE + 1e-9);
         expect(audio.preservesPitch).toBe(true);
         expect(Math.abs(audio.currentTime - offsetAt(0, Math.round(frame)))).toBeLessThanOrEqual(
           DRIFT_SECONDS,
         );
       }
     }
+  });
+
+  it("closes small drift by nudging the speed (pitch preserved), never by seeking", () => {
+    const { engine, audio, state } = setup();
+    let frame = timings[0].narrationStart + 30;
+    engine.update(state(frame, { rate: 2 }));
+    // The element was slow to start: 0.15 s behind, under the seek tolerance.
+    audio.currentTime -= 0.15;
+    let position = audio.currentTime;
+    let seeks = 0;
+    Object.defineProperty(audio, "currentTime", {
+      get: () => position,
+      set: (v: number) => {
+        position = v;
+        seeks++;
+      },
+    });
+    const advance = (dt: number) => (position += dt * audio.playbackRate);
+    // 1.4 s of wall time at 2×: stays inside this 4 s clip.
+    for (let k = 0; k < 14; k++) {
+      advance(0.1);
+      frame += 0.1 * 2 * FPS;
+      engine.update(state(Math.round(frame), { rate: 2 }));
+    }
+    expect(seeks).toBe(0);
+    expect(Math.abs(audio.currentTime - offsetAt(0, Math.round(frame)))).toBeLessThan(0.05);
+    // Back in step: the clip plays at exactly the chosen speed again.
+    expect(audio.playbackRate).toBe(2);
+    expect(audio.preservesPitch).toBe(true);
   });
 
   it("corrects drift beyond the tolerance (e.g. the clip stalled while buffering)", () => {

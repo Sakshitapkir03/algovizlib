@@ -1,4 +1,411 @@
 {
   "version": 1,
-  "storyboards": {}
+  "storyboards": {
+    "sorting-bubble-sort": {
+      "problem": {
+        "hash": "05db3834f20a80",
+        "file": "/audio/sorting-bubble-sort/problem-05db3834f20a80.mp3",
+        "durationMs": 14942,
+        "chars": 212,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "brute-force": {
+        "hash": "117c14a949cbb9",
+        "file": "/audio/sorting-bubble-sort/brute-force-117c14a949cbb9.mp3",
+        "durationMs": 12251,
+        "chars": 196,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "first-swap": {
+        "hash": "0d9ae559fccb8d",
+        "file": "/audio/sorting-bubble-sort/first-swap-0d9ae559fccb8d.mp3",
+        "durationMs": 9561,
+        "chars": 153,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "in-order": {
+        "hash": "19f7ae2a612e31",
+        "file": "/audio/sorting-bubble-sort/in-order-19f7ae2a612e31.mp3",
+        "durationMs": 7549,
+        "chars": 127,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "first-pass": {
+        "hash": "0fe8f75fea2ab7",
+        "file": "/audio/sorting-bubble-sort/first-pass-0fe8f75fea2ab7.mp3",
+        "durationMs": 14054,
+        "chars": 225,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "second-pass": {
+        "hash": "0b1e66719d4dba",
+        "file": "/audio/sorting-bubble-sort/second-pass-0b1e66719d4dba.mp3",
+        "durationMs": 11285,
+        "chars": 165,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "last-pass": {
+        "hash": "0a360f9ade03d5",
+        "file": "/audio/sorting-bubble-sort/last-pass-0a360f9ade03d5.mp3",
+        "durationMs": 10031,
+        "chars": 147,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "early-exit": {
+        "hash": "011e98d60e2dfc",
+        "file": "/audio/sorting-bubble-sort/early-exit-011e98d60e2dfc.mp3",
+        "durationMs": 11050,
+        "chars": 164,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "pattern": {
+        "hash": "1da475767cddaa",
+        "file": "/audio/sorting-bubble-sort/pattern-1da475767cddaa.mp3",
+        "durationMs": 17371,
+        "chars": 269,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      }
+    },
+    "sorting-heap-sort": {
+      "problem": {
+        "hash": "07efe3641a9a77",
+        "file": "/audio/sorting-heap-sort/problem-07efe3641a9a77.mp3",
+        "durationMs": 18808,
+        "chars": 257,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "brute-force": {
+        "hash": "19fdf0d7a3c598",
+        "file": "/audio/sorting-heap-sort/brute-force-19fdf0d7a3c598.mp3",
+        "durationMs": 16536,
+        "chars": 260,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "sift-root": {
+        "hash": "12581c39e56dfe",
+        "file": "/audio/sorting-heap-sort/sift-root-12581c39e56dfe.mp3",
+        "durationMs": 14994,
+        "chars": 198,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "sift-down": {
+        "hash": "1f69c688e4bc7f",
+        "file": "/audio/sorting-heap-sort/sift-down-1f69c688e4bc7f.mp3",
+        "durationMs": 10893,
+        "chars": 179,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "heap-built": {
+        "hash": "05488ec9ea0d21",
+        "file": "/audio/sorting-heap-sort/heap-built-05488ec9ea0d21.mp3",
+        "durationMs": 10867,
+        "chars": 173,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "retire": {
+        "hash": "02a4420edcefb5",
+        "file": "/audio/sorting-heap-sort/retire-02a4420edcefb5.mp3",
+        "durationMs": 12800,
+        "chars": 204,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "repair": {
+        "hash": "0e07ed11374194",
+        "file": "/audio/sorting-heap-sort/repair-0e07ed11374194.mp3",
+        "durationMs": 12382,
+        "chars": 186,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "done": {
+        "hash": "11df05829280ee",
+        "file": "/audio/sorting-heap-sort/done-11df05829280ee.mp3",
+        "durationMs": 12617,
+        "chars": 161,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "pattern": {
+        "hash": "1ba9f1ba5f6c3b",
+        "file": "/audio/sorting-heap-sort/pattern-1ba9f1ba5f6c3b.mp3",
+        "durationMs": 23667,
+        "chars": 319,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      }
+    },
+    "sorting-merge-sort": {
+      "problem": {
+        "hash": "170b6c611bd495",
+        "file": "/audio/sorting-merge-sort/problem-170b6c611bd495.mp3",
+        "durationMs": 14237,
+        "chars": 206,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "brute-force": {
+        "hash": "17896e788dc845",
+        "file": "/audio/sorting-merge-sort/brute-force-17896e788dc845.mp3",
+        "durationMs": 10710,
+        "chars": 174,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "split": {
+        "hash": "1b5a62bae51ccc",
+        "file": "/audio/sorting-merge-sort/split-1b5a62bae51ccc.mp3",
+        "durationMs": 12304,
+        "chars": 204,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "merge-detail": {
+        "hash": "12dd2028246985",
+        "file": "/audio/sorting-merge-sort/merge-detail-12dd2028246985.mp3",
+        "durationMs": 16953,
+        "chars": 209,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "merge-next": {
+        "hash": "147400851d6b54",
+        "file": "/audio/sorting-merge-sort/merge-next-147400851d6b54.mp3",
+        "durationMs": 11651,
+        "chars": 164,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "left-merged": {
+        "hash": "079a2782418835",
+        "file": "/audio/sorting-merge-sort/left-merged-079a2782418835.mp3",
+        "durationMs": 10762,
+        "chars": 152,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "right-merged": {
+        "hash": "07482c3b7fbf59",
+        "file": "/audio/sorting-merge-sort/right-merged-07482c3b7fbf59.mp3",
+        "durationMs": 11651,
+        "chars": 171,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "final-merge": {
+        "hash": "0834bab12e9ee7",
+        "file": "/audio/sorting-merge-sort/final-merge-0834bab12e9ee7.mp3",
+        "durationMs": 11128,
+        "chars": 172,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "done": {
+        "hash": "09af85118c91a7",
+        "file": "/audio/sorting-merge-sort/done-09af85118c91a7.mp3",
+        "durationMs": 10527,
+        "chars": 154,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "pattern": {
+        "hash": "133cc2d0691272",
+        "file": "/audio/sorting-merge-sort/pattern-133cc2d0691272.mp3",
+        "durationMs": 18390,
+        "chars": 274,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      }
+    },
+    "two-pointers": {
+      "problem": {
+        "hash": "0716f5e630b59c",
+        "file": "/audio/two-pointers/problem-0716f5e630b59c.mp3",
+        "durationMs": 14446,
+        "chars": 242,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "brute-force": {
+        "hash": "196bfdbc6863b8",
+        "file": "/audio/two-pointers/brute-force-196bfdbc6863b8.mp3",
+        "durationMs": 15726,
+        "chars": 252,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "idea": {
+        "hash": "176dfffb24edc1",
+        "file": "/audio/two-pointers/idea-176dfffb24edc1.mp3",
+        "durationMs": 13688,
+        "chars": 229,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "check-1": {
+        "hash": "1d1b9dbb6d9c4f",
+        "file": "/audio/two-pointers/check-1-1d1b9dbb6d9c4f.mp3",
+        "durationMs": 11233,
+        "chars": 186,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "check-2": {
+        "hash": "1fd39abb6fc31c",
+        "file": "/audio/two-pointers/check-2-1fd39abb6fc31c.mp3",
+        "durationMs": 12983,
+        "chars": 208,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "check-3": {
+        "hash": "1a361291f48ca7",
+        "file": "/audio/two-pointers/check-3-1a361291f48ca7.mp3",
+        "durationMs": 9273,
+        "chars": 159,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "found": {
+        "hash": "128f599d7446bb",
+        "file": "/audio/two-pointers/found-128f599d7446bb.mp3",
+        "durationMs": 11416,
+        "chars": 164,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "pattern": {
+        "hash": "1903923dbfc911",
+        "file": "/audio/two-pointers/pattern-1903923dbfc911.mp3",
+        "durationMs": 19461,
+        "chars": 289,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      }
+    },
+    "two-pointers-container-with-most-water": {
+      "problem": {
+        "hash": "1147fe45f98ac1",
+        "file": "/audio/two-pointers-container-with-most-water/problem-1147fe45f98ac1.mp3",
+        "durationMs": 13871,
+        "chars": 199,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "brute-force": {
+        "hash": "12a4de097f7173",
+        "file": "/audio/two-pointers-container-with-most-water/brute-force-12a4de097f7173.mp3",
+        "durationMs": 9848,
+        "chars": 183,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "widest": {
+        "hash": "0a5fec8f7f70e0",
+        "file": "/audio/two-pointers-container-with-most-water/widest-0a5fec8f7f70e0.mp3",
+        "durationMs": 11546,
+        "chars": 184,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "drop-short": {
+        "hash": "0e315a53a8dc55",
+        "file": "/audio/two-pointers-container-with-most-water/drop-short-0e315a53a8dc55.mp3",
+        "durationMs": 16013,
+        "chars": 225,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "not-better": {
+        "hash": "03573c99b7014d",
+        "file": "/audio/two-pointers-container-with-most-water/not-better-03573c99b7014d.mp3",
+        "durationMs": 12800,
+        "chars": 172,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "switch-sides": {
+        "hash": "0510171e192c2d",
+        "file": "/audio/two-pointers-container-with-most-water/switch-sides-0510171e192c2d.mp3",
+        "durationMs": 11233,
+        "chars": 181,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "answer": {
+        "hash": "11186c9a655590",
+        "file": "/audio/two-pointers-container-with-most-water/answer-11186c9a655590.mp3",
+        "durationMs": 10266,
+        "chars": 152,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      },
+      "pattern": {
+        "hash": "13a86ad8d7c9ae",
+        "file": "/audio/two-pointers-container-with-most-water/pattern-13a86ad8d7c9ae.mp3",
+        "durationMs": 14994,
+        "chars": 251,
+        "voiceId": "EXAVITQu4vr4xnSDxMaL",
+        "modelId": "eleven_flash_v2_5",
+        "outputFormat": "mp3_44100_64"
+      }
+    }
+  }
 }
