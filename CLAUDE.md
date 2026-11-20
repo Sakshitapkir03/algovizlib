@@ -601,7 +601,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 1. **More generated videos.** Offline generation exists (above) and is proven on Two Pointers. Next: traces for the
    other patterns (and the primitives they need), then runtime generation for custom questions behind a server
    route with rate limits, reusing the same pipeline and validator.
-2. **Narration.** Built (see "Narration"); voice the remaining videos as the monthly free quota allows. Later, use
+2. **Narration.** Built (see "Narration"); every video is voiced; voice new ones with `--missing` as the monthly free quota allows. Later, use
    ElevenLabs' word timestamps (`/with-timestamps`) to time callouts and equations, and highlight words in the
    transcript.
 3. **Database, auth, and custom questions.** Move the catalog and storyboards behind the repository into a database,
