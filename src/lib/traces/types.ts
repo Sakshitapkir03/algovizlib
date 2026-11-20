@@ -86,6 +86,21 @@ export type TraceStep = {
   compare?: [number, number];
   /** A running total (e.g. inversions found so far) and how much this step added. */
   counter?: { value: number; delta?: number };
+  /**
+   * Sliding window: the positions it covers (inclusive; `to = from - 1` when it's empty) and the value it's labeled
+   * with (its sum, its length…).
+   */
+  window?: { from: number; to: number; value?: number | string };
+  /**
+   * Character counts in the window (sliding-window string problems). `need` is how many the target requires
+   * (Minimum Window Substring); `active` is the key that just changed.
+   */
+  freq?: { entries: { key: string; count: number; need?: number }[]; active?: string };
+  /**
+   * Monotonic deque of positions, front first (Sliding Window Maximum), what this step removed from each end, and
+   * the answer written so far.
+   */
+  deque?: { indices: number[]; poppedBack?: number[]; poppedFront?: number[]; output: number[] };
 };
 
 export type Trace = {

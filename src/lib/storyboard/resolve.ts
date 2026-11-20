@@ -28,7 +28,8 @@ export function applyOperator(operator: keyof typeof OPERATORS, terms: readonly 
  * Turn an authored (or model-written) storyboard into the fully specified form the renderer and validator use.
  * Values the author omitted are taken from the trace: rows from the bound step's `values` (else `trace.row`), and
  * pointers, equations, highlights, fills, water, moves, empty slots, sorted regions, held values, tallies, groups,
- * split trees, merge buffers, partitions, heaps, and counters from the scene's bound step. Values the author did write are kept as written; the validator
+ * split trees, merge buffers, partitions, heaps, counters, windows, character counts, and deques from the scene's
+ * bound step. Values the author did write are kept as written; the validator
  * checks them against the trace. Returns issues instead of throwing, so the generator can send them back.
  */
 export function resolveStoryboard(source: StoryboardSource): ResolveResult {
@@ -297,6 +298,35 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
           if (el.value !== undefined) return el;
           if (!step?.counter) return (noState(el, "value", "running total"), el);
           return { ...el, value: step.counter.value, delta: el.delta ?? step.counter.delta };
+        }
+        case "window": {
+          if (el.from !== undefined && el.to !== undefined) return el;
+          if (!step?.window) return (noState(el, "from", "window"), el);
+          const before = previousStep && previousStep !== step ? previousStep.window : undefined;
+          const moved = before && (before.from !== step.window.from || before.to !== step.window.to);
+          return {
+            ...el,
+            from: step.window.from,
+            to: step.window.to,
+            value: el.value ?? step.window.value,
+            fromRange: el.fromRange ?? (moved ? { from: before.from, to: before.to } : undefined),
+          };
+        }
+        case "freq-table": {
+          if (el.entries) return el;
+          if (!step?.freq) return (noState(el, "entries", "character counts"), el);
+          return { ...el, entries: step.freq.entries, active: el.active ?? step.freq.active };
+        }
+        case "deque": {
+          if (el.indices && el.output) return el;
+          if (!step?.deque) return (noState(el, "indices", "deque"), el);
+          return {
+            ...el,
+            indices: el.indices ?? step.deque.indices,
+            output: el.output ?? step.deque.output,
+            poppedBack: el.poppedBack ?? step.deque.poppedBack,
+            poppedFront: el.poppedFront ?? step.deque.poppedFront,
+          };
         }
       }
     });

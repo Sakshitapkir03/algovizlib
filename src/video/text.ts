@@ -94,4 +94,5 @@ export const TEXT = {
   counterLabel: 22,
   counterValue: 40,
   counterDelta: 26,
+  windowLabel: 22,
 } as const;

@@ -1,0 +1,553 @@
+{
+  "id": "sliding-window-minimum-window-substring",
+  "title": "Minimum Window Substring: The Shortest Market Walk",
+  "concept": "Sliding Window",
+  "category": "dsa",
+  "summary": "Walk right until the stretch of stalls has everything on the list, then shrink from the left while it still does, keeping the shortest.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A market street has stalls X, A, Y, B, Z, C, A, B. Your list needs apples, bread, and cheese (A, B, and C). Find the shortest stretch of stalls in a row that has all three.",
+    "mapping": [
+      {
+        "real": "A stall",
+        "abstract": "s[i]"
+      },
+      {
+        "real": "The shopping list",
+        "abstract": "t"
+      },
+      {
+        "real": "A stretch of stalls",
+        "abstract": "the window s[left..right]"
+      },
+      {
+        "real": "Have / need for each item",
+        "abstract": "window counts vs. counts of t"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "hash-map",
+    "variable-window"
+  ],
+  "takeaway": {
+    "pattern": "Sliding window (shrink while valid)",
+    "summary": "Count what t needs. Grow on the right until the window covers t, then shrink from the left while it still covers t, recording the shortest. Both edges only move forward.",
+    "timeComplexity": "O(|s| + |t|)",
+    "spaceComplexity": "O(alphabet size)",
+    "whenToUse": [
+      "The shortest run that contains everything you need",
+      "Grow until valid, then shrink while still valid"
+    ]
+  },
+  "trace": {
+    "problem": "sliding-window/minimum-window-substring",
+    "args": [
+      "XAYBZCAB",
+      "ABC"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v6",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-20T14:08:36.769Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Market stalls run X, A, Y, B, Z, C, A, B. You need apples, bread, and cheese: A, B, and C. What's the shortest stretch of stalls that has all three?",
+      "caption": "The shortest stretch of stalls with A, B, and C",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Checking every stretch for all three items would scan the same stalls many times over.",
+      "caption": "Checking every stretch rescans the same stalls",
+      "durationInFrames": 216,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "first-cover",
+      "narration": "Walk right, counting what you have against what you need. At the C, X through C has all three, so 6 stalls is the first candidate.",
+      "caption": "Walk right until you have all three: 6 stalls",
+      "durationInFrames": 348,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "have / need"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "first candidate"
+        }
+      ]
+    },
+    {
+      "id": "drop-x",
+      "narration": "Now shrink from the left while the list is still covered. Dropping X keeps A, B, and C, so 5 stalls is the new best.",
+      "caption": "Drop X from the left: 5 stalls still work",
+      "durationInFrames": 336,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "have / need"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "break",
+      "narration": "Dropping the A loses the apples. The stretch no longer works, so stop shrinking and walk right again.",
+      "caption": "Drop A: apples are missing, so walk on",
+      "durationInFrames": 252,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "have / need"
+        }
+      ]
+    },
+    {
+      "id": "four",
+      "narration": "The next A brings apples back. Shrinking past Y still covers the list, leaving B, Z, C, A: 4 stalls.",
+      "caption": "Shrink to B, Z, C, A: 4 stalls",
+      "durationInFrames": 276,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "have / need"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "three",
+      "narration": "One more B, then shrinking past Z leaves C, A, B, just 3 stalls.",
+      "caption": "Shrink to C, A, B: just 3 stalls",
+      "durationInFrames": 204,
+      "traceStep": 18,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "have / need"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "The street ends here, so C, A, B is the shortest stretch that has everything.",
+      "caption": "C, A, B is the shortest stretch",
+      "durationInFrames": 216,
+      "traceStep": 20,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stall 1",
+            "stall 2",
+            "stall 3",
+            "stall 4",
+            "stall 5",
+            "stall 6",
+            "stall 7",
+            "stall 8"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.35,
+          "type": "result",
+          "title": "Shortest stretch",
+          "detail": "stalls 6 to 8",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Stalls are s[i] and the shopping list is t. Grow until the window covers t, then shrink while it still does. Each edge moves forward only: O(n) time.",
+      "caption": "Grow until it covers t, shrink while it still does",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "s[0]",
+            "s[1]",
+            "s[2]",
+            "s[3]",
+            "s[4]",
+            "s[5]",
+            "s[6]",
+            "s[7]"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,8 @@
+import { longestRepeatingCharacterReplacementTrace } from "./sliding-window/longest-repeating-character-replacement";
+import { longestSubstringWithoutRepeatingCharactersTrace } from "./sliding-window/longest-substring-without-repeating-characters";
+import { maximumSumSubarrayOfSizeKTrace } from "./sliding-window/maximum-sum-subarray-of-size-k";
+import { minimumWindowSubstringTrace } from "./sliding-window/minimum-window-substring";
+import { slidingWindowMaximumTrace } from "./sliding-window/sliding-window-maximum";
 import { bubbleSortTrace } from "./sorting/bubble-sort";
 import { countInversionsTrace } from "./sorting/count-inversions";
 import { countingSortTrace } from "./sorting/counting-sort";
@@ -33,6 +38,11 @@ const definitions = [
   quickSortTrace,
   heapSortTrace,
   countInversionsTrace,
+  maximumSumSubarrayOfSizeKTrace,
+  longestSubstringWithoutRepeatingCharactersTrace,
+  longestRepeatingCharacterReplacementTrace,
+  minimumWindowSubstringTrace,
+  slidingWindowMaximumTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

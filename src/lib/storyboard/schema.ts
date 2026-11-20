@@ -236,6 +236,43 @@ export const sceneSchema = z
           if (scene.elements.filter((e) => e.type === "split-tree").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one split-tree" });
           break;
+        case "window":
+          for (const [range, at] of [
+            [el, path],
+            [el.fromRange, [...path, "fromRange"]],
+          ] as [{ from: number; to: number } | undefined, (string | number)[]][]) {
+            if (!range) continue;
+            if (range.to < range.from - 1)
+              ctx.addIssue({ code: "custom", path: at, message: "to must be at least from - 1 (empty)" });
+            else if (range.to >= range.from) {
+              checkIndex(el.rowId, range.from, [...at, "from"]);
+              checkIndex(el.rowId, range.to, [...at, "to"]);
+            } else if (!rows.has(el.rowId))
+              ctx.addIssue({ code: "custom", path: at, message: `Unknown row "${el.rowId}"` });
+          }
+          break;
+        case "freq-table": {
+          const keys = el.entries.map((e) => e.key);
+          if (new Set(keys).size !== keys.length)
+            ctx.addIssue({ code: "custom", path: [...path, "entries"], message: "keys must not repeat" });
+          if (el.active !== undefined && !keys.includes(el.active))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "active"],
+              message: "active must be one of the keys",
+            });
+          if (scene.elements.filter((e) => e.type === "freq-table").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one freq-table" });
+          break;
+        }
+        case "deque":
+          for (const field of ["indices", "poppedBack", "poppedFront"] as const)
+            el[field]?.forEach((idx) => checkIndex(el.rowId, idx, [...path, field]));
+          if (new Set(el.indices).size !== el.indices.length)
+            ctx.addIssue({ code: "custom", path: [...path, "indices"], message: "indices must not repeat" });
+          if (scene.elements.filter((e) => e.type === "deque").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one deque" });
+          break;
         default:
           break;
       }

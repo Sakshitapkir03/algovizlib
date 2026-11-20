@@ -35,6 +35,12 @@ export const primitiveCatalog: Record<ElementType, string> = {
     "The same array drawn as a binary tree beside the bars (children of i at 2i + 1 and 2i + 2); nodes past the heap are faded, and the parent/child being compared are marked and swap with the bars. Omit `values`/`heapSize`/`compare`/`moves` to take them from the step (or the trace's row in an unbound scene). Use it with a bar-row in every heap scene.",
   counter:
     'A running total with a label (e.g. "inversions") and the amount this step added ("+3"). Set `label`; omit `value`/`delta` to take the step\'s count. Only use it when the step lists a count.',
+  window:
+    'The sliding window: a bracket above the cards from its left edge to its right edge, labeled with its value (e.g. label "sum" shows "sum 13"; "length" shows "length 4"). Set `rowId` and `label`; omit `from`/`to`/`value` to take the step\'s window, and the edges slide from where the previous bound scene left them. Only use it when the step lists a window.',
+  "freq-table":
+    'A small panel of character counts in the window (e.g. B 2, A 1), or have/need for a target ("A 1/1"); the count that just changed is marked. Set `label` (e.g. "in window"); omit `entries`/`active`. Only use it when the step lists counts.',
+  deque:
+    "Sliding Window Maximum's deque: the candidate positions front → back (values decreasing; the front is the window's maximum), values removed this step shown crossed out with the end they left from, and the maxima recorded so far. Set `rowId` (and optionally `label`, `outputLabel`); omit `indices`/`output`/popped lists. Only use it when the step lists a deque.",
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

@@ -269,6 +269,9 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `partition`     | quick sort: "◆ pivot" tag above the pivot bar, dashed boundary with "◀ smaller", bars outside the range dimmed                                                        | canvas |
 | `heap-tree`     | the same array as a binary tree (children 2i+1, 2i+2) on the right; compared parent/child ringed and labeled, nodes past the heap dashed with ✓, moves match the bars | canvas |
 | `counter`       | a labeled running total with this step's "+N" (inversions here; reusable for swaps, comparisons…)                                                                     | bottom |
+| `window`        | sliding window: a bracket above the cards it covers plus a faint band, labeled with its value ("sum 13"); edges slide from the previous bound scene (`fromRange`)     | canvas |
+| `freq-table`    | character counts in the window, one cell per letter ("2"), or have/need ("1/1", ✓ when met); the changed letter gets a thick border and ▲                             | bottom |
+| `deque`         | Sliding Window Maximum's deque front → back (value + position); values removed this step crossed out and dashed, "◀ front" / "✕ back"; the maxima so far beside it    | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -323,6 +326,14 @@ narrow left column (`HEAP_BARS`) so the tree gets most of the stage (`HEAP_TREE_
 player is phone-sized. Floating callouts overlap the tree, so heap scenes anchor callouts to the bars. Each video fit
 the 10-scene limit, so `MAX_SCENES` is unchanged.
 
+**Sliding window** (all five problems) added step state `window` (`from`, `to`, optional `value`; `to = from − 1`
+when empty), `freq` (`entries: { key, count, need? }[]`, `active`), and `deque` (`indices` front first,
+`poppedBack`, `poppedFront`, `output`). Every video uses cards (item-row) with `left`/`right` pointers and the
+`window` bracket; the layout reserves a strip above the cards for the bracket and its label (`sizes.window`, above the
+highlight tags) and keeps it under a two-line caption, shortening the cards when a tall bottom stack needs the room.
+Tones follow the verdict convention: a new best is positive whatever the sign (Minimum Window's shorter window is
+`<`), "fits within k" is positive and "too many changes" negative (Character Replacement), not-better is neutral.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -336,7 +347,8 @@ Trace = {
   problem: "pattern/slug", row: { values, display: "cards" | "bars" }, pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
            values?, moves?, empty?, sorted?, final?, held?, counts?, // algorithms that rearrange the array
-           range?, depth?, segments?, splitTree?, buffer?, pivot?, boundary?, heapSize?, compare?, counter? }[],
+           range?, depth?, segments?, splitTree?, buffer?, pivot?, boundary?, heapSize?, compare?, counter?,
+           window?, freq?, deque? }[],                            // sliding window (see "Sliding window" above)
                                                                   // divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   answer,             // same shape as the reference solution's return value (tested)
@@ -547,7 +559,10 @@ Two Pointers is `"analogy"`: a price-sorted shelf where you and a friend spend a
 videos each use a different analogy: cousins lining up by age (bubble), parcels loaded lightest first (selection), a
 hand of playing cards (insertion), tallying star ratings (counting), merging stacks of marked quizzes (merge), a
 librarian shelving a series around one volume (quick), an org chart whose top person retires (heap), and two
-friends' movie rankings (Count Inversions).
+friends' movie rankings (Count Inversions). Sliding Window: a taco truck's best 3 days (Maximum Sum Subarray), a DJ's
+repeat-free run of songs (Longest Substring), repainting one fence board (Character Replacement), the shortest walk
+past market stalls that sell everything on a list (Minimum Window), and the highest UV index in each 3-day forecast
+stretch (Sliding Window Maximum).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

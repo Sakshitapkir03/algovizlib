@@ -1,0 +1,480 @@
+{
+  "id": "sliding-window-longest-repeating-character-replacement",
+  "title": "Longest Repeating Character Replacement: Repainting One Fence Board",
+  "concept": "Sliding Window",
+  "category": "dsa",
+  "summary": "Grow a window of fence boards while repainting all but the most common color takes at most k boards; shrink from the left when it takes more.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A fence has seven boards painted B, A, A, B, C, B, B (blue, amber, cyan). You may repaint one board. How long a run of one color can you make?",
+    "mapping": [
+      {
+        "real": "A board's color",
+        "abstract": "s[i]"
+      },
+      {
+        "real": "Boards you may repaint",
+        "abstract": "k"
+      },
+      {
+        "real": "A stretch of boards",
+        "abstract": "the window s[left..right]"
+      },
+      {
+        "real": "Repaints needed",
+        "abstract": "length − count of the most common letter"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "variable-window",
+    "counting"
+  ],
+  "takeaway": {
+    "pattern": "Sliding window with a frequency count",
+    "summary": "Count letters in the window. It works if length − (most common count) ≤ k. Grow on the right; when it needs more than k changes, shrink from the left. The longest working window is the answer.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(alphabet size)",
+    "whenToUse": [
+      "The longest run you can fix with at most k changes",
+      "A condition that depends on counts inside the window"
+    ]
+  },
+  "trace": {
+    "problem": "sliding-window/longest-repeating-character-replacement",
+    "args": [
+      "BAABCBB",
+      1
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v6",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-20T14:08:36.760Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A fence's boards read B, A, A, B, C, B, B. You may repaint one board. How long a run of a single color can you make?",
+      "caption": "Repaint 1 board: how long can one color run?",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "board 1",
+            "board 2",
+            "board 3",
+            "board 4",
+            "board 5",
+            "board 6",
+            "board 7"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Counting the colors of every stretch from scratch would repeat the same counting again and again.",
+      "caption": "Counting colors in every stretch is slow",
+      "durationInFrames": 229,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "board 1",
+            "board 2",
+            "board 3",
+            "board 4",
+            "board 5",
+            "board 6",
+            "board 7"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fits",
+      "narration": "Grow a window and keep a count of each color in it. B, A, A needs 3 minus 2, one repaint. That's allowed, so the best is 3.",
+      "caption": "B, A, A: 3 − 2 = 1 repaint, so 3 works",
+      "durationInFrames": 372,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "board 1",
+            "board 2",
+            "board 3",
+            "board 4",
+            "board 5",
+            "board 6",
+            "board 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "in window"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "fits"
+        }
+      ]
+    },
+    {
+      "id": "too-many",
+      "narration": "Adding the next B makes 4 boards, but no color appears more than twice. 4 minus 2 is 2 repaints, more than the 1 we have.",
+      "caption": "Add B: 4 − 2 = 2 repaints, too many",
+      "durationInFrames": 348,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "board 1",
+            "board 2",
+            "board 3",
+            "board 4",
+            "board 5",
+            "board 6",
+            "board 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "in window"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "too many"
+        }
+      ]
+    },
+    {
+      "id": "shrink",
+      "narration": "So shrink from the left. Dropping that first B leaves A, A, B, which needs only one repaint again.",
+      "caption": "Drop the left B: 1 repaint again",
+      "durationInFrames": 264,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "board 1",
+            "board 2",
+            "board 3",
+            "board 4",
+            "board 5",
+            "board 6",
+            "board 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "in window"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "fits again"
+        }
+      ]
+    },
+    {
+      "id": "new-best",
+      "narration": "Further along, the window B, C, B, B has three B's. 4 minus 3 is just one repaint, so the best grows to 4.",
+      "caption": "B, C, B, B: 4 − 3 = 1 repaint, a run of 4",
+      "durationInFrames": 324,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "board 1",
+            "board 2",
+            "board 3",
+            "board 4",
+            "board 5",
+            "board 6",
+            "board 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "counts",
+          "enterAt": 0.1,
+          "type": "freq-table",
+          "label": "in window"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Repaint the C and four blue boards stand in a row. The answer is 4.",
+      "caption": "Repaint the C: four blue boards in a row",
+      "durationInFrames": 216,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "board 1",
+            "board 2",
+            "board 3",
+            "board 4",
+            "board 5",
+            "board 6",
+            "board 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.35,
+          "type": "result",
+          "title": "Longest run",
+          "detail": "B, C, B, B with the C repainted",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Boards are the characters s[i]. A window works when its length minus its most common count is at most k. Edges only move forward: O(n) time.",
+      "caption": "Length minus the top count must stay ≤ k",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "s[0]",
+            "s[1]",
+            "s[2]",
+            "s[3]",
+            "s[4]",
+            "s[5]",
+            "s[6]"
+          ]
+        }
+      ]
+    }
+  ]
+}

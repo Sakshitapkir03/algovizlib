@@ -1,0 +1,485 @@
+{
+  "id": "sliding-window-maximum-sum-subarray-of-size-k",
+  "title": "Maximum Sum Subarray of Size K: A Taco Truck's Best 3 Days",
+  "concept": "Sliding Window",
+  "category": "dsa",
+  "summary": "Slide a 3-day window across the week, dropping one day and adding the next, instead of re-adding every run.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A taco truck logs how many dozen tacos it sold each day, Monday to Sunday: 3, 1, 6, 2, 5, 4, 1. The owner wants the best run of three days in a row.",
+    "mapping": [
+      {
+        "real": "Dozens sold on one day",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "Three days in a row",
+        "abstract": "a window of size k"
+      },
+      {
+        "real": "Dropping the oldest day and adding the next",
+        "abstract": "sum − nums[left − 1] + nums[right]"
+      },
+      {
+        "real": "The best 3-day total",
+        "abstract": "the maximum window sum"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "fixed-window",
+    "prefix-sum"
+  ],
+  "takeaway": {
+    "pattern": "Sliding window (fixed size)",
+    "summary": "Sum the first k values once. Then slide: subtract the value leaving on the left and add the one entering on the right, keeping the best total. Each slide is O(1).",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Every contiguous run of a fixed length k",
+      "A running sum, count, or average over the last k items"
+    ]
+  },
+  "trace": {
+    "problem": "sliding-window/maximum-sum-subarray-of-size-k",
+    "args": [
+      [
+        3,
+        1,
+        6,
+        2,
+        5,
+        4,
+        1
+      ],
+      3
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v6",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-20T14:08:36.768Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A taco truck logs how many dozen tacos it sold each day, Monday to Sunday. The owner wants the best run of three days in a row.",
+      "caption": "Which 3 days in a row sold the most tacos?",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "You could add up every three-day run from scratch. But neighboring runs share two of their three days, so most of those additions are repeats.",
+      "caption": "Re-adding every 3-day run repeats work",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "first-window",
+      "narration": "Start with the first three days: 3 plus 1 plus 6 is 10. There's nothing to compare yet, so 10 is the best so far.",
+      "caption": "Monday to Wednesday: 3 + 1 + 6 = 10",
+      "durationInFrames": 336,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "sum"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "best so far"
+        }
+      ]
+    },
+    {
+      "id": "first-slide",
+      "narration": "Now slide the window one day. Instead of re-adding, drop Monday's 3 and add Thursday's 2. The total is 9, no better than 10.",
+      "caption": "Slide a day: drop Monday's 3, add Thursday's 2",
+      "durationInFrames": 324,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "sum"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not better"
+        }
+      ]
+    },
+    {
+      "id": "new-best",
+      "narration": "Slide again: drop Tuesday's 1 and add Friday's 5. The total jumps to 13, a new best.",
+      "caption": "Drop 1, add 5: 13 is a new best",
+      "durationInFrames": 240,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "sum"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "last-slide",
+      "narration": "Each slide costs one subtraction and one addition, however wide the window is. The last run, Friday to Sunday, totals 10, still short of 13.",
+      "caption": "The last run, Friday to Sunday, totals 10",
+      "durationInFrames": 336,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "sum"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not better"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Wednesday to Friday wins with 13 dozen tacos, so the answer is 13.",
+      "caption": "Wednesday to Friday wins with 13 dozen",
+      "durationInFrames": 192,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "sum"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.35,
+          "type": "result",
+          "title": "Best 3-day total",
+          "detail": "Wednesday to Friday",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Days are nums[i], and three days in a row is a window of size k. Each slide is O(1) work, so one pass takes O(n) time and O(1) space.",
+      "caption": "A fixed window: drop the left, add the right",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "a[0]",
+            "a[1]",
+            "a[2]",
+            "a[3]",
+            "a[4]",
+            "a[5]",
+            "a[6]"
+          ]
+        }
+      ]
+    }
+  ]
+}

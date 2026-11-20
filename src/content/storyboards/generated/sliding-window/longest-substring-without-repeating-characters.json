@@ -1,0 +1,534 @@
+{
+  "id": "sliding-window-longest-substring-without-repeating-characters",
+  "title": "Longest Substring Without Repeating Characters: A DJ's Repeat-Free Run",
+  "concept": "Sliding Window",
+  "category": "dsa",
+  "summary": "Grow a window over the playlist while every song is new, and jump its left edge past a repeat instead of starting over.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A DJ's playlist runs p, q, r, p, s, q, t, one letter per song. She wants the longest stretch of songs in a row where no song plays twice.",
+    "mapping": [
+      {
+        "real": "A song in the playlist",
+        "abstract": "s[i]"
+      },
+      {
+        "real": "A stretch of songs in a row",
+        "abstract": "the window s[left..right]"
+      },
+      {
+        "real": "A song playing twice",
+        "abstract": "a repeated character"
+      },
+      {
+        "real": "Skipping past the earlier copy",
+        "abstract": "left = lastSeen[c] + 1"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "hash-map",
+    "variable-window"
+  ],
+  "takeaway": {
+    "pattern": "Sliding window (variable size)",
+    "summary": "Grow the window one character at a time. When the new character is already inside, move the left edge just past its earlier copy. The longest window seen is the answer.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(alphabet size)",
+    "whenToUse": [
+      "The longest run that satisfies a condition",
+      "A condition that breaks by adding and heals by removing from the left"
+    ]
+  },
+  "trace": {
+    "problem": "sliding-window/longest-substring-without-repeating-characters",
+    "args": [
+      "pqrpsqt"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v6",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-20T14:08:36.766Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A DJ's playlist runs p, q, r, p, s, q, t, one letter per song. She wants the longest stretch in a row where no song plays twice.",
+      "caption": "The longest run of songs with no repeat",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "narration": "Checking every possible stretch for repeats would reread the same songs over and over.",
+      "caption": "Checking every stretch rereads the same songs",
+      "durationInFrames": 204,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grow",
+      "narration": "Instead, grow a window to the right as long as each new song isn't already in it. p, q, and r are all different, so the window is 3 long.",
+      "caption": "Grow while songs are new: p, q, r is 3 long",
+      "durationInFrames": 396,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "longest so far"
+        }
+      ]
+    },
+    {
+      "id": "repeat-p",
+      "narration": "Then p comes again. Rather than starting over, move the start just past the first p. The window is now q, r, p.",
+      "caption": "p repeats: move the start past the first p",
+      "durationInFrames": 312,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not longer"
+        }
+      ]
+    },
+    {
+      "id": "grow-s",
+      "narration": "s is new, so the window grows to 4 songs, a new best.",
+      "caption": "s is new: 4 songs, a new best",
+      "durationInFrames": 192,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "repeat-q",
+      "narration": "q repeats, so the start jumps past the first q, dropping everything before it. That leaves r, p, s, q.",
+      "caption": "q repeats: drop everything up to the first q",
+      "durationInFrames": 276,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not longer"
+        }
+      ]
+    },
+    {
+      "id": "grow-t",
+      "narration": "t is new, and the window reaches 5: r, p, s, q, t. That's the longest yet.",
+      "caption": "t is new: r, p, s, q, t is 5 long",
+      "durationInFrames": 240,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "active",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0.3,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "The end of the playlist is reached, so the longest run without a repeat is 5 songs.",
+      "caption": "The longest repeat-free run is 5 songs",
+      "durationInFrames": 240,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "song 1",
+            "song 2",
+            "song 3",
+            "song 4",
+            "song 5",
+            "song 6",
+            "song 7"
+          ]
+        },
+        {
+          "id": "window",
+          "enterAt": 0,
+          "type": "window",
+          "rowId": "row",
+          "label": "length"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "left"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "row",
+          "label": "end",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "right"
+        },
+        {
+          "id": "found",
+          "enterAt": 0.15,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.35,
+          "type": "result",
+          "title": "Longest run",
+          "detail": "r, p, s, q, t",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Songs are the characters s[i]. Both edges only move forward, so it's O(n) time, using a map of where each character was last seen.",
+      "caption": "Grow on the right, jump the left past a repeat",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "s[0]",
+            "s[1]",
+            "s[2]",
+            "s[3]",
+            "s[4]",
+            "s[5]",
+            "s[6]"
+          ]
+        }
+      ]
+    }
+  ]
+}

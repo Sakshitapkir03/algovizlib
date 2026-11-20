@@ -77,8 +77,29 @@ export const sizes = {
   marker: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.marker) + 4),
   splitRow: (t: TextMetrics) => t.size(TEXT.splitValue) + 12,
   splitCell: (t: TextMetrics) => Math.max(46, t.width("88", t.size(TEXT.splitValue), "mono") + 12),
+  /** Highlight tags above the cards (hidden on a phone-sized player). */
+  tagRoom: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.tag) + 12),
+  /** A window's label pill + bracket above the tags. */
+  window: (t: TextMetrics) => sizes.tagRoom(t) + 4 + 12 + 6 + t.size(TEXT.windowLabel) + 14 + 4,
+  /** A freq-table cell: wide enough for "count/need". */
+  freqCell: (t: TextMetrics, entries: readonly { count: number; need?: number }[]) =>
+    Math.max(
+      56,
+      ...entries.map(
+        (e) =>
+          t.width(
+            e.need !== undefined ? `${e.count}/${e.need}` : String(e.count),
+            t.size(TEXT.countCell),
+            "mono",
+          ) + 16,
+      ),
+    ),
+  dequeCell: (t: TextMetrics) => Math.max(56, t.width("-88", t.size(TEXT.countCell), "mono") + 16),
 };
 export const SPLIT_ROW_GAP = 6;
+
+/** Where a two-line caption ends (captions are at most 80 characters). */
+export const captionBottom = (t: TextMetrics) => 70 + 2 * Math.ceil(t.size(TEXT.caption) * 1.25);
 
 /** Estimated height of a bottom-slot element, so the stack can rise to make room. */
 function bottomHeight(el: Element, t: TextMetrics): number {
@@ -101,6 +122,10 @@ function bottomHeight(el: Element, t: TextMetrics): number {
       return Math.ceil(t.size(TEXT.counterValue) * 1.25) + 20;
     case "split-tree":
       return el.levels.length * (sizes.splitRow(t) + SPLIT_ROW_GAP) - SPLIT_ROW_GAP;
+    case "freq-table":
+      return t.size(TEXT.countKey) + 4 + sizes.cell(t) + 4 + sizes.marker(t);
+    case "deque":
+      return sizes.cell(t) + 2 + sizes.marker(t);
     default:
       return 0;
   }
@@ -126,6 +151,7 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     new Set(elements.flatMap((el) => (el.type === type && "rowId" in el ? [el.rowId] : [])));
   const heldRows = rowsWith("held-value");
   const pivotRows = rowsWith("partition");
+  const windowRows = rowsWith("window");
   const bufferRows = rowsWith("merge-buffer");
   const pointerRows = new Set(
     elements.flatMap((el) => (el.type === "pointer" && el.placement === "below" ? [el.rowId] : [])),
@@ -177,13 +203,25 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
         ? sizes.heldCard(t) + 10
         : pivotRows.has(row.id)
           ? sizes.pivotTag(t) + 14
-          : 0;
+          : windowRows.has(row.id)
+            ? sizes.window(t)
+            : 0;
       const bandTop = t.compact ? COMPACT_BAR_TOP : BAR_TOP;
       top = bandTop + strip;
       cardHeight = Math.min(bandTop + BAR_HEIGHT, lowest) - top;
     } else if (single) {
       cardHeight = CARD_HEIGHT;
       top = Math.min(BAND_TOP + (BAND_BOTTOM - BAND_TOP - CARD_HEIGHT) / 2 - 20, lowest - cardHeight);
+      // A sliding window's bracket and label sit above the cards (and their highlight tags). Keep them under a
+      // two-line caption, shortening the cards if a tall bottom stack leaves less room.
+      if (windowRows.has(row.id)) {
+        strip = sizes.window(t);
+        const minTop = captionBottom(t) + strip;
+        if (top < minTop) {
+          top = minTop;
+          cardHeight = Math.min(CARD_HEIGHT, lowest - top);
+        }
+      }
     } else {
       cardHeight = Math.min(CARD_HEIGHT, slot - 70);
       top = BAND_TOP + r * slot + (slot - cardHeight) / 2;

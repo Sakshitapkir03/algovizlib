@@ -6,7 +6,9 @@ import { BarRow } from "./BarRow";
 import { Callout } from "./Callout";
 import { CountArray } from "./CountArray";
 import { Counter } from "./Counter";
+import { Deque } from "./Deque";
 import { Equation } from "./Equation";
+import { FreqTable } from "./FreqTable";
 import { HeapTree } from "./HeapTree";
 import { HeldValue } from "./HeldValue";
 import { Highlight } from "./Highlight";
@@ -18,6 +20,7 @@ import { Result } from "./Result";
 import { Segments } from "./Segments";
 import { SortedRegion } from "./SortedRegion";
 import { SplitTree } from "./SplitTree";
+import { Window } from "./Window";
 
 export type PrimitiveDefinition<K extends ElementType> = {
   component: ComponentType<{ element: ElementOf<K> }>;
@@ -49,6 +52,10 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   "heap-tree": { component: HeapTree, slot: "canvas", layer: 0 },
   "split-tree": { component: SplitTree, slot: "bottom", layer: 0 },
   counter: { component: Counter, slot: "bottom", layer: 0 },
+  // Its band sits behind the cards; the bracket and label above them.
+  window: { component: Window, slot: "canvas", layer: -1 },
+  "freq-table": { component: FreqTable, slot: "bottom", layer: 0 },
+  deque: { component: Deque, slot: "bottom", layer: 0 },
   highlight: { component: Highlight, slot: "canvas", layer: 1 },
   pointer: { component: Pointer, slot: "canvas", layer: 2 },
   callout: { component: Callout, slot: "canvas", layer: 3 },

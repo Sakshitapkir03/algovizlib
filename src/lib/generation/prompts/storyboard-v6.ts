@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v5";
+export const PROMPT_VERSION = "storyboard-v6";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -53,6 +53,7 @@ ${ELEMENT_GUIDE}
 - Highlights: OMIT indices in bound scenes. Only use a state the step lists (active/rejected/found).
 - sorted-region / held-value / count-array: only in scenes whose step lists a sorted range or final positions / held value / tally; OMIT their indices, value/index, and keys/counts/active.
 - segments / split-tree / merge-buffer / partition / counter: only in scenes whose step lists groups / a split tree / a buffer / a pivot / a count; OMIT their state fields. heap-tree: in every scene of a heap trace that shows the bars (bound or not); OMIT its state fields, and anchor callouts to the bars rather than floating them over the tree.
+- window / freq-table / deque: only in scenes whose step lists a window / counts / a deque; OMIT their state fields (from/to/value, entries/active, indices/output/popped). Give the window a short label for its value ("sum", "length"); its edges slide on their own between bound scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -104,6 +105,18 @@ function describeStep(step: TraceStep, index: number): string {
   if (step.counter)
     parts.push(
       `count: ${step.counter.value}${step.counter.delta !== undefined ? ` (+${step.counter.delta})` : ""}`,
+    );
+  if (step.window)
+    parts.push(
+      `window: ${step.window.to < step.window.from ? "empty" : `${step.window.from}–${step.window.to}`}${step.window.value !== undefined ? ` (value ${step.window.value})` : ""}`,
+    );
+  if (step.freq)
+    parts.push(
+      `counts: ${step.freq.entries.map((e) => `${e.key}:${e.count}${e.need !== undefined ? `/${e.need}` : ""}`).join(" ")}${step.freq.active !== undefined ? ` (changed: ${step.freq.active})` : ""}`,
+    );
+  if (step.deque)
+    parts.push(
+      `deque (front→back positions): [${step.deque.indices.join(", ")}]${step.deque.poppedBack?.length ? `, removed from back: [${step.deque.poppedBack.join(", ")}]` : ""}${step.deque.poppedFront?.length ? `, removed from front: [${step.deque.poppedFront.join(", ")}]` : ""}, output: [${step.deque.output.join(", ")}]`,
     );
   if (step.counts)
     parts.push(
@@ -160,4 +173,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV5 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV6 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

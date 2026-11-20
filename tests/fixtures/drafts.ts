@@ -62,6 +62,17 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "partition", type: "partition", rowId: "row", label: "pivot", enterAt: 0 });
     if (step.heapSize !== undefined) elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
     if (step.counter) elements.push({ id: "count", type: "counter", label: "inversions", enterAt: 0 });
+    if (step.window) elements.push({ id: "window", type: "window", rowId: "row", label: "sum", enterAt: 0 });
+    if (step.freq) elements.push({ id: "freq", type: "freq-table", label: "in window", enterAt: 0 });
+    if (step.deque)
+      elements.push({
+        id: "deque",
+        type: "deque",
+        rowId: "row",
+        label: "deque",
+        outputLabel: "maxima",
+        enterAt: 0,
+      });
     if (step.equation)
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });

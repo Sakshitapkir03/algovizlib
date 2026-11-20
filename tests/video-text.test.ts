@@ -46,7 +46,9 @@ describe("video text at phone width", () => {
         "callout",
         "count-array",
         "counter",
+        "deque",
         "equation",
+        "freq-table",
         "heap-tree",
         "held-value",
         "highlight",
@@ -58,6 +60,7 @@ describe("video text at phone width", () => {
         "segments",
         "sorted-region",
         "split-tree",
+        "window",
       ].sort(),
     );
   });
@@ -138,6 +141,42 @@ describe("video text at phone width", () => {
                 fail(`split value ${v} is wider than its cell`);
             const width = values.length * (cell + 14) - 14;
             if (width > 1280 - 32) fail("the split overview is wider than the stage");
+            break;
+          }
+          case "window": {
+            const layout = rows[el.rowId];
+            const label =
+              el.value === undefined ? "" : [el.label, el.value].filter((v) => v !== "").join(" ");
+            if (!phone.fits(label, phone.size(TEXT.windowLabel), 1280 - 16 - 28, "mono"))
+              fail(`window label "${label}" doesn't fit the stage`);
+            const labelTop = layout.top - sizes.window(phone);
+            const captionBottom = 70 + 2 * Math.ceil(phone.size(TEXT.caption) * 1.25);
+            if (labelTop < captionBottom) fail(`window label runs into the caption`);
+            break;
+          }
+          case "freq-table": {
+            const cell = sizes.freqCell(phone, el.entries);
+            const width =
+              phone.width(el.label, phone.size(TEXT.panelLabel)) + el.entries.length * (cell + 16);
+            if (width > 1280 - 32) fail("the counts panel is wider than the stage");
+            break;
+          }
+          case "deque": {
+            const cell = sizes.dequeCell(phone);
+            const row = scene.elements.find((e) => e.id === el.rowId);
+            const values = row?.type === "item-row" ? row.items.map((i) => String(i.value)) : [];
+            for (const v of values)
+              if (!phone.fits(v, phone.size(TEXT.countCell), cell - 8, "mono"))
+                fail(`deque value ${v} overflows`);
+            const cells = el.indices.length + (el.poppedBack?.length ?? 0) + (el.poppedFront?.length ?? 0);
+            const width =
+              phone.width(el.label, phone.size(TEXT.panelLabel)) +
+              Math.max(1, cells) * (cell + 14) +
+              32 +
+              phone.width(el.outputLabel, phone.size(TEXT.panelLabel)) +
+              14 +
+              phone.width(el.output.join(" ") || "—", phone.size(TEXT.countCell), "mono");
+            if (width > 1280 - 32) fail(`the deque panel is wider than the stage (${Math.round(width)})`);
             break;
           }
           case "heap-tree":

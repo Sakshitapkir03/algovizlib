@@ -14,7 +14,8 @@ import { z } from "zod";
  *
  * Planned (not built yet): "staircase", "house-row", "coin-set", "box-arrow".
  * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`; divide and conquer adds
- * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter".
+ * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter"; sliding window adds "window",
+ * "freq-table", and "deque".
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -267,6 +268,77 @@ export const counterSourceSchema = z.object({
   value: counterShape.value.optional(),
 });
 
+const windowRangeSchema = z.object({ from: index, to: z.number().int().min(-1) });
+
+const windowShape = {
+  ...baseElement,
+  type: z.literal("window"),
+  rowId: nonEmpty,
+  /** First position inside the window. */
+  from: index,
+  /** Last position inside the window (inclusive); `from - 1` when the window is empty. */
+  to: z.number().int().min(-1),
+  /** Shown after the label, e.g. the window's sum or length. */
+  value: z.union([z.number().finite(), z.string().max(12)]).optional(),
+  /** What the value is, e.g. "sum" or "length" (rendered "sum 13"). */
+  label: z.string().max(16).default(""),
+  /** Where the window was in the previous bound scene: its edges slide from there. */
+  fromRange: windowRangeSchema.optional(),
+};
+export const windowElementSchema = z.object(windowShape);
+export const windowSourceSchema = z.object({
+  ...windowShape,
+  /** Omit from/to/value (and fromRange) to take the bound step's window. */
+  from: index.optional(),
+  to: windowShape.to.optional(),
+});
+
+const freqEntrySchema = z.object({
+  key: nonEmpty.max(3),
+  count: z.number().int().nonnegative(),
+  /** How many the target needs (shown as "count/need"). */
+  need: z.number().int().positive().optional(),
+});
+
+const freqTableShape = {
+  ...baseElement,
+  type: z.literal("freq-table"),
+  /** One cell per character, e.g. A 2, B 1 (or A 1/1 with a need). */
+  entries: z.array(freqEntrySchema).min(1).max(8),
+  /** The key that just changed. */
+  active: z.string().optional(),
+  label: nonEmpty.max(16).default("counts"),
+};
+export const freqTableElementSchema = z.object(freqTableShape);
+export const freqTableSourceSchema = z.object({
+  ...freqTableShape,
+  /** Omit entries (and active) to take the bound step's counts. */
+  entries: freqTableShape.entries.optional(),
+});
+
+const dequeShape = {
+  ...baseElement,
+  type: z.literal("deque"),
+  /** The row the positions refer to (values are read from it). */
+  rowId: nonEmpty,
+  /** Positions in the deque, front first. */
+  indices: z.array(index).max(10),
+  /** Positions this step removed from the back / the front. */
+  poppedBack: z.array(index).optional(),
+  poppedFront: z.array(index).optional(),
+  /** The answer written so far (one value per full window). */
+  output: z.array(z.number().finite()),
+  label: nonEmpty.max(16).default("deque"),
+  outputLabel: nonEmpty.max(16).default("maxima"),
+};
+export const dequeElementSchema = z.object(dequeShape);
+export const dequeSourceSchema = z.object({
+  ...dequeShape,
+  /** Omit indices/output (and the popped lists) to take the bound step's deque. */
+  indices: dequeShape.indices.optional(),
+  output: dequeShape.output.optional(),
+});
+
 const pointerShape = {
   ...baseElement,
   type: z.literal("pointer"),
@@ -383,6 +455,9 @@ export const elementSchemas = [
   partitionElementSchema,
   heapTreeElementSchema,
   counterElementSchema,
+  windowElementSchema,
+  freqTableElementSchema,
+  dequeElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -402,6 +477,9 @@ export const elementSourceSchemas = [
   partitionSourceSchema,
   heapTreeSourceSchema,
   counterSourceSchema,
+  windowSourceSchema,
+  freqTableSourceSchema,
+  dequeSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -428,6 +506,9 @@ export type MergeBufferElement = ElementOf<"merge-buffer">;
 export type PartitionElement = ElementOf<"partition">;
 export type HeapTreeElement = ElementOf<"heap-tree">;
 export type CounterElement = ElementOf<"counter">;
+export type WindowElement = ElementOf<"window">;
+export type FreqTableElement = ElementOf<"freq-table">;
+export type DequeElement = ElementOf<"deque">;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
 export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

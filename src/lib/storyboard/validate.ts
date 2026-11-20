@@ -457,6 +457,87 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               });
           }
           break;
+        case "window": {
+          checkRow(el.rowId);
+          const expected = step.window;
+          const show = (w: { from: number; to: number }) => (w.to < w.from ? "empty" : `${w.from}–${w.to}`);
+          if (!expected) push(`Trace step ${stepIndex} has no window`, el.id, "from");
+          else {
+            if (el.from !== expected.from || el.to !== expected.to)
+              push(`Window doesn't match trace step ${stepIndex}`, el.id, "from", {
+                expected: show(expected),
+                actual: show(el),
+              });
+            if (el.value !== undefined && String(el.value) !== String(expected.value ?? ""))
+              push(
+                expected.value === undefined
+                  ? `Trace step ${stepIndex}'s window has no value; omit value`
+                  : `Window value doesn't match trace step ${stepIndex}`,
+                el.id,
+                "value",
+                { expected: String(expected.value ?? "none"), actual: String(el.value) },
+              );
+          }
+          if (el.fromRange) {
+            const before = previous?.window;
+            if (!before) push("Window slides in from nowhere (no earlier bound window)", el.id, "fromRange");
+            else if (before.from !== el.fromRange.from || before.to !== el.fromRange.to)
+              push("Window should slide from where the previous scene left it", el.id, "fromRange", {
+                expected: show(before),
+                actual: show(el.fromRange),
+              });
+          }
+          break;
+        }
+        case "freq-table": {
+          const expected = step.freq;
+          if (!expected) push(`Trace step ${stepIndex} has no character counts`, el.id, "entries");
+          else {
+            const show = (entries: typeof el.entries) =>
+              entries.map((e) => `${e.key}:${e.count}${e.need !== undefined ? `/${e.need}` : ""}`).join(" ");
+            if (!sameJson(el.entries, expected.entries))
+              push(`Character counts don't match trace step ${stepIndex}`, el.id, "entries", {
+                expected: show(expected.entries),
+                actual: show(el.entries),
+              });
+            if (el.active !== undefined && el.active !== expected.active)
+              push(`The changed count doesn't match trace step ${stepIndex}`, el.id, "active", {
+                expected: expected.active ?? "none",
+                actual: el.active,
+              });
+          }
+          break;
+        }
+        case "deque": {
+          checkRow(el.rowId);
+          const expected = step.deque;
+          if (!expected) push(`Trace step ${stepIndex} has no deque`, el.id, "indices");
+          else {
+            const checks = [
+              ["indices", el.indices, expected.indices, "Deque positions don't"],
+              [
+                "poppedBack",
+                el.poppedBack ?? [],
+                expected.poppedBack ?? [],
+                "Values removed from the back don't",
+              ],
+              [
+                "poppedFront",
+                el.poppedFront ?? [],
+                expected.poppedFront ?? [],
+                "Values removed from the front don't",
+              ],
+              ["output", el.output, expected.output, "The output so far doesn't"],
+            ] as const;
+            for (const [field, actual, want, what] of checks)
+              if (!sameList(actual, want))
+                push(`${what} match trace step ${stepIndex}`, el.id, field, {
+                  expected: list(want),
+                  actual: list(actual),
+                });
+          }
+          break;
+        }
         default:
           break;
       }
@@ -481,7 +562,8 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
  * Check a resolved storyboard. Always: equation arithmetic. With a `trace` binding: bound steps exist and never
  * go backwards, every key step is shown, rows hold the trace's values (the step's own array when the algorithm
  * rearranges it), and bound pointers, equations, highlights, fills, moves, sorted regions, held values, tallies,
- * groups, split trees, merge buffers, partitions, heaps, and counters match their step, and the answer is revealed correctly. Hand-written and generated storyboards both pass
+ * groups, split trees, merge buffers, partitions, heaps, counters, windows, character counts, and deques match their
+ * step, and the answer is revealed correctly. Hand-written and generated storyboards both pass
  * through this before they are shown.
  */
 export function validateStoryboard(storyboard: Storyboard): ValidationResult {
