@@ -4,20 +4,56 @@ import { create } from "zustand";
 export const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 export type PlaybackRate = (typeof PLAYBACK_RATES)[number];
 
+/** Where the sound settings are remembered across visits. */
+export const AUDIO_PREFS_KEY = "algovizlib:audio";
+
 type PlayerState = {
   player: PlayerRef | null;
   frame: number;
   isPlaying: boolean;
   playbackRate: PlaybackRate;
   isFullscreen: boolean;
+  /** Narration volume, 0–1. */
+  volume: number;
+  muted: boolean;
+  /** Paused only to let the browser voice finish the scene; shown as playing. */
+  holding: boolean;
+  /** The browser can read scenes without ElevenLabs audio aloud (set once detected on the client). */
+  speechAvailable: boolean;
   attach: (player: PlayerRef | null) => void;
   setFrame: (frame: number) => void;
   setPlaying: (isPlaying: boolean) => void;
   setPlaybackRate: (rate: PlaybackRate) => void;
   setFullscreen: (isFullscreen: boolean) => void;
+  setHolding: (holding: boolean) => void;
+  setSpeechAvailable: (available: boolean) => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
+  /** Read the remembered volume and mute (after hydration, so server and client render the same first). */
+  loadAudioPrefs: () => void;
   toggle: () => void;
   seekTo: (frame: number) => void;
 };
+
+function saveAudioPrefs(volume: number, muted: boolean) {
+  try {
+    localStorage.setItem(AUDIO_PREFS_KEY, JSON.stringify({ volume, muted }));
+  } catch {
+    // Storage blocked (private mode, quota): the setting lasts for this visit only.
+  }
+}
+
+export function readAudioPrefs(): { volume: number; muted: boolean } | undefined {
+  try {
+    const raw = localStorage.getItem(AUDIO_PREFS_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { volume?: unknown; muted?: unknown };
+    const volume = typeof parsed.volume === "number" ? Math.min(1, Math.max(0, parsed.volume)) : 1;
+    return { volume, muted: parsed.muted === true };
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * UI-facing player state. The Remotion PlayerRef stays the source of truth for
@@ -30,12 +66,39 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   isPlaying: false,
   playbackRate: 1,
   isFullscreen: false,
-  attach: (player) => set({ player, frame: 0, isPlaying: false }),
+  volume: 1,
+  muted: false,
+  holding: false,
+  speechAvailable: false,
+  attach: (player) => set({ player, frame: 0, isPlaying: false, holding: false }),
   setFrame: (frame) => set({ frame }),
   setPlaying: (isPlaying) => set({ isPlaying }),
   setPlaybackRate: (playbackRate) => set({ playbackRate }),
   setFullscreen: (isFullscreen) => set({ isFullscreen }),
-  toggle: () => get().player?.toggle(),
+  setHolding: (holding) => set({ holding }),
+  setSpeechAvailable: (speechAvailable) => set({ speechAvailable }),
+  setVolume: (volume) => {
+    const v = Math.min(1, Math.max(0, volume));
+    // Dragging the volume up unmutes, like most players.
+    const muted = v === 0 ? get().muted : false;
+    set({ volume: v, muted });
+    saveAudioPrefs(v, muted);
+  },
+  toggleMute: () => {
+    const muted = !get().muted;
+    set({ muted });
+    saveAudioPrefs(get().volume, muted);
+  },
+  loadAudioPrefs: () => {
+    const prefs = readAudioPrefs();
+    if (prefs) set(prefs);
+  },
+  toggle: () => {
+    const { player, holding } = get();
+    // Pausing while the video waits for the browser voice stops the voice too (the player is already paused).
+    if (holding) set({ holding: false });
+    else player?.toggle();
+  },
   seekTo: (frame) => {
     const { player } = get();
     if (!player) return;

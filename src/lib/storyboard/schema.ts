@@ -51,14 +51,19 @@ export const takeawaySchema = z.object({
 
 const sceneShape = {
   id: nonEmpty,
-  /** Text to be voiced (ElevenLabs, later). */
+  /** Text to be voiced (ElevenLabs via `pnpm generate:narration`, or the browser's voice). */
   narration: nonEmpty,
   /** Short on-screen text. */
   caption: nonEmpty.max(80),
-  /** Estimated from narration for now; audio length replaces this later. */
+  /** Estimated from the narration, or from the voiced clip's length when the scene has `audio`. */
   durationInFrames: z.number().int().min(45),
   /** Index of the trace step this scene shows. Bound pointers, equations, and highlights follow that step. */
   traceStep: z.number().int().nonnegative().optional(),
+  /**
+   * Voiced narration, attached by `withNarration()` from the narration manifest (never written in storyboard files).
+   * It plays from `NARRATION_LEAD_FRAMES` into the scene.
+   */
+  audio: z.object({ src: z.string().min(1), durationMs: z.number().positive() }).optional(),
 };
 
 type SceneLike = { id: string; elements: readonly { id: string }[] };

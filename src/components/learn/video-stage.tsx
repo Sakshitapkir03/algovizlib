@@ -7,6 +7,8 @@ import { FPS, VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 import { usePlayerStore } from "@/store/player-store";
 import { StoryboardComposition, type StoryboardCompositionProps } from "@/video/StoryboardComposition";
 
+import { useNarration } from "./use-narration";
+
 /**
  * The Remotion Player plus its event wiring. Loaded client-only (see
  * LearnView): the Player reads the clock while rendering, which can't run
@@ -36,6 +38,7 @@ export default function VideoStage({
   }, []);
   const props = useMemo(() => ({ ...inputProps, displayWidth }), [inputProps, displayWidth]);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
+  useNarration(playerRef, inputProps.storyboard.scenes);
 
   // Mirror player events into the store so controls/scene list can react.
   useEffect(() => {

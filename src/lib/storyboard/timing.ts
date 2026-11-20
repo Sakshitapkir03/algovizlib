@@ -16,12 +16,22 @@ export function countWords(text: string): number {
 }
 
 /**
- * Estimate a scene's length from its narration. This is a placeholder:
- * once narration is voiced, the audio clip's length replaces it.
+ * Estimate a scene's length from its narration. Used for scenes without voiced audio (they're read by the browser
+ * voice, which waits at the scene's end if it runs long); voiced scenes use `narrationDurationInFrames`.
  */
 export function estimateDurationInFrames(narration: string, fps: number = FPS): number {
   const seconds = Math.max(MIN_SECONDS, countWords(narration) / WORDS_PER_SECOND + PADDING_SECONDS);
   return Math.ceil(seconds * fps);
+}
+
+/** Narration starts this far into a scene (inside its fade-in), so the cut never clips the first word. */
+export const NARRATION_LEAD_FRAMES = 9;
+/** Silence after a voiced clip before the scene ends. Longer than the cross-fade, so clips never overlap. */
+export const NARRATION_PAUSE_SECONDS = 0.7;
+
+/** A voiced scene's length: lead-in + the measured clip + a short pause. */
+export function narrationDurationInFrames(audioMs: number, fps: number = FPS): number {
+  return Math.max(45, NARRATION_LEAD_FRAMES + Math.ceil((audioMs / 1000 + NARRATION_PAUSE_SECONDS) * fps));
 }
 
 export type SceneTiming = {
@@ -33,8 +43,10 @@ export type SceneTiming = {
   startFrame: number;
   /** Last frame (exclusive) where this scene counts as "current". */
   endFrame: number;
-  /** Where "jump to scene" seeks: just after the fade-in completes. */
+  /** Where "jump to scene" seeks: where its narration starts (past the cross-fade's midpoint, so it's current). */
   seekFrame: number;
+  /** Where this scene's narration starts. */
+  narrationStart: number;
 };
 
 /**
@@ -55,6 +67,7 @@ export function getSceneTimeline(
   });
   const durationInFrames = Math.max(1, cursor);
   const half = Math.floor(transitionFrames / 2);
+  const narrationStart = (i: number) => starts[i] + Math.max(NARRATION_LEAD_FRAMES, half + 1);
   // The midpoint of each cross-fade is where "current" switches scenes.
   const boundary = (i: number) => (i === 0 ? 0 : starts[i] + half);
 
@@ -64,7 +77,8 @@ export function getSceneTimeline(
     sequenceStart: starts[i],
     startFrame: boundary(i),
     endFrame: i === scenes.length - 1 ? durationInFrames : boundary(i + 1),
-    seekFrame: i === 0 ? 0 : starts[i] + transitionFrames,
+    seekFrame: i === 0 ? 0 : narrationStart(i),
+    narrationStart: narrationStart(i),
   }));
   return { timings, durationInFrames };
 }

@@ -77,11 +77,11 @@ export function LearnView({
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
-  // Keyboard: Space play/pause, ←/→ seek 5s, Shift+←/→ previous/next scene, F fullscreen.
+  // Keyboard: Space play/pause, ←/→ seek 5s, Shift+←/→ previous/next scene, F fullscreen, M mute.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || isInteractive(e.target)) return;
-      const { frame: f, seekTo, toggle } = usePlayerStore.getState();
+      const { frame: f, seekTo, toggle, toggleMute } = usePlayerStore.getState();
       const idx = sceneIndexAtFrame(timings, f);
       switch (e.key) {
         case " ":
@@ -100,6 +100,10 @@ export function LearnView({
         case "f":
         case "F":
           toggleFullscreen();
+          break;
+        case "m":
+        case "M":
+          toggleMute();
           break;
         default:
           return;
@@ -134,6 +138,7 @@ export function LearnView({
               durationInFrames={durationInFrames}
               timings={timings}
               currentIndex={currentIndex}
+              hasAudio={storyboard.scenes[currentIndex].audio !== undefined}
               onToggleFullscreen={toggleFullscreen}
             />
           </div>

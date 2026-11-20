@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "generate:storyboards": "node --env-file-if-exists=.env.local --import tsx scripts/generate-storyboards.ts",
+    "generate:narration": "node --env-file-if-exists=.env.local --import tsx scripts/generate-narration.ts",
     "storyboards:prompt": "node --import tsx scripts/render-prompt.ts",
     "storyboards:validate-draft": "node --import tsx scripts/validate-draft.ts"
   },

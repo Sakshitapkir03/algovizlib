@@ -68,6 +68,8 @@ to `/dsa/two-pointers/pair-with-target-sum`.
 | `pnpm test:watch` | Vitest in watch mode                                                                             |
 | `pnpm format`     | Format with Prettier                                                                             |
 
+Offline tooling: `pnpm generate:storyboards` (below) and `pnpm generate:narration` (voice-over, below).
+
 ## Generating storyboards
 
 Requires a model key in `.env.local` (copy `.env.example`). The default provider is Google Gemini
@@ -87,10 +89,34 @@ Flags: `--problem <pattern>/<slug>`, `--force`, `--max-requests <n>` (default 15
 `.cache/generation`, so a real run after a dry run makes no new requests. On the free tier's daily limit the run stops
 cleanly and tells you to rerun with `--missing` the next day. Details: [CLAUDE.md](./CLAUDE.md).
 
+## Narration
+
+Videos are narrated. Scenes voiced with [ElevenLabs](https://elevenlabs.io) play their recorded clip and take their
+length from it; the rest are read by the browser's built-in voice (Web Speech API), which waits at a scene's end if it
+runs long. Without either, the video plays silently with captions and the transcript. A label under the player says
+which voice is active ("Narrated by ElevenLabs" / "Browser voice"), and the footer credits ElevenLabs, as its free
+plan requires.
+
+Clips are made offline and committed as small MP3s under `public/audio/`, listed in
+`src/content/narration/manifest.json`. Set `ELEVENLABS_API_KEY` in `.env.local` (see `.env.example`), then:
+
+```bash
+pnpm generate:narration --storyboard sorting/merge-sort --storyboard sorting/heap-sort --dry-run   # characters, no calls
+pnpm generate:narration --storyboard sorting/merge-sort --storyboard sorting/heap-sort             # voice them
+pnpm generate:narration --missing                                                                  # everything not voiced yet
+```
+
+The free plan covers about 20,000 characters a month on the Flash model; a video's narration is ~1,500–1,950. Each run
+stops before a video that would pass `--max-chars` (default 9,000), never re-pays for unchanged narration (clips are
+named by a hash of the text, voice, and model), and stops cleanly, keeping what's saved, when the monthly quota runs
+out. Details: [CLAUDE.md](./CLAUDE.md).
+
 ## Player controls
 
-Play/pause, scrubber, speed (0.5x–2x), and fullscreen. Keyboard: **Space** play/pause, **←/→** seek 5 seconds,
-**Shift + ←/→** previous/next scene, **F** fullscreen. Click a scene in the list (or in the transcript) to jump to it.
+Play/pause, scrubber, speed (0.5x–2x, narration keeps its pitch), narration mute and volume (remembered), and
+fullscreen. Keyboard: **Space** play/pause, **←/→** seek 5 seconds, **Shift + ←/→** previous/next scene, **M** mute,
+**F** fullscreen. Click a scene in the list (or in the transcript) to jump to it. Sound starts only when you press
+play.
 
 ## Deploying
 
@@ -107,3 +133,6 @@ the roadmap.
 
 Remotion is free for individuals and small teams. Companies of 4+ people need a
 [Remotion company license](https://remotion.dev/license).
+
+Narration clips come from the ElevenLabs free plan, which requires crediting ElevenLabs (the footer and player do)
+and doesn't include a commercial license. Fine for a portfolio; a commercial site needs a paid plan.

@@ -1,11 +1,22 @@
 "use client";
 
-import { Maximize, Minimize, Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import {
+  Maximize,
+  Minimize,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  Volume1,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { chooseVoice } from "@/lib/narration/engine";
 import { formatTime, type SceneTiming } from "@/lib/storyboard";
 import { PLAYBACK_RATES, usePlayerStore, type PlaybackRate } from "@/store/player-store";
 
@@ -39,15 +50,26 @@ export function PlayerControls({
   durationInFrames,
   timings,
   currentIndex,
+  hasAudio,
   onToggleFullscreen,
 }: {
   durationInFrames: number;
   timings: readonly SceneTiming[];
   currentIndex: number;
+  /** The current scene has ElevenLabs narration. */
+  hasAudio: boolean;
   onToggleFullscreen: () => void;
 }) {
   const frame = usePlayerStore((s) => s.frame);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  // Waiting for the browser voice to finish a scene still counts as playing.
+  const isPlaying = usePlayerStore((s) => s.isPlaying || s.holding);
+  const volume = usePlayerStore((s) => s.volume);
+  const muted = usePlayerStore((s) => s.muted);
+  const setVolume = usePlayerStore((s) => s.setVolume);
+  const toggleMute = usePlayerStore((s) => s.toggleMute);
+  const speechAvailable = usePlayerStore((s) => s.speechAvailable);
+  const voice = chooseVoice({ audio: hasAudio || undefined }, speechAvailable);
+  const silent = muted || volume === 0;
   const isFullscreen = usePlayerStore((s) => s.isFullscreen);
   const playbackRate = usePlayerStore((s) => s.playbackRate);
   const toggle = usePlayerStore((s) => s.toggle);
@@ -80,10 +102,38 @@ export function PlayerControls({
         <IconButton label="Next scene" shortcut="Shift+ArrowRight" onClick={() => seekTo(next.seekFrame)}>
           <SkipForward aria-hidden />
         </IconButton>
-        <span className="ml-2 font-mono text-xs text-muted-foreground tabular-nums" aria-live="off">
-          {formatTime(frame)} / {formatTime(durationInFrames)}
+        <span
+          className="ml-1 font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums sm:ml-2"
+          aria-live="off"
+        >
+          {formatTime(frame)}
+          {/* On a phone the bar is full; the scrubber still announces the total. */}
+          <span className="hidden sm:inline"> / {formatTime(durationInFrames)}</span>
         </span>
         <div className="ml-auto flex items-center gap-1">
+          <IconButton
+            label={silent ? "Unmute narration" : "Mute narration"}
+            shortcut="M"
+            onClick={toggleMute}
+          >
+            {silent ? (
+              <VolumeX aria-hidden />
+            ) : volume < 0.5 ? (
+              <Volume1 aria-hidden />
+            ) : (
+              <Volume2 aria-hidden />
+            )}
+          </IconButton>
+          <Slider
+            min={0}
+            max={100}
+            step={5}
+            value={[muted ? 0 : Math.round(volume * 100)]}
+            onValueChange={([v]) => setVolume(v / 100)}
+            thumbLabel="Narration volume"
+            thumbValueText={muted ? "Muted" : `${Math.round(volume * 100)}%`}
+            className="mr-2 hidden w-20 sm:flex"
+          />
           <Select
             value={String(playbackRate)}
             onValueChange={(v) => setPlaybackRate(Number(v) as PlaybackRate)}
@@ -108,6 +158,25 @@ export function PlayerControls({
           </IconButton>
         </div>
       </div>
+      <p className="font-mono text-[11px] text-muted-foreground" data-voice={voice}>
+        {voice === "elevenlabs" ? (
+          <>
+            Narrated by{" "}
+            <a
+              href="https://elevenlabs.io"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2"
+            >
+              ElevenLabs
+            </a>
+          </>
+        ) : voice === "browser" ? (
+          "Browser voice"
+        ) : (
+          "No voice available: follow the captions and transcript"
+        )}
+      </p>
     </div>
   );
 }

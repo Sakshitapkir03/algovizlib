@@ -47,7 +47,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               {children}
             </main>
             <footer className="border-t py-6 text-center text-xs text-muted-foreground">
-              algovizlib · Learn the approach, not just the code.
+              algovizlib · Learn the approach, not just the code. ·{" "}
+              <span className="whitespace-nowrap">
+                Voice by{" "}
+                <a
+                  href="https://elevenlabs.io"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline underline-offset-2"
+                >
+                  ElevenLabs
+                </a>
+              </span>
             </footer>
           </TooltipProvider>
         </ThemeProvider>

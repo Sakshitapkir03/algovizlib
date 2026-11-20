@@ -4,7 +4,8 @@
 
 A web app that teaches computer science concepts (DSA first, then system design) through a curated **catalog**
 (category → pattern → problem) and short animated videos. Each video explains the **approach** through a concrete
-real-world example, not a line-by-line code walkthrough. Narration will be voiced with ElevenLabs later.
+real-world example, not a line-by-line code walkthrough. Narration is voiced offline with ElevenLabs where the budget
+allows and read by the browser's own voice everywhere else (see "Narration").
 
 Every video is driven by a **storyboard**: plain, typed data bound to a **trace** (the exact steps an algorithm takes
 on one example). Storyboards are hand-written or generated offline by a model (`pnpm generate:storyboards`). Either
@@ -21,6 +22,7 @@ pnpm test         # Vitest
 pnpm build        # production build (static prerender)
 pnpm format       # Prettier
 pnpm generate:storyboards --pattern two-pointers --dry-run   # offline AI generation (see below)
+pnpm generate:narration --storyboard two-pointers --dry-run   # offline ElevenLabs voice-over (see "Narration")
 ```
 
 Run `lint`, `typecheck`, `test`, and `build` before committing.
@@ -45,6 +47,7 @@ src/
     catalog/                 categories, patterns/<slug>.ts, problems/<pattern>/<slug>.ts, index.ts
     storyboards/             hand-written storyboards + registry (index.ts)
       generated/             <pattern>/<slug>.json written by the generator + index.ts (regenerated, don't edit)
+    narration/manifest.json  voiced clips per storyboard/scene (hash, file, measured length), written by the script
     legacy-redirects.ts      old /learn/<id> URLs (imported by next.config.ts)
   lib/
     catalog/                 Zod schemas, define*(), judgeOutput(), repository.ts (the only way pages read content)
@@ -52,11 +55,16 @@ src/
     storyboard/              Zod schemas (source + resolved), defineStoryboard(), resolveStoryboard(),
                              validateStoryboard(), primitive catalog, timing/timeline helpers
     traces/                  deterministic instrumented solutions: <pattern>/<slug>.ts + registry (app code)
+    narration/               app side of narration: hash, manifest + withNarration(), NarrationEngine (sync),
+                             browser speech/audio adapters
     generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
+      narration/             OFFLINE ONLY: ElevenLabs client, MP3 duration, narration pipeline, CLI, file store
   video/                     Remotion composition, scene renderer, primitives + registry, theme
-  store/player-store.ts      Zustand: mirrors PlayerRef events, exposes toggle/seekTo
+  store/player-store.ts      Zustand: mirrors PlayerRef events, exposes toggle/seekTo, volume/mute (remembered), hold
   hooks/                     useReducedMotion
 scripts/generate-storyboards.ts   the generator CLI (tsx)
+scripts/generate-narration.ts     the narration CLI (tsx)
+public/audio/<storyboard>/        narration MP3s, <scene>-<hash>.mp3
 tests/                       Vitest specs (fixtures/drafts.ts builds a correct draft from any trace)
   reference-solutions/       test-only solve() per problem; never imported by src/ (a test enforces it)
 ```
@@ -232,8 +240,9 @@ Two forms of the same schema:
   renderers and the validator only see this form.
 
 - `narration` is what gets voiced. `caption` is the short on-screen headline.
-- `durationInFrames` is currently `estimateDurationInFrames(narration)` (~150 wpm plus padding, 30 fps). Once audio
-  exists, the audio clip's length replaces it. Nothing else needs to change because element timing is relative (below).
+- `durationInFrames` is `estimateDurationInFrames(narration)` (~150 wpm plus padding, 30 fps) in storyboard files.
+  For a voiced scene, `withNarration()` replaces it with `narrationDurationInFrames(clip)` (lead-in + measured clip +
+  0.7 s pause) and sets `scene.audio`. Element timing is relative (below), so animations stay in sync either way.
 - Schema-level checks (in `superRefine`): unique scene/element ids, and every `rowId`/index reference points at an
   existing item-row or bar-row and an in-range item.
 
@@ -459,6 +468,70 @@ Set in `.env.local` (gitignored; see `.env.example`). Never print, log, or commi
 
 The script fails fast, naming the missing variable, if the selected provider's key isn't set.
 
+## Narration
+
+Every scene's `narration` is spoken: by an ElevenLabs clip when the scene has one, otherwise by the browser's
+built-in voice (Web Speech API), otherwise not at all (captions and the transcript carry it, as before).
+
+**Pipeline (offline, `pnpm generate:narration`).** `scripts/generate-narration.ts` → `src/lib/generation/narration/`
+(covered by the same ESLint rule and test that keep generation code out of the app):
+
+```bash
+pnpm generate:narration --storyboard two-pointers/pair-with-target-sum --storyboard sorting/heap-sort --dry-run
+pnpm generate:narration --pattern sorting          # every sorting video
+pnpm generate:narration --missing                  # every video with a scene not voiced yet
+#   --storyboard <id or pattern/slug>   repeatable    --max-chars <n>   default 9000    --dry-run   call nothing
+```
+
+- One request per scene: `POST /v1/text-to-speech/{voice_id}?output_format=mp3_44100_64` with `model_id`, over
+  plain `fetch` (`elevenlabs.ts`). Model `eleven_flash_v2_5` (Flash is the cheapest per character; the Turbo models
+  are deprecated in its favor), voice "Sarah" (`EXAVITQu4vr4xnSDxMaL`, a default voice the free plan can use through
+  the API; Voice Library voices return 402). One voice for every video.
+- Clips go to `public/audio/<storyboard>/<scene>-<hash>.mp3`, where `hash = narrationHash(narration, voice)` covers
+  the text, voice, model, and format (`lib/narration/hash.ts`, the same function in Node and the browser). A scene
+  whose hash matches the manifest and whose file exists is skipped, so unchanged narration is never paid for twice;
+  edited narration gets a new file and the old one is deleted. The length is measured from the MP3 frames
+  (`mp3.ts`, no ffprobe) and written to `src/content/narration/manifest.json` after every clip.
+- **Budget.** The free plan is ~10k credits/month ≈ 20k characters on Flash; a video is ~1,500–1,950 characters, all
+  13 about 22.6k. `--max-chars` (default 9000) is checked before each video (a video is voiced whole or not at all)
+  and before each request. A dry run prints characters per video and the total, and if a selection is over budget
+  names the one video to drop (`suggestDrop`). Only successful requests count.
+- **Errors.** Quota exhausted (`quota_exceeded`) and 402 (paid plan needed) stop the run without retrying; 429
+  (`too_many_concurrent_requests`, `system_busy`), 5xx, timeouts, and dropped connections retry with backoff (5s,
+  15s, 45s, or `retry-after`), then stop as "unavailable"; a bad key (401) aborts; a refused request (400/422) fails
+  that video and the run continues. Exit codes as for the other scripts (0 / 1 / 2, `narrationExitStatus()`). What
+  was saved before a stop is kept, and the summary lists what remains and the `--missing` command to resume.
+- Config (`.env.local`, never printed or committed): `ELEVENLABS_API_KEY` (not needed for `--dry-run`), optional
+  `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`, `ELEVENLABS_DELAY_MS` (500), `ELEVENLABS_TIMEOUT_MS` (60000).
+
+**Timing.** `content/storyboards/index.ts` passes every storyboard through `withNarration(storyboard, manifest)`: a
+scene whose manifest entry matches its current narration gets `audio: { src, durationMs }` and
+`durationInFrames = narrationDurationInFrames(durationMs)`. Stale or missing entries keep the estimate. Each scene's
+narration starts at `timings[i].narrationStart` (`NARRATION_LEAD_FRAMES` into it, past the cross-fade's midpoint),
+which is also where scene jumps land; the 0.7 s pause after a clip outlasts the cross-fade, so clips never overlap.
+
+**Playback (`NarrationEngine`, `lib/narration/engine.ts`; wired by `components/learn/use-narration.ts`).** The
+Player is the clock. Frame updates, seeks, play/pause, and store changes (speed, volume, mute, hold) call
+`engine.update()`:
+
+- ElevenLabs: one `<audio>`; on a scene change or seek its `currentTime` is set from the frame, and it's corrected
+  whenever it drifts more than `DRIFT_SECONDS` (0.3 s). Speed sets `playbackRate` with `preservesPitch`.
+- Browser voice: the narration is split into sentences, one utterance each (long utterances stall in Chrome). A seek
+  restarts from the sentence at that point, estimated at the narration pace; pause remembers the sentence being
+  spoken and play restarts it; a speed change restarts it at the new rate; mute stops the voice without holding.
+  If the voice is still speaking two frames before the scene ends, the engine **holds**: the player pauses there
+  (`holding` in the store, shown as playing) and resumes when the last sentence ends (a watchdog releases it if the
+  voice never reports back). Pressing pause or seeking during a hold ends it.
+- Nothing sounds until the viewer presses play (autoplay rules). Volume and mute live in the player store and are
+  saved to localStorage (`algovizlib:audio`), read after hydration.
+- `chooseVoice()` picks per scene; the controls show "Narrated by ElevenLabs" (linked) or "Browser voice", and the
+  footer always shows "Voice by ElevenLabs" (the free plan requires attribution and has no commercial license: fine
+  for a portfolio).
+
+Tests: `tests/narration-generation.test.ts` (hashing and caching, budget, dry run, quota/limit handling, the
+ElevenLabs client and error mapping, MP3 length, CLI) and `tests/narration-player.test.ts` (manifest timing, voice
+choice, the engine against mocked audio and speech: seeks, scene jumps, pause/resume, speed, drift, hold).
+
 ## Choosing the example
 
 `exampleSource` decides where the real-world example comes from. The schema enforces it.
@@ -504,7 +577,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
   scrubber thumb has `aria-valuetext`. The current scene uses `aria-current="step"` plus a "Now playing" text marker,
   and a polite live region announces scene changes. Item states always pair color with a glyph and a word.
 - Keyboard (window-level, ignored while focus is in a button, slider, select, or input): Space play/pause, ←/→ seek
-  5s, Shift+←/→ previous/next scene, F fullscreen.
+  5s, Shift+←/→ previous/next scene, F fullscreen, M mute narration.
 - Respect `prefers-reduced-motion` in both the UI (`motion-reduce:` plus the global CSS rule) and the video
   (`reducedMotion` input prop).
 
@@ -513,9 +586,9 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 1. **More generated videos.** Offline generation exists (above) and is proven on Two Pointers. Next: traces for the
    other patterns (and the primitives they need), then runtime generation for custom questions behind a server
    route with rate limits, reusing the same pipeline and validator.
-2. **ElevenLabs narration.** Voice each scene's `narration`, store the audio, set `durationInFrames` from the clip
-   length (plus padding), and add an `<Audio>` per scene in `SceneView`. Element `enterAt` fractions keep animations
-   aligned. Later, use word timestamps to time callouts and equations.
+2. **Narration.** Built (see "Narration"); voice the remaining videos as the monthly free quota allows. Later, use
+   ElevenLabs' word timestamps (`/with-timestamps`) to time callouts and equations, and highlight words in the
+   transcript.
 3. **Database, auth, and custom questions.** Move the catalog and storyboards behind the repository into a database,
    move progress to a server-backed `ProgressRepository` after auth, and let users paste their own question.
 4. **Practice mode.** See "Practice mode (planned)" above.
