@@ -2,7 +2,15 @@ import { createContext, useContext } from "react";
 
 import type { Element } from "@/lib/storyboard";
 
-import type { ListLayout, Region, RowLayout, StackLayout, TreeLayout } from "./layout";
+import type {
+  GraphLayout,
+  GridLayout,
+  ListLayout,
+  Region,
+  RowLayout,
+  StackLayout,
+  TreeLayout,
+} from "./layout";
 import type { TextMetrics } from "./text";
 import type { VideoPalette } from "./theme";
 
@@ -18,6 +26,9 @@ export type SceneContextValue = {
   /** A binary tree's and a call stack's geometry, when the scene has them. */
   tree?: TreeLayout;
   stack?: StackLayout;
+  /** A BFS grid's or graph's geometry, when the scene has one. */
+  grid?: GridLayout;
+  graph?: GraphLayout;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

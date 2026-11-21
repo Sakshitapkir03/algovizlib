@@ -1,12 +1,14 @@
 import { finalPositions, runTrace, type Trace, type TraceStep } from "@/lib/traces";
 
-import type { TraceLinks, TraceTreeNode, TraceTreeWalk } from "@/lib/traces";
+import type { TraceBfs, TraceLinks, TraceQueueItem, TraceTreeNode, TraceTreeWalk } from "@/lib/traces";
 
 import type {
   BinaryTreeElement,
   ComparisonOp,
   Element,
   EquationElement,
+  GraphElement,
+  GridElement,
   LinkedListElement,
 } from "./elements";
 import type { ValidationIssue, ValidationResult } from "./issues";
@@ -136,6 +138,34 @@ function rowValues(el: Element): readonly (number | string)[] | undefined {
   return undefined;
 }
 
+/** A search's state field by field, in a canonical text form (empty and missing read the same). */
+function bfsFields(bfs: Partial<TraceBfs> | GridElement | GraphElement): Record<string, string> {
+  const ids = (list: readonly number[] | undefined) =>
+    JSON.stringify([...(list ?? [])].sort((a, b) => a - b));
+  return {
+    current: JSON.stringify(bfs.current ?? null),
+    visited: ids(bfs.visited),
+    // Front first: order matters.
+    frontier: JSON.stringify(bfs.frontier ?? []),
+    levels: JSON.stringify(
+      [...(bfs.levels ?? [])].sort((a, b) => a.id - b.id).map((l) => ({ id: l.id, level: l.level })),
+    ),
+    checks: JSON.stringify(
+      (bfs.checks ?? []).map((ch) => ({
+        from: ch.from,
+        to: ch.to ?? null,
+        dir: ch.dir ?? null,
+        result: ch.result,
+      })),
+    ),
+  };
+}
+
+const showQueue = (items: readonly TraceQueueItem[]) =>
+  items.map((item) => `${item.label} (level ${item.level})`).join(", ") || "empty";
+const canonQueue = (items: readonly TraceQueueItem[]) =>
+  JSON.stringify(items.map((item) => ({ id: item.id, label: item.label, level: item.level })));
+
 /** "#0 5 (L #1, R #2), …", for readable issues. */
 const showTree = (nodes: readonly TraceTreeNode[]) =>
   [...nodes]
@@ -258,6 +288,52 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
         });
     };
 
+    /** A grid's or graph's shape against the trace, and the grid's contents against `cells`. */
+    const checkShape = (el: GridElement | GraphElement, cells: unknown) => {
+      if (el.type === "grid") {
+        const grid = trace.grid;
+        if (!grid) return push("This trace isn't a grid; remove the grid", el.id, "cells");
+        if (el.rows !== grid.rows || el.cols !== grid.cols)
+          push("The grid's size doesn't match the trace", el.id, "rows", {
+            expected: `${grid.rows}×${grid.cols}`,
+            actual: `${el.rows}×${el.cols}`,
+          });
+        if (!sameJson(el.legend, grid.legend))
+          push("The grid's legend doesn't match the trace; omit it", el.id, "legend");
+        if (!sameJson(el.cells, cells))
+          push(
+            scene.traceStep === undefined
+              ? "Without a traceStep, the grid is drawn as it starts (or ends); omit cells"
+              : `The grid's cells don't match trace step ${scene.traceStep}`,
+            el.id,
+            "cells",
+            { expected: JSON.stringify(cells), actual: JSON.stringify(el.cells) },
+          );
+        return;
+      }
+      const graph = trace.graph;
+      if (!graph) return push("This trace isn't a graph; remove the graph", el.id, "nodes");
+      if (
+        !sameJson(
+          el.nodes.map((n) => ({ id: n.id, label: n.label })),
+          graph.nodes,
+        )
+      )
+        push("The graph's nodes don't match the trace; omit nodes", el.id, "nodes", {
+          expected: graph.nodes.map((n) => n.label).join(", "),
+          actual: el.nodes.map((n) => n.label).join(", "),
+        });
+      const edges = (list: readonly (readonly [number, number])[]) =>
+        JSON.stringify(
+          list.map(([a, b]) => (a < b ? [a, b] : [b, a])).sort((x, y) => x[0] - y[0] || x[1] - y[1]),
+        );
+      if (edges(el.edges) !== edges(graph.edges))
+        push("The graph's edges don't match the trace; omit edges", el.id, "edges", {
+          expected: edges(graph.edges),
+          actual: edges(el.edges),
+        });
+    };
+
     // Reveals and answer checks apply with or without a bound step.
     for (const el of scene.elements) {
       if (
@@ -340,6 +416,23 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             el.id,
             "frames",
           );
+        if (el.type === "queue")
+          push("A queue needs the scene to set traceStep (its items come from the step)", el.id, "items");
+        if (el.type === "grid" || el.type === "graph") {
+          // An unbound grid or graph is the starting one (no search yet), or the search as it ends (a recap).
+          const last = trace.steps.at(-1);
+          const ending = el.type === "grid" && last?.cells && sameJson(el.cells, last.cells);
+          checkShape(el, ending ? last.cells : trace.grid?.cells);
+          const drawn = bfsFields(el);
+          const same = (fields: Record<string, string>) =>
+            Object.keys(drawn).every((k) => drawn[k] === fields[k]);
+          if (!same(bfsFields({})) && !(last?.bfs && same(bfsFields(last.bfs))))
+            push(
+              `Without a traceStep, the ${el.type} shows no search (or the search as it ends); omit current/visited/frontier/levels/checks`,
+              el.id,
+              "visited",
+            );
+        }
       }
       continue;
     }
@@ -828,6 +921,48 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
                 actual: String(el.kept),
               });
           }
+          break;
+        }
+        case "grid":
+        case "graph": {
+          checkShape(el, step.cells ?? trace.grid?.cells);
+          if (!step.bfs) {
+            push(`Trace step ${stepIndex} has no search`, el.id, "visited");
+            break;
+          }
+          const expected = bfsFields(step.bfs);
+          const drawn = bfsFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The ${el.type}'s ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "queue": {
+          const expected = step.queue;
+          if (!expected) {
+            push(`Trace step ${stepIndex} has no queue`, el.id, "items");
+            break;
+          }
+          // Items carry their level, so the level markers between them are checked too.
+          if (canonQueue(el.items) !== canonQueue(expected.items))
+            push(`The queue doesn't match trace step ${stepIndex} (items and their levels)`, el.id, "items", {
+              expected: showQueue(expected.items),
+              actual: showQueue(el.items),
+            });
+          const out = (item?: TraceQueueItem) => (item ? canonQueue([item]) : "none");
+          if (out(el.dequeued) !== out(expected.dequeued))
+            push(`The item taken off the front doesn't match trace step ${stepIndex}`, el.id, "dequeued", {
+              expected: expected.dequeued ? showQueue([expected.dequeued]) : "none",
+              actual: el.dequeued ? showQueue([el.dequeued]) : "none",
+            });
+          if (JSON.stringify(el.enqueued ?? []) !== JSON.stringify(expected.enqueued ?? []))
+            push(`The items added at the back don't match trace step ${stepIndex}`, el.id, "enqueued", {
+              expected: JSON.stringify(expected.enqueued ?? []),
+              actual: JSON.stringify(el.enqueued ?? []),
+            });
           break;
         }
         case "linked-list": {

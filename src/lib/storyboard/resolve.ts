@@ -47,7 +47,7 @@ export function applyOperator(operator: keyof typeof OPERATORS, terms: readonly 
  * Values the author omitted are taken from the trace: rows from the bound step's `values` (else `trace.row`), and
  * pointers, equations, highlights, fills, water, moves, empty slots, sorted regions, held values, tallies, groups,
  * split trees, merge buffers, partitions, heaps, counters, windows, character counts, deques, search ranges,
- * candidate answers, cuts, lists, tree walks, and call stacks from the scene's bound step (an item-row with `traceRow: "second"` shows the trace's
+ * candidate answers, cuts, lists, tree walks, call stacks, grids, graphs, and queues from the scene's bound step (an item-row with `traceRow: "second"` shows the trace's
  * second list). Values the author did write are kept as written; the validator
  * checks them against the trace. Returns issues instead of throwing, so the generator can send them back.
  */
@@ -432,6 +432,49 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             ...el,
             frames: step.stack,
             kept: el.kept ?? (before ? keptFrames(before, step.stack) : undefined),
+          };
+        }
+        case "grid":
+        case "graph": {
+          const shape = el.type === "grid" ? trace?.grid : trace?.graph;
+          if (!shape && (el.type === "grid" ? !el.cells : !el.nodes))
+            return (missing(el, el.type === "grid" ? "cells" : "nodes"), el);
+          if (step && !step.bfs) return (noState(el, "visited", "search"), el);
+          const bfs = step?.bfs;
+          const search = {
+            current: el.current ?? bfs?.current,
+            visited: el.visited ?? bfs?.visited ?? [],
+            frontier: el.frontier ?? bfs?.frontier ?? [],
+            levels: el.levels ?? bfs?.levels,
+            checks: el.checks ?? bfs?.checks,
+          };
+          if (el.type === "grid") {
+            const grid = trace?.grid;
+            return {
+              ...el,
+              ...search,
+              rows: el.rows ?? grid?.rows,
+              cols: el.cols ?? grid?.cols,
+              // A step that changes the grid (paint, rot) carries its own contents.
+              cells: el.cells ?? step?.cells ?? grid?.cells,
+              legend: el.legend ?? grid?.legend,
+            } as ElementSource;
+          }
+          return {
+            ...el,
+            ...search,
+            nodes: el.nodes ?? trace?.graph?.nodes,
+            edges: el.edges ?? trace?.graph?.edges,
+          } as ElementSource;
+        }
+        case "queue": {
+          if (el.items) return el;
+          if (!step?.queue) return (noState(el, "items", "queue"), el);
+          return {
+            ...el,
+            items: step.queue.items,
+            dequeued: el.dequeued ?? step.queue.dequeued,
+            enqueued: el.enqueued ?? step.queue.enqueued,
           };
         }
         case "deque": {

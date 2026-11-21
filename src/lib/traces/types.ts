@@ -124,6 +124,63 @@ export type TraceStep = {
   tree?: TraceTreeWalk;
   /** The recursion's open calls, bottom (the first call) to top (the running one). */
   stack?: TraceFrame[];
+  /** A grid's contents after this step, when the search changes them (a paint fill, oranges rotting). */
+  cells?: TraceValue[][];
+  /** A breadth-first search over `trace.grid` or `trace.graph` after this step. See `TraceBfs`. */
+  bfs?: TraceBfs;
+  /** The BFS queue after this step, front first, with what this step took off the front and added at the back. */
+  queue?: TraceQueue;
+};
+
+/**
+ * A grid's cells. A cell's id is `row * cols + col`; `legend` says how each value is drawn (a glyph and a word, so
+ * no state depends on color: "≈ water", "■ wall") and its tone.
+ */
+export type TraceGrid = { rows: number; cols: number; cells: TraceValue[][]; legend: TraceCellKind[] };
+export type TraceCellKind = {
+  value: TraceValue;
+  /** Drawn in the cell ("≈", "■", or the value itself for pixel colors); "" for nothing. */
+  glyph: string;
+  word: string;
+  /** plain: open space; fill: solid ground (land, a fresh orange); wall: blocked; mark: changed by the search. */
+  tone: "plain" | "fill" | "wall" | "mark";
+};
+
+/** A graph's nodes (ids 0…n-1, laid out by BFS level from node 0) and undirected edges. */
+export type TraceGraph = { nodes: { id: number; label: string }[]; edges: [number, number][] };
+
+/**
+ * One neighbor check: from the item being processed to `to` (a cell or node id), or, off the grid, in direction
+ * `dir` ([dRow, dCol]). `added` joins the queue; `visited` was already seen; `blocked` can't be entered (water, a wall,
+ * another color); `out` is off the grid.
+ */
+export type BfsCheck = {
+  from: number;
+  to?: number;
+  dir?: [number, number];
+  result: "added" | "visited" | "blocked" | "out";
+};
+
+export type TraceBfs = {
+  /** The item being processed (just taken off the queue), or the cell a scan just found. */
+  current?: number;
+  /** Everything seen so far (marked when it joins the queue). */
+  visited: number[];
+  /** What's in the queue: the frontier. */
+  frontier: number[];
+  /** Each seen item's level (distance from the start), when the search counts them. */
+  levels?: { id: number; level: number }[];
+  /** This step's neighbor checks, in the order they ran. */
+  checks?: BfsCheck[];
+};
+
+export type TraceQueueItem = { id: number; label: string; level: number };
+export type TraceQueue = {
+  items: TraceQueueItem[];
+  /** Taken off the front this step. */
+  dequeued?: TraceQueueItem;
+  /** Ids added at the back this step. */
+  enqueued?: number[];
 };
 
 /**
@@ -189,9 +246,13 @@ export type Trace = {
   /** "pattern/slug" of the catalog problem. */
   problem: string;
   /** The values the video animates, in display order. */
-  row: { values: TraceValue[]; display: "cards" | "bars" | "list" | "tree" };
+  row: { values: TraceValue[]; display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" };
   /** A binary tree's shape (display "tree"); it never changes, steps record the walk over it. */
   tree?: { nodes: TraceTreeNode[] };
+  /** A grid (display "grid"): its starting contents; steps record changes (`cells`) and the search (`bfs`). */
+  grid?: TraceGrid;
+  /** A graph (display "graph"): nodes and edges; steps record the search (`bfs`). */
+  graph?: TraceGraph;
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */
   secondRow?: { values: TraceValue[] };
   pointerNames: string[];

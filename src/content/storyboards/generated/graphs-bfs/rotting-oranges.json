@@ -1,0 +1,256 @@
+{
+  "id": "graphs-bfs-rotting-oranges",
+  "title": "Rotting Oranges: Every Rotten Orange Spreads at Once",
+  "concept": "Graphs (BFS)",
+  "category": "dsa",
+  "summary": "Start the queue with every rotten orange; each minute is one level of the search.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "grid",
+    "bfs",
+    "multi-source"
+  ],
+  "takeaway": {
+    "pattern": "Multi-source breadth-first search",
+    "summary": "Put every source in the queue at level 0. Process the queue one level at a time; each level is one minute. Track how many fresh oranges remain.",
+    "timeComplexity": "O(rows × cols)",
+    "spaceComplexity": "O(rows × cols) for the queue",
+    "whenToUse": [
+      "Spreading from several starting points at the same time",
+      "Distance from the nearest of many sources"
+    ]
+  },
+  "trace": {
+    "problem": "graphs-bfs/rotting-oranges",
+    "args": [
+      [
+        [
+          2,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v10",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:00:20.467Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "crate",
+      "narration": "In a crate of oranges, every minute each rotten orange rots the fresh ones directly beside it. How many minutes until no fresh orange is left?",
+      "caption": "Rot spreads each minute: how long until nothing's fresh?",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "simulate",
+      "narration": "Re-checking the whole crate every minute would look at oranges that never change, again and again.",
+      "caption": "Re-checking the whole crate every minute is wasteful",
+      "durationInFrames": 229,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "sources",
+      "narration": "Instead, put every rotten orange in the queue at once, as minute zero. They spread at the same time, so they start together. Five fresh oranges are left.",
+      "caption": "Both rotten oranges start in the queue together",
+      "durationInFrames": 372,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "spreading",
+          "levelLabel": "minute"
+        },
+        {
+          "id": "fresh",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fresh left"
+        }
+      ]
+    },
+    {
+      "id": "minute-1a",
+      "narration": "Minute one. The top-left orange rots the oranges below it and to its right. They join the back of the queue, behind a divider: they spread next minute.",
+      "caption": "Minute 1: the top-left orange rots two neighbors",
+      "durationInFrames": 372,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "spreading",
+          "levelLabel": "minute"
+        },
+        {
+          "id": "fresh",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fresh left"
+        }
+      ]
+    },
+    {
+      "id": "minute-1b",
+      "narration": "Still minute one: the bottom-right orange rots the one to its left. The empty space above it can't rot.",
+      "caption": "Same minute: the bottom-right orange rots its neighbor",
+      "durationInFrames": 264,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "spreading",
+          "levelLabel": "minute"
+        },
+        {
+          "id": "fresh",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fresh left"
+        }
+      ]
+    },
+    {
+      "id": "minute-2",
+      "narration": "Minute two takes the oranges rotted in minute one. The first rots the middle orange.",
+      "caption": "Minute 2: the oranges rotted in minute 1 spread",
+      "durationInFrames": 216,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "spreading",
+          "levelLabel": "minute"
+        },
+        {
+          "id": "fresh",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fresh left"
+        }
+      ]
+    },
+    {
+      "id": "last-fresh",
+      "narration": "The next one rots the top-right orange, the last fresh one. The count reaches zero.",
+      "caption": "The top-right orange rots: none fresh left",
+      "durationInFrames": 216,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "spreading",
+          "levelLabel": "minute"
+        },
+        {
+          "id": "fresh",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fresh left"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Minute two finishes with nothing fresh, so the answer is two minutes.",
+      "caption": "Every orange is rotten after 2 minutes",
+      "durationInFrames": 180,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Minutes",
+          "showsAnswer": true,
+          "tone": "success"
+        },
+        {
+          "id": "fresh",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fresh left"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's multi-source breadth-first search: every source starts in the queue, and each level is one minute. If fresh oranges remained when the queue emptied, the answer would be minus one.",
+      "caption": "Many starting points, one queue: multi-source BFS",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    }
+  ]
+}

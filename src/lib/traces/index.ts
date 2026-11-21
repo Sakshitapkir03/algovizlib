@@ -1,3 +1,8 @@
+import { floodFillTrace } from "./graphs-bfs/flood-fill";
+import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
+import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
+import { shortestPathInBinaryMatrixTrace } from "./graphs-bfs/shortest-path-in-binary-matrix";
+import { wordLadderTrace } from "./graphs-bfs/word-ladder";
 import { kokoEatingBananasTrace } from "./binary-search/koko-eating-bananas";
 import { medianOfTwoSortedArraysTrace } from "./binary-search/median-of-two-sorted-arrays";
 import { searchInRotatedSortedArrayTrace } from "./binary-search/search-in-rotated-sorted-array";
@@ -73,6 +78,11 @@ const definitions = [
   countGoodNodesInBinaryTreeTrace,
   validateBinarySearchTreeTrace,
   binaryTreeMaximumPathSumTrace,
+  floodFillTrace,
+  numberOfIslandsTrace,
+  rottingOrangesTrace,
+  shortestPathInBinaryMatrixTrace,
+  wordLadderTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

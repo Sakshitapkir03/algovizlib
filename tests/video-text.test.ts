@@ -8,6 +8,7 @@ import { primitiveRegistry } from "@/video/primitives/registry";
 import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
+import { searchProblems } from "./fixtures/search-fit";
 import { treeProblems } from "./fixtures/tree-fit";
 import { MIN_TEXT_PX, PHONE_PLAYER_WIDTH, TEXT, textMetrics } from "@/video/text";
 
@@ -54,6 +55,8 @@ describe("video text at phone width", () => {
         "deque",
         "equation",
         "freq-table",
+        "graph",
+        "grid",
         "heap-tree",
         "held-value",
         "highlight",
@@ -63,6 +66,7 @@ describe("video text at phone width", () => {
         "number-line",
         "partition",
         "pointer",
+        "queue",
         "result",
         "search-range",
         "segments",
@@ -71,6 +75,20 @@ describe("video text at phone width", () => {
         "window",
       ].sort(),
     );
+  });
+
+  it("grids, graphs, and queues fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        (["grid", "graph", "queue"] as const).flatMap((type) =>
+          scene.elements.some((e) => e.type === type)
+            ? searchProblems(scene.elements, full, type).map((p) => `${storyboard.id} › ${scene.id}: ${p}`)
+            : [],
+        ),
+      ),
+    );
+    expect(problems).toEqual([]);
   });
 
   it("trees and call stacks fit at full size too", () => {
@@ -282,6 +300,11 @@ describe("video text at phone width", () => {
           }
           case "binary-tree":
             for (const problem of treeProblems(scene.elements, phone, bottomTop)) fail(problem);
+            break;
+          case "grid":
+          case "graph":
+          case "queue":
+            for (const problem of searchProblems(scene.elements, phone, el.type)) fail(problem);
             break;
           case "heap-tree":
             for (const v of el.values)

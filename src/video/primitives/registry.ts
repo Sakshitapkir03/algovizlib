@@ -12,6 +12,8 @@ import { Cut } from "./Cut";
 import { Deque } from "./Deque";
 import { Equation } from "./Equation";
 import { FreqTable } from "./FreqTable";
+import { Graph } from "./Graph";
+import { Grid } from "./Grid";
 import { HeapTree } from "./HeapTree";
 import { HeldValue } from "./HeldValue";
 import { Highlight } from "./Highlight";
@@ -21,6 +23,7 @@ import { MergeBuffer } from "./MergeBuffer";
 import { NumberLine } from "./NumberLine";
 import { Partition } from "./Partition";
 import { Pointer } from "./Pointer";
+import { Queue } from "./Queue";
 import { Result } from "./Result";
 import { SearchRange } from "./SearchRange";
 import { Segments } from "./Segments";
@@ -51,6 +54,10 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   // Nodes, edges, and notes; highlights ring the nodes. The call stack is a column beside it.
   "binary-tree": { component: BinaryTree, slot: "canvas", layer: 0 },
   "call-stack": { component: CallStack, slot: "canvas", layer: 0 },
+  // A breadth-first search's grid or graph (cells or nodes, then the check arrows over them); the queue sits below.
+  grid: { component: Grid, slot: "canvas", layer: 0 },
+  graph: { component: Graph, slot: "canvas", layer: 0 },
+  queue: { component: Queue, slot: "bottom", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

@@ -365,6 +365,11 @@ describe("selectTargets", () => {
       "trees-dfs/validate-binary-search-tree",
       "trees-dfs/count-good-nodes-in-binary-tree",
       "trees-dfs/binary-tree-maximum-path-sum",
+      "graphs-bfs/flood-fill",
+      "graphs-bfs/number-of-islands",
+      "graphs-bfs/rotting-oranges",
+      "graphs-bfs/shortest-path-in-binary-matrix",
+      "graphs-bfs/word-ladder",
     ]);
   });
 
@@ -559,7 +564,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v9");
+    expect(currentPrompts.version).toBe("storyboard-v10");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

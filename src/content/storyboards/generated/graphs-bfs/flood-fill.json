@@ -1,0 +1,181 @@
+{
+  "id": "graphs-bfs-flood-fill",
+  "title": "Flood Fill: The Paint Bucket Spreading Ring by Ring",
+  "concept": "Graphs (BFS)",
+  "category": "dsa",
+  "summary": "Paint the clicked pixel, then spread to same-colored neighbors one ring at a time with a queue.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "grid",
+    "bfs",
+    "matrix"
+  ],
+  "takeaway": {
+    "pattern": "Breadth-first search on a grid",
+    "summary": "Start from one cell, queue it, and repeatedly take the front cell and queue its matching neighbors. Marking a cell when it's queued means it's never handled twice.",
+    "timeComplexity": "O(rows × cols)",
+    "spaceComplexity": "O(rows × cols) for the queue",
+    "whenToUse": [
+      "Filling or measuring a connected region of a grid",
+      "Anything that spreads to neighbors step by step"
+    ]
+  },
+  "trace": {
+    "problem": "graphs-bfs/flood-fill",
+    "args": [
+      [
+        [
+          2,
+          2,
+          0
+        ],
+        [
+          2,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          1
+        ]
+      ],
+      0,
+      0,
+      5
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v10",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T20:58:52.171Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "picture",
+      "narration": "A tiny picture stores a color number in each pixel. You click the paint bucket on the top-left pixel with color 5. Every color-2 pixel connected to it, up, down, left, or right, must change.",
+      "caption": "Paint bucket on pixel (0,0): recolor its color-2 region to 5",
+      "durationInFrames": 456,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "rescan",
+      "narration": "You could sweep the whole picture again and again, painting anything next to paint, until a sweep changes nothing. Most sweeps would recheck the same pixels.",
+      "caption": "Rescanning the whole picture until nothing changes is slow",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "click",
+      "narration": "Instead, paint the clicked pixel and put it in a queue. The queue holds pixels whose neighbors still need checking.",
+      "caption": "Paint the clicked pixel and put it in the queue",
+      "durationInFrames": 276,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to check",
+          "levelLabel": "ring"
+        }
+      ]
+    },
+    {
+      "id": "first-ring",
+      "narration": "Take (0,0) off the front and look in four directions. Below and to the right are color 2, so paint them and queue them: that's the first ring.",
+      "caption": "Its color-2 neighbors are painted and join the queue",
+      "durationInFrames": 372,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to check",
+          "levelLabel": "ring"
+        }
+      ]
+    },
+    {
+      "id": "other-colors",
+      "narration": "Pixel (0,1) touches color 0 below and to the right, and paint on its left. Nothing new joins the queue.",
+      "caption": "Pixel (0,1) only touches other colors: nothing to add",
+      "durationInFrames": 276,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to check",
+          "levelLabel": "ring"
+        }
+      ]
+    },
+    {
+      "id": "empty",
+      "narration": "The paint spreads down the left column and along the bottom, one ring at a time. When the queue is empty, every connected color-2 pixel is 5.",
+      "caption": "The queue empties: the whole color-2 region is now 5",
+      "durationInFrames": 360,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "The picture after the fill",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's breadth-first search on a grid: a queue of cells to expand, marked when they join so none is handled twice. Each pixel is visited at most once: O(rows times columns).",
+      "caption": "One queue, one visit per pixel: breadth-first search",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    }
+  ]
+}

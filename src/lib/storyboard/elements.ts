@@ -17,7 +17,7 @@ import { z } from "zod";
  * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter"; sliding window adds "window",
  * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`;
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
- * "call-stack".
+ * "call-stack"; breadth-first search adds "grid", "graph", and "queue".
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -469,6 +469,112 @@ export const callStackSourceSchema = z.object({
   frames: callStackShape.frames.optional(),
 });
 
+const cellValueSchema = z.union([z.number().finite(), z.string().max(4)]);
+
+export const cellKindSchema = z.object({
+  value: cellValueSchema,
+  /** Drawn in the cell ("≈", "■", a pixel's color number); "" for nothing. */
+  glyph: z.string().max(3),
+  /** Names the content ("water", "wall"); a skipped neighbor check shows it as the reason. */
+  word: z.string().max(10),
+  tone: z.enum(["plain", "fill", "wall", "mark"]),
+});
+
+export const bfsCheckSchema = z.object({
+  from: index,
+  to: index.optional(),
+  /** [row step, column step] on a grid (the only way to point off the grid). */
+  dir: z.tuple([z.number().int().min(-1).max(1), z.number().int().min(-1).max(1)]).optional(),
+  result: z.enum(["added", "visited", "blocked", "out"]),
+});
+
+/** A breadth-first search drawn on a grid or graph (ids are cells, row * cols + col, or nodes). */
+const bfsShape = {
+  /** The item being processed (ringed). */
+  current: index.optional(),
+  /** Everything seen so far. */
+  visited: z.array(index).default([]),
+  /** What's in the queue (dashed accent outline). */
+  frontier: z.array(index).default([]),
+  /** Each seen item's level (distance), shown on it. */
+  levels: z.array(z.object({ id: index, level: z.number().int().min(0).max(99) })).optional(),
+  /** This scene's neighbor checks: an arrow each, added or skipped (with the reason). */
+  checks: z.array(bfsCheckSchema).max(8).optional(),
+};
+const bfsSource = {
+  ...bfsShape,
+  visited: bfsShape.visited.removeDefault().optional(),
+  frontier: bfsShape.frontier.removeDefault().optional(),
+};
+
+const gridShape = {
+  ...baseElement,
+  type: z.literal("grid"),
+  rows: z.number().int().min(1).max(6),
+  cols: z.number().int().min(1).max(6),
+  /** Each cell's content, row by row. */
+  cells: z.array(z.array(cellValueSchema).min(1).max(6)).min(1).max(6),
+  /** How each value is drawn. */
+  legend: z.array(cellKindSchema).min(1).max(6),
+  ...bfsShape,
+};
+export const gridElementSchema = z.object(gridShape);
+export const gridSourceSchema = z.object({
+  ...gridShape,
+  /** Omit the shape and contents (rows, cols, cells, legend) and the search to take them from the trace. */
+  rows: gridShape.rows.optional(),
+  cols: gridShape.cols.optional(),
+  cells: gridShape.cells.optional(),
+  legend: gridShape.legend.optional(),
+  ...bfsSource,
+});
+
+const graphShape = {
+  ...baseElement,
+  type: z.literal("graph"),
+  nodes: z
+    .array(z.object({ id: index, label: z.string().trim().min(1).max(8) }))
+    .min(1)
+    .max(10),
+  /** Undirected edges between node ids. */
+  edges: z.array(z.tuple([index, index])).max(20),
+  ...bfsShape,
+};
+export const graphElementSchema = z.object(graphShape);
+export const graphSourceSchema = z.object({
+  ...graphShape,
+  /** Omit nodes/edges and the search to take them from the trace. */
+  nodes: graphShape.nodes.optional(),
+  edges: graphShape.edges.optional(),
+  ...bfsSource,
+});
+
+const queueItemSchema = z.object({
+  id: index,
+  label: z.string().trim().min(1).max(8),
+  level: z.number().int().min(0).max(99),
+});
+
+const queueShape = {
+  ...baseElement,
+  type: z.literal("queue"),
+  /** Front first; a divider marks where one level's items end and the next level's begin. */
+  items: z.array(queueItemSchema).max(10),
+  /** Taken off the front in this scene (drawn leaving). */
+  dequeued: queueItemSchema.optional(),
+  /** Ids added at the back in this scene (they slide in). */
+  enqueued: z.array(index).optional(),
+  label: nonEmpty.max(16).default("queue"),
+  /** The word on each level marker: "level" shows "level 2"; "minute" shows "minute 2". */
+  levelLabel: nonEmpty.max(10).default("level"),
+};
+export const queueElementSchema = z.object(queueShape);
+export const queueSourceSchema = z.object({
+  ...queueShape,
+  /** Omit items/dequeued/enqueued to take the bound step's queue. */
+  items: queueShape.items.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -640,6 +746,9 @@ export const elementSchemas = [
   linkedListElementSchema,
   binaryTreeElementSchema,
   callStackElementSchema,
+  gridElementSchema,
+  graphElementSchema,
+  queueElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -668,6 +777,9 @@ export const elementSourceSchemas = [
   linkedListSourceSchema,
   binaryTreeSourceSchema,
   callStackSourceSchema,
+  gridSourceSchema,
+  graphSourceSchema,
+  queueSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -706,6 +818,11 @@ export type BinaryTreeElement = ElementOf<"binary-tree">;
 export type TreeNode = z.infer<typeof treeNodeSchema>;
 export type CallStackElement = ElementOf<"call-stack">;
 export type StackFrame = z.infer<typeof stackFrameSchema>;
+export type GridElement = ElementOf<"grid">;
+export type GraphElement = ElementOf<"graph">;
+export type QueueElement = ElementOf<"queue">;
+export type CellKind = z.infer<typeof cellKindSchema>;
+export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
 export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

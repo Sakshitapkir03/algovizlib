@@ -407,6 +407,66 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one binary-tree" });
           break;
         }
+        case "grid":
+        case "graph": {
+          const n = el.type === "grid" ? el.rows * el.cols : el.nodes.length;
+          if (el.type === "grid") {
+            if (el.cells.length !== el.rows || el.cells.some((row) => row.length !== el.cols))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "cells"],
+                message: `cells must be ${el.rows} rows of ${el.cols}`,
+              });
+            const known = new Set(el.legend.map((k) => String(k.value)));
+            if (el.cells.flat().some((v) => !known.has(String(v))))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "legend"],
+                message: "every cell value needs a legend entry",
+              });
+          } else {
+            if (el.nodes.some((node, k) => node.id !== k))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "nodes"],
+                message: "node ids must be 0, 1, 2, … in order",
+              });
+            if (el.edges.some(([a, b]) => a >= n || b >= n || a === b))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "edges"],
+                message: "an edge joins two different nodes",
+              });
+          }
+          const ids = [
+            el.current,
+            ...el.visited,
+            ...el.frontier,
+            ...(el.levels ?? []).map((l) => l.id),
+            ...(el.checks ?? []).flatMap((ch) => [ch.from, ch.to]),
+          ];
+          if (ids.some((id) => id !== undefined && id >= n))
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: `the search refers to an item outside the ${el.type} (0–${n - 1})`,
+            });
+          if (el.type === "grid" && (el.checks ?? []).some((ch) => !ch.dir))
+            ctx.addIssue({ code: "custom", path: [...path, "checks"], message: "a grid's checks need dir" });
+          if (scene.elements.filter((e) => e.type === el.type).length > 1)
+            ctx.addIssue({ code: "custom", path, message: `A scene can show only one ${el.type}` });
+          break;
+        }
+        case "queue":
+          if (scene.elements.filter((e) => e.type === "queue").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one queue" });
+          if ((el.enqueued ?? []).some((id) => !el.items.some((item) => item.id === id)))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "enqueued"],
+              message: "every enqueued id must be in items",
+            });
+          break;
         case "call-stack":
           if (scene.elements.filter((e) => e.type === "call-stack").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one call-stack" });

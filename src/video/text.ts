@@ -105,4 +105,8 @@ export const TEXT = {
   stackLabel: 20,
   stackNote: 15,
   stackTitle: 15,
+  gridGlyph: 30,
+  gridNote: 14,
+  graphLabel: 24,
+  queueItem: 22,
 } as const;

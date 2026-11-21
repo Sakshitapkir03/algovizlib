@@ -407,6 +407,9 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `linked-list`   | node boxes in lanes with an arrow to each `next`, a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; pointers/highlights use node ids   | canvas |
 | `binary-tree`   | a tree by depth: running call ringed, open path in orange, finished ✓ with "↑ 3", null stubs, values travel up edges                                                  | canvas |
 | `call-stack`    | recursion frames beside the tree, bottom to top: "depth(5) waiting for left", "returns 3"; pushed frames slide in                                                     | canvas |
+| `grid`          | BFS grid: cell glyph + word (≈ water, ■ wall), current ringed, frontier dashed, levels in corners, check arrows (✕ + reason)                                          | canvas |
+| `graph`         | BFS graph in columns by level from node 0: current ringed, frontier dashed, level labels, checked edges lit (✕ if seen)                                               | canvas |
+| `queue`         | BFS queue front → back: dequeued fades struck out, enqueued slides in; a divider + "level 2" marker between levels                                                    | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -515,6 +518,24 @@ gets a double border instead of the ✓. Tones: Count Good Nodes' "not good" is 
 positive and a worse bend neutral, Validate BST's out-of-range value negative. No problem in the pattern is
 level-order, so there's no queue panel yet (a level-order problem would reuse `deque`).
 
+**Graphs (BFS)** (all five problems) added `trace.grid` (`rows`, `cols`, starting `cells`, and a `legend`: each value's
+glyph, word, and tone, so no cell state depends on color) or `trace.graph` (`nodes` with labels, undirected `edges`),
+plus three pieces of step state: `cells` (the grid after a step that changes it: paint, rot), `bfs` (`current`,
+`visited`, `frontier` = the queue's ids, `levels`, and `checks`: each neighbor check `{ from, to?, dir?, result }`,
+where `result` is `added`, `visited`, `blocked`, or `out` (off the grid, `dir` only)), and `queue` (`items` front to
+back, each with its `level`; `dequeued`; `enqueued`). Ids: a cell is `row * cols + col`, `trace.row.values` the cells
+by id (or the graph's labels). Traces drive a `Bfs` recorder (`traces/graphs-bfs/shared.ts`) exactly like the
+reference solutions (`enqueue` marks seen; one step per item taken off the queue, with all its checks); grids are at
+most 5×6. Three primitives: `grid` (cells as large as the band allows, never narrower than their glyphs, with a rim
+for off-grid arrows; check arrows appear one after another; reasons come from the legend word, "seen", or "edge", only
+with ≤ 4 checks on a large player; on a phone a seen cell shows its level or ✓ in place of a symbol glyph), `graph`
+(columns by BFS level from node 0, computed in `graphColumns`, so the layout never moves between scenes), and `queue`
+(a bottom panel; a new primitive rather than a change to `deque`, which reads row values and carries Sliding Window's
+output). The queue marks level boundaries: a divider between levels and a marker over each level's first item, words
+set by `levelLabel` ("minute", "distance", "keys"); items carry their level, so the validator checks the boundaries
+with the items. No comparison in these traces would mislead, so none sets a tone. Rotting Oranges is multi-source: every
+rotten orange is queued at level 0 in the first step. As with trees, grid and graph scenes keep the bottom stack short.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -525,7 +546,8 @@ input and returns a `Trace` (types in `traces/types.ts`):
 
 ```ts
 Trace = {
-  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" | "tree" }, secondRow?: { values },
+  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" },
+  secondRow?: { values },
   pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
            values?, moves?, empty?, sorted?, final?, held?, counts?, // algorithms that rearrange the array
@@ -533,10 +555,12 @@ Trace = {
            window?, freq?, deque?,                                // sliding window (see "Sliding window" above)
            search?, answers?, cuts?,                              // binary search (see "Binary search" above)
            links?, heap?,                                         // linked lists (see "Linked lists" above)
-           tree?, stack? }[],                                     // trees (see "Trees (DFS)" above)
+           tree?, stack?,                                         // trees (see "Trees (DFS)" above)
+           cells?, bfs?, queue? }[],                              // breadth-first search (see "Graphs (BFS)" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
+  grid?: { rows, cols, cells, legend }, graph?: { nodes, edges },   // a BFS's grid or graph
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
   answerIndices?,     // when the answer is a set of positions
@@ -559,7 +583,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -786,7 +810,10 @@ a fixed two floats ahead (Remove Nth), a slideshow alternating oldest and newest
 board for three subway lines (Merge K). Trees (DFS): a cave's deepest route, reported back chamber by chamber (Maximum
 Depth), a hike of exactly 13 km from a trailhead to a campsite (Path Sum), mail routing desks whose unit numbers must fit
 every turn above them (Validate BST), record-height stations on a cable car network (Count Good Nodes), and the most
-profitable stretch of road between towns that earn or cost money (Maximum Path Sum).
+profitable stretch of road between towns that earn or cost money (Maximum Path Sum). Graphs (BFS): Flood Fill,
+Number of Islands, and Rotting Oranges are problem-native (a paint bucket, a map, a crate); Shortest Path in a Binary
+Matrix is a chess king crossing a board with blocked squares, and Word Ladder a locksmith recutting a key one notch at
+a time, every key on the building's register.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

@@ -6,6 +6,11 @@ import binarySearchMedianOfTwoSortedArrays from "./binary-search/median-of-two-s
 import binarySearchSearchInRotatedSortedArray from "./binary-search/search-in-rotated-sorted-array.json";
 import binarySearchSearchInsertPosition from "./binary-search/search-insert-position.json";
 import binarySearchSearchSortedArray from "./binary-search/search-sorted-array.json";
+import graphsBfsFloodFill from "./graphs-bfs/flood-fill.json";
+import graphsBfsNumberOfIslands from "./graphs-bfs/number-of-islands.json";
+import graphsBfsRottingOranges from "./graphs-bfs/rotting-oranges.json";
+import graphsBfsShortestPathInBinaryMatrix from "./graphs-bfs/shortest-path-in-binary-matrix.json";
+import graphsBfsWordLadder from "./graphs-bfs/word-ladder.json";
 import linkedListMergeKSortedLists from "./linked-list/merge-k-sorted-lists.json";
 import linkedListMergeTwoSortedLists from "./linked-list/merge-two-sorted-lists.json";
 import linkedListRemoveNthNodeFromEnd from "./linked-list/remove-nth-node-from-end.json";
@@ -41,6 +46,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "binary-search/search-in-rotated-sorted-array": loadStoryboard(binarySearchSearchInRotatedSortedArray),
   "binary-search/search-insert-position": loadStoryboard(binarySearchSearchInsertPosition),
   "binary-search/search-sorted-array": loadStoryboard(binarySearchSearchSortedArray),
+  "graphs-bfs/flood-fill": loadStoryboard(graphsBfsFloodFill),
+  "graphs-bfs/number-of-islands": loadStoryboard(graphsBfsNumberOfIslands),
+  "graphs-bfs/rotting-oranges": loadStoryboard(graphsBfsRottingOranges),
+  "graphs-bfs/shortest-path-in-binary-matrix": loadStoryboard(graphsBfsShortestPathInBinaryMatrix),
+  "graphs-bfs/word-ladder": loadStoryboard(graphsBfsWordLadder),
   "linked-list/merge-k-sorted-lists": loadStoryboard(linkedListMergeKSortedLists),
   "linked-list/merge-two-sorted-lists": loadStoryboard(linkedListMergeTwoSortedLists),
   "linked-list/remove-nth-node-from-end": loadStoryboard(linkedListRemoveNthNodeFromEnd),

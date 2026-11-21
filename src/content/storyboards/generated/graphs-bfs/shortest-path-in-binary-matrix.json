@@ -1,0 +1,255 @@
+{
+  "id": "graphs-bfs-shortest-path-in-binary-matrix",
+  "title": "Shortest Path in a Binary Matrix: A King Crossing a Blocked Board",
+  "concept": "Graphs (BFS)",
+  "category": "dsa",
+  "summary": "Search outward from the start one distance at a time; the first time the far corner comes off the queue, its distance is the shortest.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A chess king must cross a 4×4 board from the top-left square to the bottom-right one. Some squares hold other pieces and are blocked. The king moves one square in any of eight directions.",
+    "mapping": [
+      {
+        "real": "A free square",
+        "abstract": "A 0 cell"
+      },
+      {
+        "real": "A blocked square",
+        "abstract": "A 1 cell (a wall)"
+      },
+      {
+        "real": "One king move",
+        "abstract": "A step to one of the 8 neighbors"
+      },
+      {
+        "real": "Squares on the king's route, counting both ends",
+        "abstract": "The path length (the distance)"
+      },
+      {
+        "real": "Squares waiting to be explored",
+        "abstract": "The BFS queue"
+      }
+    ]
+  },
+  "tags": [
+    "grid",
+    "bfs",
+    "shortest-path"
+  ],
+  "takeaway": {
+    "pattern": "Breadth-first search for shortest paths",
+    "summary": "When every move costs the same, BFS reaches cells in order of distance. Record each cell's distance when it's queued; the first time the target comes off the queue, its distance is the answer.",
+    "timeComplexity": "O(n²) cells, 8 checks each",
+    "spaceComplexity": "O(n²)",
+    "whenToUse": [
+      "Fewest moves on a grid or graph where every move costs the same",
+      "Mazes, boards, and moves with unit cost"
+    ]
+  },
+  "trace": {
+    "problem": "graphs-bfs/shortest-path-in-binary-matrix",
+    "args": [
+      [
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          0,
+          1
+        ],
+        [
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          0
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v10",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:00:20.463Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "board",
+      "narration": "A chess king must cross the board from the top-left square to the bottom-right, moving one square in any of eight directions, around the blocked squares. What's the shortest route?",
+      "caption": "A king crosses a board with blocked squares",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "every-route",
+      "narration": "Trying every possible route grows explosively. Better to explore close squares before far ones.",
+      "caption": "Trying every route explodes",
+      "durationInFrames": 204,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "Start with the king's own square, a route of one square, in the queue. Each square remembers how many squares its route takes.",
+      "caption": "Start square: a route of 1 square",
+      "durationInFrames": 312,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "distance"
+        }
+      ]
+    },
+    {
+      "id": "first-move",
+      "narration": "From the corner, five moves fall off the board and two squares are blocked. Only the square to the right is free: distance 2.",
+      "caption": "Eight moves: five off the board, two blocked, one free",
+      "durationInFrames": 324,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "distance"
+        }
+      ]
+    },
+    {
+      "id": "two-at-once",
+      "narration": "From there the king reaches two new squares at once, straight right and diagonally down. Both are distance 3.",
+      "caption": "Two new squares at distance 3",
+      "durationInFrames": 264,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "distance"
+        }
+      ]
+    },
+    {
+      "id": "diagonal",
+      "narration": "The top-right corner is a dead end. But from the middle square a diagonal slips past the wall to a new square at distance 4.",
+      "caption": "A diagonal slips past the wall: distance 4",
+      "durationInFrames": 336,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "distance"
+        }
+      ]
+    },
+    {
+      "id": "corner",
+      "narration": "One square down is the far corner, distance 5. It joins the queue.",
+      "caption": "One more move reaches the far corner: distance 5",
+      "durationInFrames": 192,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "distance"
+        }
+      ]
+    },
+    {
+      "id": "reached",
+      "narration": "When the corner comes off the queue, every closer square has already come off, so no shorter route exists. The answer is 5.",
+      "caption": "The corner comes off the queue: 5 squares",
+      "durationInFrames": 312,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Shortest route",
+          "detail": "squares, counting both ends",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Free squares are 0 cells, blocked ones are 1s, and king moves are the eight neighbors. BFS expands by distance, so it finds the shortest path in O(n squared) time.",
+      "caption": "Squares are cells; moves are 8 neighbors",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    }
+  ]
+}

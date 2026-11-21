@@ -25,12 +25,16 @@ export function buildDraft(problemKey: string): Draft {
         ? "linked-list"
         : trace.row.display === "tree"
           ? "binary-tree"
-          : "item-row";
+          : trace.row.display === "grid"
+            ? "grid"
+            : trace.row.display === "graph"
+              ? "graph"
+              : "item-row";
   const row = (): ElementSource =>
     rowType === "linked-list"
       ? { id: "row", type: "linked-list", enterAt: 0 }
-      : rowType === "binary-tree"
-        ? { id: "row", type: "binary-tree", enterAt: 0 }
+      : rowType === "binary-tree" || rowType === "grid" || rowType === "graph"
+        ? ({ id: "row", type: rowType, enterAt: 0 } as ElementSource)
         : rowType === "bar-row"
           ? { id: "row", type: "bar-row", unit: "", enterAt: 0 }
           : {
@@ -109,9 +113,11 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "cut2", type: "cut", rowId: "row2", enterAt: 0 });
     }
     if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
+    if (step.queue)
+      elements.push({ id: "queue", type: "queue", label: "queue", levelLabel: "level", enterAt: 0 });
     // A tree's last scene keeps its bottom stack short (the answer, and at most a count).
     const last = index === trace.steps.length - 1;
-    if (step.equation && !(rowType === "binary-tree" && last))
+    if (step.equation && !((rowType === "binary-tree" || step.queue) && last))
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });
     // The last step is where the answer is known: state it there (a real story does the same).

@@ -3,6 +3,8 @@ import type {
   BinaryTreeElement,
   CallStackElement,
   Element,
+  GraphElement,
+  GridElement,
   ItemRowElement,
   LinkedListElement,
   PointerElement,
@@ -73,6 +75,25 @@ export type TreeLayout = {
   region: Region;
 };
 
+/** Where a grid draws: square cells, ids row * cols + col. */
+export type GridLayout = {
+  cell: number;
+  left: number;
+  top: number;
+  rows: number;
+  cols: number;
+  center: (id: number) => { x: number; y: number };
+};
+
+/** Where a graph draws: one column per BFS level from node 0. */
+export type GraphLayout = {
+  nodeWidth: number;
+  nodeHeight: number;
+  center: (id: number) => { x: number; y: number };
+  /** Room under each node for its level label. */
+  labelRoom: number;
+};
+
 /** Where a call-stack draws: a column beside the tree, frames stacked from the bottom. */
 export type StackLayout = {
   left: number;
@@ -128,6 +149,8 @@ export type SceneLayout = {
   /** A binary tree's and a call stack's geometry, when the scene has them. */
   tree?: TreeLayout;
   stack?: StackLayout;
+  grid?: GridLayout;
+  graph?: GraphLayout;
 };
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
@@ -162,6 +185,11 @@ export const sizes = {
   /** A number-line tick: wide enough for its largest candidate. */
   numberCell: (t: TextMetrics, values: readonly number[]) =>
     Math.max(48, ...values.map((v) => t.width(String(v), t.size(TEXT.countCell), "mono") + 16)),
+  /** A queue item: wide enough for "(3,4)" or a short word. */
+  queueCell: (t: TextMetrics, labels: readonly string[]) =>
+    Math.max(56, ...labels.map((l) => t.width(l, t.size(TEXT.queueItem), "mono") + 18)),
+  /** The queue's level markers above its items (words hidden on a phone-sized player: just the divider). */
+  queueMarker: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.tag) + 8),
   /** A call-stack frame: one line of label and note. */
   stackFrame: (t: TextMetrics) => Math.max(t.size(TEXT.stackLabel), t.size(TEXT.stackNote)) + 18,
   /** A tree node's box: big enough for a two-digit negative value. */
@@ -251,6 +279,8 @@ function bottomHeight(el: Element, t: TextMetrics): number {
       return sizes.cell(t) + 2 + sizes.marker(t);
     case "number-line":
       return t.size(TEXT.countKey) + 4 + sizes.cell(t) + 4 + sizes.marker(t);
+    case "queue":
+      return sizes.queueMarker(t) + sizes.cell(t) + 2 + sizes.marker(t);
     default:
       return 0;
   }
@@ -545,6 +575,96 @@ function layoutTree(
   };
 }
 
+const GRID = { maxCell: 104, margin: 64, rim: 0.35 };
+
+/** A grid as large as the band allows (capped), centered; asks the bottom stack to move down for full-size cells. */
+function layoutGrid(
+  el: GridElement,
+  t: TextMetrics,
+  bottomTop: number,
+): { grid: GridLayout; overflow: number } {
+  const top = captionBottom(t) + 8;
+  const bottom = bottomTop - 16;
+  const width = VIDEO_WIDTH - 2 * GRID.margin;
+  // Never narrower than what a cell shows: its glyphs, or a level (two digits only once a level reaches 10).
+  const shown = [...el.legend.map((k) => k.glyph), ...(el.levels ?? []).map((l) => String(l.level)), "8"];
+  const needed = Math.max(...shown.map((g) => t.width(g, t.size(TEXT.gridGlyph), "mono"))) + 16;
+  // Room above and below for off-grid check arrows (and their ✕) on the edge rows.
+  const rim = GRID.rim * 2;
+  const cell = Math.max(needed, Math.min(GRID.maxCell, width / el.cols, (bottom - top) / (el.rows + rim)));
+  const ideal = Math.min(GRID.maxCell, width / el.cols);
+  const overflow = Math.max(0, Math.max(cell, ideal) * (el.rows + rim) - (bottom - top));
+  const left = (VIDEO_WIDTH - cell * el.cols) / 2;
+  const y0 = top + Math.max(GRID.rim * cell, (bottom - top - cell * el.rows) / 2);
+  return {
+    grid: {
+      cell,
+      left,
+      top: y0,
+      rows: el.rows,
+      cols: el.cols,
+      center: (id) => ({
+        x: left + (id % el.cols) * cell + cell / 2,
+        y: y0 + Math.floor(id / el.cols) * cell + cell / 2,
+      }),
+    },
+    overflow,
+  };
+}
+
+/** BFS levels from node 0 (unreachable nodes go one column past the last). */
+export function graphColumns(el: GraphElement): number[] {
+  const level = el.nodes.map(() => -1);
+  if (level.length === 0) return level;
+  level[0] = 0;
+  const queue = [0];
+  for (let head = 0; head < queue.length; head++) {
+    const a = queue[head];
+    for (const [x, y] of el.edges) {
+      const b = x === a ? y : y === a ? x : -1;
+      if (b >= 0 && level[b] < 0) {
+        level[b] = level[a] + 1;
+        queue.push(b);
+      }
+    }
+  }
+  const last = Math.max(...level);
+  return level.map((l) => (l < 0 ? last + 1 : l));
+}
+
+/** A graph in columns by level, each column's nodes spread evenly down the band. */
+function layoutGraph(
+  el: GraphElement,
+  t: TextMetrics,
+  bottomTop: number,
+): { graph: GraphLayout; overflow: number } {
+  const columns = graphColumns(el);
+  const count = Math.max(...columns) + 1;
+  const labelSize = t.size(TEXT.graphLabel);
+  const nodeWidth = Math.max(...el.nodes.map((n) => t.width(n.label, labelSize, "mono"))) + 28;
+  const nodeHeight = labelSize + 26;
+  const labelRoom = t.size(TEXT.gridNote) + 14;
+  const top = captionBottom(t) + 12;
+  const bottom = bottomTop - 16;
+  const perColumn = Array.from({ length: count }, (_, c) => el.nodes.filter((n) => columns[n.id] === c));
+  const tallest = Math.max(...perColumn.map((nodes) => nodes.length));
+  const slot = nodeHeight + labelRoom + 24;
+  const overflow = Math.max(0, tallest * slot - (bottom - top));
+  const pitch = (VIDEO_WIDTH - 2 * GRID.margin) / count;
+  const center = (id: number) => {
+    const c = columns[id];
+    const nodes = perColumn[c];
+    const k = nodes.findIndex((n) => n.id === id);
+    const span = Math.max(nodes.length * slot, bottom - top);
+    const gap = span / nodes.length;
+    return {
+      x: GRID.margin + pitch * (c + 0.5),
+      y: top + (bottom - top - span) / 2 + gap * (k + 0.5) - labelRoom / 2,
+    };
+  };
+  return { graph: { nodeWidth, nodeHeight, center, labelRoom }, overflow };
+}
+
 export function layoutScene(elements: readonly Element[], text: TextMetrics = textMetrics()): SceneLayout {
   const t = text;
   const bottom = elements.filter((el) => bottomHeight(el, t) > 0);
@@ -561,7 +681,7 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     ),
   );
   // A linked list's lanes (or a tree's levels) that don't fit push the bottom stack down too.
-  const need = Math.max(short, first.listOverflow ?? 0, first.treeOverflow ?? 0);
+  const need = Math.max(short, first.listOverflow ?? 0, first.treeOverflow ?? 0, first.searchOverflow ?? 0);
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
 }
@@ -570,7 +690,7 @@ function layoutWith(
   elements: readonly Element[],
   t: TextMetrics,
   bottomTop: number,
-): SceneLayout & { listOverflow?: number; treeOverflow?: number } {
+): SceneLayout & { listOverflow?: number; treeOverflow?: number; searchOverflow?: number } {
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
   let list: ListLayout | undefined;
@@ -606,6 +726,13 @@ function layoutWith(
     listRows[treeElement.id] = laid.row;
     treeOverflow = laid.overflow;
   }
+  let grid: GridLayout | undefined;
+  let graph: GraphLayout | undefined;
+  let searchOverflow: number | undefined;
+  const gridElement = elements.find((el): el is GridElement => el.type === "grid");
+  const graphElement = elements.find((el): el is GraphElement => el.type === "graph");
+  if (gridElement) ({ grid, overflow: searchOverflow } = layoutGrid(gridElement, t, bottomTop));
+  else if (graphElement) ({ graph, overflow: searchOverflow } = layoutGraph(graphElement, t, bottomTop));
 
   const rows = elements.filter((el): el is Row => el.type === "item-row" || el.type === "bar-row");
   const layouts: Record<string, RowLayout> = {};
@@ -717,6 +844,9 @@ function layoutWith(
     tree,
     stack,
     treeOverflow,
+    grid,
+    graph,
+    searchOverflow,
   };
 }
 

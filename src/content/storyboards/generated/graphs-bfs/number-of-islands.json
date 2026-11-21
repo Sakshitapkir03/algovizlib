@@ -1,0 +1,212 @@
+{
+  "id": "graphs-bfs-number-of-islands",
+  "title": "Number of Islands: Marking Each Island Once",
+  "concept": "Graphs (BFS)",
+  "category": "dsa",
+  "summary": "Scan the map; each unseen land cell starts a new island, and a BFS marks all of its land so it's never counted again.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "grid",
+    "bfs",
+    "connected-components"
+  ],
+  "takeaway": {
+    "pattern": "Breadth-first search for connected components",
+    "summary": "Scan every cell. Unseen land starts a new component: count it and BFS through its land, marking it seen. Water and seen cells are skipped.",
+    "timeComplexity": "O(rows × cols)",
+    "spaceComplexity": "O(rows × cols) for the seen marks and the queue",
+    "whenToUse": [
+      "Counting connected regions on a grid or graph",
+      "Labeling which region each cell belongs to"
+    ]
+  },
+  "trace": {
+    "problem": "graphs-bfs/number-of-islands",
+    "args": [
+      [
+        "11000",
+        "10011",
+        "00010",
+        "01001"
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v10",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:01:19.474Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "map",
+      "narration": "A map marks each square as land or water. Land squares joined up, down, left, or right form one island. How many islands are there?",
+      "caption": "A map of land and water: how many islands?",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "double-count",
+      "narration": "Counting land squares gives eight, not the number of islands. You need to know which squares belong together, and never count an island twice.",
+      "caption": "Counting every land square would count islands many times",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    },
+    {
+      "id": "island-1",
+      "narration": "Scan row by row. The very first square is land nobody has seen, so it starts island 1. Put it in the queue to explore everything it touches.",
+      "caption": "Unseen land at (0,0): island 1",
+      "durationInFrames": 372,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "step"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "islands"
+        }
+      ]
+    },
+    {
+      "id": "explore",
+      "narration": "Take (0,0) off the queue. Below and to the right is land: mark it and queue it. Off the map counts as water.",
+      "caption": "Its land neighbors join the queue; water is skipped",
+      "durationInFrames": 312,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "step"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "islands"
+        }
+      ]
+    },
+    {
+      "id": "island-done",
+      "narration": "Neither new square touches more land. When the queue is empty, all of island 1 is marked, so the scan will skip it.",
+      "caption": "The queue empties: island 1 is fully marked",
+      "durationInFrames": 312,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "step"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "islands"
+        }
+      ]
+    },
+    {
+      "id": "island-2",
+      "narration": "The scan moves on past marked land and water until (1,3): unseen land, so island 2. The same exploration marks its three squares.",
+      "caption": "More unseen land at (1,3): island 2",
+      "durationInFrames": 312,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "to explore",
+          "levelLabel": "step"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "islands"
+        }
+      ]
+    },
+    {
+      "id": "count",
+      "narration": "Two lone squares in the bottom row each start an island of their own. The scan ends with four islands.",
+      "caption": "Two single squares make islands 3 and 4",
+      "durationInFrames": 276,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Islands",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Each island is a connected component. Marking squares as you queue them means every square is handled once: O(rows times columns) time.",
+      "caption": "Each new start is a connected component",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "grid",
+          "enterAt": 0,
+          "type": "grid"
+        }
+      ]
+    }
+  ]
+}

@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v9";
+export const PROMPT_VERSION = "storyboard-v10";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -57,6 +57,7 @@ ${ELEMENT_GUIDE}
 - search-range / number-line / cut: only in scenes whose step lists a search range / candidate answers / cuts; OMIT their state fields (from/to/mid/sorted, min/max/low/high/mid, at). A search range's bracket shrinks on its own between bound scenes; give an empty range a label for the gap ("insert here"). With two lists, add one cut per item-row, and give the second list's item-row traceRow: "second".
 - linked-list: when the trace's row is a list ("list"), make it the first element of every scene that shows data, and OMIT nodes/rewired/fromPlaces (a bound scene takes the step's list, an unbound scene the starting list). Rewired links and moving nodes animate on their own. Give laneLabels that name each lane in your analogy. Put pointers on it with placement: "above" and rowId set to the linked-list's id, bound to the step's pointer names; a pointer the step doesn't list is null, so leave it out. Highlights on it use node ids (OMIT indices). Skip callouts in list scenes: the narration carries the reasoning. With a heap of list heads (step lists a heap), add a heap-tree in those scenes (OMIT values) and drop it once the heap is empty.
 - binary-tree / call-stack: when the trace's row is a tree ("tree"), make a binary-tree the first element of every scene that shows data and OMIT nodes and the walk fields (current, nullVisit, path, done, skipped, returned, results, badges): a bound scene takes the step's walk, an unbound scene shows the bare tree. Add a call-stack (OMIT frames/kept) right after it in every bound scene. Highlights and anchored callouts on the tree use rowId = the binary-tree's id and node ids (OMIT indices). Keep the bottom stack short, because the tree needs the height: at most one equation and a counter per scene, and in the answer scene only the result (plus a counter if the step lists one). Skip callouts in tree scenes: the narration carries the reasoning.
+- grid / graph / queue: when the trace's row is a grid ("grid") or a graph ("graph"), make a grid (or graph) the first element of every scene that shows data and OMIT everything on it (rows, cols, cells, legend, nodes, edges, and the search: current, visited, frontier, levels, checks): a bound scene takes the step's search, an unbound scene the starting grid or graph. Add a queue (OMIT items/dequeued/enqueued) in every bound scene whose step lists one, with levelLabel set to the story's unit for a level ("minute", "step", "rung"). Keep the bottom stack short: the queue, plus at most a counter or an equation; in the answer scene, the result and at most one more. Skip callouts in grid and graph scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -174,6 +175,29 @@ function describeStep(step: TraceStep, index: number): string {
     ];
     parts.push(walk.filter(Boolean).join("; "));
   }
+  if (step.cells) parts.push(`cells: ${JSON.stringify(step.cells)}`);
+  if (step.bfs) {
+    const b = step.bfs;
+    const ids = (list: readonly number[] | undefined) => `[${(list ?? []).join(", ")}]`;
+    parts.push(
+      [
+        b.current !== undefined ? `processing: #${b.current}` : "",
+        `seen: ${ids(b.visited)}`,
+        b.levels?.length ? `levels: ${b.levels.map((l) => `#${l.id}=${l.level}`).join(" ")}` : "",
+        b.checks?.length
+          ? `checks: ${b.checks.map((c) => `${c.to !== undefined ? `#${c.to}` : `off-grid ${JSON.stringify(c.dir)}`} ${c.result}`).join(", ")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  if (step.queue) {
+    const q = step.queue;
+    parts.push(
+      `queue (front→back): ${q.items.map((i) => `${i.label}@${i.level}`).join(" ") || "empty"}${q.dequeued ? ` | took ${q.dequeued.label}` : ""}${q.enqueued?.length ? ` | added ${q.enqueued.length}` : ""}`,
+    );
+  }
   if (step.stack)
     parts.push(
       `stack (bottom→top): ${
@@ -210,16 +234,20 @@ Complexity: ${problem.complexity.time} time, ${problem.complexity.space} space.
 ${
   trace.row.display === "list"
     ? "Nodes (use one linked-list; pointers and highlights refer to node ids), id: value"
-    : trace.row.display === "tree"
-      ? `Tree (use one binary-tree; highlights refer to node ids), id: value (children)\n${(
-          trace.tree?.nodes ?? []
-        )
-          .map(
-            (n) =>
-              `  #${n.id}: ${n.value} (left ${n.left === null ? "none" : `#${n.left}`}, right ${n.right === null ? "none" : `#${n.right}`})`,
-          )
-          .join("\n")}\nValues by id`
-      : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
+    : trace.row.display === "grid"
+      ? `Grid (use one grid), ${trace.grid?.rows}×${trace.grid?.cols}; cell id = row × ${trace.grid?.cols} + col. Legend: ${(trace.grid?.legend ?? []).map((k) => `${JSON.stringify(k.value)} = ${k.word}`).join(", ")}\nStarting cells by id`
+      : trace.row.display === "graph"
+        ? `Graph (use one graph), edges: ${(trace.graph?.edges ?? []).map(([a, b]) => `#${a}–#${b}`).join(", ")}\nNodes by id`
+        : trace.row.display === "tree"
+          ? `Tree (use one binary-tree; highlights refer to node ids), id: value (children)\n${(
+              trace.tree?.nodes ?? []
+            )
+              .map(
+                (n) =>
+                  `  #${n.id}: ${n.value} (left ${n.left === null ? "none" : `#${n.left}`}, right ${n.right === null ? "none" : `#${n.right}`})`,
+              )
+              .join("\n")}\nValues by id`
+          : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
 }
 ${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}${
     trace.secondRow
@@ -253,4 +281,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV9 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV10 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
