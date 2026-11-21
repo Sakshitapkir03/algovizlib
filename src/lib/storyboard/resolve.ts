@@ -491,6 +491,23 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             );
           return { ...el, heaps, slots };
         }
+        case "stack": {
+          if (el.items) return el;
+          if (step && !step.pile) return (noState(el, "items", "stack"), el);
+          const pile = step?.pile;
+          // An unbound scene (the intro) shows the stack empty.
+          if (!pile) return { ...el, items: [] };
+          return {
+            ...el,
+            items: pile.items,
+            order: el.order ?? pile.order,
+            pushed: pile.pushed,
+            popped: pile.popped,
+            links: pile.links,
+            answers: pile.answers,
+            text: pile.text,
+          };
+        }
         case "dp-table": {
           const dp = trace?.dp;
           const rows = el.rows ?? dp?.rows;

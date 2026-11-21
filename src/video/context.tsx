@@ -8,6 +8,7 @@ import type {
   GridLayout,
   HeapPanel,
   ListLayout,
+  PileLayout,
   Region,
   RowLayout,
   StackLayout,
@@ -35,6 +36,8 @@ export type SceneContextValue = {
   heapPanels?: HeapPanel[];
   /** A dp-table's geometry (and the story region above a 1D one), when the scene has one. */
   dp?: DpLayout;
+  /** A stack's column (and the room under its input row), when the scene has one. */
+  pile?: PileLayout;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

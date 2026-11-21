@@ -39,6 +39,11 @@ import sortingInsertionSort from "./sorting/insertion-sort.json";
 import sortingMergeSort from "./sorting/merge-sort.json";
 import sortingQuickSort from "./sorting/quick-sort.json";
 import sortingSelectionSort from "./sorting/selection-sort.json";
+import stackDailyTemperatures from "./stack/daily-temperatures.json";
+import stackDecodeString from "./stack/decode-string.json";
+import stackEvaluateReversePolishNotation from "./stack/evaluate-reverse-polish-notation.json";
+import stackLargestRectangleInHistogram from "./stack/largest-rectangle-in-histogram.json";
+import stackValidParentheses from "./stack/valid-parentheses.json";
 import treesDfsBinaryTreeMaximumPathSum from "./trees-dfs/binary-tree-maximum-path-sum.json";
 import treesDfsCountGoodNodesInBinaryTree from "./trees-dfs/count-good-nodes-in-binary-tree.json";
 import treesDfsMaximumDepthOfBinaryTree from "./trees-dfs/maximum-depth-of-binary-tree.json";
@@ -95,6 +100,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "sorting/merge-sort": loadStoryboard(sortingMergeSort),
   "sorting/quick-sort": loadStoryboard(sortingQuickSort),
   "sorting/selection-sort": loadStoryboard(sortingSelectionSort),
+  "stack/daily-temperatures": loadStoryboard(stackDailyTemperatures),
+  "stack/decode-string": loadStoryboard(stackDecodeString),
+  "stack/evaluate-reverse-polish-notation": loadStoryboard(stackEvaluateReversePolishNotation),
+  "stack/largest-rectangle-in-histogram": loadStoryboard(stackLargestRectangleInHistogram),
+  "stack/valid-parentheses": loadStoryboard(stackValidParentheses),
   "trees-dfs/binary-tree-maximum-path-sum": loadStoryboard(treesDfsBinaryTreeMaximumPathSum),
   "trees-dfs/count-good-nodes-in-binary-tree": loadStoryboard(treesDfsCountGoodNodesInBinaryTree),
   "trees-dfs/maximum-depth-of-binary-tree": loadStoryboard(treesDfsMaximumDepthOfBinaryTree),

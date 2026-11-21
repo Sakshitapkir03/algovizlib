@@ -1,0 +1,364 @@
+{
+  "id": "stack-decode-string",
+  "title": "Decode String: Following a Knitting Pattern's Repeats",
+  "concept": "Stack",
+  "category": "dsa",
+  "summary": "Each '[' saves the work so far and the repeat count; each ']' pops it and repeats the inner part.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A knitting pattern writes repeats as brackets: 3[x2[yz]]w means knit x, then yz twice, all of that three times, then w. A knitter notes where each repeat started.",
+    "mapping": [
+      {
+        "real": "A stitch",
+        "abstract": "A letter"
+      },
+      {
+        "real": "A repeat bracket with its count",
+        "abstract": "k[...]"
+      },
+      {
+        "real": "The note of work so far and the count, kept for later",
+        "abstract": "A stack frame"
+      },
+      {
+        "real": "The row knitted so far",
+        "abstract": "The current string"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "stack",
+    "recursion"
+  ],
+  "takeaway": {
+    "pattern": "Stack (nested structure)",
+    "summary": "On '[', push the text so far and the count, then start fresh. On ']', pop and set text = saved + inner × count. Nesting unwinds innermost first.",
+    "timeComplexity": "O(output length)",
+    "spaceComplexity": "O(nesting depth + output)",
+    "whenToUse": [
+      "Expanding nested repeats or groups",
+      "Anything that saves state on open and restores it on close"
+    ]
+  },
+  "trace": {
+    "problem": "stack/decode-string",
+    "args": [
+      "3[x2[yz]]w"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v13",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T23:07:41.479Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "pattern-text",
+      "narration": "A knitting pattern reads 3, open bracket, x, 2, open bracket, y, z, close, close, w. Repeats sit inside repeats. What's the full row?",
+      "caption": "3[x2[yz]]w: repeats inside repeats",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        }
+      ]
+    },
+    {
+      "id": "rescan",
+      "narration": "You could expand the innermost bracket and rescan the pattern again and again, but that rereads everything each time.",
+      "caption": "Expanding from the inside out by rescanning is slow",
+      "durationInFrames": 264,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        }
+      ]
+    },
+    {
+      "id": "open-3",
+      "narration": "Read once, left to right. At the first bracket, note what's knitted so far, nothing yet, with the count 3, and start fresh.",
+      "caption": "'[' after 3: note the work so far and the count",
+      "durationInFrames": 312,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "code",
+          "state": "active"
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        }
+      ]
+    },
+    {
+      "id": "open-2",
+      "narration": "After knitting x, another bracket opens. Note x with the count 2 on top, and start fresh again.",
+      "caption": "A bracket inside: note 'x' with the count 2",
+      "durationInFrames": 252,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "code",
+          "state": "active"
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        }
+      ]
+    },
+    {
+      "id": "close-2",
+      "narration": "Knit y and z. The first close bracket takes the top note: x, then yz twice, giving x y z y z.",
+      "caption": "']' pops 'x' ×2: x + yz twice = xyzyz",
+      "durationInFrames": 300,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "code",
+          "state": "active"
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        }
+      ]
+    },
+    {
+      "id": "close-3",
+      "narration": "The next close bracket takes the outer note: nothing before it, then x y z y z three times.",
+      "caption": "']' pops the outer note: that whole row three times",
+      "durationInFrames": 264,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "code",
+          "state": "active"
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "The last w is added, and the whole row is decoded: sixteen stitches.",
+      "caption": "Add the final w: the full 16-stitch row",
+      "durationInFrames": 192,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Decoded",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Each repeat note is a stack frame: open saves the text and count, close restores and repeats. Innermost repeats finish first.",
+      "caption": "Repeat notes are stack frames",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "code",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"
+          ]
+        },
+        {
+          "id": "notes",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "code",
+          "label": "repeat notes"
+        }
+      ]
+    }
+  ]
+}

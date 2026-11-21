@@ -7,6 +7,7 @@ import type {
   GridElement,
   DpTableElement,
   HeapElement,
+  StackElement,
   ItemRowElement,
   LinkedListElement,
   PointerElement,
@@ -134,6 +135,24 @@ export type DpLayout = {
   story?: { top: number; bottom: number };
 };
 
+/**
+ * Where a stack draws: a column on the right (items from the bottom up), and under the input row, room for resolved
+ * answers, the resolve arcs, and a built-text strip.
+ */
+export type PileLayout = {
+  left: number;
+  width: number;
+  top: number;
+  bottom: number;
+  itemHeight: number;
+  gap: number;
+  /** Under the input row (an item-row): the answers' row, the arcs' band, and the text strip. */
+  answersTop?: number;
+  arcsTop?: number;
+  arcsBottom?: number;
+  textTop?: number;
+};
+
 /** Where a call-stack draws: a column beside the tree, frames stacked from the bottom. */
 export type StackLayout = {
   left: number;
@@ -194,6 +213,7 @@ export type SceneLayout = {
   /** One panel per heap in a "heap" element. */
   heapPanels?: HeapPanel[];
   dp?: DpLayout;
+  pile?: PileLayout;
 };
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
@@ -235,6 +255,12 @@ export const sizes = {
   queueMarker: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.tag) + 8),
   /** Under the array: each cell's index (hidden on a phone-sized player). */
   heapIndex: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.heapNote) + 6),
+  /** A stack item. */
+  pileItem: (t: TextMetrics) => t.size(TEXT.stackItem) + 18,
+  /** Under the input row: resolved answers, the resolve arcs, and the text strip. */
+  pileAnswers: (t: TextMetrics) => t.size(TEXT.stackNote) + 12,
+  pileArcs: (t: TextMetrics) => 34 + t.size(TEXT.stackNote),
+  pileText: (t: TextMetrics) => t.size(TEXT.stackItem) + 22,
   /** A call-stack frame: one line of label and note. */
   stackFrame: (t: TextMetrics) => Math.max(t.size(TEXT.stackLabel), t.size(TEXT.stackNote)) + 18,
   /** A tree node's box: big enough for a two-digit negative value. */
@@ -851,6 +877,17 @@ function layoutDp(
   };
 }
 
+const PILE = { gap: 48, minWidth: 170, maxWidth: 330, minCard: 70 };
+
+/** The stack column's width: its widest item or title, within limits. */
+function stackColumnWidth(el: StackElement, t: TextMetrics): number {
+  const items = [...el.items, ...(el.popped ?? [])].map(
+    (i) => t.width(i.label, t.size(TEXT.stackItem), "mono") + 32,
+  );
+  const title = t.compact ? 0 : t.width(`${el.label} · ${el.order ?? ""}`, t.size(TEXT.stackTitleSmall)) + 8;
+  return Math.min(PILE.maxWidth, Math.max(PILE.minWidth, title, ...items));
+}
+
 export function layoutScene(elements: readonly Element[], text: TextMetrics = textMetrics()): SceneLayout {
   const t = text;
   const bottom = elements.filter((el) => bottomHeight(el, t) > 0);
@@ -935,6 +972,13 @@ function layoutWith(
 
   const heapElement = elements.find((el): el is HeapElement => el.type === "heap");
   const dpElement = elements.find((el): el is DpTableElement => el.type === "dp-table");
+  const pileElement = elements.find((el): el is StackElement => el.type === "stack");
+  // A stack takes a column on the right; the input moves left of it.
+  const pileWidth = pileElement ? stackColumnWidth(pileElement, t) : 0;
+  const pileLeft = VIDEO_WIDTH - SIDE_MARGIN - pileWidth;
+  const pileBelow = pileElement
+    ? sizes.pileAnswers(t) + sizes.pileArcs(t) + (pileElement.text ? sizes.pileText(t) : 0)
+    : 0;
   const rows = elements.filter((el): el is Row => el.type === "item-row" || el.type === "bar-row");
   const layouts: Record<string, RowLayout> = {};
   const hasCounts = elements.some((el) => el.type === "count-array");
@@ -961,7 +1005,9 @@ function layoutWith(
     const extra = groupStarts.size * GROUP_GAP;
     const [regionLeft, regionRight] = heap
       ? [HEAP_BARS.left, HEAP_BARS.right]
-      : [SIDE_MARGIN, VIDEO_WIDTH - SIDE_MARGIN];
+      : pileElement
+        ? [SIDE_MARGIN, pileLeft - PILE.gap]
+        : [SIDE_MARGIN, VIDEO_WIDTH - SIDE_MARGIN];
     const cardWidth = Math.min(maxWidth, (regionRight - regionLeft - GAP * (n - 1) - extra) / n);
     const total = n * cardWidth + GAP * (n - 1) + extra;
     const lefts: number[] = [];
@@ -1000,6 +1046,11 @@ function layoutWith(
       const bandTop = t.compact ? COMPACT_BAR_TOP : BAR_TOP;
       top = bandTop + strip;
       cardHeight = Math.min(bandTop + BAR_HEIGHT, lowest) - top;
+    } else if (single && pileElement && row.type === "item-row") {
+      // Beside a stack: the cards under the caption (tags above them), with room under them for resolved answers,
+      // the resolve arcs, and the text strip.
+      top = captionBottom(t) + sizes.tagRoom(t) + 4;
+      cardHeight = Math.max(PILE.minCard, Math.min(CARD_HEIGHT, lowest - top - pileBelow));
     } else if (single && (heapElement || dpElement)) {
       // With a heap or a table below, the input is a short strip of cards under the caption.
       cardHeight = HEAP_ROW_CARD;
@@ -1040,6 +1091,27 @@ function layoutWith(
       rightLimit: heap ? heapRegion.left - 10 : VIDEO_WIDTH - 16,
     };
   });
+  let pile: PileLayout | undefined;
+  if (pileElement) {
+    const row = Object.values(layouts).find((r) =>
+      elements.some((e) => e.id === r.rowId && e.type === "item-row"),
+    );
+    const answersTop = row ? row.top + row.cardHeight + 6 : undefined;
+    const arcsTop = answersTop !== undefined ? answersTop + sizes.pileAnswers(t) : undefined;
+    const arcsBottom = arcsTop !== undefined ? arcsTop + sizes.pileArcs(t) : undefined;
+    pile = {
+      left: pileLeft,
+      width: pileWidth,
+      top: captionBottom(t) + 8,
+      bottom: bottomTop - 16,
+      itemHeight: sizes.pileItem(t),
+      gap: 6,
+      answersTop,
+      arcsTop,
+      arcsBottom,
+      textTop: pileElement.text && arcsBottom !== undefined ? arcsBottom + 4 : undefined,
+    };
+  }
   let dp: DpLayout | undefined;
   let dpOverflow: number | undefined;
   if (dpElement) {
@@ -1071,6 +1143,7 @@ function layoutWith(
     heapOverflow,
     dp,
     dpOverflow,
+    pile,
   };
 }
 

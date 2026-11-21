@@ -40,6 +40,11 @@ export function BarRow({ element }: { element: BarRowElement }) {
     background: `repeating-linear-gradient(0deg, ${palette.info}55 0 6px, ${palette.info}33 6px 12px)`,
     border: `2px solid ${palette.info}`,
   };
+  // A covering rectangle (Largest Rectangle): diagonal hatching in the accent, so it isn't mistaken for water.
+  const coverStyle = {
+    background: `repeating-linear-gradient(135deg, ${palette.primary}55 0 6px, ${palette.primary}22 6px 12px)`,
+    border: `3px solid ${palette.primary}`,
+  };
   const p = enterProgress(frame, fps, reducedMotion);
   const fill = element.fill;
   const empty = new Set(element.empty ?? []);
@@ -153,13 +158,16 @@ export function BarRow({ element }: { element: BarRowElement }) {
         <div
           style={{
             position: "absolute",
-            left: layout.centers[fill.from],
-            width: layout.centers[fill.to] - layout.centers[fill.from],
+            // A container sits between two walls' centers; a covering rectangle spans the bars whole.
+            left: fill.cover ? layout.lefts[fill.from] : layout.centers[fill.from],
+            width: fill.cover
+              ? layout.lefts[fill.to] + layout.cardWidth - layout.lefts[fill.from]
+              : layout.centers[fill.to] - layout.centers[fill.from],
             top: baseline - fill.level * unitHeight,
             height: fill.level * unitHeight,
             borderRadius: 4,
             opacity: p,
-            ...waterStyle,
+            ...(fill.cover ? coverStyle : waterStyle),
           }}
         >
           <span
@@ -178,7 +186,7 @@ export function BarRow({ element }: { element: BarRowElement }) {
               borderRadius: 6,
             }}
           >
-            water
+            {fill.label ?? "water"}
           </span>
         </div>
       ) : null}

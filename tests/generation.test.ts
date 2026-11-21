@@ -193,7 +193,7 @@ describe("runGeneration", () => {
 
   it("skips problems that have no trace", async () => {
     const t = deps(fakeModel([]));
-    const summary = await runGeneration([target("stack/daily-temperatures")], OPTIONS, t.deps);
+    const summary = await runGeneration([target("intervals/meeting-rooms")], OPTIONS, t.deps);
     expect(summary.rows[0]).toMatchObject({ status: "skipped", requests: 0 });
     expect(summary.rows[0].detail).toMatch(/no trace/);
   });
@@ -355,6 +355,11 @@ describe("selectTargets", () => {
       "binary-search/search-in-rotated-sorted-array",
       "binary-search/koko-eating-bananas",
       "binary-search/median-of-two-sorted-arrays",
+      "stack/valid-parentheses",
+      "stack/evaluate-reverse-polish-notation",
+      "stack/daily-temperatures",
+      "stack/decode-string",
+      "stack/largest-rectangle-in-histogram",
       "linked-list/reverse-linked-list",
       "linked-list/merge-two-sorted-lists",
       "linked-list/remove-nth-node-from-end",
@@ -574,7 +579,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v12");
+    expect(currentPrompts.version).toBe("storyboard-v13");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

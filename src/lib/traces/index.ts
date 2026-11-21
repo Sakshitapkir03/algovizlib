@@ -3,6 +3,11 @@ import { coinChangeTrace } from "./dynamic-programming/coin-change";
 import { editDistanceTrace } from "./dynamic-programming/edit-distance";
 import { houseRobberTrace } from "./dynamic-programming/house-robber";
 import { longestCommonSubsequenceTrace } from "./dynamic-programming/longest-common-subsequence";
+import { dailyTemperaturesTrace } from "./stack/daily-temperatures";
+import { decodeStringTrace } from "./stack/decode-string";
+import { evaluateReversePolishNotationTrace } from "./stack/evaluate-reverse-polish-notation";
+import { largestRectangleInHistogramTrace } from "./stack/largest-rectangle-in-histogram";
+import { validParenthesesTrace } from "./stack/valid-parentheses";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -103,6 +108,11 @@ const definitions = [
   coinChangeTrace,
   longestCommonSubsequenceTrace,
   editDistanceTrace,
+  validParenthesesTrace,
+  dailyTemperaturesTrace,
+  evaluateReversePolishNotationTrace,
+  decodeStringTrace,
+  largestRectangleInHistogramTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

@@ -30,7 +30,8 @@ frontier spreading one level at a time, neighbor checks with the reason each is 
 each level begins), and all five Heap / Priority Queue problems (a tree and its backing array moving together as
 items sift up and down, size-k heaps, and two heaps keeping a running median), and all five Dynamic Programming problems (a table filling cell by cell
 with arrows from the cells it reads, a staircase and a street lined up with their tables, and the recursion tree a
-table replaces). The first is
+table replaces), and all five Stack problems (a stack column beside the input, monotonic stacks whose pops link each
+item to its answer, and the rectangle each popped bar resolves). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach

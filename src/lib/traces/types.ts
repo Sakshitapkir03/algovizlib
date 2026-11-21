@@ -42,7 +42,8 @@ export type TraceStep = {
   /** Items that form the answer (or the current hit, e.g. a found triplet). */
   found?: number[];
   /** Container between two bars, filled to `level` (bar-row only). */
-  fill?: { from: number; to: number; level: number };
+  /** `cover`: shade the bars from..to whole (a rectangle) rather than between their centers; `label` names it. */
+  fill?: { from: number; to: number; level: number; cover?: boolean; label?: string };
   /** Water standing on each bar so far (bar-row only). */
   water?: number[];
   /**
@@ -138,6 +139,29 @@ export type TraceStep = {
   climb?: { at: number; hops?: { from: number; to: number }[] };
   /** House Robber's street: the house being decided, and the best plan so far (houses taken and skipped). */
   houses?: { current?: number; taken: number[]; skipped: number[] };
+  /**
+   * A stack after this step (named `pile` so it doesn't clash with a recursion's call stack, `stack`). See
+   * `TracePile`.
+   */
+  pile?: TracePile;
+};
+
+/** A stack item: shown as `label`, from input position `ref` (if any), ordered by `key` in a monotonic stack. */
+export type TracePileItem = { label: string; ref?: number; key?: number };
+
+/**
+ * A stack, bottom to top, after a step: what the step pushed (on top) and popped (in pop order), the answers those
+ * pops resolved as links on the input row (`from` the popped item's position `to` the position that resolved it), every
+ * answer resolved so far (under the input), and text built so far (Decode String's current string).
+ */
+export type TracePile = {
+  items: TracePileItem[];
+  order?: "increasing" | "decreasing";
+  pushed?: number;
+  popped?: TracePileItem[];
+  links?: { from: number; to: number; label: string }[];
+  answers?: { index: number; label: string }[];
+  text?: { label: string; value: string };
 };
 
 /** A table cell, [row, column]. */
@@ -350,5 +374,14 @@ export function isHeap(kind: "min" | "max", items: readonly { key: number }[]): 
     if (i === 0) return true;
     const parent = items[(i - 1) >> 1];
     return kind === "min" ? parent.key <= item.key : parent.key >= item.key;
+  });
+}
+
+/** Whether a stack's items keep `order` by key, bottom to top (equal keys allowed). */
+export function keepsOrder(order: "increasing" | "decreasing", items: readonly { key?: number }[]): boolean {
+  return items.every((item, k) => {
+    const below = items[k - 1]?.key;
+    if (k === 0 || item.key === undefined || below === undefined) return true;
+    return order === "increasing" ? item.key >= below : item.key <= below;
   });
 }

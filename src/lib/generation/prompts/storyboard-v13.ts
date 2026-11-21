@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v12";
+export const PROMPT_VERSION = "storyboard-v13";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -60,6 +60,7 @@ ${ELEMENT_GUIDE}
 - grid / graph / queue: when the trace's row is a grid ("grid") or a graph ("graph"), make a grid (or graph) the first element of every scene that shows data and OMIT everything on it (rows, cols, cells, legend, nodes, edges, and the search: current, visited, frontier, levels, checks): a bound scene takes the step's search, an unbound scene the starting grid or graph. Add a queue (OMIT items/dequeued/enqueued) in every bound scene whose step lists one, with levelLabel set to the story's unit for a level ("minute", "step", "rung"). Keep the bottom stack short: the queue, plus at most a counter or an equation; in the answer scene, the result and at most one more. Skip callouts in grid and graph scenes.
 - heap: when steps list heaps, add a heap (OMIT heaps) in every bound scene; with two heaps give labels naming each half in the story. Leave it out of unbound scenes (it would show the final heaps). The input (the item-row, if the trace has a row) appears in intro scenes and in bound scenes whose step lists active items, marked with an "active" highlight (OMIT indices); don't add pointers to it, and leave it out of the answer scene. Keep the bottom stack short: at most one equation, counter, or freq-table per scene; in the answer scene, only the heap and the result. Skip callouts in heap scenes.
 - dp-table: when the trace has a table, add a dp-table (OMIT everything on it) to every scene that shows data; an unbound scene shows it empty. When the row is "stairs" or "houses", put a staircase or house-row (OMIT everything) first and the dp-table after it: they line up column by column. With coins (an item-row), mark the winning coin with an "active" highlight (OMIT indices). A step listing a tree walk with repeated calls (plain recursion) gets a scene with only a binary-tree (OMIT everything). Keep the bottom stack to at most one equation. For a one-row table, the answer scene holds the result; for a table with several rows, keep the last step's scene to the table and put the result (showsAnswer) in the closing scene, without the table. Skip callouts in table scenes.
+- stack: when steps list a stack, add a stack (set rowId to the input row's id, OMIT everything else) in every bound scene; an unbound scene shows it empty. Mark the item being read with an "active" highlight (OMIT indices) instead of pointers: the space under the row holds the resolve arcs and answers. A matched pair can use a "found" highlight. Keep the bottom stack to at most one equation or counter, and in the answer scene the result and at most a counter. Skip callouts in stack scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -177,6 +178,20 @@ function describeStep(step: TraceStep, index: number): string {
       w.repeats?.length ? `repeated calls: [${w.repeats.join(", ")}]` : "",
     ];
     parts.push(walk.filter(Boolean).join("; "));
+  }
+  if (step.pile) {
+    const p = step.pile;
+    parts.push(
+      [
+        `stack (bottom→top): [${p.items.map((i) => i.label).join(", ")}]${p.order ? ` (${p.order})` : ""}`,
+        p.popped?.length ? `popped ${p.popped.map((i) => i.label).join(", ")}` : "",
+        p.pushed ? `pushed ${p.pushed}` : "",
+        p.links?.length ? `resolved ${p.links.map((l) => `${l.from}→${l.to} "${l.label}"`).join(", ")}` : "",
+        p.text ? `${p.text.label}: "${p.text.value}"` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
   }
   if (step.table) {
     const t = step.table;
@@ -330,4 +345,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV12 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV13 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

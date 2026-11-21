@@ -457,6 +457,29 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: `A scene can show only one ${el.type}` });
           break;
         }
+        case "stack":
+          if (el.rowId) {
+            for (const [k, link] of (el.links ?? []).entries()) {
+              checkIndex(el.rowId, link.from, [...path, "links", k, "from"]);
+              checkIndex(el.rowId, link.to, [...path, "links", k, "to"]);
+            }
+            for (const [k, a] of (el.answers ?? []).entries())
+              checkIndex(el.rowId, a.index, [...path, "answers", k]);
+          } else if (el.links?.length || el.answers?.length)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "rowId"],
+              message: "links and answers need the input row's id",
+            });
+          if (el.pushed !== undefined && el.pushed > el.items.length)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "pushed"],
+              message: "pushed can't exceed the items",
+            });
+          if (scene.elements.filter((e) => e.type === "stack").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one stack" });
+          break;
         case "dp-table": {
           if (el.cells.length !== el.rows || el.cells.some((row) => row.length !== el.cols))
             ctx.addIssue({

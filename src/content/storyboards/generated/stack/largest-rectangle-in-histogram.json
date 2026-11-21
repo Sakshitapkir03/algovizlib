@@ -1,0 +1,326 @@
+{
+  "id": "stack-largest-rectangle-in-histogram",
+  "title": "Largest Rectangle in Histogram: The Widest Rooftop Banner",
+  "concept": "Stack",
+  "category": "dsa",
+  "summary": "An increasing stack of bars; each pop finds the widest rectangle at the popped bar's height.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Five buildings stand side by side with heights 2, 4, 3, 3, and 1. A rectangular banner must hang flat against them, no taller than the shortest building it covers. What's the biggest banner?",
+    "mapping": [
+      {
+        "real": "A building",
+        "abstract": "A bar"
+      },
+      {
+        "real": "The banner",
+        "abstract": "The rectangle"
+      },
+      {
+        "real": "Buildings still able to extend a banner to the right",
+        "abstract": "The increasing stack"
+      },
+      {
+        "real": "A shorter building cutting a banner off",
+        "abstract": "A pop"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "monotonic stack"
+  ],
+  "takeaway": {
+    "pattern": "Monotonic stack (increasing)",
+    "summary": "Keep bars on a stack in increasing height. A shorter bar pops taller ones; each popped bar's rectangle spans from the bar below it on the stack to the new bar. Track the best area.",
+    "timeComplexity": "O(n): each bar is pushed and popped once",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "How far each item extends before something smaller stops it",
+      "Largest rectangle or span problems"
+    ]
+  },
+  "trace": {
+    "problem": "stack/largest-rectangle-in-histogram",
+    "args": [
+      [
+        2,
+        4,
+        3,
+        3,
+        1
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v13",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T23:07:41.483Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "skyline",
+      "narration": "Five buildings stand in a row, heights 2, 4, 3, 3, and 1. A rectangular banner can't be taller than the shortest building it covers. What's the biggest banner?",
+      "caption": "Buildings 2, 4, 3, 3, 1: the biggest flat banner?",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        }
+      ]
+    },
+    {
+      "id": "every-span",
+      "narration": "Trying every span of buildings and its shortest one is quadratic. Instead, keep buildings whose banners can still grow on a stack, heights rising.",
+      "caption": "Trying every span of buildings is quadratic",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        }
+      ]
+    },
+    {
+      "id": "rising",
+      "narration": "Heights 2 and 4 rise, so both go on the stack: their banners can still stretch to the right.",
+      "caption": "2, then 4: heights rise, so both wait",
+      "durationInFrames": 264,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bars",
+          "state": "active"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        }
+      ]
+    },
+    {
+      "id": "first-pop",
+      "narration": "A 3 is shorter than the 4 on top, so the 4's banner can't go further: pop it. It covers just its own building: 4 times 1 is 4.",
+      "caption": "3 cuts off the 4: its banner is 4 × 1 = 4",
+      "durationInFrames": 384,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        },
+        {
+          "id": "area",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "best"
+        }
+      ]
+    },
+    {
+      "id": "equal",
+      "narration": "The next building is also 3. It pops the first 3, whose banner spans two buildings: 3 times 2 is 6, a new best.",
+      "caption": "The next 3 pops the first 3: 3 × 2 = 6",
+      "durationInFrames": 324,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        },
+        {
+          "id": "area",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "best"
+        }
+      ]
+    },
+    {
+      "id": "nine",
+      "narration": "The 1 cuts off the remaining 3. Its banner spans three buildings, from just past the 2: 3 times 3 is 9.",
+      "caption": "Height 1 pops the last 3: 3 × 3 = 9",
+      "durationInFrames": 300,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        },
+        {
+          "id": "area",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new best"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "best"
+        }
+      ]
+    },
+    {
+      "id": "eight",
+      "narration": "The 1 also pops the 2, whose banner spans four buildings: 8, not better than 9.",
+      "caption": "Then the 2 pops too: 2 × 4 = 8, not better",
+      "durationInFrames": 229,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        },
+        {
+          "id": "area",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not better"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "best"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "A final height of 0 flushes the last building. Every building was popped once, and the biggest banner covers 9.",
+      "caption": "Every building popped once: the biggest banner is 9",
+      "durationInFrames": 276,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Largest area",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Buildings are bars, and the rising stack tells each bar how far its rectangle reaches. Each bar is pushed and popped once: O(n).",
+      "caption": "Buildings are bars; the rising stack finds each span",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "bars",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": ""
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "bars",
+          "label": "still rising"
+        }
+      ]
+    }
+  ]
+}

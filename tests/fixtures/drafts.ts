@@ -86,6 +86,8 @@ export function buildDraft(problemKey: string): Draft {
     const last = index === trace.steps.length - 1;
     // Heap scenes mark the input with a highlight (no pointer), and the answer scene leaves the input out.
     const heapScene = step.heaps !== undefined;
+    // Stack scenes mark the input with a highlight too: pointers would sit where the resolve arcs go.
+    const pileScene = step.pile !== undefined;
     // A recursion-tree step (Climbing Stairs' plain recursion) shows only the tree.
     const recursion = step.tree !== undefined && trace.row.display !== "tree";
     const elements: ElementSource[] = recursion
@@ -93,7 +95,7 @@ export function buildDraft(problemKey: string): Draft {
       : heapScene && (last || !step.active)
         ? []
         : [...rows(), ...second()];
-    for (const name of heapScene ? [] : Object.keys(step.pointers)) {
+    for (const name of heapScene || pileScene ? [] : Object.keys(step.pointers)) {
       elements.push({
         id: `p-${name}`,
         type: "pointer",
@@ -146,10 +148,21 @@ export function buildDraft(problemKey: string): Draft {
     }
     if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
     if (step.heaps) elements.push({ id: "heaps", type: "heap", enterAt: 0 });
+    if (step.pile)
+      elements.push({
+        id: "stack",
+        type: "stack",
+        ...(trace.row.values.length ? { rowId: "row" } : {}),
+        label: "stack",
+        enterAt: 0,
+      } as ElementSource);
     if (step.queue)
       elements.push({ id: "queue", type: "queue", label: "queue", levelLabel: "level", enterAt: 0 });
     // A tree's last scene keeps its bottom stack short (the answer, and at most a count).
-    if (step.equation && !((rowType === "binary-tree" || step.queue || step.heaps || step.table) && last))
+    if (
+      step.equation &&
+      !((rowType === "binary-tree" || step.queue || step.heaps || step.table || step.pile) && last)
+    )
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });
     // The last step is where the answer is known: state it there (a real story does the same). A 2D table fills

@@ -1,0 +1,338 @@
+{
+  "id": "stack-daily-temperatures",
+  "title": "Daily Temperatures: Who's Still Waiting for a Warmer Day?",
+  "concept": "Stack",
+  "category": "dsa",
+  "summary": "Days waiting for a warmer one sit on a decreasing stack; each warmer day pops and answers them.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "monotonic stack"
+  ],
+  "takeaway": {
+    "pattern": "Monotonic stack (next greater element)",
+    "summary": "Keep the unanswered items on a stack in decreasing order. A bigger item pops every smaller one on top, and each pop is that item's answer.",
+    "timeComplexity": "O(n): each day is pushed and popped once",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Next greater or smaller element",
+      "Waiting for the first later item that beats each one"
+    ]
+  },
+  "trace": {
+    "problem": "stack/daily-temperatures",
+    "args": [
+      [
+        65,
+        70,
+        68,
+        66,
+        71,
+        64
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v13",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T23:07:41.475Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "forecast",
+      "narration": "A six-day forecast reads 65, 70, 68, 66, 71, and 64 degrees. For each day, how many days until a strictly warmer one?",
+      "caption": "For each day: how long until a warmer one?",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        }
+      ]
+    },
+    {
+      "id": "look-ahead",
+      "narration": "Looking ahead from each day separately checks the same later days again and again.",
+      "caption": "Scanning ahead from every day repeats the same looks",
+      "durationInFrames": 204,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        }
+      ]
+    },
+    {
+      "id": "first",
+      "narration": "Instead, keep the days still waiting on a stack. Day 0, 65 degrees, starts waiting.",
+      "caption": "Day 0 waits on the stack",
+      "durationInFrames": 216,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "today",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "days",
+          "state": "active"
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        }
+      ]
+    },
+    {
+      "id": "first-pop",
+      "narration": "Day 1 is 70, warmer than day 0 on top. Day 0's wait is over after 1 day: pop it. Day 1 waits now.",
+      "caption": "70 beats 65: day 0 waited 1 day",
+      "durationInFrames": 324,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "today",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "days",
+          "state": "active"
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        },
+        {
+          "id": "vs",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "warmer"
+        }
+      ]
+    },
+    {
+      "id": "cooling",
+      "narration": "68 and then 66 aren't warmer than the top, so they wait too. The stack only ever gets cooler toward the top.",
+      "caption": "68, then 66: cooler days pile up, still decreasing",
+      "durationInFrames": 300,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "today",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "days",
+          "state": "active"
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        },
+        {
+          "id": "vs",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not warmer"
+        }
+      ]
+    },
+    {
+      "id": "big-pop",
+      "narration": "Day 4 is 71, warmer than 66, 68, and 70. It pops all three, and each gets its wait: 1, 2, and 3 days.",
+      "caption": "71 answers three days at once: waits of 1, 2, and 3",
+      "durationInFrames": 324,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "today",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "days",
+          "state": "active"
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        },
+        {
+          "id": "vs",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "warmer"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Day 5, 64, just waits. The forecast ends with days 4 and 5 still waiting, so their answer is 0.",
+      "caption": "Days 4 and 5 never see a warmer day: 0",
+      "durationInFrames": 276,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Days to wait",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's a monotonic stack: unanswered days in decreasing order, each popped exactly once by its next warmer day. O(n) time.",
+      "caption": "A decreasing stack finds each next warmer day",
+      "durationInFrames": 276,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "waiting",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "days",
+          "label": "waiting"
+        }
+      ]
+    }
+  ]
+}

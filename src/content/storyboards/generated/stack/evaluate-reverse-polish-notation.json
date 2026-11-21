@@ -1,0 +1,366 @@
+{
+  "id": "stack-evaluate-reverse-polish-notation",
+  "title": "Evaluate Reverse Polish Notation: A Waiter's Order Spike",
+  "concept": "Stack",
+  "category": "dsa",
+  "summary": "Numbers go on the stack; each operator combines the top two and puts the result back.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A diner's order spike collects slips. Number slips are stuck on the spike; a combining slip pulls the top two off, works them out, and spikes one slip with the result.",
+    "mapping": [
+      {
+        "real": "A number slip",
+        "abstract": "An operand token"
+      },
+      {
+        "real": "A combining slip (+, −, ×, ÷)",
+        "abstract": "An operator token"
+      },
+      {
+        "real": "The spike, newest slip on top",
+        "abstract": "The stack"
+      },
+      {
+        "real": "The last slip left on the spike",
+        "abstract": "The value of the expression"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "stack",
+    "math"
+  ],
+  "takeaway": {
+    "pattern": "Stack (expression evaluation)",
+    "summary": "Push operands. An operator pops the right operand, then the left, and pushes the result. One value remains at the end.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Evaluating postfix expressions",
+      "Combining the two most recent values"
+    ]
+  },
+  "trace": {
+    "problem": "stack/evaluate-reverse-polish-notation",
+    "args": [
+      [
+        "2",
+        "9",
+        "3",
+        "-",
+        "*",
+        "4",
+        "+"
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v13",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T23:07:41.481Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "spike",
+      "narration": "A waiter's slips read 2, 9, 3, minus, times, 4, plus. Each operator works on the two values just before it. What's the total?",
+      "caption": "Slips: 2, 9, 3, −, ×, 4, +. What's the total?",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        }
+      ]
+    },
+    {
+      "id": "brackets",
+      "narration": "You could rewrite it with brackets first, but there's no need: the order of the slips already says what to do.",
+      "caption": "Adding brackets back first is extra work",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        }
+      ]
+    },
+    {
+      "id": "numbers",
+      "narration": "Number slips go on the spike: 2, then 9. They wait for an operator.",
+      "caption": "Number slips go on the spike and wait",
+      "durationInFrames": 204,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "slips",
+          "state": "active"
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        }
+      ]
+    },
+    {
+      "id": "minus",
+      "narration": "After 3 goes on, minus pulls the top two: 3, then 9. Nine minus three is 6, which goes back on the spike.",
+      "caption": "Minus takes 3 and 9 off the top: 9 − 3 = 6",
+      "durationInFrames": 312,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "slips",
+          "state": "active"
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        },
+        {
+          "id": "calc",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "times",
+      "narration": "Times pulls 6 and then 2: two times six is 12, back on the spike.",
+      "caption": "Times combines 2 and 6: 12",
+      "durationInFrames": 216,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "slips",
+          "state": "active"
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        },
+        {
+          "id": "calc",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "plus",
+      "narration": "4 goes on the spike, then plus pulls 4 and 12: sixteen.",
+      "caption": "4 goes on, then plus: 12 + 4 = 16",
+      "durationInFrames": 180,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "slips",
+          "state": "active"
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        },
+        {
+          "id": "calc",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Every slip is read and one value is left on the spike: the total is 16.",
+      "caption": "One slip is left on the spike: 16",
+      "durationInFrames": 229,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Total",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Slips are tokens and the spike is a stack: operands wait, and each operator combines the two most recent. One pass, O(n).",
+      "caption": "Slips are tokens; the spike is a stack",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "slips",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7"
+          ]
+        },
+        {
+          "id": "spike",
+          "enterAt": 0,
+          "type": "stack",
+          "rowId": "slips",
+          "label": "spike"
+        }
+      ]
+    }
+  ]
+}

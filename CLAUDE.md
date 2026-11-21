@@ -414,6 +414,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `dp-table`      | DP table (row or grid, headers): unfilled cells dashed, current ringed, read arrows (winner solid), answer cell ✓                                                     | canvas |
 | `staircase`     | Climbing Stairs: numbered steps over table cells, a climber, the +1 / +2 hops onto the step as arcs                                                                   | canvas |
 | `house-row`     | House Robber: houses over table cells with their cash, neighbors linked (shared alarm), ✓ take / ✕ skip plan                                                          | canvas |
+| `stack`         | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row                            | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -575,6 +576,22 @@ skip is neutral. The validator checks the table's shape and headers, every cell,
 option, and answer, and the climber/hops and the street's plan; an unbound table is empty or final, and no plan may
 take two neighbors (schema).
 
+**Stack** (the five home problems; Trapping Rain Water is cross-listed in with its video, Min Stack and Implement
+Queue using Stacks without) added step state `pile` (named so it doesn't clash with a recursion's `stack`): `items`
+bottom to top (each `{ label, ref?, key? }`: `ref` the input position, `key` what a monotonic stack orders by),
+`order` ("increasing" | "decreasing"), `pushed` (how many at the top this step pushed), `popped` (in pop order),
+`links` (answers the pops resolved, `{ from, to, label }` on the input row), `answers` (every one resolved so far),
+and `text` (Decode String's string so far). Traces drive a `Pile` (`traces/stack/shared.ts`). The `stack` primitive is
+separate from `call-stack` (the Trees videos' frames are pixel-identical before and after): a column on the right
+(the input row moves left of it), pushes drop in, pops lift out struck through, "top ▶" on the top item, the
+order in its title; under an item-row it draws the answers, the resolve arcs (dipping under the row, labeled "+3",
+"match"), and the text strip, so stack scenes mark the current input with an "active" highlight, not a pointer.
+The validator checks every field against the step, and that a stack labeled increasing or decreasing is (by key,
+bound or not; `keepsOrder` in `traces/types.ts`). An unbound stack is empty. Largest Rectangle shades each popped
+bar's rectangle with a bar-row `fill` that sets `cover` (whole bars, hatched in the accent) and a `label` (the area);
+without them a fill is the water container, as before. Tones: a warmer day found is positive and one that isn't
+neutral (Daily Temperatures); a new best area positive, a smaller one neutral.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -598,7 +615,8 @@ Trace = {
            tree?, stack?,                                         // trees (see "Trees (DFS)" above)
            cells?, bfs?, queue?,                                  // breadth-first search (see "Graphs (BFS)" above)
            heaps?,                                                // priority queues (see "Heap / Priority Queue" above)
-           table?, climb?, houses? }[],                           // dynamic programming (see "Dynamic Programming" above)
+           table?, climb?, houses?,                               // dynamic programming (see "Dynamic Programming" above)
+           pile? }[],                                             // stacks (see "Stack" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -626,7 +644,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -861,7 +879,9 @@ is a talent-show judge's two-seat shortlist, Top K Frequent a record shop's two-
 lockers nearest a courier depot, and Find Median a party host splitting arriving children into a younger and an older
 group. Dynamic Programming: Climbing Stairs, House Robber, and Coin Change are problem-native (the staircase, the
 street, the cashier, with their own numbers); Longest Common Subsequence is two bird-watchers' sighting logs, and Edit
-Distance a sign painter turning CART into ACT.
+Distance a sign painter turning CART into ACT. Stack: Daily Temperatures is problem-native (the forecast); Valid
+Parentheses is a packer shutting nested boxes with matching lids, Evaluate RPN a diner's order spike, Decode String a
+knitting pattern's repeat brackets, and Largest Rectangle the widest banner across a row of rooftops.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

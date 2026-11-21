@@ -32,6 +32,7 @@ import { SearchRange } from "./SearchRange";
 import { Segments } from "./Segments";
 import { SortedRegion } from "./SortedRegion";
 import { SplitTree } from "./SplitTree";
+import { Stack } from "./Stack";
 import { Staircase } from "./Staircase";
 import { Window } from "./Window";
 
@@ -68,6 +69,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   "dp-table": { component: DpTable, slot: "canvas", layer: 0 },
   staircase: { component: Staircase, slot: "canvas", layer: -1 },
   "house-row": { component: HouseRow, slot: "canvas", layer: 0 },
+  // A stack's column on the right, plus its resolve arcs, answers, and text strip under the input row.
+  stack: { component: Stack, slot: "canvas", layer: 1.5 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

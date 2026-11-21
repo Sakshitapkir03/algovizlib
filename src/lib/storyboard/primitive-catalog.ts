@@ -64,6 +64,8 @@ export const primitiveCatalog: Record<ElementType, string> = {
     "Climbing Stairs' staircase: numbered steps rising left to right (step i sits over table cell i), a climber on the step being counted, and the 1-step and 2-step hops that land there drawn as arcs. Omit everything to take it from the trace and the step; an unbound scene shows the bare staircase. Put it before the dp-table.",
   "house-row":
     'House Robber\'s street: houses with their cash, neighbors linked by a shared alarm, the house being decided ringed, and the best plan so far marked "✓ take" or "✕ skip". House i sits over table cell i. Omit everything to take it from the trace and the step; an unbound scene shows the bare street. Put it before the dp-table.',
+  stack:
+    'A stack as a column beside the input, bottom to top, "top" marked: pushes drop in, pops lift out; a monotonic stack is labeled "increasing" or "decreasing". When a pop resolves an answer, an arc on the input row links the popped item to the item that resolved it ("+3", "match"), and resolved answers stay under the input; text built so far shows in a strip ("building: xyz"). Set `rowId` to the input row; omit everything else to take the step\'s stack (an unbound scene shows it empty). Use it in every bound scene of a stack trace.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

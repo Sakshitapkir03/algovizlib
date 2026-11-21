@@ -1,7 +1,8 @@
-import { finalPositions, isHeap, runTrace, type Trace, type TraceStep } from "@/lib/traces";
+import { finalPositions, isHeap, keepsOrder, runTrace, type Trace, type TraceStep } from "@/lib/traces";
 
 import type {
   TraceHeap,
+  TracePile,
   TraceBfs,
   TraceLinks,
   TraceQueueItem,
@@ -58,6 +59,14 @@ const ranges = (groups: readonly { from: number; to: number }[]) =>
 /** Engine-independent checks: every equation's arithmetic must be true, and every drawn heap must be a heap. */
 function validateArithmetic(scene: Scene, issues: ValidationIssue[]) {
   for (const el of scene.elements) {
+    if (el.type === "stack" && el.order && !keepsOrder(el.order, el.items))
+      issues.push({
+        sceneId: scene.id,
+        elementId: el.id,
+        field: "items",
+        message: `The stack is labeled ${el.order} but its items aren't (bottom to top)`,
+        actual: el.items.map((i) => i.key ?? i.label).join(", "),
+      });
     if (el.type === "heap")
       el.heaps.forEach((heap, h) => {
         if (!isHeap(heap.kind, heap.items))
@@ -189,6 +198,21 @@ function tableFields(t: Partial<Omit<DpTableElement, "type" | "id" | "enterAt">>
     chosen: JSON.stringify([...(t.chosen ?? [])].sort((a, b) => a - b)),
     choice: JSON.stringify(t.choice ?? null),
     answer: JSON.stringify(t.answer ?? null),
+  };
+}
+
+/** A stack's state field by field, in a canonical text form (empty and missing read the same). */
+function pileFields(p: Partial<TracePile>): Record<string, string> {
+  const items = (list?: readonly { label: string; ref?: number; key?: number }[]) =>
+    JSON.stringify((list ?? []).map((i) => ({ label: i.label, ref: i.ref ?? null, key: i.key ?? null })));
+  return {
+    items: items(p.items),
+    order: JSON.stringify(p.order ?? null),
+    pushed: JSON.stringify(p.pushed ?? 0),
+    popped: items(p.popped),
+    links: JSON.stringify((p.links ?? []).map((l) => ({ from: l.from, to: l.to, label: l.label }))),
+    answers: JSON.stringify((p.answers ?? []).map((a) => ({ index: a.index, label: a.label }))),
+    text: JSON.stringify(p.text ? { label: p.text.label, value: p.text.value } : null),
   };
 }
 
@@ -493,6 +517,16 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               "Without a traceStep, the table is empty (or the final table); omit cells/current/reads/chosen to take them from the trace",
               el.id,
               "cells",
+            );
+        }
+        if (el.type === "stack") {
+          const drawn = pileFields(el);
+          const empty = pileFields({ order: el.order });
+          if (Object.keys(drawn).some((k) => drawn[k] !== empty[k]))
+            push(
+              "Without a traceStep, the stack is empty; omit items to take it from the trace",
+              el.id,
+              "items",
             );
         }
         if (el.type === "staircase" && (el.at !== undefined || el.hops?.length))
@@ -1031,6 +1065,22 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           for (const field of Object.keys(expected))
             if (drawn[field] !== expected[field])
               push(`The ${el.type}'s ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "stack": {
+          if (!step.pile) {
+            push(`Trace step ${stepIndex} has no stack`, el.id, "items");
+            break;
+          }
+          if (el.rowId) checkRow(el.rowId);
+          const expected = pileFields(step.pile);
+          const drawn = pileFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The stack's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
                 actual: drawn[field],
               });

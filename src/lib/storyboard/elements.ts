@@ -18,7 +18,7 @@ import { z } from "zod";
  * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`;
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
- * "house-row"; priority queues add "heap" (built
+ * "house-row"; stacks add "stack" (apart from "call-stack"); priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -68,7 +68,15 @@ export const barSchema = z.object({
 
 const moveSchema = z.object({ from: index, to: index });
 
-const fillSchema = z.object({ from: index, to: index, level: z.number().finite().nonnegative() });
+const fillSchema = z.object({
+  from: index,
+  to: index,
+  level: z.number().finite().nonnegative(),
+  /** Cover the bars from..to whole (a rectangle over them) instead of the gap between their centers (a container). */
+  cover: z.boolean().optional(),
+  /** The fill's word (default "water"). */
+  label: z.string().max(10).optional(),
+});
 
 const barRowShape = {
   ...baseElement,
@@ -696,6 +704,42 @@ export const houseRowSourceSchema = z.object({
   skipped: houseRowShape.skipped.removeDefault().optional(),
 });
 
+const pileItemSchema = z.object({
+  label: z.string().trim().min(1).max(8),
+  /** The input position it came from. */
+  ref: index.optional(),
+  /** What a monotonic stack orders by. */
+  key: z.number().finite().optional(),
+});
+
+const stackShape = {
+  ...baseElement,
+  type: z.literal("stack"),
+  /** The input row (item-row or bar-row) that links, answers, and refs point into. */
+  rowId: nonEmpty.optional(),
+  /** Bottom to top. */
+  items: z.array(pileItemSchema).max(10),
+  /** A monotonic stack's order (labeled, and checked). */
+  order: z.enum(["increasing", "decreasing"]).optional(),
+  /** How many items at the top were pushed in this scene (they drop in). */
+  pushed: z.number().int().nonnegative().optional(),
+  /** Popped in this scene, in pop order (they lift out). */
+  popped: z.array(pileItemSchema).optional(),
+  /** Answers these pops resolved: arcs on the input row from the popped item's position to the one that resolved it. */
+  links: z.array(z.object({ from: index, to: index, label: z.string().trim().min(1).max(8) })).optional(),
+  /** Every answer resolved so far, under the input. */
+  answers: z.array(z.object({ index, label: z.string().trim().min(1).max(6) })).optional(),
+  /** Text built so far, in a strip under the input ("building: xyzyz"). */
+  text: z.object({ label: z.string().trim().min(1).max(10), value: z.string().max(20) }).optional(),
+  label: nonEmpty.max(16).default("stack"),
+};
+export const stackElementSchema = z.object(stackShape);
+export const stackSourceSchema = z.object({
+  ...stackShape,
+  /** Omit items (and everything with them) to take the bound step's stack; an unbound scene shows it empty. */
+  items: stackShape.items.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -874,6 +918,7 @@ export const elementSchemas = [
   dpTableElementSchema,
   staircaseElementSchema,
   houseRowElementSchema,
+  stackElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -909,6 +954,7 @@ export const elementSourceSchemas = [
   dpTableSourceSchema,
   staircaseSourceSchema,
   houseRowSourceSchema,
+  stackSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -955,6 +1001,7 @@ export type HeapState = z.infer<typeof heapStateSchema>;
 export type DpTableElement = ElementOf<"dp-table">;
 export type StaircaseElement = ElementOf<"staircase">;
 export type HouseRowElement = ElementOf<"house-row">;
+export type StackElement = ElementOf<"stack">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

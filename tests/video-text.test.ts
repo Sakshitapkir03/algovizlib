@@ -9,6 +9,7 @@ import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
 import { dpProblems } from "./fixtures/dp-fit";
+import { stackProblems } from "./fixtures/stack-fit";
 import { heapProblems } from "./fixtures/heap-fit";
 import { searchProblems } from "./fixtures/search-fit";
 import { treeProblems } from "./fixtures/tree-fit";
@@ -78,9 +79,20 @@ describe("video text at phone width", () => {
         "sorted-region",
         "staircase",
         "split-tree",
+        "stack",
         "window",
       ].sort(),
     );
+  });
+
+  it("stacks fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        stackProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+      ),
+    );
+    expect(problems).toEqual([]);
   });
 
   it("DP tables and their stories fit at full size too", () => {
@@ -332,6 +344,9 @@ describe("video text at phone width", () => {
             break;
           case "dp-table":
             for (const problem of dpProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "stack":
+            for (const problem of stackProblems(scene.elements, phone)) fail(problem);
             break;
           case "grid":
           case "graph":

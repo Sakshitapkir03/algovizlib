@@ -117,4 +117,6 @@ export const TEXT = {
   dpLabel: 14,
   houseCash: 22,
   stepNumber: 18,
+  stackItem: 22,
+  stackTitleSmall: 15,
 } as const;
