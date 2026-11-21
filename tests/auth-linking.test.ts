@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   decideOAuthSignIn,
+  createVerificationMemo,
   githubEmailVerified,
   googleEmailVerified,
+  provesEmail,
   SIGN_IN_ERRORS,
   type LinkingInput,
 } from "@/lib/auth/linking";
@@ -138,5 +140,29 @@ describe("what the adapter stores", () => {
       { email: "ada@example.com" },
       { userId: "u1", type: "oauth", provider: "github", providerAccountId: "42" },
     ]);
+  });
+});
+
+describe("marking an account's email verified from a provider", () => {
+  const base = { userEmail: "ada@example.com", userEmailVerified: false, providerEmail: "Ada@Example.com" };
+  it("only when the provider verified that same address and the account isn't verified yet", () => {
+    expect(provesEmail({ ...base, providerEmailVerified: true })).toBe(true);
+    expect(provesEmail({ ...base, providerEmailVerified: false })).toBe(false);
+    expect(provesEmail({ ...base, providerEmailVerified: true, userEmailVerified: true })).toBe(false);
+    expect(provesEmail({ ...base, providerEmailVerified: true, providerEmail: "other@example.com" })).toBe(
+      false,
+    );
+    expect(provesEmail({ ...base, providerEmailVerified: true, userEmail: null })).toBe(false);
+  });
+
+  it("carries the sign-in check (Google's raw email_verified) to the link event once, and forgets old entries", () => {
+    let now = 0;
+    const memo = createVerificationMemo(() => now, 1000);
+    memo.remember("google", "123", "ada@example.com", true);
+    expect(memo.take("google", "123")).toMatchObject({ verified: true, email: "ada@example.com" });
+    expect(memo.take("google", "123")).toBeUndefined();
+    memo.remember("google", "456", "b@example.com", true);
+    now = 2000;
+    expect(memo.take("google", "456")).toBeUndefined();
   });
 });

@@ -39,6 +39,48 @@ export function decideOAuthSignIn(input: LinkingInput): LinkingDecision {
   return { allow: true, reason: "new-user" };
 }
 
+/**
+ * Whether a GitHub or Google sign-in proves the account's email: the provider verified that same address. Used when
+ * a provider account is linked (a new user, or a verified match) and on every returning sign-in, so an account whose
+ * email was never marked verified gets fixed the next time its owner signs in.
+ */
+export function provesEmail(input: {
+  userEmail: string | null;
+  userEmailVerified: boolean;
+  providerEmail: string | null;
+  providerEmailVerified: boolean;
+}): boolean {
+  return (
+    !input.userEmailVerified &&
+    input.providerEmailVerified &&
+    input.userEmail !== null &&
+    input.providerEmail !== null &&
+    input.userEmail.toLowerCase() === input.providerEmail.toLowerCase()
+  );
+}
+
+/**
+ * Carries the `signIn` callback's verification result to the `linkAccount` event of the same request: Auth.js
+ * gives the event only the normalized profile (no Google `email_verified`), so it can't check again itself.
+ */
+export function createVerificationMemo(now: () => number = Date.now, ttlMs = 5 * 60_000) {
+  const entries = new Map<string, { verified: boolean; email: string | null; at: number }>();
+  const key = (provider: string, id: string) => `${provider}:${id}`;
+  return {
+    remember(provider: string, id: string, email: string | null, verified: boolean) {
+      for (const [k, v] of entries) if (now() - v.at > ttlMs) entries.delete(k);
+      entries.set(key(provider, id), { verified, email, at: now() });
+    },
+    /** Read once: the entry is removed. */
+    take(provider: string, id: string) {
+      const k = key(provider, id);
+      const entry = entries.get(k);
+      entries.delete(k);
+      return entry && now() - entry.at <= ttlMs ? entry : undefined;
+    },
+  };
+}
+
 /** What the login page says for each refusal (`/login?error=<code>`), plus Auth.js's own error codes. */
 export const SIGN_IN_ERRORS: Record<string, string> = {
   "account-exists":

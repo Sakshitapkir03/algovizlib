@@ -11,7 +11,13 @@ import Google from "next-auth/providers/google";
 import { storageAdapter } from "@/lib/auth/adapter";
 import { authDeps, clientIp } from "@/lib/auth/deps";
 import { emailPasswordEnabled, oauthProviders } from "@/lib/auth/flags";
-import { decideOAuthSignIn, githubEmailVerified, googleEmailVerified } from "@/lib/auth/linking";
+import {
+  createVerificationMemo,
+  decideOAuthSignIn,
+  githubEmailVerified,
+  googleEmailVerified,
+  provesEmail,
+} from "@/lib/auth/linking";
 import { authorizeCredentials } from "@/lib/auth/service";
 import { createPrismaAuthStore } from "@/lib/auth/store";
 import { db } from "@/lib/db";
@@ -27,6 +33,8 @@ class RateLimited extends CredentialsSignin {
 }
 
 const SESSION_COOKIES = ["__Secure-authjs.session-token", "authjs.session-token"];
+
+const verificationMemo = createVerificationMemo();
 
 /** The signed-in user behind the request's session cookie: an id, "invalid" if it was signed out, or null. */
 async function sessionFromCookie(): Promise<string | "invalid" | null> {
@@ -96,11 +104,25 @@ function config(): NextAuthConfig {
         const email = (profile?.email ?? user.email)?.toLowerCase() ?? null;
         const linked = await store.findAccount(account.provider, account.providerAccountId);
         const session = linked ? null : await sessionFromCookie();
+        // Here `profile` is the provider's raw profile (Google's `email_verified` is only available here).
+        const verified = email
+          ? await providerEmailVerified(account.provider, account.access_token, profile, email)
+          : false;
+        if (linked) {
+          // Returning: fix an account whose email this provider proves but that was never marked verified.
+          const owner = await store.findUserById(linked.userId);
+          if (
+            owner &&
+            provesEmail({
+              userEmail: owner.email,
+              userEmailVerified: owner.emailVerified !== null,
+              providerEmail: email,
+              providerEmailVerified: verified,
+            })
+          )
+            await store.markEmailVerified(owner.id, new Date());
+        } else verificationMemo.remember(account.provider, account.providerAccountId, email, verified);
         const needsEmailCheck = !linked && session === null;
-        const verified =
-          needsEmailCheck && email
-            ? await providerEmailVerified(account.provider, account.access_token, profile, email)
-            : false;
         const existing = needsEmailCheck && email ? await store.findUserByEmail(email) : null;
         const decision = decideOAuthSignIn({
           linkedUserId: linked?.userId ?? null,
@@ -135,11 +157,18 @@ function config(): NextAuthConfig {
       },
     },
     events: {
-      // A first GitHub or Google sign-in only gets this far with a provider-verified email (see `signIn`).
-      async linkAccount({ user, account, profile }) {
-        const email = profile?.email?.toLowerCase();
-        if (!user.id || !email || user.email?.toLowerCase() !== email) return;
-        if (await providerEmailVerified(account.provider, account.access_token, profile, email))
+      // A new link: mark the email verified if the provider proved it (checked in `signIn`, this same request).
+      async linkAccount({ user, account }) {
+        const checked = verificationMemo.take(account.provider, account.providerAccountId);
+        if (!user.id || !checked) return;
+        if (
+          provesEmail({
+            userEmail: user.email ?? null,
+            userEmailVerified: "emailVerified" in user && Boolean(user.emailVerified),
+            providerEmail: checked.email,
+            providerEmailVerified: checked.verified,
+          })
+        )
           await store.markEmailVerified(user.id, new Date());
       },
     },
