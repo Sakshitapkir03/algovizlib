@@ -803,8 +803,12 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 
 ## Gotchas
 
-- **Prisma 7** generates its client into `src/generated/prisma` (gitignored) on `pnpm install` (`postinstall`) with
-  the `prisma-client` generator and the `pg` driver adapter (`lib/db.ts`). Import from `@/generated/prisma/client`.
+- **Prisma 7** generates its client into `src/generated/prisma` (gitignored) with the `prisma-client` generator and
+  the `pg` driver adapter (`lib/db.ts`: plain TCP to Neon's pooled URL from Node functions; `@prisma/adapter-neon` is
+  only needed on the Edge runtime). **`pnpm build` runs `prisma generate` itself**: `postinstall` alone isn't
+  enough, because when Vercel restores `node_modules` from its build cache and the lockfile is unchanged, pnpm skips
+  every install script (that's why deploy 4a6ad59 failed with "Can't resolve '@/generated/prisma/client'"). Generating
+  needs no database, so builds without `DATABASE_URL` (previews) work. Import from `@/generated/prisma/client`.
   `prisma.config.ts` loads `.env.local` (the CLI doesn't). Prisma's install scripts are allowed in
   `pnpm-workspace.yaml` (`allowBuilds`). Auth.js and Prisma packages are pinned to exact versions.
 - **Auth forms submit through `startTransition`, not `<form action>`** (`useFieldValidation().submitWith`): React
