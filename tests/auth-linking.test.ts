@@ -1,3 +1,4 @@
+import type { Adapter } from "next-auth/adapters";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -108,5 +109,34 @@ describe("provider email verification", () => {
     expect(googleEmailVerified({ email_verified: false })).toBe(false);
     expect(googleEmailVerified({ email_verified: "true" })).toBe(false);
     expect(googleEmailVerified(undefined)).toBe(false);
+  });
+});
+
+describe("what the adapter stores", () => {
+  it("lowercases emails and keeps no provider tokens", async () => {
+    const { storageAdapter } = await import("@/lib/auth/adapter");
+    const calls: Record<string, unknown>[] = [];
+    const base = {
+      getUserByEmail: async (email: string) => (calls.push({ email }), null),
+      createUser: async (user: Record<string, unknown>) => (calls.push(user), user),
+      linkAccount: async (account: Record<string, unknown>) => void calls.push(account),
+    };
+    const adapter = storageAdapter(base as unknown as Adapter);
+    await adapter.getUserByEmail!("Ada@Example.COM");
+    await adapter.linkAccount!({
+      userId: "u1",
+      type: "oauth",
+      provider: "github",
+      providerAccountId: "42",
+      access_token: "gho_secret",
+      refresh_token: "r",
+      id_token: "i",
+      scope: "read:user user:email",
+      token_type: "bearer",
+    });
+    expect(calls).toEqual([
+      { email: "ada@example.com" },
+      { userId: "u1", type: "oauth", provider: "github", providerAccountId: "42" },
+    ]);
   });
 });

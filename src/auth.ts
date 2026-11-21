@@ -3,12 +3,12 @@ import "server-only";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { cookies } from "next/headers";
 import NextAuth, { CredentialsSignin, type NextAuthConfig } from "next-auth";
-import type { Adapter } from "next-auth/adapters";
 import { decode } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 
+import { storageAdapter } from "@/lib/auth/adapter";
 import { authDeps, clientIp } from "@/lib/auth/deps";
 import { emailPasswordEnabled, oauthProviders } from "@/lib/auth/flags";
 import { decideOAuthSignIn, githubEmailVerified, googleEmailVerified } from "@/lib/auth/linking";
@@ -27,15 +27,6 @@ class RateLimited extends CredentialsSignin {
 }
 
 const SESSION_COOKIES = ["__Secure-authjs.session-token", "authjs.session-token"];
-
-/** Emails are stored lowercased, so GitHub's "Me@Example.com" and a registered "me@example.com" are one user. */
-function lowercasingAdapter(base: Adapter): Adapter {
-  return {
-    ...base,
-    getUserByEmail: (email) => base.getUserByEmail!(email.toLowerCase()),
-    createUser: (user) => base.createUser!({ ...user, email: user.email.toLowerCase() }),
-  };
-}
 
 /** The signed-in user behind the request's session cookie: an id, "invalid" if it was signed out, or null. */
 async function sessionFromCookie(): Promise<string | "invalid" | null> {
@@ -88,7 +79,7 @@ function config(): NextAuthConfig {
   const store = createPrismaAuthStore(prisma);
 
   return {
-    adapter: lowercasingAdapter(PrismaAdapter(prisma)),
+    adapter: storageAdapter(PrismaAdapter(prisma)),
     session: { strategy: "jwt" },
     providers,
     pages: { signIn: "/login", error: "/login" },

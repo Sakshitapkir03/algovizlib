@@ -51,11 +51,17 @@ export function LoginForm({ options }: { options: SignInOptions }) {
       title="Sign in"
       description="Sync your progress and pick up videos where you left off, on any device. Signing in is optional."
       footer={
-        options.emailPassword && (
-          <p>
-            New here? <TextLink href="/register">Create an account</TextLink>
+        <>
+          {options.emailPassword && (
+            <p>
+              New here? <TextLink href="/register">Create an account</TextLink>
+            </p>
+          )}
+          <p className="text-xs">
+            Signing in saves your progress to an account. See the{" "}
+            <TextLink href="/privacy">privacy policy</TextLink> and <TextLink href="/terms">terms</TextLink>.
           </p>
-        )
+        </>
       }
     >
       <FormMessage state={banner} />

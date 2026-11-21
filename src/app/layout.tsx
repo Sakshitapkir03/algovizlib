@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 
 import { AccountProvider } from "@/components/account/account-provider";
 import { VerifyBanner } from "@/components/account/verify-banner";
@@ -63,6 +64,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     ElevenLabs
                   </a>
                 </span>
+                <nav aria-label="Legal" className="mt-2 flex justify-center gap-3 font-mono">
+                  <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                    privacy
+                  </Link>
+                  <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+                    terms
+                  </Link>
+                </nav>
               </footer>
             </TooltipProvider>
           </AccountProvider>

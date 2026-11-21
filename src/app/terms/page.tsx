@@ -1,0 +1,82 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+import { LegalPage, LegalSection, Mail } from "@/components/site/legal-page";
+
+export const metadata: Metadata = {
+  title: "Terms",
+  description: "The terms for using algovizlib.",
+};
+
+/** Update with any change below, in the same commit. */
+const EFFECTIVE = "2026-11-21";
+
+export default function TermsPage() {
+  return (
+    <LegalPage
+      slug="terms"
+      title="Terms of use"
+      effective={EFFECTIVE}
+      summary={
+        <p>
+          algovizlib is a free, non-commercial site for learning algorithms. By using it you agree to these
+          terms. They&apos;re short on purpose.
+        </p>
+      }
+    >
+      <LegalSection title="Using the site">
+        <p>
+          You can use everything without an account. Signing in (with GitHub or Google) only saves your
+          progress across devices. Keep your GitHub or Google account secure: whoever can sign in to it can
+          see your progress here.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Fair use">
+        <p>Please don&apos;t:</p>
+        <ul>
+          <li>try to access other people&apos;s accounts or data, or get around the site&apos;s security;</li>
+          <li>overload the site, for example with automated sign-in attempts or heavy scraping;</li>
+          <li>use the site to break the law.</li>
+        </ul>
+        <p>We may block access or remove an account that does these things.</p>
+      </LegalSection>
+
+      <LegalSection title="Content">
+        <p>
+          Problem statements, hints, explanations, and videos are written for algovizlib, and you&apos;re
+          welcome to use them for your own learning. Well-known problem names belong to their usual sources,
+          and links to other sites (such as LeetCode) lead to services with their own terms. Narration is
+          voiced by ElevenLabs.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="No guarantees">
+        <p>
+          Every example and animated step is checked against reference solutions, but the site is provided as
+          is, without warranties: it may contain mistakes, change, or be unavailable at times. To the extent
+          the law allows, algovizlib isn&apos;t liable for losses from using it.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Ending">
+        <p>
+          You can stop using the site at any time, and ask for your account to be deleted by emailing <Mail />
+          . We may change or shut down the site; if accounts are affected, you can still ask for your data to
+          be deleted.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Changes and contact">
+        <p>
+          If these terms change, we&apos;ll update them here and change the effective date. How we handle your
+          data is in the{" "}
+          <Link href="/privacy" className="text-primary underline underline-offset-4">
+            privacy policy
+          </Link>
+          . Questions: <Mail />.
+        </p>
+      </LegalSection>
+    </LegalPage>
+  );
+}

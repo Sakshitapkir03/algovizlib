@@ -42,6 +42,7 @@ src/
     dsa/load.ts              loadPattern/loadProblem: resolve URL slugs or notFound()
     system-design/page.tsx   coming soon + planned topics
     login, register, forgot-password, reset-password, verify-email/   auth pages (static shells, client forms)
+    privacy/, terms/         privacy policy and terms of use (keep accurate; see "Accounts")
     account/, me/            account settings; My progress (both read the session/progress in the browser)
     api/auth/[...nextauth]/  Auth.js;  api/progress (GET, POST one change, sendBeacon) + api/progress/merge
   components/
@@ -273,8 +274,15 @@ Signing in is optional; guests can use everything. Auth.js v5 (**pinned to `5.0.
   provider account signs in; a valid session linking from `/account` is allowed (a session that was signed out is
   refused); otherwise the provider must say the email is verified (Google `email_verified`; GitHub `/user/emails`'
   `verified`), and an existing account with that email is linked only if its email is verified too. Refusals go to
-  `/login?error=account-exists | unverified-provider-email | session-expired` with a clear message. Emails are
-  lowercased everywhere (the adapter is wrapped).
+  `/login?error=account-exists | unverified-provider-email | session-expired` with a clear message. The adapter is
+  wrapped (`lib/auth/adapter.ts`): emails are lowercased, and a linked `Account` keeps only provider, account id,
+  and type, never the provider's access/refresh/ID tokens (nothing calls GitHub or Google after sign-in).
+- **Privacy and terms** (`/privacy`, `/terms`, linked from the footer and the sign-in page; layout in
+  `components/site/legal-page.tsx`) describe exactly what the code does: what's stored, cookies, rate-limit counts,
+  providers (Vercel, Neon, GitHub/Google), pre-generated narration, deletion by email. **Any change to sign-in,
+  stored data, providers, or narration must update them and their effective date in the same commit** (e.g.
+  turning on email + password: mention hashed passwords and Resend). Google's OAuth branding uses
+  `/privacy` and `/terms`.
 - **Rate limits** (`lib/auth/rate-limit.ts`, fixed windows in the `RateLimit` table, shared by every instance): login
   30/15 min per IP and 10/15 min per email; register 5/h per IP and 3/h per email; forgot 10/15 min per IP and 3/h
   per email; reset and verify per IP; resend and change-password per user; progress writes 300/min per user.
