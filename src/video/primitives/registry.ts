@@ -14,6 +14,7 @@ import { HeapTree } from "./HeapTree";
 import { HeldValue } from "./HeldValue";
 import { Highlight } from "./Highlight";
 import { ItemRow } from "./ItemRow";
+import { LinkedList } from "./LinkedList";
 import { MergeBuffer } from "./MergeBuffer";
 import { NumberLine } from "./NumberLine";
 import { Partition } from "./Partition";
@@ -43,6 +44,8 @@ export type PrimitiveDefinition<K extends ElementType> = {
 export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } = {
   "item-row": { component: ItemRow, slot: "canvas", layer: 0 },
   "bar-row": { component: BarRow, slot: "canvas", layer: 0 },
+  // Nodes and arrows; highlights ring the nodes and pointers sit above them.
+  "linked-list": { component: LinkedList, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

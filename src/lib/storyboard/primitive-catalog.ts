@@ -32,7 +32,7 @@ export const primitiveCatalog: Record<ElementType, string> = {
   partition:
     'Quick sort\'s partition: a "◆ pivot" tag above the pivot bar, a dashed boundary with smaller values to its left, and bars outside the range being partitioned dimmed. Set `rowId`; omit `pivot`/`boundary`/`from`/`to`. Only use it when the step lists a pivot.',
   "heap-tree":
-    "The same array drawn as a binary tree beside the bars (children of i at 2i + 1 and 2i + 2); nodes past the heap are faded, and the parent/child being compared are marked and swap with the bars. Omit `values`/`heapSize`/`compare`/`moves` to take them from the step (or the trace's row in an unbound scene). Use it with a bar-row in every heap scene.",
+    "The same array drawn as a binary tree beside the bars (children of i at 2i + 1 and 2i + 2); nodes past the heap are faded, and the parent/child being compared are marked and swap with the bars. Omit `values`/`heapSize`/`compare`/`moves` to take them from the step (or the trace's row in an unbound scene). Use it with a bar-row in every heap scene. When the step lists a `heap` (a min-heap of list heads, Merge K Sorted Lists), it draws that heap beside the linked-list instead: omit `values` too, and leave it out once the heap is empty.",
   counter:
     'A running total with a label (e.g. "inversions") and the amount this step added ("+3"). Set `label`; omit `value`/`delta` to take the step\'s count. Only use it when the step lists a count.',
   window:
@@ -46,6 +46,8 @@ export const primitiveCatalog: Record<ElementType, string> = {
   "number-line":
     'Binary search on the answer: every candidate answer (e.g. speeds 1–13) as a tick, those ruled out dashed with ✕, those known to work solid with ✓, the ones still possible plain, and the candidate just tested (mid) marked. Set `label` (e.g. "speed"); omit `min`/`max`/`low`/`high`/`mid`. Only use it when the step lists candidate answers.',
   cut: 'A divider through a row of cards marking how many values sit on its left, with the left side shaded (Median of Two Sorted Arrays: one cut per list). Set `rowId`; omit `at`, and it slides from where the previous bound scene left it. For the second list, give that item-row `traceRow: "second"` and its own id. Only use it when the step lists cuts.',
+  "linked-list":
+    'Linked lists as node boxes with an arrow from each node to its `next` (curved when it points backward or to another lane) and a "null" end; a dummy node is dashed. Several lists share one element as lanes (two input lists and the merged list; three lists and the merged one), and nodes slide between lanes and slots as the algorithm moves them. In a bound scene a rewired link visibly detaches (the old arrow ghosts away) and reattaches. Omit `nodes` (and `rewired`/`fromPlaces`) to take the step\'s list; an unbound scene shows the list as the trace starts. Optional `laneLabels` name the lanes in the story (e.g. ["queue A", "queue B", "boarding"]). Pointers and highlights on it use `rowId` = its id and node ids as indices: put pointers `placement: "above"` and bind them (a pointer the step doesn\'t list is at null; leave it out). Use exactly one per scene, first, in every scene that shows the list.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

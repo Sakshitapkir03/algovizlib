@@ -1,0 +1,436 @@
+{
+  "id": "linked-list-merge-two-sorted-lists",
+  "title": "Merge Two Sorted Lists: Two Boarding Queues, One Gate",
+  "concept": "Linked List",
+  "category": "dsa",
+  "summary": "Link the smaller front node each time; a dummy node makes the first link like every other.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Two queues of passengers, each in boarding-number order, merge at one gate, where the lower number always boards next.",
+    "mapping": [
+      {
+        "real": "A passenger with a boarding number",
+        "abstract": "A node"
+      },
+      {
+        "real": "The front of each queue",
+        "abstract": "The heads a and b"
+      },
+      {
+        "real": "The last passenger through the gate",
+        "abstract": "tail"
+      },
+      {
+        "real": "The gate's empty starting spot",
+        "abstract": "The dummy node"
+      }
+    ]
+  },
+  "tags": [
+    "linked-list",
+    "merge",
+    "sorted"
+  ],
+  "takeaway": {
+    "pattern": "Merge with a dummy node",
+    "summary": "Start tail at a dummy node, link the smaller head after it, and advance. When one list runs out, one link attaches the rest of the other. The answer is dummy.next.",
+    "timeComplexity": "O(n + m)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Combining two sorted lists into one",
+      "Building a new list where the first node would otherwise be a special case"
+    ]
+  },
+  "trace": {
+    "problem": "linked-list/merge-two-sorted-lists",
+    "args": [
+      [
+        2,
+        5,
+        8
+      ],
+      [
+        1,
+        5,
+        6,
+        10
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v8",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T17:59:08.466Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "gate",
+      "narration": "Queue A holds boarding numbers 2, 5, and 8. Queue B holds 1, 5, 6, and 10. They merge at one gate, and the lower number always boards next.",
+      "caption": "Two queues, sorted by boarding number, one gate",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "queue A",
+            "queue B",
+            "boarded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reshuffle",
+      "narration": "You could pull everyone out and sort them again, but both queues are already in order. Only the two people at the front can be next.",
+      "caption": "Lining everyone up again from scratch is wasted work",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "queue A",
+            "queue B",
+            "boarded"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dummy",
+      "narration": "Put a placeholder at the gate, the dummy node, and let tail mark the end of the boarded line. Now every passenger joins the same way.",
+      "caption": "A placeholder starts the line; tail marks the end",
+      "durationInFrames": 348,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "queue A",
+            "queue B",
+            "boarded"
+          ]
+        },
+        {
+          "id": "p-a",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "a",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "a"
+        },
+        {
+          "id": "p-b",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "b",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "b"
+        },
+        {
+          "id": "p-tail",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "tail",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "tail"
+        }
+      ]
+    },
+    {
+      "id": "take-1",
+      "narration": "Compare the fronts: 2 against 1. Passenger 1 boards, linked after tail, and tail moves onto them.",
+      "caption": "2 against 1: passenger 1 boards",
+      "durationInFrames": 240,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "queue A",
+            "queue B",
+            "boarded"
+          ]
+        },
+        {
+          "id": "p-a",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "a",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "a"
+        },
+        {
+          "id": "p-b",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "b",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "b"
+        },
+        {
+          "id": "p-tail",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "tail",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "tail"
+        },
+        {
+          "id": "active",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "compare",
+          "enterAt": 0.15,
+          "type": "equation",
+          "unit": "",
+          "verdict": "1 boards"
+        }
+      ]
+    },
+    {
+      "id": "take-2",
+      "narration": "Now 2 against 5. Passenger 2 boards, and the link from 1 swings over to them.",
+      "caption": "2 against 5: passenger 2 boards",
+      "durationInFrames": 229,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "queue A",
+            "queue B",
+            "boarded"
+          ]
+        },
+        {
+          "id": "p-a",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "a",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "a"
+        },
+        {
+          "id": "p-b",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "b",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "b"
+        },
+        {
+          "id": "p-tail",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "tail",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "tail"
+        },
+        {
+          "id": "active",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "compare",
+          "enterAt": 0.15,
+          "type": "equation",
+          "unit": "",
+          "verdict": "2 boards"
+        }
+      ]
+    },
+    {
+      "id": "tie",
+      "narration": "Both fronts hold 5. Queue A's passenger goes first, so equal numbers keep their order.",
+      "caption": "5 and 5: queue A's passenger goes first",
+      "durationInFrames": 216,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "queue A",
+            "queue B",
+            "boarded"
+          ]
+        },
+        {
+          "id": "p-a",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "a",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "a"
+        },
+        {
+          "id": "p-b",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "b",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "b"
+        },
+        {
+          "id": "p-tail",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "tail",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "tail"
+        },
+        {
+          "id": "active",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "compare",
+          "enterAt": 0.15,
+          "type": "equation",
+          "unit": "",
+          "verdict": "A first"
+        }
+      ]
+    },
+    {
+      "id": "rest",
+      "narration": "A few boardings later, queue A is empty. One link attaches the rest of queue B. The merged line starts after the placeholder.",
+      "caption": "Queue A is empty: the rest of B follows in one link",
+      "durationInFrames": 312,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "queue A",
+            "queue B",
+            "boarded"
+          ]
+        },
+        {
+          "id": "p-head",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "head",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "head"
+        },
+        {
+          "id": "p-tail",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "tail",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "tail"
+        },
+        {
+          "id": "active",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Boarding order",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Passengers are nodes, the fronts are a and b, and the placeholder is a dummy node. Each node is linked once: O(n + m) time, O(1) extra space.",
+      "caption": "Passengers are nodes; the placeholder is the dummy",
+      "durationInFrames": 372,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "list a",
+            "list b",
+            "merged"
+          ]
+        },
+        {
+          "id": "p-head",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "head",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "head"
+        },
+        {
+          "id": "p-tail",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "tail",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "tail"
+        }
+      ]
+    }
+  ]
+}

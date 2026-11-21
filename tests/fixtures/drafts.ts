@@ -18,17 +18,20 @@ export function traceFor(problemKey: string): { trace: Trace; args: unknown[] } 
 export function buildDraft(problemKey: string): Draft {
   const def = getTraceDefinition(problemKey)!;
   const { trace } = traceFor(problemKey);
-  const rowType = trace.row.display === "bars" ? "bar-row" : "item-row";
+  const rowType =
+    trace.row.display === "bars" ? "bar-row" : trace.row.display === "list" ? "linked-list" : "item-row";
   const row = (): ElementSource =>
-    rowType === "bar-row"
-      ? { id: "row", type: "bar-row", unit: "", enterAt: 0 }
-      : {
-          id: "row",
-          type: "item-row",
-          unit: "",
-          enterAt: 0,
-          labels: trace.row.values.map((_, i) => `item ${i}`),
-        };
+    rowType === "linked-list"
+      ? { id: "row", type: "linked-list", enterAt: 0 }
+      : rowType === "bar-row"
+        ? { id: "row", type: "bar-row", unit: "", enterAt: 0 }
+        : {
+            id: "row",
+            type: "item-row",
+            unit: "",
+            enterAt: 0,
+            labels: trace.row.values.map((_, i) => `item ${i}`),
+          };
 
   const second = (): ElementSource[] =>
     trace.secondRow
@@ -55,7 +58,7 @@ export function buildDraft(problemKey: string): Draft {
         label: name,
         binds: name,
         enterAt: 0,
-        placement: "below",
+        placement: rowType === "linked-list" ? "above" : "below",
         tone: "primary",
       });
     }
@@ -74,7 +77,10 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "buffer", type: "merge-buffer", rowId: "row", label: "merged", enterAt: 0 });
     if (step.pivot !== undefined)
       elements.push({ id: "partition", type: "partition", rowId: "row", label: "pivot", enterAt: 0 });
-    if (step.heapSize !== undefined) elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
+    if (step.heapSize !== undefined || (step.heap && step.heap.length > 0))
+      elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
+    if (step.rejected && rowType === "linked-list")
+      elements.push({ id: "rejected", type: "highlight", rowId: "row", state: "rejected", enterAt: 0 });
     if (step.counter) elements.push({ id: "count", type: "counter", label: "inversions", enterAt: 0 });
     if (step.window) elements.push({ id: "window", type: "window", rowId: "row", label: "sum", enterAt: 0 });
     if (step.freq) elements.push({ id: "freq", type: "freq-table", label: "in window", enterAt: 0 });

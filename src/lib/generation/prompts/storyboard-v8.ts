@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v7";
+export const PROMPT_VERSION = "storyboard-v8";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -55,6 +55,7 @@ ${ELEMENT_GUIDE}
 - segments / split-tree / merge-buffer / partition / counter: only in scenes whose step lists groups / a split tree / a buffer / a pivot / a count; OMIT their state fields. heap-tree: in every scene of a heap trace that shows the bars (bound or not); OMIT its state fields, and anchor callouts to the bars rather than floating them over the tree.
 - window / freq-table / deque: only in scenes whose step lists a window / counts / a deque; OMIT their state fields (from/to/value, entries/active, indices/output/popped). Give the window a short label for its value ("sum", "length"); its edges slide on their own between bound scenes.
 - search-range / number-line / cut: only in scenes whose step lists a search range / candidate answers / cuts; OMIT their state fields (from/to/mid/sorted, min/max/low/high/mid, at). A search range's bracket shrinks on its own between bound scenes; give an empty range a label for the gap ("insert here"). With two lists, add one cut per item-row, and give the second list's item-row traceRow: "second".
+- linked-list: when the trace's row is a list ("list"), make it the first element of every scene that shows data, and OMIT nodes/rewired/fromPlaces (a bound scene takes the step's list, an unbound scene the starting list). Rewired links and moving nodes animate on their own. Give laneLabels that name each lane in your analogy. Put pointers on it with placement: "above" and rowId set to the linked-list's id, bound to the step's pointer names; a pointer the step doesn't list is null, so leave it out. Highlights on it use node ids (OMIT indices). Skip callouts in list scenes: the narration carries the reasoning. With a heap of list heads (step lists a heap), add a heap-tree in those scenes (OMIT values) and drop it once the heap is empty.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -137,6 +138,26 @@ function describeStep(step: TraceStep, index: number): string {
     parts.push(
       `tally: ${step.counts.keys.map((k, i) => `${k}:${step.counts!.counts[i]}`).join(" ")}${step.counts.active !== undefined ? ` (changed: ${step.counts.keys[step.counts.active]})` : ""}`,
     );
+  if (step.links) {
+    // Each lane left to right, following slots: "#4 dummy → #0 …".
+    const lanes = new Map<number, typeof step.links.nodes>();
+    for (const node of [...step.links.nodes].sort((a, b) => a.slot - b.slot))
+      lanes.set(node.lane, [...(lanes.get(node.lane) ?? []), node]);
+    parts.push(
+      `lanes: ${[...lanes.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(
+          ([lane, nodes]) =>
+            `${lane}: ${nodes.map((n) => `#${n.id}(${n.value})→${n.next === null ? "null" : `#${n.next}`}`).join(" ")}`,
+        )
+        .join(" ; ")}`,
+    );
+    if (step.links.rewired?.length)
+      parts.push(
+        `rewired: ${step.links.rewired.map((r) => `#${r.node} ${r.from === null ? "null" : `#${r.from}`}⇒${r.to === null ? "null" : `#${r.to}`}`).join(", ")}`,
+      );
+  }
+  if (step.heap) parts.push(`heap: [${step.heap.join(", ")}]`);
   return `${parts.join(" | ")}\n   ${step.note}`;
 }
 
@@ -159,7 +180,11 @@ Complexity: ${problem.complexity.time} time, ${problem.complexity.space} space.
 # exampleSource for this problem: "${input.exampleSource}"
 
 # Trace
-Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value
+${
+  trace.row.display === "list"
+    ? "Nodes (use one linked-list; pointers and highlights refer to node ids), id: value"
+    : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
+}
 ${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}${
     trace.secondRow
       ? `\nSecond list (a second item-row with traceRow: "second"), index: value\n${trace.secondRow.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}`
@@ -192,4 +217,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV7 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV8 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

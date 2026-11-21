@@ -23,21 +23,34 @@ export function Pointer({ element }: { element: PointerElement }) {
 
   const to = layout.centers[element.index];
   const from = layout.centers[element.fromIndex ?? element.index];
+  // Rows whose positions sit at different heights (a linked list's lanes) give each position its own top.
+  const topOf = (i: number) => layout.tops?.[i] ?? layout.top;
   // Slide between items; under reduced motion, jump straight to the target.
   const travel = reducedMotion
     ? 1
     : spring({ frame: frame - 6, fps, config: { damping: 18, stiffness: 90, mass: 0.8 } });
   const x = interpolate(travel, [0, 1], [from, to]);
+  const rowTop = interpolate(
+    travel,
+    [0, 1],
+    [topOf(element.fromIndex ?? element.index), topOf(element.index)],
+  );
   const opacity = element.fromIndex === undefined ? enterProgress(frame, fps, reducedMotion) : 1;
 
   const color = element.tone === "primary" ? palette.primary : palette.secondary;
   const textColor = element.tone === "primary" ? palette.primaryText : palette.secondaryText;
   const below = element.placement === "below";
-  // Pointers on the same position stack: the first keeps the arrow, the rest hang under it as pills.
-  const level = below ? pointerLevel(element, elements) : 0;
+  // Pointers on the same position stack: the first keeps the arrow, the rest hang under it (or, above a linked
+  // list, rise over it) as pills.
+  const level = below || layout.tops ? pointerLevel(element, elements) : 0;
+  const pointerTop = layout.tops ? rowTop + layout.cardHeight + 8 : layout.pointerTop;
   const top = below
-    ? layout.pointerTop + (level > 0 ? ARROW + labelHeight + 6 + (level - 1) * sizes.stackedPointer(text) : 0)
-    : layout.top - 8 - ARROW - labelHeight;
+    ? pointerTop + (level > 0 ? ARROW + labelHeight + 6 + (level - 1) * sizes.stackedPointer(text) : 0)
+    : rowTop -
+      8 -
+      ARROW -
+      labelHeight -
+      (level > 0 ? 6 + (level - 1) * sizes.stackedPointer(text) + labelHeight : 0);
 
   const arrow = (
     <div
@@ -86,7 +99,7 @@ export function Pointer({ element }: { element: PointerElement }) {
       }}
     >
       {level > 0 ? null : below ? arrow : label}
-      {below ? label : arrow}
+      {below ? label : level > 0 ? label : arrow}
     </div>
   );
 }

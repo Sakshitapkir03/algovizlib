@@ -1,0 +1,361 @@
+{
+  "id": "linked-list-remove-nth-node-from-end",
+  "title": "Remove the Nth Node From the End: A Spotter Two Floats Ahead",
+  "concept": "Linked List",
+  "category": "dsa",
+  "summary": "Keep a fixed gap between two pointers, and the back one stops right before the node to remove.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A parade of floats 10, 20, 30, 40, and 50 must drop the second float from the end, but nobody knows how long the parade is.",
+    "mapping": [
+      {
+        "real": "A float",
+        "abstract": "A node"
+      },
+      {
+        "real": "You, walking along the parade",
+        "abstract": "slow"
+      },
+      {
+        "real": "A spotter walking ahead",
+        "abstract": "fast"
+      },
+      {
+        "real": "A marshal at the start line",
+        "abstract": "The dummy node"
+      }
+    ]
+  },
+  "tags": [
+    "linked-list",
+    "two-pointers"
+  ],
+  "takeaway": {
+    "pattern": "Two pointers with a fixed gap",
+    "summary": "Start both at a dummy node, move fast n + 1 ahead, then walk both until fast passes the end. slow is then right before the nth node from the end: skip it with one link.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Anything measured from the end of a list in one pass",
+      "Removing a node when it might be the head"
+    ]
+  },
+  "trace": {
+    "problem": "linked-list/remove-nth-node-from-end",
+    "args": [
+      [
+        10,
+        20,
+        30,
+        40,
+        50
+      ],
+      2
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v8",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T17:59:08.828Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "parade",
+      "narration": "The parade has floats 10 through 50, and the second float from the end has to be pulled out. Nobody knows how long the parade is.",
+      "caption": "Drop the second float from the end of the parade",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "two-walks",
+      "narration": "You could walk the whole parade to count it, then walk again to the right float. A spotter lets you do it in one walk.",
+      "caption": "Counting every float first means walking it twice",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "marshal",
+      "narration": "Add a marshal in front of the first float, the dummy node. You and the spotter both start there, so even the first float could be removed the same way.",
+      "caption": "A marshal at the start line; you and the spotter stand there",
+      "durationInFrames": 396,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "you",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "spotter",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "fast"
+        }
+      ]
+    },
+    {
+      "id": "gap",
+      "narration": "The spotter walks n plus 1, so three floats ahead. That gap never changes from here on.",
+      "caption": "The spotter walks 2 + 1 = 3 floats ahead",
+      "durationInFrames": 240,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "you",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "spotter",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "fast"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.2,
+          "type": "equation",
+          "unit": "",
+          "verdict": "gap"
+        }
+      ]
+    },
+    {
+      "id": "walk",
+      "narration": "Now you walk together, one float at a time, still three apart.",
+      "caption": "Walk together: you at 10, the spotter at 40",
+      "durationInFrames": 180,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "you",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "spotter",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "fast"
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "narration": "When the spotter walks past the last float, you're at float 30, right before the one to remove.",
+      "caption": "The spotter is past the end: you're just before float 40",
+      "durationInFrames": 252,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "you",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        }
+      ]
+    },
+    {
+      "id": "unlink",
+      "narration": "Float 30 now leads straight to 50. Nothing leads to float 40 any more, so it's out of the parade.",
+      "caption": "Float 30 now leads straight to 50",
+      "durationInFrames": 276,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "you",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "The parade starts after the marshal: 10, 20, 30, 50.",
+      "caption": "The parade: 10, 20, 30, 50",
+      "durationInFrames": 156,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "parade",
+            "pulled out"
+          ]
+        },
+        {
+          "id": "p-head",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "head",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "head"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Parade",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Floats are nodes, you are slow, and the spotter is fast. A gap of n plus 1 from a dummy node finds the node before the target in one pass: O(n) time, O(1) space.",
+      "caption": "You are slow, the spotter is fast: a fixed gap of n + 1",
+      "durationInFrames": 444,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "list",
+            "removed"
+          ]
+        },
+        {
+          "id": "p-head",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "head",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "head"
+        },
+        {
+          "id": "rejected",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        }
+      ]
+    }
+  ]
+}

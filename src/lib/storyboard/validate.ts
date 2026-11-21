@@ -1,6 +1,8 @@
 import { finalPositions, runTrace, type Trace, type TraceStep } from "@/lib/traces";
 
-import type { ComparisonOp, Element, EquationElement } from "./elements";
+import type { TraceLinks } from "@/lib/traces";
+
+import type { ComparisonOp, Element, EquationElement, LinkedListElement } from "./elements";
 import type { ValidationIssue, ValidationResult } from "./issues";
 import { applyOperator } from "./resolve";
 import type { Scene, Storyboard } from "./schema";
@@ -121,8 +123,29 @@ function checkEquation(
 function rowValues(el: Element): readonly (number | string)[] | undefined {
   if (el.type === "item-row") return el.items.map((i) => i.value);
   if (el.type === "bar-row") return el.bars.map((b) => b.value);
+  // Pointers and highlights on a list refer to nodes by id, so the "row" is the values in id order.
+  if (el.type === "linked-list") return [...el.nodes].sort((a, b) => a.id - b.id).map((n) => n.value);
   return undefined;
 }
+
+/** A list's nodes in a canonical form (id order, every field present), for comparing with a trace step. */
+const canonicalNodes = (nodes: LinkedListElement["nodes"] | TraceLinks["nodes"]) =>
+  [...nodes]
+    .sort((a, b) => a.id - b.id)
+    .map((n) => ({
+      id: n.id,
+      value: n.value,
+      next: n.next,
+      lane: n.lane,
+      slot: n.slot,
+      dummy: n.dummy === true,
+    }));
+
+/** "10→20 20→∅ … (lane:slot)", for readable issues. */
+const showNodes = (nodes: LinkedListElement["nodes"] | TraceLinks["nodes"]) =>
+  canonicalNodes(nodes)
+    .map((n) => `#${n.id} ${n.value}→${n.next === null ? "null" : `#${n.next}`} @${n.lane}:${n.slot}`)
+    .join(", ");
 
 function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: ValidationIssue[]) {
   const covered = new Set<number>();
@@ -216,6 +239,25 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
       for (const el of scene.elements) {
         if (el.type === "pointer" && el.binds) {
           push(`Pointer bound to "${el.binds}" needs the scene to set traceStep`, el.id, "binds");
+        }
+        // An unbound list is the list as the trace starts or as it ends (the intro, or a recap).
+        if (el.type === "linked-list") {
+          const withLinks = trace.steps.filter((s) => s.links);
+          const first = withLinks[0]?.links;
+          const last = withLinks.at(-1)?.links;
+          const drawn = JSON.stringify(canonicalNodes(el.nodes));
+          const ok = [first, last].some(
+            (links) => links && JSON.stringify(canonicalNodes(links.nodes)) === drawn,
+          );
+          if (!ok)
+            push(
+              "Without a traceStep, the list must be drawn as the trace starts (or ends); omit nodes to take it from the trace",
+              el.id,
+              "nodes",
+              { expected: first ? showNodes(first.nodes) : "none", actual: showNodes(el.nodes) },
+            );
+          if (el.rewired?.length)
+            push("Links only rewire in a scene bound to a trace step", el.id, "rewired");
         }
       }
       continue;
@@ -434,6 +476,26 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           break;
         }
         case "heap-tree": {
+          if (step.heap) {
+            // A list trace's heap (Merge K's current heads).
+            if (!sameList(el.values, step.heap))
+              push(`The heap doesn't match trace step ${stepIndex}`, el.id, "values", {
+                expected: list(step.heap),
+                actual: list(el.values),
+              });
+            if (el.heapSize !== step.heap.length)
+              push(`Heap size doesn't match trace step ${stepIndex}`, el.id, "heapSize", {
+                expected: String(step.heap.length),
+                actual: String(el.heapSize),
+              });
+            if (el.compare || el.moves?.length)
+              push(
+                `Trace step ${stepIndex} doesn't compare or move heap nodes; omit compare/moves`,
+                el.id,
+                "compare",
+              );
+            break;
+          }
           if (!sameList(el.values, expectedValues))
             push(`The heap must show the array as it is after trace step ${stepIndex}`, el.id, "values", {
               expected: list(expectedValues),
@@ -628,6 +690,40 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
                 expected: String(before),
                 actual: String(el.fromAt),
               });
+          }
+          break;
+        }
+        case "linked-list": {
+          const expected = step.links;
+          if (!expected) {
+            push(`Trace step ${stepIndex} has no linked list`, el.id, "nodes");
+            break;
+          }
+          if (JSON.stringify(canonicalNodes(el.nodes)) !== JSON.stringify(canonicalNodes(expected.nodes)))
+            push(`The list's nodes and links don't match trace step ${stepIndex}`, el.id, "nodes", {
+              expected: showNodes(expected.nodes),
+              actual: showNodes(el.nodes),
+            });
+          if (el.rewired && !sameJson(el.rewired, expected.rewired ?? []))
+            push(`Rewired links don't match trace step ${stepIndex}`, el.id, "rewired", {
+              expected: JSON.stringify(expected.rewired ?? []),
+              actual: JSON.stringify(el.rewired),
+            });
+          if (el.fromPlaces) {
+            const before = new Map(previous?.links?.nodes.map((n) => [n.id, n]));
+            for (const place of el.fromPlaces) {
+              const old = before.get(place.id);
+              if (!old || old.lane !== place.lane || old.slot !== place.slot)
+                push(
+                  `Node #${place.id} should slide from where the previous scene left it`,
+                  el.id,
+                  "fromPlaces",
+                  {
+                    expected: old ? `${old.lane}:${old.slot}` : "no earlier bound list",
+                    actual: `${place.lane}:${place.slot}`,
+                  },
+                );
+            }
           }
           break;
         }

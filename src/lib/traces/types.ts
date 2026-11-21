@@ -113,13 +113,42 @@ export type TraceStep = {
   answers?: { min: number; max: number; low: number; high: number; mid?: number };
   /** Two-list partition (Median of Two Sorted Arrays): how many values sit left of the cut in each list. */
   cuts?: { first: number; second: number };
+  /**
+   * Linked lists: every node after this step (its `next`, and where it's drawn), plus the links this step rewired.
+   * Pointers, highlights, and `trace.row.values` refer to nodes by id (see `TraceLinks`).
+   */
+  links?: TraceLinks;
+  /** A min-heap's array after this step (Merge K Sorted Lists' heads), drawn by a heap-tree. */
+  heap?: number[];
+};
+
+/**
+ * Linked-list state. Node ids are 0…n-1 and never change; `trace.row.values[id]` is node `id`'s value. A node sits
+ * in a lane (one horizontal list on screen: an input list, the merged list…) at a slot (left to right); nodes slide
+ * when their lane or slot changes between bound steps.
+ */
+export type TraceListNode = {
+  id: number;
+  value: TraceValue;
+  /** The node this one links to, or null (the end of a list). */
+  next: number | null;
+  lane: number;
+  slot: number;
+  /** A placeholder node in front of the real list (the dummy-node trick). */
+  dummy?: boolean;
+};
+
+export type TraceLinks = {
+  nodes: TraceListNode[];
+  /** Links this step changed: `node` used to point at `from` and now points at `to`. */
+  rewired?: { node: number; from: number | null; to: number | null }[];
 };
 
 export type Trace = {
   /** "pattern/slug" of the catalog problem. */
   problem: string;
   /** The values the video animates, in display order. */
-  row: { values: TraceValue[]; display: "cards" | "bars" };
+  row: { values: TraceValue[]; display: "cards" | "bars" | "list" };
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */
   secondRow?: { values: TraceValue[] };
   pointerNames: string[];

@@ -54,6 +54,7 @@ describe("video text at phone width", () => {
         "held-value",
         "highlight",
         "item-row",
+        "linked-list",
         "merge-buffer",
         "number-line",
         "partition",
@@ -66,6 +67,24 @@ describe("video text at phone width", () => {
         "window",
       ].sort(),
     );
+  });
+
+  it("linked lists fit at full size too (lanes, the bottom stack, and the stage edges)", () => {
+    const full = textMetrics(1280);
+    const problems: string[] = [];
+    for (const storyboard of storyboards)
+      for (const scene of storyboard.scenes) {
+        const { list, bottomTop } = layoutScene(scene.elements, full);
+        const el = scene.elements.find((e) => e.type === "linked-list");
+        if (!list || el?.type !== "linked-list") continue;
+        const where = `${storyboard.id} › ${scene.id}`;
+        if (Math.max(...list.laneTops) + list.nodeHeight > bottomTop + 2)
+          problems.push(`${where}: lanes run into the bottom stack`);
+        for (const node of el.nodes)
+          if (list.slotLeft(node.lane, node.slot + 1) > 1280 - 8)
+            problems.push(`${where}: node ${node.value} runs off the stage`);
+      }
+    expect(problems).toEqual([]);
   });
 
   describe.each(storyboards.map((s) => [s.id, s] as const))("%s fits at phone width", (_, storyboard) => {
@@ -110,7 +129,9 @@ describe("video text at phone width", () => {
                 other === el ||
                 other.rowId !== el.rowId ||
                 other.placement !== el.placement ||
-                other.index === el.index
+                other.index === el.index ||
+                // A linked list's other lanes sit at other heights.
+                (layout.tops?.[other.index] ?? 0) !== (layout.tops?.[el.index] ?? 0)
               )
                 continue;
               const otherLabel = pointerLabel(other, layout, phone, pointers);
@@ -218,6 +239,31 @@ describe("video text at phone width", () => {
               fail(`row "${el.rowId}" is too short to read under a cut (${Math.round(layout.cardHeight)}px)`);
             break;
           }
+          case "linked-list": {
+            const { list } = layoutScene(scene.elements, phone);
+            if (!list) {
+              fail("linked list has no layout");
+              break;
+            }
+            const size = phone.size(TEXT.listValue);
+            for (const node of el.nodes)
+              if (!node.dummy && !phone.fits(String(node.value), size, list.nodeWidth - 8, "mono"))
+                fail(`node value ${node.value} is wider than its box (${Math.round(list.nodeWidth)}px)`);
+            if (list.nodeHeight < size + 8)
+              fail(`nodes are too short for their values (${list.nodeHeight}px)`);
+            // Every node (and a null end after it) stays on the stage.
+            for (const node of el.nodes)
+              if (list.slotLeft(node.lane, node.slot + 1) > 1280 - 8)
+                fail(`node ${node.value} (lane ${node.lane}, slot ${node.slot}) runs off the stage`);
+            // Lanes don't overlap: each lane's pointers start below the previous lane's nodes.
+            const lanes = [...new Set(el.nodes.map((n) => n.lane))].sort((a, b) => a - b);
+            for (let k = 1; k < lanes.length; k++)
+              if (list.laneTops[lanes[k]] - list.laneTops[lanes[k - 1]] < list.nodeHeight + 8)
+                fail(`lanes ${lanes[k - 1]} and ${lanes[k]} overlap`);
+            if (Math.max(...list.laneTops) + list.nodeHeight > bottomTop + 2)
+              fail("the last lane runs into the bottom stack");
+            break;
+          }
           case "heap-tree":
             for (const v of el.values)
               if (!phone.fits(String(v), phone.size(TEXT.heapNode), 96 - 12, "mono"))
@@ -233,7 +279,7 @@ describe("video text at phone width", () => {
         if (layout.reservedTop < captionBottom) fail(`row "${layout.rowId}" starts under the caption`);
       // The bottom stack never climbs into the rows.
       for (const layout of Object.values(rows))
-        if (layout.top + layout.cardHeight > bottomTop)
+        if (Math.max(layout.top, ...(layout.tops ?? [])) + layout.cardHeight > bottomTop)
           fail(`row "${layout.rowId}" overlaps the bottom stack`);
       expect(problems).toEqual([]);
     });

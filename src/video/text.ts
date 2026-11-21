@@ -95,4 +95,8 @@ export const TEXT = {
   counterValue: 40,
   counterDelta: 26,
   windowLabel: 22,
+  listValue: 30,
+  listDummy: 18,
+  listNull: 15,
+  laneLabel: 15,
 } as const;

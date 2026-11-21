@@ -404,6 +404,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `search-range`  | binary search over a row: bracket over the cards still in play (notch over `mid`), dropped cards dimmed, dashed, ✕; a rotated list's sorted half tinted, "✓ sorted"   | canvas |
 | `number-line`   | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                      | bottom |
 | `cut`           | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                      | canvas |
+| `linked-list`   | node boxes in lanes with an arrow to each `next`, a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; pointers/highlights use node ids   | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -476,6 +477,23 @@ negative; which half is sorted is neutral, the target inside it positive; a misp
 searches keep the sign colors (too low / too high / found). Two rows share the space between the caption and the
 bottom stack.
 
+**Linked lists** (all five problems) added step state `links` (`nodes`: every node's `id`, `value`, `next` (an id or
+null), `lane`, `slot`, `dummy`; `rewired`: the links this step changed, `{ node, from, to }`) and `heap` (Merge K's
+min-heap of heads, drawn by the existing heap-tree). Traces mutate a `ListState` (`traces/linked-list/shared.ts`) with
+real `node.next = …` assignments, so every rewire is recorded where it happens. Node ids are fixed; `trace.row.values[id]`
+is a node's value, `display: "list"`, and pointers and highlights refer to node ids (a null pointer is left out of
+`pointers`). One `linked-list` element per scene holds every list as a lane: Reverse/Remove Nth/Reorder use one or two
+lanes, Merge Two uses A, B, and the merged lane (taken nodes move into it and still point into their old list until
+the next link), Merge K uses three input lanes on the left, the heap-tree on the right, and the merged lane across the
+bottom. The layout (`layoutList` in `video/layout.ts`) stacks lanes with room above for each lane's pointers (which
+stack upward when they share a node) and below for highlight tags (they go under the nodes) and skip arcs; a lane with
+nothing in it collapses; when lanes need more height the bottom stack moves down. `RowLayout.tops` gives each node its
+lane's height, so `pointer`, `highlight`, and pointer labels work unchanged. Arrows: neighbors to the right are
+straight, back to the left neighbor straight on a lower track, skips curve under the lane, other lanes S-curve (or rise
+into the target from below when it's behind). Tones: comparing two heads is neutral (Merge Two's `2 > 1` isn't bad
+news). Gotcha: the element's fading wrapper is a full-stage box; a zero-size wrapper made Chrome skip painting the nodes
+mid-animation.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -486,12 +504,13 @@ input and returns a `Trace` (types in `traces/types.ts`):
 
 ```ts
 Trace = {
-  problem: "pattern/slug", row: { values, display: "cards" | "bars" }, secondRow?: { values }, pointerNames,
+  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" }, secondRow?: { values }, pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
            values?, moves?, empty?, sorted?, final?, held?, counts?, // algorithms that rearrange the array
            range?, depth?, segments?, splitTree?, buffer?, pivot?, boundary?, heapSize?, compare?, counter?,
            window?, freq?, deque?,                                // sliding window (see "Sliding window" above)
            search?, answers?, cuts? }[],                          // binary search (see "Binary search" above)
+           links?, heap?                                          // linked lists (see "Linked lists" above)
                                                                   // divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   answer,             // same shape as the reference solution's return value (tested)
@@ -516,7 +535,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, and cuts match the step (a `traceRow: "second"` row holds the second list); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, and linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -737,7 +756,10 @@ repeat-free run of songs (Longest Substring), repainting one fence board (Charac
 past market stalls that sell everything on a list (Minimum Window), and the highest UV index in each 3-day forecast
 stretch (Sliding Window Maximum). Binary Search: a hotel directory with basement floors (Search a Sorted Array), a new
 bus slotted into a timetable (Search Insert Position), a community board of event dates that wraps into next month
-(Rotated), and two classes' sorted quiz scores (Median); Koko Eating Bananas is problem-native.
+(Rotated), and two classes' sorted quiz scores (Median); Koko Eating Bananas is problem-native. Linked List: a
+scavenger hunt rerun backwards (Reverse), two boarding queues merging at one gate (Merge Two), a parade spotter walking
+a fixed two floats ahead (Remove Nth), a slideshow alternating oldest and newest photos (Reorder), and one departure
+board for three subway lines (Merge K).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

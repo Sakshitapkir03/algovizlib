@@ -22,7 +22,8 @@ solution. Problems with a video play it inline: five Two Pointers problems, all 
 quick, and heap sort get split, partition, and heap-tree views; Count Inversions gets a running counter), and all five
 Sliding Window problems (a window bracket that grows and shrinks, character counts, and a monotonic deque), and all five
 Binary Search problems (a shrinking search range with the dropped half dimmed, a number line of candidate answers, and
-partition cuts across two lists). The first is
+partition cuts across two lists), and all five Linked List problems (nodes and arrows that visibly rewire one link at a
+time, a dummy node, several lists merging into one, and Merge K's min-heap of heads). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach

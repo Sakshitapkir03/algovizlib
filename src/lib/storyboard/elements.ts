@@ -15,7 +15,8 @@ import { z } from "zod";
  * Planned (not built yet): "staircase", "house-row", "coin-set", "box-arrow".
  * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`; divide and conquer adds
  * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter"; sliding window adds "window",
- * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`.
+ * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`;
+ * linked lists add "linked-list" (and heap-tree values from a step's `heap`).
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -360,6 +361,46 @@ export const cutSourceSchema = z.object({
   at: index.optional(),
 });
 
+export const listNodeSchema = z.object({
+  /** Node ids are 0…n-1; pointers and highlights refer to nodes by id (`rowId` = this element's id). */
+  id: index,
+  /** A number, or a short word (the dummy node's "dummy"). */
+  value: z.union([z.number().finite(), z.string().max(8)]),
+  /** The node it links to, or null (the end of a list). */
+  next: index.nullable(),
+  /** Which horizontal list on screen (0 = top), and the position in it (0 = left). */
+  lane: z.number().int().min(0).max(3),
+  slot: z.number().int().min(0).max(9),
+  /** The dummy-node trick's placeholder, drawn dashed. */
+  dummy: z.boolean().optional(),
+});
+
+const listPlaceSchema = z.object({
+  id: index,
+  lane: listNodeSchema.shape.lane,
+  slot: listNodeSchema.shape.slot,
+});
+
+const linkedListShape = {
+  ...baseElement,
+  type: z.literal("linked-list"),
+  /** Every node, with its link and where it's drawn. */
+  nodes: z.array(listNodeSchema).min(1).max(16),
+  /** Links changed in this scene: the old arrow ghosts away while the new one draws in. */
+  rewired: z.array(z.object({ node: index, from: index.nullable(), to: index.nullable() })).optional(),
+  /** Where nodes that moved were in the previous bound scene: they slide from there. */
+  fromPlaces: z.array(listPlaceSchema).optional(),
+  /** A short name at the left of each lane, e.g. ["list A", "list B", "merged"]. */
+  laneLabels: z.array(z.string().max(16)).max(4).optional(),
+};
+export const linkedListElementSchema = z.object(linkedListShape);
+export const linkedListSourceSchema = z.object({
+  ...linkedListShape,
+  /** Omit to take the bound step's list (or, in an unbound scene, the list as the trace starts); rewired and
+   * fromPlaces follow. */
+  nodes: linkedListShape.nodes.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -528,6 +569,7 @@ export const elementSchemas = [
   searchRangeElementSchema,
   numberLineElementSchema,
   cutElementSchema,
+  linkedListElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -553,6 +595,7 @@ export const elementSourceSchemas = [
   searchRangeSourceSchema,
   numberLineSourceSchema,
   cutSourceSchema,
+  linkedListSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -585,6 +628,8 @@ export type DequeElement = ElementOf<"deque">;
 export type SearchRangeElement = ElementOf<"search-range">;
 export type NumberLineElement = ElementOf<"number-line">;
 export type CutElement = ElementOf<"cut">;
+export type LinkedListElement = ElementOf<"linked-list">;
+export type ListNode = z.infer<typeof listNodeSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
 export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

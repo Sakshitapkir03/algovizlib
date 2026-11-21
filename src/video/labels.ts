@@ -35,7 +35,9 @@ export function pointerLabel(
           o !== element &&
           o.rowId === element.rowId &&
           o.placement === element.placement &&
-          o.index !== element.index,
+          o.index !== element.index &&
+          // On another lane of a linked list, a pointer is at another height: no competition.
+          (layout.tops?.[o.index] ?? 0) === (layout.tops?.[element.index] ?? 0),
       )
       .map((o) => Math.abs(layout.centers[o.index] - x) / 2 - 4),
   );
@@ -50,6 +52,7 @@ export function firstFitting(
   size: number,
   room: number,
   text: TextMetrics,
+  font?: "sans" | "mono",
 ): string | undefined {
-  return candidates.find((c) => text.fits(c, size, room));
+  return candidates.find((c) => text.fits(c, size, room, font));
 }

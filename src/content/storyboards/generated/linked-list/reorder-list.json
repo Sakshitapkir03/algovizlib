@@ -1,0 +1,345 @@
+{
+  "id": "linked-list-reorder-list",
+  "title": "Reorder List: Alternating Oldest and Newest Photos",
+  "concept": "Linked List",
+  "category": "dsa",
+  "summary": "Find the middle, reverse the back half, then weave the halves together, all in place.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A slideshow of photos 10, 20, 30, 40, and 50, oldest first, should alternate: oldest, newest, second oldest, second newest, and so on.",
+    "mapping": [
+      {
+        "real": "A photo",
+        "abstract": "A node"
+      },
+      {
+        "real": "Which photo shows next",
+        "abstract": "node.next"
+      },
+      {
+        "real": "The newer half, newest first",
+        "abstract": "The reversed second half"
+      }
+    ]
+  },
+  "tags": [
+    "linked-list",
+    "two-pointers",
+    "in-place"
+  ],
+  "takeaway": {
+    "pattern": "Middle, reverse, merge",
+    "summary": "Find the middle with slow and fast pointers, cut the list there, reverse the second half, and weave the two halves by relinking one node from each in turn.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Pairing a list's front with its back in place",
+      "Palindrome checks and other front-to-back comparisons on a list"
+    ]
+  },
+  "trace": {
+    "problem": "linked-list/reorder-list",
+    "args": [
+      [
+        10,
+        20,
+        30,
+        40,
+        50
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v8",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T17:59:09.200Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "slideshow",
+      "narration": "A slideshow runs photos 10 through 50, oldest first. It should alternate: 10, then 50, then 20, then 40, then 30.",
+      "caption": "Show the oldest, then the newest, then the next oldest",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "copy",
+      "narration": "You could copy the photos into an array and pick from both ends. But each photo can be relinked where it is, in three moves.",
+      "caption": "Copying every photo into a new list takes extra room",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "middle-start",
+      "narration": "First find the middle. slow steps once and fast steps twice, both from photo 10.",
+      "caption": "Find the middle: slow steps once, fast twice",
+      "durationInFrames": 216,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "fast",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "fast"
+        }
+      ]
+    },
+    {
+      "id": "middle",
+      "narration": "When fast can't take two more steps, slow is at the middle: photo 30 ends the older half.",
+      "caption": "fast can't go on: slow is at the middle, 30",
+      "durationInFrames": 252,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "fast",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "fast"
+        }
+      ]
+    },
+    {
+      "id": "cut",
+      "narration": "Cut after 30. The newer photos, 40 and 50, stand on their own.",
+      "caption": "Cut after 30: the newer half stands alone",
+      "durationInFrames": 192,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-curr",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "curr",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "curr"
+        }
+      ]
+    },
+    {
+      "id": "reverse",
+      "narration": "Reverse that half one link at a time, so it runs newest first: 50, then 40.",
+      "caption": "Reverse the newer half: 50, then 40",
+      "durationInFrames": 229,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        },
+        {
+          "id": "p-back",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "back",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "back"
+        }
+      ]
+    },
+    {
+      "id": "weave",
+      "narration": "Now weave. Photo 10 points to 50, and 50 points to 20. Then 20 points to 40, and 40 to 30.",
+      "caption": "Weave: 10 points to 50, and 50 to 20",
+      "durationInFrames": 288,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        },
+        {
+          "id": "p-front",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "front",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "front"
+        },
+        {
+          "id": "p-back",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "back",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "back"
+        },
+        {
+          "id": "active",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "The back half is used up. The slideshow runs 10, 50, 20, 40, 30.",
+      "caption": "The slideshow: 10, 50, 20, 40, 30",
+      "durationInFrames": 204,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "slideshow",
+            "newest first"
+          ]
+        },
+        {
+          "id": "p-head",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "head",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "head"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.4,
+          "type": "result",
+          "title": "Slideshow",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Photos are nodes. Find the middle with slow and fast, reverse the second half, and weave the halves: O(n) time, O(1) extra space.",
+      "caption": "Middle, reverse, weave: O(n) time, O(1) space",
+      "durationInFrames": 312,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "list"
+          ]
+        },
+        {
+          "id": "p-head",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "head",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "head"
+        }
+      ]
+    }
+  ]
+}

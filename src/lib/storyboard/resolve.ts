@@ -286,6 +286,11 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
           };
         }
         case "heap-tree": {
+          // A list trace's heap (Merge K's heads) is its own array; sorting draws the array being sorted.
+          if (!el.values && step?.heap) {
+            if (step.heap.length === 0) return (noState(el, "values", "heap (it's empty)"), el);
+            return { ...el, values: step.heap, heapSize: el.heapSize ?? step.heap.length };
+          }
           const values = el.values ?? step?.values ?? trace?.row.values;
           if (!values) return (missing(el, "values"), el);
           if (values.some((v) => typeof v !== "number")) {
@@ -361,6 +366,26 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
           if (el.entries) return el;
           if (!step?.freq) return (noState(el, "entries", "character counts"), el);
           return { ...el, entries: step.freq.entries, active: el.active ?? step.freq.active };
+        }
+        case "linked-list": {
+          if (el.nodes) return el;
+          // An unbound scene (the intro) shows the list as the trace starts.
+          const links = step ? step.links : trace?.steps.find((s) => s.links)?.links;
+          if (!links) return (noState(el, "nodes", "linked list"), el);
+          const before = previousStep && previousStep !== step ? previousStep.links : undefined;
+          const was = new Map(before?.nodes.map((node) => [node.id, node]));
+          const moved = links.nodes.flatMap((node) => {
+            const old = was.get(node.id);
+            return old && (old.lane !== node.lane || old.slot !== node.slot)
+              ? [{ id: node.id, lane: old.lane, slot: old.slot }]
+              : [];
+          });
+          return {
+            ...el,
+            nodes: links.nodes,
+            rewired: el.rewired ?? (step ? links.rewired : undefined),
+            fromPlaces: el.fromPlaces ?? (moved.length > 0 ? moved : undefined),
+          };
         }
         case "deque": {
           if (el.indices && el.output) return el;

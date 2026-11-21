@@ -36,13 +36,27 @@ export function Highlight({ element }: { element: HighlightElement }) {
   // and give the rest the glyph, so every card still carries a glyph and the state is named once.
   const tagSize = text.size(TEXT.tag);
   const tagWidth = text.width(`${style.glyph} ${style.word}`, tagSize) + 20;
+  const sameLevel = (a: number, b: number) => (layout.tops?.[a] ?? 0) === (layout.tops?.[b] ?? 0);
   const crowded = element.indices.some(
-    (idx, k) => k > 0 && Math.abs(layout.centers[idx] - layout.centers[element.indices[k - 1]]) < tagWidth,
+    (idx, k) =>
+      k > 0 &&
+      sameLevel(idx, element.indices[k - 1]) &&
+      Math.abs(layout.centers[idx] - layout.centers[element.indices[k - 1]]) < tagWidth,
   );
   // Neighboring tags can't even fit one word between them (the heap scenes' narrow bars): glyphs only, and the
   // solid border carries the state as on a phone.
   const glyphWidth = text.width(style.glyph, tagSize) + 20;
-  const spacing = layout.centers.length > 1 ? layout.centers[1] - layout.centers[0] : Infinity;
+  // The closest two positions at the same height (a linked list's ids aren't in screen order).
+  const spacing = layout.tops
+    ? Math.min(
+        Infinity,
+        ...layout.centers.flatMap((c, a) =>
+          layout.centers.flatMap((d, b) => (a < b && sameLevel(a, b) ? [Math.abs(c - d)] : [])),
+        ),
+      )
+    : layout.centers.length > 1
+      ? layout.centers[1] - layout.centers[0]
+      : Infinity;
   const squeezed = tagWidth / 2 + glyphWidth / 2 + 4 > spacing;
   const border =
     element.state === "rejected"
@@ -59,7 +73,7 @@ export function Highlight({ element }: { element: HighlightElement }) {
           style={{
             position: "absolute",
             left: layout.lefts[i] - 4,
-            top: layout.top - 4,
+            top: (layout.tops?.[i] ?? layout.top) - 4,
             width: layout.cardWidth + 8,
             height: layout.cardHeight + 8,
             borderRadius: 19,
@@ -78,7 +92,8 @@ export function Highlight({ element }: { element: HighlightElement }) {
             style={{
               display: text.compact ? "none" : undefined,
               position: "absolute",
-              top: -tagSize,
+              // Above the card, or under it where a linked list keeps the space above for its pointers.
+              top: layout.tagsBelow ? layout.cardHeight + 8 - 4 : -tagSize,
               // Centered on the card, but kept on the stage (narrow heap bars sit near the left edge).
               left: (layout.cardWidth + 8) / 2,
               transform: `translateX(calc(-50% + ${Math.max(0, tagWidth / 2 + 4 - layout.centers[i])}px))`,

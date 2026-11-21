@@ -85,6 +85,7 @@ export const sceneSchema = z
     for (const el of scene.elements) {
       if (el.type === "item-row") rows.set(el.id, el.items.length);
       if (el.type === "bar-row") rows.set(el.id, el.bars.length);
+      if (el.type === "linked-list") rows.set(el.id, el.nodes.length);
     }
 
     const checkIndex = (rowId: string, idx: number, path: (string | number)[]) => {
@@ -321,6 +322,46 @@ export const sceneSchema = z
           if (scene.elements.filter((e) => e.type === "number-line").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one number-line" });
           break;
+        case "linked-list": {
+          const n = el.nodes.length;
+          const ids = el.nodes.map((node) => node.id);
+          if (new Set(ids).size !== n || ids.some((id) => id >= n))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: `node ids must be 0–${n - 1}, each once`,
+            });
+          const places = el.nodes.map((node) => `${node.lane}:${node.slot}`);
+          if (new Set(places).size !== n)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "two nodes share a lane and slot",
+            });
+          el.nodes.forEach((node, k) => {
+            if (node.next !== null && node.next >= n)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "nodes", k, "next"],
+                message: `node ${node.id} links to ${node.next}, which isn't a node`,
+              });
+          });
+          el.rewired?.forEach((r, k) => {
+            if ([r.node, r.from, r.to].some((id) => id !== null && id >= n))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "rewired", k],
+                message: "rewired refers to a missing node",
+              });
+          });
+          if (scene.elements.filter((e) => e.type === "linked-list").length > 1)
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: "A scene can show only one linked-list (use lanes for more lists)",
+            });
+          break;
+        }
         case "cut":
           for (const field of ["at", "fromAt"] as const) {
             const at = el[field];

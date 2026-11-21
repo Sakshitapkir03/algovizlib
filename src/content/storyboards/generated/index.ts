@@ -6,6 +6,11 @@ import binarySearchMedianOfTwoSortedArrays from "./binary-search/median-of-two-s
 import binarySearchSearchInRotatedSortedArray from "./binary-search/search-in-rotated-sorted-array.json";
 import binarySearchSearchInsertPosition from "./binary-search/search-insert-position.json";
 import binarySearchSearchSortedArray from "./binary-search/search-sorted-array.json";
+import linkedListMergeKSortedLists from "./linked-list/merge-k-sorted-lists.json";
+import linkedListMergeTwoSortedLists from "./linked-list/merge-two-sorted-lists.json";
+import linkedListRemoveNthNodeFromEnd from "./linked-list/remove-nth-node-from-end.json";
+import linkedListReorderList from "./linked-list/reorder-list.json";
+import linkedListReverseLinkedList from "./linked-list/reverse-linked-list.json";
 import slidingWindowLongestRepeatingCharacterReplacement from "./sliding-window/longest-repeating-character-replacement.json";
 import slidingWindowLongestSubstringWithoutRepeatingCharacters from "./sliding-window/longest-substring-without-repeating-characters.json";
 import slidingWindowMaximumSumSubarrayOfSizeK from "./sliding-window/maximum-sum-subarray-of-size-k.json";
@@ -31,6 +36,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "binary-search/search-in-rotated-sorted-array": loadStoryboard(binarySearchSearchInRotatedSortedArray),
   "binary-search/search-insert-position": loadStoryboard(binarySearchSearchInsertPosition),
   "binary-search/search-sorted-array": loadStoryboard(binarySearchSearchSortedArray),
+  "linked-list/merge-k-sorted-lists": loadStoryboard(linkedListMergeKSortedLists),
+  "linked-list/merge-two-sorted-lists": loadStoryboard(linkedListMergeTwoSortedLists),
+  "linked-list/remove-nth-node-from-end": loadStoryboard(linkedListRemoveNthNodeFromEnd),
+  "linked-list/reorder-list": loadStoryboard(linkedListReorderList),
+  "linked-list/reverse-linked-list": loadStoryboard(linkedListReverseLinkedList),
   "sliding-window/longest-repeating-character-replacement": loadStoryboard(
     slidingWindowLongestRepeatingCharacterReplacement,
   ),
