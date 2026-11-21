@@ -304,11 +304,12 @@ Signing in is optional; guests can use everything. Auth.js v5 (**pinned to `5.0.
 
 **Setup.** Locally: Postgres (`brew services start postgresql@16`), `createdb algovizlib_dev algovizlib_test`, then in
 `.env.local`: `DATABASE_URL`, `DATABASE_URL_TEST`, `AUTH_SECRET` (`npx auth secret`), and for `pnpm start`
-`AUTH_TRUST_HOST=true`; `pnpm db:migrate`. Optional locally: a GitHub OAuth app with callback
-`http://localhost:3000/api/auth/callback/github`, and Google credentials with
-`http://localhost:3000/api/auth/callback/google`. Production (Vercel, Production environment): `DATABASE_URL`
+`AUTH_TRUST_HOST=true`; `pnpm db:migrate`. One GitHub OAuth app and one Google OAuth client serve both
+environments: each lists both callbacks, `https://algovizlib.vercel.app/api/auth/callback/<github|google>` and
+`http://localhost:3000/api/auth/callback/<github|google>` (put the same ids/secrets in `.env.local` to use them
+locally). Production (Vercel, Production environment): `DATABASE_URL`
 (Neon pooled), `DATABASE_URL_UNPOOLED` (Neon direct, for migrations), `AUTH_SECRET` (a new one, not the local one),
-`AUTH_GITHUB_ID`/`_SECRET` (a second GitHub OAuth app with the production callback),
+`AUTH_GITHUB_ID`/`_SECRET`,
 `AUTH_GOOGLE_ID`/`_SECRET`; apply migrations with `pnpm db:deploy` against the direct URL before deploying a schema
 change (the build never migrates, so previews can't touch production data).
 
