@@ -19,19 +19,27 @@ export function buildDraft(problemKey: string): Draft {
   const def = getTraceDefinition(problemKey)!;
   const { trace } = traceFor(problemKey);
   const rowType =
-    trace.row.display === "bars" ? "bar-row" : trace.row.display === "list" ? "linked-list" : "item-row";
+    trace.row.display === "bars"
+      ? "bar-row"
+      : trace.row.display === "list"
+        ? "linked-list"
+        : trace.row.display === "tree"
+          ? "binary-tree"
+          : "item-row";
   const row = (): ElementSource =>
     rowType === "linked-list"
       ? { id: "row", type: "linked-list", enterAt: 0 }
-      : rowType === "bar-row"
-        ? { id: "row", type: "bar-row", unit: "", enterAt: 0 }
-        : {
-            id: "row",
-            type: "item-row",
-            unit: "",
-            enterAt: 0,
-            labels: trace.row.values.map((_, i) => `item ${i}`),
-          };
+      : rowType === "binary-tree"
+        ? { id: "row", type: "binary-tree", enterAt: 0 }
+        : rowType === "bar-row"
+          ? { id: "row", type: "bar-row", unit: "", enterAt: 0 }
+          : {
+              id: "row",
+              type: "item-row",
+              unit: "",
+              enterAt: 0,
+              labels: trace.row.values.map((_, i) => `item ${i}`),
+            };
 
   const second = (): ElementSource[] =>
     trace.secondRow
@@ -100,7 +108,10 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "cut", type: "cut", rowId: "row", enterAt: 0 });
       elements.push({ id: "cut2", type: "cut", rowId: "row2", enterAt: 0 });
     }
-    if (step.equation)
+    if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
+    // A tree's last scene keeps its bottom stack short (the answer, and at most a count).
+    const last = index === trace.steps.length - 1;
+    if (step.equation && !(rowType === "binary-tree" && last))
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });
     // The last step is where the answer is known: state it there (a real story does the same).

@@ -20,6 +20,24 @@ function traceMaxValue(trace: Trace): number | undefined {
   return max > 0 ? max : undefined;
 }
 
+/**
+ * How many bottom frames of `before` are still open in `after`: the same calls, up to the first one that returned in
+ * `before` (it popped, so a matching frame after it is a new call).
+ */
+export function keptFrames(before: readonly StackFrameLike[], after: readonly StackFrameLike[]): number {
+  let k = 0;
+  while (
+    k < before.length &&
+    k < after.length &&
+    before[k].returns === undefined &&
+    before[k].label === after[k].label &&
+    before[k].node === after[k].node
+  )
+    k++;
+  return k;
+}
+type StackFrameLike = { label: string; node: number | null; returns?: string };
+
 export function applyOperator(operator: keyof typeof OPERATORS, terms: readonly number[]): number {
   return terms.slice(1).reduce(OPERATORS[operator], terms[0]);
 }
@@ -29,7 +47,7 @@ export function applyOperator(operator: keyof typeof OPERATORS, terms: readonly 
  * Values the author omitted are taken from the trace: rows from the bound step's `values` (else `trace.row`), and
  * pointers, equations, highlights, fills, water, moves, empty slots, sorted regions, held values, tallies, groups,
  * split trees, merge buffers, partitions, heaps, counters, windows, character counts, deques, search ranges,
- * candidate answers, and cuts from the scene's bound step (an item-row with `traceRow: "second"` shows the trace's
+ * candidate answers, cuts, lists, tree walks, and call stacks from the scene's bound step (an item-row with `traceRow: "second"` shows the trace's
  * second list). Values the author did write are kept as written; the validator
  * checks them against the trace. Returns issues instead of throwing, so the generator can send them back.
  */
@@ -385,6 +403,35 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             nodes: links.nodes,
             rewired: el.rewired ?? (step ? links.rewired : undefined),
             fromPlaces: el.fromPlaces ?? (moved.length > 0 ? moved : undefined),
+          };
+        }
+        case "binary-tree": {
+          const nodes = el.nodes ?? trace?.tree?.nodes;
+          if (!nodes || nodes.length === 0) return (missing(el, "nodes"), el);
+          // An unbound scene (the intro, a recap) shows the bare tree; a bound one the step's walk.
+          if (step && !step.tree) return (noState(el, "path", "tree walk"), el);
+          const walk = step?.tree;
+          return {
+            ...el,
+            nodes,
+            current: el.current ?? walk?.current,
+            nullVisit: el.nullVisit ?? walk?.nullVisit,
+            path: el.path ?? walk?.path ?? [],
+            done: el.done ?? walk?.done ?? [],
+            skipped: el.skipped ?? walk?.skipped,
+            returned: el.returned ?? walk?.returned,
+            results: el.results ?? walk?.results,
+            badges: el.badges ?? walk?.badges,
+          };
+        }
+        case "call-stack": {
+          if (el.frames) return el;
+          if (!step?.stack) return (noState(el, "frames", "call stack"), el);
+          const before = previousStep && previousStep !== step ? previousStep.stack : undefined;
+          return {
+            ...el,
+            frames: step.stack,
+            kept: el.kept ?? (before ? keptFrames(before, step.stack) : undefined),
           };
         }
         case "deque": {

@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 
 import type { Element } from "@/lib/storyboard";
 
-import type { ListLayout, Region, RowLayout } from "./layout";
+import type { ListLayout, Region, RowLayout, StackLayout, TreeLayout } from "./layout";
 import type { TextMetrics } from "./text";
 import type { VideoPalette } from "./theme";
 
@@ -15,6 +15,9 @@ export type SceneContextValue = {
   heapRegion: Region;
   /** A linked-list's lanes and slots, when the scene has one. */
   list?: ListLayout;
+  /** A binary tree's and a call stack's geometry, when the scene has them. */
+  tree?: TreeLayout;
+  stack?: StackLayout;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

@@ -16,7 +16,8 @@ import { z } from "zod";
  * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`; divide and conquer adds
  * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter"; sliding window adds "window",
  * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`;
- * linked lists add "linked-list" (and heap-tree values from a step's `heap`).
+ * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
+ * "call-stack".
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -401,6 +402,73 @@ export const linkedListSourceSchema = z.object({
   nodes: linkedListShape.nodes.optional(),
 });
 
+const treeSideSchema = z.enum(["left", "right"]);
+
+export const treeNodeSchema = z.object({
+  /** Node ids are level-order positions of the real nodes (0 = the root); highlights and callouts use them. */
+  id: index,
+  value: z.number().finite(),
+  left: index.nullable(),
+  right: index.nullable(),
+});
+
+const binaryTreeShape = {
+  ...baseElement,
+  type: z.literal("binary-tree"),
+  /** The tree's shape: every node with its children (null = missing). */
+  nodes: z.array(treeNodeSchema).min(1).max(15),
+  /** The node whose call is running (ringed). */
+  current: index.optional(),
+  /** A call on a missing child, drawn as a "null" stub under `parent`. */
+  nullVisit: z.object({ parent: index, side: treeSideSchema }).optional(),
+  /** Nodes with an open call, root first: the active path, drawn in the accent color. */
+  path: z.array(index).default([]),
+  /** Nodes whose call has returned (marked ✓). */
+  done: z.array(index).default([]),
+  /** Nodes never visited because the answer came early (dashed and faded). */
+  skipped: z.array(index).optional(),
+  /** A value handed up this scene: it travels up the edge from the child on `side` of `to`. */
+  returned: z.object({ to: index, side: treeSideSchema, value: z.string().max(8) }).optional(),
+  /** What each finished call returned, beside its node. */
+  results: z.array(z.object({ node: index, value: z.string().max(8) })).optional(),
+  /** Running state carried down to a node ("sum 9", "(5, 10)"). */
+  badges: z.array(z.object({ node: index, text: z.string().max(12) })).optional(),
+};
+export const binaryTreeElementSchema = z.object(binaryTreeShape);
+export const binaryTreeSourceSchema = z.object({
+  ...binaryTreeShape,
+  /** Omit nodes and the walk (current, path, done, …) to take them from the bound step (the bare tree when unbound). */
+  nodes: binaryTreeShape.nodes.optional(),
+  path: binaryTreeShape.path.removeDefault().optional(),
+  done: binaryTreeShape.done.removeDefault().optional(),
+});
+
+export const stackFrameSchema = z.object({
+  /** The call, e.g. "depth(5)"; "depth(∅)" for a missing child. */
+  label: z.string().trim().min(1).max(14),
+  node: index.nullable(),
+  /** The child this call is waiting on. */
+  waiting: treeSideSchema.optional(),
+  /** Set when the call returns in this scene. */
+  returns: z.string().max(8).optional(),
+});
+
+const callStackShape = {
+  ...baseElement,
+  type: z.literal("call-stack"),
+  /** Open calls, bottom (the first call) to top (the running one). */
+  frames: z.array(stackFrameSchema).max(8),
+  /** How many bottom frames were already there in the previous bound scene; the rest are pushed in. */
+  kept: z.number().int().nonnegative().optional(),
+  label: nonEmpty.max(16).default("call stack"),
+};
+export const callStackElementSchema = z.object(callStackShape);
+export const callStackSourceSchema = z.object({
+  ...callStackShape,
+  /** Omit frames (and kept) to take the bound step's stack. */
+  frames: callStackShape.frames.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -570,6 +638,8 @@ export const elementSchemas = [
   numberLineElementSchema,
   cutElementSchema,
   linkedListElementSchema,
+  binaryTreeElementSchema,
+  callStackElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -596,6 +666,8 @@ export const elementSourceSchemas = [
   numberLineSourceSchema,
   cutSourceSchema,
   linkedListSourceSchema,
+  binaryTreeSourceSchema,
+  callStackSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -630,6 +702,10 @@ export type NumberLineElement = ElementOf<"number-line">;
 export type CutElement = ElementOf<"cut">;
 export type LinkedListElement = ElementOf<"linked-list">;
 export type ListNode = z.infer<typeof listNodeSchema>;
+export type BinaryTreeElement = ElementOf<"binary-tree">;
+export type TreeNode = z.infer<typeof treeNodeSchema>;
+export type CallStackElement = ElementOf<"call-stack">;
+export type StackFrame = z.infer<typeof stackFrameSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
 export type VerdictTone = z.infer<typeof verdictToneSchema>;
 export type Operator = z.infer<typeof operatorSchema>;

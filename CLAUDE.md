@@ -405,6 +405,8 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `number-line`   | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                      | bottom |
 | `cut`           | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                      | canvas |
 | `linked-list`   | node boxes in lanes with an arrow to each `next`, a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; pointers/highlights use node ids   | canvas |
+| `binary-tree`   | a tree by depth: running call ringed, open path in orange, finished ✓ with "↑ 3", null stubs, values travel up edges                                                  | canvas |
+| `call-stack`    | recursion frames beside the tree, bottom to top: "depth(5) waiting for left", "returns 3"; pushed frames slide in                                                     | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -494,6 +496,25 @@ into the target from below when it's behind). Tones: comparing two heads is neut
 news). Gotcha: the element's fading wrapper is a full-stage box; a zero-size wrapper made Chrome skip painting the nodes
 mid-animation.
 
+**Trees (DFS)** (all five problems) added `trace.tree` (the shape: every node's `id`, `value`, `left`, `right`; ids are
+level-order positions of the real nodes, `trace.row.values[id]` is a node's value, `display: "tree"`) and two pieces
+of step state: `tree` (the walk: `current`, the running call; `nullVisit`, a call on a missing child; `path`, the open
+calls from the root; `done`; `skipped`, nodes an early exit never visits; `returned`, a value handed up this step,
+`{ to, side, value }`; `results`, what each finished call returned; `badges`, running state carried down, e.g. "sum 9")
+and `stack` (frames bottom to top: `label` like "depth(5)" or "depth(∅)", `node`, `waiting` on a side, `returns`).
+Traces drive a `TreeWalk` (`traces/trees-dfs/shared.ts`) exactly like the recursive reference solutions: `enter`,
+`base` (a missing child answers at once, one step), `leave` (the frame shows `returns`, then pops); the top frame is
+never "waiting". `treeArgs` caps examples at 8 nodes and 4 levels. Two primitives: `binary-tree` (nodes at their
+position in a full tree, so left and right read correctly; nodes as large as the band allows and never narrower than
+their widest value; a "null" stub only for the missing child being visited) and `call-stack` (a column right of the
+tree, frames from the bottom; `kept` counts frames still open since the previous bound scene, the rest slide in;
+notes fall back "waiting for left" → "wait: left" → "◀ left"). The tree asks the bottom stack to move down until it
+gets full-size nodes, so tree scenes keep the bottom stack short (at most an equation and a counter; the answer scene
+the result plus at most one more). On a phone-sized player only the running call's note shows, and a finished node
+gets a double border instead of the ✓. Tones: Count Good Nodes' "not good" is neutral, Maximum Path Sum's new best is
+positive and a worse bend neutral, Validate BST's out-of-range value negative. No problem in the pattern is
+level-order, so there's no queue panel yet (a level-order problem would reuse `deque`).
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -504,15 +525,18 @@ input and returns a `Trace` (types in `traces/types.ts`):
 
 ```ts
 Trace = {
-  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" }, secondRow?: { values }, pointerNames,
+  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" | "tree" }, secondRow?: { values },
+  pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
            values?, moves?, empty?, sorted?, final?, held?, counts?, // algorithms that rearrange the array
            range?, depth?, segments?, splitTree?, buffer?, pivot?, boundary?, heapSize?, compare?, counter?,
            window?, freq?, deque?,                                // sliding window (see "Sliding window" above)
-           search?, answers?, cuts? }[],                          // binary search (see "Binary search" above)
-           links?, heap?                                          // linked lists (see "Linked lists" above)
-                                                                  // divide and conquer (see "Divide and conquer" above)
+           search?, answers?, cuts?,                              // binary search (see "Binary search" above)
+           links?, heap?,                                         // linked lists (see "Linked lists" above)
+           tree?, stack? }[],                                     // trees (see "Trees (DFS)" above)
+           // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
+  tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
   answerIndices?,     // when the answer is a set of positions
@@ -535,7 +559,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, and linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -759,7 +783,10 @@ bus slotted into a timetable (Search Insert Position), a community board of even
 (Rotated), and two classes' sorted quiz scores (Median); Koko Eating Bananas is problem-native. Linked List: a
 scavenger hunt rerun backwards (Reverse), two boarding queues merging at one gate (Merge Two), a parade spotter walking
 a fixed two floats ahead (Remove Nth), a slideshow alternating oldest and newest photos (Reorder), and one departure
-board for three subway lines (Merge K).
+board for three subway lines (Merge K). Trees (DFS): a cave's deepest route, reported back chamber by chamber (Maximum
+Depth), a hike of exactly 13 km from a trailhead to a campsite (Path Sum), mail routing desks whose unit numbers must fit
+every turn above them (Validate BST), record-height stations on a cable car network (Count Good Nodes), and the most
+profitable stretch of road between towns that earn or cost money (Maximum Path Sum).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

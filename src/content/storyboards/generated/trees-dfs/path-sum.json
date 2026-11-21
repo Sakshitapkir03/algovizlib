@@ -1,0 +1,214 @@
+{
+  "id": "trees-dfs-path-sum",
+  "title": "Path Sum: A Hike of Exactly 13 Kilometers",
+  "concept": "Trees (DFS)",
+  "category": "dsa",
+  "summary": "Carry the distance so far down each fork; a campsite at exactly the target ends the search early.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A trail map starts at a trailhead and forks into legs that end at campsites. A hiker wants a route from the trailhead to a campsite that is exactly 13 km long.",
+    "mapping": [
+      {
+        "real": "A waypoint and the length of its leg",
+        "abstract": "A node and its value"
+      },
+      {
+        "real": "A campsite (the trail ends)",
+        "abstract": "A leaf"
+      },
+      {
+        "real": "Kilometers walked so far",
+        "abstract": "The running sum passed down"
+      },
+      {
+        "real": "Forks still waiting to hear back",
+        "abstract": "The call stack"
+      },
+      {
+        "real": "Calling the search off once a route works",
+        "abstract": "Returning true early (left || right)"
+      }
+    ]
+  },
+  "tags": [
+    "binary-tree",
+    "dfs",
+    "path"
+  ],
+  "takeaway": {
+    "pattern": "Depth-first search (pre-order, carrying state down)",
+    "summary": "Pass the running sum down to each child. At a leaf, compare it with the target. Return left || right, so the first true stops the search.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(h) for the call stack",
+    "whenToUse": [
+      "Root-to-leaf questions where each path carries a running value",
+      "Searches that can stop as soon as one path works"
+    ]
+  },
+  "trace": {
+    "problem": "trees-dfs/path-sum",
+    "args": [
+      [
+        6,
+        3,
+        9,
+        1,
+        4,
+        null,
+        2
+      ],
+      13
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v9",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T20:23:29.934Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "trail",
+      "narration": "A trail map forks from the trailhead down to campsites, and each number is the length of a leg. Is there a route to a campsite that is exactly 13 kilometers?",
+      "caption": "Find a route from the trailhead to a campsite: exactly 13 km",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "every-route",
+      "narration": "You could list every route and add each one up from the start, but routes share their first legs, so you'd keep re-adding the same kilometers.",
+      "caption": "Adding up every route from scratch repeats the shared legs",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "carry",
+      "narration": "Instead, carry the running total as you walk. The trailhead leg is 6 kilometers. Only a campsite can end a route, so keep going down.",
+      "caption": "Carry the kilometers so far down each fork",
+      "durationInFrames": 336,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "open forks"
+        }
+      ]
+    },
+    {
+      "id": "too-short",
+      "narration": "Down the left fork, 3 more makes 9, and campsite 1 makes 10. It's a campsite, but 10 isn't 13, so this route answers false.",
+      "caption": "Campsite 1: 6 + 3 + 1 = 10 km, not 13",
+      "durationInFrames": 336,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "open forks"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "too short"
+        }
+      ]
+    },
+    {
+      "id": "exact",
+      "narration": "Back at waypoint 3, try its other fork. Campsite 4 brings the total to exactly 13. This campsite answers true.",
+      "caption": "Campsite 4: 6 + 3 + 4 = 13 km exactly",
+      "durationInFrames": 276,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "open forks"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "exact"
+        }
+      ]
+    },
+    {
+      "id": "stop",
+      "narration": "True travels back up, and the trailhead stops right there. The legs to 9 and 2 are never walked: the first route that works is enough.",
+      "caption": "One route works: the right side is never walked",
+      "durationInFrames": 348,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "open forks"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "A 13 km route exists",
+          "detail": "6 → 3 → 4",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Waypoints are nodes, campsites are leaves, and the running total is a value passed down each call. Returning left or right stops at the first true. That's O(n) time and O(h) space.",
+      "caption": "Waypoints are nodes; campsites are leaves",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    }
+  ]
+}

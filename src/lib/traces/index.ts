@@ -26,6 +26,11 @@ import { pairWithTargetSumTrace } from "./two-pointers/pair-with-target-sum";
 import { threeSumTrace } from "./two-pointers/three-sum";
 import { trappingRainWaterTrace } from "./two-pointers/trapping-rain-water";
 import { validPalindromeTrace } from "./two-pointers/valid-palindrome";
+import { binaryTreeMaximumPathSumTrace } from "./trees-dfs/binary-tree-maximum-path-sum";
+import { countGoodNodesInBinaryTreeTrace } from "./trees-dfs/count-good-nodes-in-binary-tree";
+import { maximumDepthOfBinaryTreeTrace } from "./trees-dfs/maximum-depth-of-binary-tree";
+import { pathSumTrace } from "./trees-dfs/path-sum";
+import { validateBinarySearchTreeTrace } from "./trees-dfs/validate-binary-search-tree";
 import type { Trace, TraceDefinition } from "./types";
 
 export * from "./types";
@@ -63,6 +68,11 @@ const definitions = [
   removeNthNodeFromEndTrace,
   reorderListTrace,
   mergeKSortedListsTrace,
+  maximumDepthOfBinaryTreeTrace,
+  pathSumTrace,
+  countGoodNodesInBinaryTreeTrace,
+  validateBinarySearchTreeTrace,
+  binaryTreeMaximumPathSumTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

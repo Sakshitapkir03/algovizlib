@@ -3,7 +3,9 @@ import type { ComponentType } from "react";
 import type { ElementOf, ElementType } from "@/lib/storyboard";
 
 import { BarRow } from "./BarRow";
+import { BinaryTree } from "./BinaryTree";
 import { Callout } from "./Callout";
+import { CallStack } from "./CallStack";
 import { CountArray } from "./CountArray";
 import { Counter } from "./Counter";
 import { Cut } from "./Cut";
@@ -46,6 +48,9 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   "bar-row": { component: BarRow, slot: "canvas", layer: 0 },
   // Nodes and arrows; highlights ring the nodes and pointers sit above them.
   "linked-list": { component: LinkedList, slot: "canvas", layer: 0 },
+  // Nodes, edges, and notes; highlights ring the nodes. The call stack is a column beside it.
+  "binary-tree": { component: BinaryTree, slot: "canvas", layer: 0 },
+  "call-stack": { component: CallStack, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

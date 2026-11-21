@@ -1,0 +1,257 @@
+{
+  "id": "trees-dfs-count-good-nodes-in-binary-tree",
+  "title": "Count Good Nodes: Record Heights on a Cable Car Network",
+  "concept": "Trees (DFS)",
+  "category": "dsa",
+  "summary": "Carry the highest station seen so far down each line; a station at least that high is a record, and counts add up on the way back.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Cable car lines branch out from a base station, and each number is a station's height in hundreds of meters. A station is a record if you're at least as high as every station you passed to reach it.",
+    "mapping": [
+      {
+        "real": "A station and its height",
+        "abstract": "A node and its value"
+      },
+      {
+        "real": "The highest station passed so far",
+        "abstract": "The maximum on the path, passed down"
+      },
+      {
+        "real": "A record station",
+        "abstract": "A good node"
+      },
+      {
+        "real": "Stations waiting for their branch's count",
+        "abstract": "The call stack"
+      },
+      {
+        "real": "A branch reporting its records",
+        "abstract": "The count a call returns"
+      }
+    ]
+  },
+  "tags": [
+    "binary-tree",
+    "dfs"
+  ],
+  "takeaway": {
+    "pattern": "Depth-first search (state down, counts up)",
+    "summary": "Pass the largest value on the path down to each node. A node at least that large is good. Each call returns its own 1 or 0 plus both children's counts.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(h) for the call stack",
+    "whenToUse": [
+      "A node's status depends on all of its ancestors",
+      "Counting or summing over a tree while carrying path state down"
+    ]
+  },
+  "trace": {
+    "problem": "trees-dfs/count-good-nodes-in-binary-tree",
+    "args": [
+      [
+        4,
+        2,
+        6,
+        5,
+        1,
+        3,
+        8
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v9",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T20:23:29.931Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "network",
+      "narration": "Cable car lines branch out from a base station, and each number is a height. A station is a record if nothing you passed on the way was higher. How many records are there?",
+      "caption": "Count stations at least as high as any before them",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "recheck",
+      "narration": "You could ride back to the base for every station and compare it with each one on the way, but that repeats the same rides over and over.",
+      "caption": "Rechecking every route from the base repeats the ride",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "narration": "Instead, carry the highest height seen so far. The base station, 4, has nothing before it, so it's a record, and the highest is now 4.",
+      "caption": "The base station counts: nothing came before it",
+      "durationInFrames": 348,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "stations waiting"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "records"
+        }
+      ]
+    },
+    {
+      "id": "lower",
+      "narration": "Ride left to station 2. You already passed a 4, so 2 isn't a record. The highest stays 4.",
+      "caption": "Station 2 is lower than the 4 you passed: no record",
+      "durationInFrames": 264,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "stations waiting"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "no record"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "records"
+        }
+      ]
+    },
+    {
+      "id": "higher",
+      "narration": "Station 5 is below a lower station, but it's higher than the 4 you carried down. That makes it a record.",
+      "caption": "Station 5 beats the 4 you passed: a record",
+      "durationInFrames": 288,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "stations waiting"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "record"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "records"
+        }
+      ]
+    },
+    {
+      "id": "branch",
+      "narration": "Station 1 isn't a record either. Station 2 adds its own 0 to 1 from the left and 0 from the right, and reports 1 back to the base.",
+      "caption": "Station 2's branch reports 0 + 1 + 0 = 1 record",
+      "durationInFrames": 384,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "stations waiting"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "reports 1"
+        }
+      ]
+    },
+    {
+      "id": "total",
+      "narration": "On the right, 6 and 8 are records and 3 isn't, so that branch reports 2. The base adds its own 1: four records in all.",
+      "caption": "The base adds it all up: 1 + 1 + 2 = 4 records",
+      "durationInFrames": 348,
+      "traceStep": 21,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "stations waiting"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Record stations",
+          "detail": "4, 5, 6, and 8",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Stations are nodes, the height carried down is the path's maximum, and records are good nodes. Every node is visited once: O(n) time, O(h) space.",
+      "caption": "Stations are nodes; records are good nodes",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    }
+  ]
+}

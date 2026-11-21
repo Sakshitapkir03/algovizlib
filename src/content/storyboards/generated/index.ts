@@ -24,6 +24,11 @@ import sortingInsertionSort from "./sorting/insertion-sort.json";
 import sortingMergeSort from "./sorting/merge-sort.json";
 import sortingQuickSort from "./sorting/quick-sort.json";
 import sortingSelectionSort from "./sorting/selection-sort.json";
+import treesDfsBinaryTreeMaximumPathSum from "./trees-dfs/binary-tree-maximum-path-sum.json";
+import treesDfsCountGoodNodesInBinaryTree from "./trees-dfs/count-good-nodes-in-binary-tree.json";
+import treesDfsMaximumDepthOfBinaryTree from "./trees-dfs/maximum-depth-of-binary-tree.json";
+import treesDfsPathSum from "./trees-dfs/path-sum.json";
+import treesDfsValidateBinarySearchTree from "./trees-dfs/validate-binary-search-tree.json";
 import twoPointersContainerWithMostWater from "./two-pointers/container-with-most-water.json";
 import twoPointersThreeSum from "./two-pointers/three-sum.json";
 import twoPointersTrappingRainWater from "./two-pointers/trapping-rain-water.json";
@@ -58,6 +63,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "sorting/merge-sort": loadStoryboard(sortingMergeSort),
   "sorting/quick-sort": loadStoryboard(sortingQuickSort),
   "sorting/selection-sort": loadStoryboard(sortingSelectionSort),
+  "trees-dfs/binary-tree-maximum-path-sum": loadStoryboard(treesDfsBinaryTreeMaximumPathSum),
+  "trees-dfs/count-good-nodes-in-binary-tree": loadStoryboard(treesDfsCountGoodNodesInBinaryTree),
+  "trees-dfs/maximum-depth-of-binary-tree": loadStoryboard(treesDfsMaximumDepthOfBinaryTree),
+  "trees-dfs/path-sum": loadStoryboard(treesDfsPathSum),
+  "trees-dfs/validate-binary-search-tree": loadStoryboard(treesDfsValidateBinarySearchTree),
   "two-pointers/container-with-most-water": loadStoryboard(twoPointersContainerWithMostWater),
   "two-pointers/three-sum": loadStoryboard(twoPointersThreeSum),
   "two-pointers/trapping-rain-water": loadStoryboard(twoPointersTrappingRainWater),

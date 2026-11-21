@@ -86,6 +86,7 @@ export const sceneSchema = z
       if (el.type === "item-row") rows.set(el.id, el.items.length);
       if (el.type === "bar-row") rows.set(el.id, el.bars.length);
       if (el.type === "linked-list") rows.set(el.id, el.nodes.length);
+      if (el.type === "binary-tree") rows.set(el.id, el.nodes.length);
     }
 
     const checkIndex = (rowId: string, idx: number, path: (string | number)[]) => {
@@ -362,6 +363,60 @@ export const sceneSchema = z
             });
           break;
         }
+        case "binary-tree": {
+          const n = el.nodes.length;
+          const ids = el.nodes.map((node) => node.id);
+          if (new Set(ids).size !== n || ids.some((id) => id >= n))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: `node ids must be 0–${n - 1}, each once`,
+            });
+          const children = el.nodes.flatMap((node) => [node.left, node.right]).filter((c) => c !== null);
+          if (children.some((c) => c >= n || c === 0) || new Set(children).size !== children.length)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "every node but the root (0) must be exactly one node's child",
+            });
+          const refs: [string, number | undefined][] = [
+            ["current", el.current],
+            ["nullVisit", el.nullVisit?.parent],
+            ["returned", el.returned?.to],
+            ...el.path.map((id) => ["path", id] as [string, number]),
+            ...el.done.map((id) => ["done", id] as [string, number]),
+            ...(el.skipped ?? []).map((id) => ["skipped", id] as [string, number]),
+            ...(el.results ?? []).map((r) => ["results", r.node] as [string, number]),
+            ...(el.badges ?? []).map((b) => ["badges", b.node] as [string, number]),
+          ];
+          for (const [field, id] of refs)
+            if (id !== undefined && id >= n)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, field],
+                message: `${field} refers to node ${id}, which isn't in the tree`,
+              });
+          const byId = new Map(el.nodes.map((node) => [node.id, node]));
+          if (el.nullVisit && byId.get(el.nullVisit.parent)?.[el.nullVisit.side] !== null)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nullVisit"],
+              message: `node ${el.nullVisit.parent} has a ${el.nullVisit.side} child, so that call isn't on a missing one`,
+            });
+          if (scene.elements.filter((e) => e.type === "binary-tree").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one binary-tree" });
+          break;
+        }
+        case "call-stack":
+          if (scene.elements.filter((e) => e.type === "call-stack").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one call-stack" });
+          if (el.kept !== undefined && el.kept > el.frames.length)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "kept"],
+              message: `kept (${el.kept}) can't exceed the ${el.frames.length} frames`,
+            });
+          break;
         case "cut":
           for (const field of ["at", "fromAt"] as const) {
             const at = el[field];

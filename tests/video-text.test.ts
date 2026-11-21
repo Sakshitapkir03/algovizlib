@@ -7,6 +7,8 @@ import { storyboards } from "@/content/storyboards";
 import { primitiveRegistry } from "@/video/primitives/registry";
 import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
+
+import { treeProblems } from "./fixtures/tree-fit";
 import { MIN_TEXT_PX, PHONE_PLAYER_WIDTH, TEXT, textMetrics } from "@/video/text";
 
 const phone = textMetrics(PHONE_PLAYER_WIDTH);
@@ -43,6 +45,8 @@ describe("video text at phone width", () => {
     expect(Object.keys(primitiveRegistry).sort()).toEqual(
       [
         "bar-row",
+        "binary-tree",
+        "call-stack",
         "callout",
         "count-array",
         "counter",
@@ -67,6 +71,18 @@ describe("video text at phone width", () => {
         "window",
       ].sort(),
     );
+  });
+
+  it("trees and call stacks fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        treeProblems(scene.elements, full, layoutScene(scene.elements, full).bottomTop).map(
+          (p) => `${storyboard.id} › ${scene.id}: ${p}`,
+        ),
+      ),
+    );
+    expect(problems).toEqual([]);
   });
 
   it("linked lists fit at full size too (lanes, the bottom stack, and the stage edges)", () => {
@@ -264,6 +280,9 @@ describe("video text at phone width", () => {
               fail("the last lane runs into the bottom stack");
             break;
           }
+          case "binary-tree":
+            for (const problem of treeProblems(scene.elements, phone, bottomTop)) fail(problem);
+            break;
           case "heap-tree":
             for (const v of el.values)
               if (!phone.fits(String(v), phone.size(TEXT.heapNode), 96 - 12, "mono"))

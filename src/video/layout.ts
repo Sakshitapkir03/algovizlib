@@ -1,5 +1,7 @@
 import type {
   BarRowElement,
+  BinaryTreeElement,
+  CallStackElement,
   Element,
   ItemRowElement,
   LinkedListElement,
@@ -56,6 +58,32 @@ export type ListLayout = {
   present: boolean[];
 };
 
+/** Where a binary tree draws: node centers by id, plus geometry for stubs and annotations. */
+export type TreeLayout = {
+  nodeSize: number;
+  /** Center of node `id`. */
+  center: (id: number) => { x: number; y: number };
+  /** Vertical distance between levels (center to center). */
+  levelGap: number;
+  /** Horizontal distance from a node at `depth` to either child's center. */
+  childOffset: (depth: number) => number;
+  depthOf: (id: number) => number;
+  /** Room to the right of a node for its note ("sum 9", "↑ 3") before the next node or the region's edge. */
+  noteRoom: (id: number) => number;
+  region: Region;
+};
+
+/** Where a call-stack draws: a column beside the tree, frames stacked from the bottom. */
+export type StackLayout = {
+  left: number;
+  width: number;
+  /** Top of the title (hidden on a phone-sized player) and bottom of the lowest frame. */
+  top: number;
+  bottom: number;
+  frameHeight: number;
+  gap: number;
+};
+
 const SIDE_MARGIN = 64;
 const GAP = 16;
 const MAX_CARD_WIDTH = 140;
@@ -97,6 +125,9 @@ export type SceneLayout = {
   heapRegion: Region;
   /** A linked-list's geometry, when the scene has one. */
   list?: ListLayout;
+  /** A binary tree's and a call stack's geometry, when the scene has them. */
+  tree?: TreeLayout;
+  stack?: StackLayout;
 };
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
@@ -131,6 +162,10 @@ export const sizes = {
   /** A number-line tick: wide enough for its largest candidate. */
   numberCell: (t: TextMetrics, values: readonly number[]) =>
     Math.max(48, ...values.map((v) => t.width(String(v), t.size(TEXT.countCell), "mono") + 16)),
+  /** A call-stack frame: one line of label and note. */
+  stackFrame: (t: TextMetrics) => Math.max(t.size(TEXT.stackLabel), t.size(TEXT.stackNote)) + 18,
+  /** A tree node's box: big enough for a two-digit negative value. */
+  treeNode: (t: TextMetrics) => t.width("-88", t.size(TEXT.treeValue), "mono") + 14,
   /** Each extra pointer stacked under the first at the same position: its pill plus a gap. */
   stackedPointer: (t: TextMetrics) => t.size(TEXT.pointer) + 18 + 6,
 };
@@ -366,6 +401,150 @@ function layoutList(
   };
 }
 
+/** How far a missing child's "null" stub reaches below its parent before its box. */
+export const STUB_DROP = 28;
+
+const TREE = {
+  maxNode: 76,
+  /** Levels are at least this far apart beyond a node's height (room for the edges). */
+  minEdge: 22,
+  idealEdge: 44,
+  maxLevelGap: 132,
+  margin: 48,
+  stackGap: 40,
+  stackMaxWidth: 380,
+  /** On a phone-sized player the stack's text is larger: it gets more room. */
+  compactStackMaxWidth: 470,
+  stackMinWidth: 240,
+};
+
+/** The call-stack's longest line, at the sizes it's drawn with (its notes fall back to shorter forms). */
+function stackWidth(stack: CallStackElement, t: TextMetrics): number {
+  const label = Math.max(0, ...stack.frames.map((f) => t.width(f.label, t.size(TEXT.stackLabel), "mono")));
+  const note = t.width(t.compact ? "→ false" : "waiting for right", t.size(TEXT.stackNote));
+  return Math.min(
+    t.compact ? TREE.compactStackMaxWidth : TREE.stackMaxWidth,
+    Math.max(TREE.stackMinWidth, label + note + 48),
+  );
+}
+
+/** A binary tree by depth (each node at its position in a full tree), with a call stack beside it. */
+function layoutTree(
+  tree: BinaryTreeElement,
+  stackElement: CallStackElement | undefined,
+  elements: readonly Element[],
+  t: TextMetrics,
+  bottomTop: number,
+): { tree: TreeLayout; row: RowLayout; stack?: StackLayout; overflow: number } {
+  const byId = new Map(tree.nodes.map((n) => [n.id, n]));
+  const place = new Map<number, { depth: number; k: number }>();
+  const walk = (id: number | null, depth: number, k: number) => {
+    if (id === null || place.has(id)) return;
+    place.set(id, { depth, k });
+    walk(byId.get(id)?.left ?? null, depth + 1, 2 * k);
+    walk(byId.get(id)?.right ?? null, depth + 1, 2 * k + 1);
+  };
+  walk(0, 0, 0);
+  const levels = Math.max(1, ...[...place.values()].map((p) => p.depth + 1));
+
+  const stackW = stackElement ? stackWidth(stackElement, t) : 0;
+  const right = VIDEO_WIDTH - TREE.margin;
+  const stackLeft = right - stackW;
+  const region: Region = {
+    left: TREE.margin,
+    right: stackElement ? stackLeft - TREE.stackGap : right,
+    top: captionBottom(t) + 8,
+    bottom: bottomTop - 16,
+  };
+  const width = region.right - region.left;
+  const bottomPitch = width / 2 ** (levels - 1);
+  // Room above the root for highlight tags, and under the last level when this scene visits a missing child there.
+  const tags = elements.some((el) => el.type === "highlight" && el.rowId === tree.id) ? sizes.tagRoom(t) : 0;
+  const deepStub =
+    tree.nullVisit !== undefined && (place.get(tree.nullVisit.parent)?.depth ?? 0) === levels - 1;
+  const stub = deepStub ? STUB_DROP + t.size(TEXT.treeNull) * 1.8 : 0;
+  const height = region.bottom - region.top - tags - stub;
+  // Nodes as large as the width and height allow (capped), but never smaller than their widest value.
+  const valueSize = t.size(TEXT.treeValue);
+  const needed = Math.max(...tree.nodes.map((n) => t.width(String(n.value), valueSize, "mono"))) + 14;
+  const nodeSize = Math.max(
+    needed,
+    Math.min(TREE.maxNode, bottomPitch * 0.74, (height - (levels - 1) * TREE.minEdge) / levels),
+  );
+  const minGap = nodeSize + TREE.minEdge;
+  const levelGap =
+    levels > 1 ? Math.min(TREE.maxLevelGap, Math.max(minGap, (height - nodeSize) / (levels - 1))) : 0;
+  const used = tags + nodeSize + (levels - 1) * levelGap + stub;
+  // Ask the bottom stack to move down until the tree gets its full-size nodes and roomy levels (it only moves as
+  // far as its own contents allow).
+  const ideal = Math.min(TREE.maxNode, bottomPitch * 0.74);
+  const wanted = tags + ideal + (levels - 1) * (ideal + TREE.idealEdge) + stub;
+  const overflow = Math.max(0, Math.max(used, wanted) - (region.bottom - region.top));
+  // Centered in the band when there's room to spare.
+  const top = region.top + tags + Math.max(0, (region.bottom - region.top - used) / 2);
+  const center = (id: number) => {
+    const p = place.get(id) ?? { depth: 0, k: 0 };
+    return {
+      x: region.left + ((p.k + 0.5) * width) / 2 ** p.depth,
+      y: top + nodeSize / 2 + p.depth * levelGap,
+    };
+  };
+  const childOffset = (depth: number) => width / 2 ** (depth + 2);
+  const noteRoom = (id: number) => {
+    const p = place.get(id);
+    if (!p) return 0;
+    const x = center(id).x + nodeSize / 2;
+    const next = [...place.entries()]
+      .filter(([other, q]) => other !== id && q.depth === p.depth && q.k > p.k)
+      .map(([other]) => center(other).x - nodeSize / 2);
+    return Math.max(0, Math.min(region.right + TREE.stackGap / 2, ...next) - x - 8);
+  };
+
+  const ids = [...tree.nodes].sort((a, b) => a.id - b.id).map((n) => n.id);
+  const centers = ids.map((id) => center(id).x);
+  const tops = ids.map((id) => center(id).y - nodeSize / 2);
+  const row: RowLayout = {
+    rowId: tree.id,
+    top: Math.min(...tops),
+    cardWidth: nodeSize,
+    cardHeight: nodeSize,
+    lefts: centers.map((x) => x - nodeSize / 2),
+    centers,
+    tops,
+    reservedTop: Math.min(...tops) - tags,
+    pointerTop: Math.max(...tops) + nodeSize + 8,
+    panelTop: Math.max(...tops) + nodeSize + 8,
+    rightLimit: region.right,
+  };
+
+  let stack: StackLayout | undefined;
+  if (stackElement) {
+    const frameHeight = sizes.stackFrame(t);
+    stack = {
+      left: stackLeft,
+      width: stackW,
+      top: region.top,
+      bottom: region.bottom,
+      frameHeight,
+      gap: 6,
+    };
+  }
+  return {
+    tree: {
+      nodeSize,
+      center,
+      levelGap,
+      childOffset,
+      depthOf: (id) => place.get(id)?.depth ?? 0,
+      noteRoom,
+      region,
+    },
+    row,
+    stack,
+    overflow,
+  };
+}
+
 export function layoutScene(elements: readonly Element[], text: TextMetrics = textMetrics()): SceneLayout {
   const t = text;
   const bottom = elements.filter((el) => bottomHeight(el, t) > 0);
@@ -381,8 +560,8 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
       el.type === "item-row" && first.rows[el.id] ? [CARD_HEIGHT - first.rows[el.id].cardHeight] : [],
     ),
   );
-  // A linked list's lanes that don't fit push the bottom stack down too.
-  const need = Math.max(short, first.listOverflow ?? 0);
+  // A linked list's lanes (or a tree's levels) that don't fit push the bottom stack down too.
+  const need = Math.max(short, first.listOverflow ?? 0, first.treeOverflow ?? 0);
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
 }
@@ -391,7 +570,7 @@ function layoutWith(
   elements: readonly Element[],
   t: TextMetrics,
   bottomTop: number,
-): SceneLayout & { listOverflow?: number } {
+): SceneLayout & { listOverflow?: number; treeOverflow?: number } {
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
   let list: ListLayout | undefined;
@@ -409,6 +588,23 @@ function layoutWith(
     listRows[listElement.id] = laid.row;
     if (laid.heap) heapRegion = laid.heap;
     listOverflow = laid.overflow;
+  }
+  const treeElement = elements.find((el): el is BinaryTreeElement => el.type === "binary-tree");
+  let tree: TreeLayout | undefined;
+  let stack: StackLayout | undefined;
+  let treeOverflow: number | undefined;
+  if (treeElement) {
+    const laid = layoutTree(
+      treeElement,
+      elements.find((el): el is CallStackElement => el.type === "call-stack"),
+      elements,
+      t,
+      bottomTop,
+    );
+    tree = laid.tree;
+    stack = laid.stack;
+    listRows[treeElement.id] = laid.row;
+    treeOverflow = laid.overflow;
   }
 
   const rows = elements.filter((el): el is Row => el.type === "item-row" || el.type === "bar-row");
@@ -512,7 +708,16 @@ function layoutWith(
       rightLimit: heap ? heapRegion.left - 10 : VIDEO_WIDTH - 16,
     };
   });
-  return { rows: { ...layouts, ...listRows }, bottomTop, heapRegion, list, listOverflow };
+  return {
+    rows: { ...layouts, ...listRows },
+    bottomTop,
+    heapRegion,
+    list,
+    listOverflow,
+    tree,
+    stack,
+    treeOverflow,
+  };
 }
 
 /** Row geometry only (see `layoutScene`). */

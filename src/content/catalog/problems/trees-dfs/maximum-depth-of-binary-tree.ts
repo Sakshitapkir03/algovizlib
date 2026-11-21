@@ -13,7 +13,7 @@ A tree is written in level order: values row by row, left to right, with \`null\
     {
       input: "root = [5, 2, 8, null, 4, 7, 9, null, null, 1]",
       output: "4",
-      explanation: "The longest path is 5 → 2 → 4 → 1, which has 4 nodes.",
+      explanation: "The longest path is 5 → 8 → 7 → 1, which has 4 nodes.",
       args: [[5, 2, 8, null, 4, 7, 9, null, null, 1]],
       expected: 4,
     },

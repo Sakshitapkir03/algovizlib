@@ -1,0 +1,211 @@
+{
+  "id": "trees-dfs-validate-binary-search-tree",
+  "title": "Validate a Binary Search Tree: Checking the Mail Routing Desks",
+  "concept": "Trees (DFS)",
+  "category": "dsa",
+  "summary": "Every desk inherits a range from the desks above it; the first number outside its range fails the whole chart.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A mailroom routes letters through desks: at each desk, lower unit numbers go left and higher ones go right. A desk only works if its number fits every turn a letter took to reach it.",
+    "mapping": [
+      {
+        "real": "A routing desk and its unit number",
+        "abstract": "A node and its value"
+      },
+      {
+        "real": "Lower numbers go left, higher go right",
+        "abstract": "The search tree rule"
+      },
+      {
+        "real": "The range of numbers that can reach a desk",
+        "abstract": "The (low, high) bounds passed down"
+      },
+      {
+        "real": "Desks still waiting for a verdict",
+        "abstract": "The call stack"
+      },
+      {
+        "real": "Stopping at the first misrouted desk",
+        "abstract": "Returning false early (left && right)"
+      }
+    ]
+  },
+  "tags": [
+    "binary-tree",
+    "bst",
+    "dfs"
+  ],
+  "takeaway": {
+    "pattern": "Depth-first search with bounds passed down",
+    "summary": "Pass a (low, high) range to every node. Going left, the node's value becomes the new upper bound; going right, the new lower bound. A value outside its range fails, and && stops the search there.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(h) for the call stack",
+    "whenToUse": [
+      "Checking an ordering rule that involves every ancestor, not just the parent",
+      "Any tree check where constraints narrow on the way down"
+    ]
+  },
+  "trace": {
+    "problem": "trees-dfs/validate-binary-search-tree",
+    "args": [
+      [
+        10,
+        5,
+        15,
+        3,
+        12
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v9",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T20:23:29.935Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "mailroom",
+      "narration": "A mailroom routes letters through desks. At each desk, lower unit numbers go left and higher ones go right. Is this routing chart correct?",
+      "caption": "Lower unit numbers go left, higher numbers go right",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "parent-only",
+      "narration": "Comparing each desk with the desk right above it misses mistakes further up, and comparing it with every desk above it repeats work at each level.",
+      "caption": "Checking each desk against its parent isn't enough",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "root",
+      "narration": "Instead, hand each desk the range of numbers that can reach it. Desk 10 is first, so anything goes, from minus infinity to infinity.",
+      "caption": "Desk 10 has no limits yet",
+      "durationInFrames": 324,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "desks waiting"
+        }
+      ]
+    },
+    {
+      "id": "left-of-10",
+      "narration": "Letters reach desk 5 by turning left at 10, so desk 5 must be below 10. It is. Its own right side must now stay between 5 and 10.",
+      "caption": "Left of desk 10, every number must be below 10",
+      "durationInFrames": 384,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "desks waiting"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "fits"
+        }
+      ]
+    },
+    {
+      "id": "misrouted",
+      "narration": "Desk 3 fits. Then desk 12: it's bigger than 5, so its parent looks happy, but it sits left of 10. A 12 could never be routed there.",
+      "caption": "Desk 12 must be between 5 and 10, but it's above 10",
+      "durationInFrames": 372,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "desks waiting"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "out of range"
+        }
+      ]
+    },
+    {
+      "id": "stop",
+      "narration": "False travels back up, and desk 10 stops right away. Desk 15 is never checked: one misrouted desk is enough.",
+      "caption": "One misrouted desk fails the chart: 15 is never checked",
+      "durationInFrames": 276,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "desks waiting"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Valid routing chart?",
+          "detail": "12 sits left of 10",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Desks are nodes, and each call carries a low and high bound that tighten on the way down. Each node is checked once: O(n) time, O(h) space.",
+      "caption": "Desks are nodes; the range is (low, high)",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    }
+  ]
+}

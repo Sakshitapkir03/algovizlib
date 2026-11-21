@@ -120,6 +120,47 @@ export type TraceStep = {
   links?: TraceLinks;
   /** A min-heap's array after this step (Merge K Sorted Lists' heads), drawn by a heap-tree. */
   heap?: number[];
+  /** A binary tree's walk after this step (the tree's shape is `trace.tree`). See `TraceTreeWalk`. */
+  tree?: TraceTreeWalk;
+  /** The recursion's open calls, bottom (the first call) to top (the running one). */
+  stack?: TraceFrame[];
+};
+
+/**
+ * A binary tree's node. Ids are positions in level order counting only real nodes (0 = the root), never change,
+ * and `trace.row.values[id]` is the node's value; pointers and highlights refer to nodes by id.
+ */
+export type TraceTreeNode = { id: number; value: number; left: number | null; right: number | null };
+
+export type TreeSide = "left" | "right";
+
+/** Where a recursive walk is: which call runs, which calls are open, finished, or never made. */
+export type TraceTreeWalk = {
+  /** The node whose call is running (it may be returning in this step). */
+  current?: number;
+  /** A call on a missing child (the base case): the child of `parent` on `side`, drawn as a "null" stub. */
+  nullVisit?: { parent: number; side: TreeSide };
+  /** Nodes with an open call, root first (the path from the root to the running call). */
+  path: number[];
+  /** Nodes whose call has returned. */
+  done: number[];
+  /** Nodes never visited because an answer came early (an early exit skips their whole subtree). */
+  skipped?: number[];
+  /** A value handed up this step: from the child of `to` on `side` (a node or a missing child) to `to`. */
+  returned?: { to: number; side: TreeSide; value: string };
+  /** What each finished call returned, shown beside its node. */
+  results?: { node: number; value: string }[];
+  /** Running state carried down to a node (the sum so far, the bounds, the best on the path). */
+  badges?: { node: number; text: string }[];
+};
+
+/** One open call: `label` reads like the call ("depth(5)", "depth(∅)"), `waiting` names the child it's waiting on. */
+export type TraceFrame = {
+  label: string;
+  node: number | null;
+  waiting?: TreeSide;
+  /** Set in the step where the call returns (the frame pops after it). */
+  returns?: string;
 };
 
 /**
@@ -148,7 +189,9 @@ export type Trace = {
   /** "pattern/slug" of the catalog problem. */
   problem: string;
   /** The values the video animates, in display order. */
-  row: { values: TraceValue[]; display: "cards" | "bars" | "list" };
+  row: { values: TraceValue[]; display: "cards" | "bars" | "list" | "tree" };
+  /** A binary tree's shape (display "tree"); it never changes, steps record the walk over it. */
+  tree?: { nodes: TraceTreeNode[] };
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */
   secondRow?: { values: TraceValue[] };
   pointerNames: string[];

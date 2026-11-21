@@ -1,10 +1,16 @@
 import { finalPositions, runTrace, type Trace, type TraceStep } from "@/lib/traces";
 
-import type { TraceLinks } from "@/lib/traces";
+import type { TraceLinks, TraceTreeNode, TraceTreeWalk } from "@/lib/traces";
 
-import type { ComparisonOp, Element, EquationElement, LinkedListElement } from "./elements";
+import type {
+  BinaryTreeElement,
+  ComparisonOp,
+  Element,
+  EquationElement,
+  LinkedListElement,
+} from "./elements";
 import type { ValidationIssue, ValidationResult } from "./issues";
-import { applyOperator } from "./resolve";
+import { applyOperator, keptFrames } from "./resolve";
 import type { Scene, Storyboard } from "./schema";
 
 function compare(a: number, b: number): ComparisonOp {
@@ -125,7 +131,42 @@ function rowValues(el: Element): readonly (number | string)[] | undefined {
   if (el.type === "bar-row") return el.bars.map((b) => b.value);
   // Pointers and highlights on a list refer to nodes by id, so the "row" is the values in id order.
   if (el.type === "linked-list") return [...el.nodes].sort((a, b) => a.id - b.id).map((n) => n.value);
+  // Same for a tree's nodes.
+  if (el.type === "binary-tree") return [...el.nodes].sort((a, b) => a.id - b.id).map((n) => n.value);
   return undefined;
+}
+
+/** "#0 5 (L #1, R #2), …", for readable issues. */
+const showTree = (nodes: readonly TraceTreeNode[]) =>
+  [...nodes]
+    .sort((a, b) => a.id - b.id)
+    .map(
+      (n) =>
+        `#${n.id} ${n.value} (L ${n.left === null ? "null" : `#${n.left}`}, R ${n.right === null ? "null" : `#${n.right}`})`,
+    )
+    .join(", ");
+
+/** A tree walk field by field, in a canonical text form (empty and missing read the same). */
+function walkFields(walk: Partial<TraceTreeWalk> | BinaryTreeElement): Record<string, string> {
+  const ids = (list: readonly number[] | undefined) =>
+    JSON.stringify([...(list ?? [])].sort((a, b) => a - b));
+  const byNode = <T extends { node: number }>(list: readonly T[] | undefined) =>
+    JSON.stringify([...(list ?? [])].sort((a, b) => a.node - b.node));
+  return {
+    current: JSON.stringify(walk.current ?? null),
+    nullVisit: JSON.stringify(
+      walk.nullVisit ? { parent: walk.nullVisit.parent, side: walk.nullVisit.side } : null,
+    ),
+    // Root first: order matters.
+    path: JSON.stringify(walk.path ?? []),
+    done: ids(walk.done),
+    skipped: ids(walk.skipped),
+    returned: JSON.stringify(
+      walk.returned ? { to: walk.returned.to, side: walk.returned.side, value: walk.returned.value } : null,
+    ),
+    results: byNode(walk.results?.map((r) => ({ node: r.node, value: r.value }))),
+    badges: byNode(walk.badges?.map((b) => ({ node: b.node, text: b.text }))),
+  };
 }
 
 /** A list's nodes in a canonical form (id order, every field present), for comparing with a trace step. */
@@ -198,6 +239,25 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
       }
     };
 
+    const checkTree = (el: BinaryTreeElement) => {
+      const expected = trace.tree?.nodes;
+      if (!expected) {
+        push("This trace isn't a tree; remove the binary-tree", el.id, "nodes");
+        return;
+      }
+      const canon = (nodes: readonly TraceTreeNode[]) =>
+        JSON.stringify(
+          [...nodes]
+            .sort((a, b) => a.id - b.id)
+            .map((n) => ({ id: n.id, value: n.value, left: n.left, right: n.right })),
+        );
+      if (canon(el.nodes) !== canon(expected))
+        push("The tree's nodes don't match the trace; omit nodes to take them from it", el.id, "nodes", {
+          expected: showTree(expected),
+          actual: showTree(el.nodes),
+        });
+    };
+
     // Reveals and answer checks apply with or without a bound step.
     for (const el of scene.elements) {
       if (
@@ -259,6 +319,27 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           if (el.rewired?.length)
             push("Links only rewire in a scene bound to a trace step", el.id, "rewired");
         }
+        if (el.type === "binary-tree") {
+          checkTree(el);
+          // An unbound tree is bare (the intro), or the walk as it ends (a recap).
+          const drawn = walkFields(el);
+          const bare = walkFields({});
+          const last = trace.steps.at(-1)?.tree;
+          const same = (fields: Record<string, string>) =>
+            Object.keys(drawn).every((k) => drawn[k] === fields[k]);
+          if (!same(bare) && !(last && same(walkFields(last))))
+            push(
+              "Without a traceStep, the tree is drawn bare (or as the walk ends); omit current/path/done/… to take them from the trace",
+              el.id,
+              "path",
+            );
+        }
+        if (el.type === "call-stack")
+          push(
+            "A call-stack needs the scene to set traceStep (its frames come from the step)",
+            el.id,
+            "frames",
+          );
       }
       continue;
     }
@@ -693,6 +774,62 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           }
           break;
         }
+        case "binary-tree": {
+          checkTree(el);
+          if (!step.tree) {
+            push(`Trace step ${stepIndex} has no tree walk`, el.id, "path");
+            break;
+          }
+          const expected = walkFields(step.tree);
+          const drawn = walkFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The tree's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "call-stack": {
+          if (!step.stack) {
+            push(`Trace step ${stepIndex} has no call stack`, el.id, "frames");
+            break;
+          }
+          const show = (frames: readonly { label: string; waiting?: string; returns?: string }[]) =>
+            frames
+              .map(
+                (f) =>
+                  `${f.label}${f.waiting ? ` waiting for ${f.waiting}` : ""}${f.returns !== undefined ? ` returns ${f.returns}` : ""}`,
+              )
+              .join(" | ") || "empty";
+          const canon = (
+            frames: readonly { label: string; node: number | null; waiting?: string; returns?: string }[],
+          ) =>
+            JSON.stringify(
+              frames.map((f) => ({
+                label: f.label,
+                node: f.node,
+                waiting: f.waiting ?? null,
+                returns: f.returns ?? null,
+              })),
+            );
+          if (canon(el.frames) !== canon(step.stack))
+            push(`The call stack doesn't match trace step ${stepIndex}`, el.id, "frames", {
+              expected: show(step.stack),
+              actual: show(el.frames),
+            });
+          if (el.kept !== undefined) {
+            const expectedKept = previous?.stack ? keptFrames(previous.stack, step.stack) : undefined;
+            if (expectedKept === undefined)
+              push("Frames can't be kept from nowhere (no earlier bound call stack)", el.id, "kept");
+            else if (el.kept !== expectedKept)
+              push("kept must count the frames still open since the previous bound scene", el.id, "kept", {
+                expected: String(expectedKept),
+                actual: String(el.kept),
+              });
+          }
+          break;
+        }
         case "linked-list": {
           const expected = step.links;
           if (!expected) {
@@ -752,7 +889,7 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
  * go backwards, every key step is shown, rows hold the trace's values (the step's own array when the algorithm
  * rearranges it), and bound pointers, equations, highlights, fills, moves, sorted regions, held values, tallies,
  * groups, split trees, merge buffers, partitions, heaps, counters, windows, character counts, deques, search ranges,
- * candidate answers, and cuts match their step (a `traceRow: "second"` row holds the trace's second list), and the answer is revealed correctly. Hand-written and generated storyboards both pass
+ * candidate answers, cuts, linked lists, tree walks, and call stacks match their step (a `traceRow: "second"` row holds the trace's second list), and the answer is revealed correctly. Hand-written and generated storyboards both pass
  * through this before they are shown.
  */
 export function validateStoryboard(storyboard: Storyboard): ValidationResult {

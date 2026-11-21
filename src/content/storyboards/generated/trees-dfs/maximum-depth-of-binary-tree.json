@@ -1,0 +1,263 @@
+{
+  "id": "trees-dfs-maximum-depth-of-binary-tree",
+  "title": "Maximum Depth of a Binary Tree: How Deep Does the Cave Go?",
+  "concept": "Trees (DFS)",
+  "category": "dsa",
+  "summary": "Each chamber asks its two passages how deep they go and reports one more than the deeper answer.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A cave where every chamber opens into at most two passages. Cavers want to know how many chambers lie on the deepest route from the entrance.",
+    "mapping": [
+      {
+        "real": "A chamber",
+        "abstract": "A node"
+      },
+      {
+        "real": "A passage down to another chamber",
+        "abstract": "A left or right child"
+      },
+      {
+        "real": "A dead end",
+        "abstract": "A missing child (null), depth 0"
+      },
+      {
+        "real": "Cavers waiting at junctions for a report",
+        "abstract": "The call stack"
+      },
+      {
+        "real": "The report radioed back up",
+        "abstract": "The value a call returns"
+      }
+    ]
+  },
+  "tags": [
+    "binary-tree",
+    "recursion",
+    "dfs"
+  ],
+  "takeaway": {
+    "pattern": "Depth-first search (post-order)",
+    "summary": "A node's depth is 1 plus the deeper of its children's depths, and a missing child is 0. Ask both sides, then combine on the way back up.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(h) for the call stack (h = height)",
+    "whenToUse": [
+      "An answer for a node that depends on answers from its subtrees",
+      "Heights, sizes, and sums over a tree"
+    ]
+  },
+  "trace": {
+    "problem": "trees-dfs/maximum-depth-of-binary-tree",
+    "args": [
+      [
+        5,
+        2,
+        8,
+        null,
+        4,
+        7,
+        9,
+        null,
+        null,
+        1
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v9",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T20:23:29.933Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "cave",
+      "narration": "Cavers are mapping a cave where each chamber opens into at most two passages. How many chambers lie on the deepest route?",
+      "caption": "Every chamber opens into at most two passages",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "routes",
+      "narration": "Walking every route from the entrance would crawl through the shared upper passages again and again.",
+      "caption": "Walking every route from the entrance repeats work",
+      "durationInFrames": 229,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "ask",
+      "narration": "Instead, each chamber sends cavers down both passages and waits. Its depth is one more than the deeper report. The entrance, 5, asks first.",
+      "caption": "Ask both passages how deep they go, then add one",
+      "durationInFrames": 324,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "waiting cavers"
+        }
+      ]
+    },
+    {
+      "id": "dead-end",
+      "narration": "Chamber 2 has no left passage. A dead end answers at once: zero chambers. That's the rule that stops the search.",
+      "caption": "A dead end is 0 chambers deep",
+      "durationInFrames": 288,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "waiting cavers"
+        }
+      ]
+    },
+    {
+      "id": "chamber-2",
+      "narration": "Chamber 4 is a dead end both ways, so it reports 1. Chamber 2 now has 0 and 1, keeps the deeper, adds itself, and radios 2 up to the entrance.",
+      "caption": "Chamber 2 hears 0 and 1, so it reports 2",
+      "durationInFrames": 408,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "waiting cavers"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "reports 2"
+        }
+      ]
+    },
+    {
+      "id": "chamber-7",
+      "narration": "On the right side the cavers go deeper still. Chamber 1 reports 1, the dead end beside it reports 0, so chamber 7 reports 2.",
+      "caption": "Chamber 7 hears 1 and 0: it reports 2",
+      "durationInFrames": 336,
+      "traceStep": 15,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "waiting cavers"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "reports 2"
+        }
+      ]
+    },
+    {
+      "id": "chamber-8",
+      "narration": "Chamber 9 reports 1. Chamber 8 keeps the deeper report, 2, adds itself, and sends 3 up.",
+      "caption": "Chamber 8 hears 2 and 1, so it reports 3",
+      "durationInFrames": 240,
+      "traceStep": 20,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "waiting cavers"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "reports 3"
+        }
+      ]
+    },
+    {
+      "id": "entrance",
+      "narration": "The entrance hears 2 from the left and 3 from the right. One plus 3 is 4: the deepest route passes four chambers.",
+      "caption": "The entrance: 1 + the deeper of 2 and 3 = 4",
+      "durationInFrames": 312,
+      "traceStep": 21,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "call-stack",
+          "label": "waiting cavers"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Deepest route",
+          "detail": "chambers 5 → 8 → 7 → 1",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Chambers are nodes, dead ends are null, and the waiting cavers are the call stack. One visit per node: O(n) time, O(h) space.",
+      "caption": "Chambers are nodes; dead ends are null",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    }
+  ]
+}

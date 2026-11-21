@@ -99,4 +99,10 @@ export const TEXT = {
   listDummy: 18,
   listNull: 15,
   laneLabel: 15,
+  treeValue: 30,
+  treeNote: 15,
+  treeNull: 13,
+  stackLabel: 20,
+  stackNote: 15,
+  stackTitle: 15,
 } as const;
