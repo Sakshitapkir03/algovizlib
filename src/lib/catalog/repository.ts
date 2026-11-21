@@ -206,3 +206,46 @@ export function getSearchIndex(): SearchIndex {
     ),
   };
 }
+
+/** What /me and the landing page's "Continue" card need to show progress: every group, pattern, and problem. */
+export type ProgressIndex = {
+  groups: {
+    slug: string;
+    name: string;
+    patterns: {
+      slug: string;
+      name: string;
+      href: string;
+      problems: { patternSlug: string; slug: string }[];
+    }[];
+  }[];
+  /** Problem key ("<pattern>/<slug>") → display data. */
+  problems: Record<string, { title: string; href: string; patternName: string; hasVideo: boolean }>;
+};
+
+export function getProgressIndex(): ProgressIndex {
+  const patternName = new Map(getPatterns("dsa").map((p) => [p.slug, p.name]));
+  return {
+    groups: getPatternsByGroup("dsa").map(({ group, patterns }) => ({
+      slug: group.slug,
+      name: group.name,
+      patterns: patterns.map((p) => ({
+        slug: p.slug,
+        name: p.name,
+        href: patternHref(p),
+        problems: getProblems(p.slug).map(({ patternSlug, slug }) => ({ patternSlug, slug })),
+      })),
+    })),
+    problems: Object.fromEntries(
+      getAllProblems().map((p) => [
+        `${p.patternSlug}/${p.slug}`,
+        {
+          title: p.title,
+          href: problemHref(p),
+          patternName: patternName.get(p.patternSlug) ?? p.patternSlug,
+          hasVideo: hasVideo(p),
+        },
+      ]),
+    ),
+  };
+}

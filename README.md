@@ -25,7 +25,12 @@ Binary Search problems (a shrinking search range with the dropped half dimmed, a
 partition cuts across two lists). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
-You can mark each problem Not started / Learning / Done. Progress is saved in your browser.
+Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach
+marks it Learning; finishing the video asks "Mark as done?" (Done is never set for you, and your own choice always
+wins). Videos remember where you stopped and offer "Resume from 0:42". Without an account all of this is saved in
+your browser. **Signing in is optional** (GitHub or Google; email + password behind a flag, see Accounts): then
+progress and video positions sync across devices, and `/me` shows progress by group and pattern, what to continue,
+and what you finished recently.
 
 Videos are **trace-bound storyboards**: deterministic code runs each algorithm on one example and records every
 decision, and a storyboard's pointers, equations, and highlights come from (and are checked against) that trace.
@@ -34,26 +39,39 @@ Storyboards can be generated offline by a model: the model writes the story, the
 ## Stack
 
 Next.js (App Router, `src/`) · TypeScript (strict) · Tailwind CSS v4 · shadcn/ui · Remotion (`@remotion/player`) ·
-Zustand · Zod · Vitest · ESLint + Prettier · pnpm
+Zustand · Zod · Auth.js v5 · Prisma + Postgres (Neon) · Argon2id · Resend · Vitest · ESLint + Prettier · pnpm
 
 ## Getting started
 
-Requirements: Node.js 20+ and pnpm (`corepack enable pnpm`).
+Requirements: Node.js 20+, pnpm (`corepack enable pnpm`), and Postgres for accounts (locally:
+`brew install postgresql@16 && brew services start postgresql@16`).
 
 ```bash
-pnpm install
+pnpm install                       # also generates the Prisma client
+cp .env.example .env.local         # then fill in DATABASE_URL and AUTH_SECRET (below)
+createdb algovizlib_dev && createdb algovizlib_test
+pnpm db:migrate                    # apply the migrations to DATABASE_URL
 pnpm dev
 ```
 
+Minimal `.env.local` for accounts (never commit it): `DATABASE_URL=postgresql://<you>@localhost:5432/algovizlib_dev`,
+`DATABASE_URL_TEST=postgresql://<you>@localhost:5432/algovizlib_test`, and `AUTH_SECRET` from `npx auth secret`.
+Email + password sign-in is on locally, and verification and reset links are printed to the dev server's console
+(no email service needed). GitHub and Google buttons appear once their `AUTH_*_ID`/`_SECRET` are set. Everything
+else works without any of this: guests never touch the database.
+
 Open http://localhost:3000. Routes:
 
-| Route                   | Page                                                 |
-| ----------------------- | ---------------------------------------------------- |
-| `/`                     | Landing                                              |
-| `/dsa`                  | Patterns grouped in four sections, with progress     |
-| `/dsa/<pattern>`        | Pattern intro and a filterable problem table         |
-| `/dsa/<pattern>/<slug>` | Problem: statement, examples, video, hints, approach |
-| `/system-design`        | Coming soon, with planned topics                     |
+| Route                                                               | Page                                                 |
+| ------------------------------------------------------------------- | ---------------------------------------------------- |
+| `/`                                                                 | Landing                                              |
+| `/dsa`                                                              | Patterns grouped in four sections, with progress     |
+| `/dsa/<pattern>`                                                    | Pattern intro and a filterable problem table         |
+| `/dsa/<pattern>/<slug>`                                             | Problem: statement, examples, video, hints, approach |
+| `/system-design`                                                    | Coming soon, with planned topics                     |
+| `/me`                                                               | My progress: by group and pattern, continue, done    |
+| `/login`, `/account`                                                | Sign in (optional); linked providers, password       |
+| `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Email + password (when enabled)                      |
 
 Press **Cmd/Ctrl + K** anywhere to jump to a pattern group, pattern, or problem. Old `/learn/two-pointers` links redirect permanently
 to `/dsa/two-pointers/pair-with-target-sum`.
@@ -70,6 +88,9 @@ to `/dsa/two-pointers/pair-with-target-sum`.
 | `pnpm test`       | Run the Vitest suite once (includes checking every problem example against a reference solution) |
 | `pnpm test:watch` | Vitest in watch mode                                                                             |
 | `pnpm format`     | Format with Prettier                                                                             |
+| `pnpm db:migrate` | Create/apply Prisma migrations on `DATABASE_URL` (development)                                   |
+| `pnpm db:deploy`  | Apply committed migrations (production: run against Neon's direct URL)                           |
+| `pnpm db:studio`  | Browse the database                                                                              |
 
 Offline tooling: `pnpm generate:storyboards` (below) and `pnpm generate:narration` (voice-over, below).
 
@@ -126,10 +147,26 @@ fullscreen. Keyboard: **Space** play/pause, **←/→** seek 5 seconds, **Shift 
 **F** fullscreen. Click a scene in the list (or in the transcript) to jump to it. Sound starts only when you press
 play.
 
+## Accounts
+
+Auth.js v5 (pinned to `5.0.0-beta.32`) with GitHub, Google, and email + password; sessions are httpOnly JWT cookies,
+and changing or resetting a password signs out every other session. Data lives in Postgres through Prisma
+(`prisma/schema.prisma`, migrations committed): Auth.js's tables, `AuthToken` (hashed single-use verification and
+reset tokens), `RateLimit` (shared counters for login, register, and reset limits), and `Progress` (per user and
+problem: status, whether you set it yourself, and the last video position). Passwords are hashed with Argon2id.
+
+Email + password is behind `AUTH_EMAIL_PASSWORD_ENABLED` (on locally, off in production): it needs a sending domain
+verified with Resend, because Resend's free plan without one only delivers to your own address. To turn it on in
+production: verify a domain in Resend, set `RESEND_API_KEY`, `EMAIL_FROM` (an address on that domain), and
+`AUTH_EMAIL_PASSWORD_ENABLED=true` in Vercel, and redeploy. Full setup, data model, and rules: [CLAUDE.md](./CLAUDE.md).
+
 ## Deploying
 
-Import the repo into Vercel. It needs no configuration: the framework, pnpm, and the build command are detected
-automatically, and every page is statically prerendered.
+Import the repo into Vercel: the framework, pnpm, and the build command are detected automatically, and every page
+is statically prerendered (session and progress load in the browser). Accounts need these environment variables in
+Vercel (Production): `DATABASE_URL` (Neon, pooled), `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`,
+`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, plus `DATABASE_URL_UNPOOLED` for running `pnpm db:deploy` (migrations are
+never run by the build). See `.env.example`.
 
 ## Contributing
 

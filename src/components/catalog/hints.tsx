@@ -3,12 +3,20 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { applyProgress } from "@/lib/progress/use-progress";
 
 import { InlineText } from "./rich-text";
 
-/** Progressive hints: one more each click, so the learner only sees as much as they ask for. */
-export function Hints({ hints }: { hints: string[] }) {
+/**
+ * Progressive hints: one more each click, so the learner only sees as much as they ask for. With `problemKey`,
+ * revealing one marks the problem "Learning" (only if it's "Not started").
+ */
+export function Hints({ hints, problemKey }: { hints: string[]; problemKey?: string }) {
   const [shown, setShown] = useState(0);
+  const reveal = () => {
+    setShown((n) => n + 1);
+    if (problemKey) applyProgress({ op: "mark-learning", key: problemKey });
+  };
   return (
     <div className="space-y-3">
       {shown > 0 && (
@@ -27,7 +35,7 @@ export function Hints({ hints }: { hints: string[] }) {
       )}
       <div className="flex items-center gap-3">
         {shown < hints.length ? (
-          <Button variant="outline" size="sm" onClick={() => setShown((n) => n + 1)}>
+          <Button variant="outline" size="sm" onClick={reveal}>
             {shown === 0 ? "Show first hint" : "Show next hint"}
           </Button>
         ) : (

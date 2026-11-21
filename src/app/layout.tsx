@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { AccountProvider } from "@/components/account/account-provider";
+import { VerifyBanner } from "@/components/account/verify-banner";
 import { SiteHeader } from "@/components/site/site-header";
 import { ThemeProvider } from "@/components/site/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,32 +37,35 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
-          <TooltipProvider>
-            <a
-              href="#main"
-              className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:ring-3 focus:ring-ring/50"
-            >
-              Skip to content
-            </a>
-            <SiteHeader />
-            <main id="main" className="flex-1">
-              {children}
-            </main>
-            <footer className="border-t py-6 text-center text-xs text-muted-foreground">
-              algovizlib · Learn the approach, not just the code. ·{" "}
-              <span className="whitespace-nowrap">
-                Voice by{" "}
-                <a
-                  href="https://elevenlabs.io"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2"
-                >
-                  ElevenLabs
-                </a>
-              </span>
-            </footer>
-          </TooltipProvider>
+          <AccountProvider>
+            <TooltipProvider>
+              <a
+                href="#main"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:ring-3 focus:ring-ring/50"
+              >
+                Skip to content
+              </a>
+              <SiteHeader />
+              <VerifyBanner />
+              <main id="main" className="flex-1">
+                {children}
+              </main>
+              <footer className="border-t py-6 text-center text-xs text-muted-foreground">
+                algovizlib · Learn the approach, not just the code. ·{" "}
+                <span className="whitespace-nowrap">
+                  Voice by{" "}
+                  <a
+                    href="https://elevenlabs.io"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    ElevenLabs
+                  </a>
+                </span>
+              </footer>
+            </TooltipProvider>
+          </AccountProvider>
         </ThemeProvider>
       </body>
     </html>

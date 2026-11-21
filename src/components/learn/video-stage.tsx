@@ -49,17 +49,18 @@ export default function VideoStage({
     const onFrame = (e: { detail: { frame: number } }) => store.setFrame(e.detail.frame);
     const onPlay = () => store.setPlaying(true);
     const onPause = () => store.setPlaying(false);
+    const onEnded = () => store.setEnded();
     player.addEventListener("frameupdate", onFrame);
     player.addEventListener("seeked", onFrame);
     player.addEventListener("play", onPlay);
     player.addEventListener("pause", onPause);
-    player.addEventListener("ended", onPause);
+    player.addEventListener("ended", onEnded);
     return () => {
       player.removeEventListener("frameupdate", onFrame);
       player.removeEventListener("seeked", onFrame);
       player.removeEventListener("play", onPlay);
       player.removeEventListener("pause", onPause);
-      player.removeEventListener("ended", onPause);
+      player.removeEventListener("ended", onEnded);
       store.attach(null);
     };
   }, []);

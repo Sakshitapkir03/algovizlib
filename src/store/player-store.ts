@@ -11,6 +11,8 @@ type PlayerState = {
   player: PlayerRef | null;
   frame: number;
   isPlaying: boolean;
+  /** The video played to its last frame (cleared by playing or seeking again). */
+  ended: boolean;
   playbackRate: PlaybackRate;
   isFullscreen: boolean;
   /** Narration volume, 0–1. */
@@ -23,6 +25,7 @@ type PlayerState = {
   attach: (player: PlayerRef | null) => void;
   setFrame: (frame: number) => void;
   setPlaying: (isPlaying: boolean) => void;
+  setEnded: () => void;
   setPlaybackRate: (rate: PlaybackRate) => void;
   setFullscreen: (isFullscreen: boolean) => void;
   setHolding: (holding: boolean) => void;
@@ -64,15 +67,17 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
   player: null,
   frame: 0,
   isPlaying: false,
+  ended: false,
   playbackRate: 1,
   isFullscreen: false,
   volume: 1,
   muted: false,
   holding: false,
   speechAvailable: false,
-  attach: (player) => set({ player, frame: 0, isPlaying: false, holding: false }),
+  attach: (player) => set({ player, frame: 0, isPlaying: false, ended: false, holding: false }),
   setFrame: (frame) => set({ frame }),
-  setPlaying: (isPlaying) => set({ isPlaying }),
+  setPlaying: (isPlaying) => set(isPlaying ? { isPlaying, ended: false } : { isPlaying }),
+  setEnded: () => set({ ended: true, isPlaying: false }),
   setPlaybackRate: (playbackRate) => set({ playbackRate }),
   setFullscreen: (isFullscreen) => set({ isFullscreen }),
   setHolding: (holding) => set({ holding }),
@@ -104,6 +109,6 @@ export const usePlayerStore = create<PlayerState>()((set, get) => ({
     if (!player) return;
     const target = Math.max(0, Math.round(frame));
     player.seekTo(target);
-    set({ frame: target });
+    set({ frame: target, ended: false });
   },
 }));

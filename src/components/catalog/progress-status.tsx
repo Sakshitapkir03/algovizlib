@@ -8,7 +8,16 @@ import {
   statusOf,
   type ProgressStatus,
 } from "@/lib/progress";
-import { useProgress } from "@/lib/progress/use-progress";
+import { useProgress, type SyncState } from "@/lib/progress/use-progress";
+
+import { StatusNote } from "./status-note";
+
+const WHERE: Record<SyncState, string> = {
+  browser: "saved in this browser",
+  unverified: "saved in this browser · verify your email to sync",
+  syncing: "syncing…",
+  account: "synced to your account",
+};
 
 const GLYPH: Record<ProgressStatus, string> = { "not-started": "○", learning: "◐", done: "●" };
 
@@ -40,7 +49,7 @@ export function ProblemStatus({ problem }: { problem: ProblemRef }) {
 
 /** Segmented radio group for the problem page. */
 export function StatusPicker({ problem }: { problem: ProblemRef }) {
-  const { snapshot, setStatus, persistent } = useProgress();
+  const { snapshot, setStatus, persistent, sync } = useProgress();
   const key = progressKey(problem);
   const current = statusOf(snapshot, key);
   return (
@@ -69,8 +78,11 @@ export function StatusPicker({ problem }: { problem: ProblemRef }) {
         ))}
       </fieldset>
       <p className="font-mono text-[11px] text-muted-foreground" aria-live="polite">
-        {persistent ? "saved in this browser" : "storage unavailable: progress lasts until you reload"}
+        {persistent || sync === "account"
+          ? WHERE[sync]
+          : "storage unavailable: progress lasts until you reload"}
       </p>
+      <StatusNote />
     </div>
   );
 }

@@ -4,12 +4,20 @@ import { ChevronRight } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { applyProgress } from "@/lib/progress/use-progress";
 
-/** Hides the key idea and complexity until the learner asks, so the page never spoils the solution by default. */
-export function ApproachToggle({ children }: { children: ReactNode }) {
+/**
+ * Hides the key idea and complexity until the learner asks, so the page never spoils the solution by default.
+ * With `problemKey`, opening it marks the problem "Learning" (only if it's "Not started").
+ */
+export function ApproachToggle({ children, problemKey }: { children: ReactNode; problemKey?: string }) {
   const [open, setOpen] = useState(false);
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next && problemKey) applyProgress({ op: "mark-learning", key: problemKey });
+  };
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border">
+    <Collapsible open={open} onOpenChange={onOpenChange} className="rounded-lg border">
       <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-4 py-3 text-left text-sm font-medium hover:bg-muted/40">
         <ChevronRight
           aria-hidden

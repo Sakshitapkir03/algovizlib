@@ -1,0 +1,121 @@
+// Accounts and per-user progress. Migrations live in prisma/migrations (committed); apply them with
+// `pnpm db:migrate` locally and `pnpm db:deploy` against Neon. See "Accounts" in CLAUDE.md.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Auth.js tables (the @auth/prisma-adapter shape), plus password and session-revocation fields.
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  /// Argon2id hash (PHC string). Null for accounts that only sign in with GitHub or Google.
+  passwordHash   String?
+  /// Bumped on password change or reset; a session whose version differs is signed out.
+  sessionVersion Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts   Account[]
+  sessions   Session[]
+  authTokens AuthToken[]
+  progress   Progress[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Required by the adapter's shape; unused, since sessions are JWTs (the credentials provider needs them).
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Required by the adapter's shape; unused (no magic-link provider). Our tokens are in AuthToken.
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+enum AuthTokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+/// Email verification and password reset tokens. Only a SHA-256 hash is stored; each is single-use.
+model AuthToken {
+  id        String           @id @default(cuid())
+  userId    String
+  purpose   AuthTokenPurpose
+  tokenHash String           @unique
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+}
+
+/// Fixed-window counters for rate limits (login, register, reset, progress writes), shared by every instance.
+model RateLimit {
+  key         String
+  windowStart DateTime
+  count       Int
+
+  @@id([key, windowStart])
+  @@index([windowStart])
+}
+
+/// One row per user and problem ("<pattern>/<slug>"). Status: "not-started" | "learning" | "done".
+model Progress {
+  userId            String
+  problemKey        String
+  status            String    @default("not-started")
+  /// Set by the learner (the selector or "Mark as done"); automatic updates never change a manual status.
+  statusManual      Boolean   @default(false)
+  statusUpdatedAt   DateTime  @default(now())
+  /// Where the video was left: the scene and seconds from the video's start. Null once watched to the end.
+  sceneId           String?
+  positionSeconds   Float?
+  positionUpdatedAt DateTime?
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, problemKey])
+}

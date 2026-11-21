@@ -17,6 +17,7 @@ import { ExampleSourceBadge } from "@/components/learn/example-source-badge";
 import { KeyTakeaway } from "@/components/learn/key-takeaway";
 import { LearnView } from "@/components/learn/learn-view";
 import type { Problem } from "@/lib/catalog";
+import { progressKey } from "@/lib/progress";
 import {
   getAdjacentProblems,
   getRelatedPatterns,
@@ -138,7 +139,11 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
                 {storyboard ? (
                   <div className="space-y-3">
                     <ExampleSourceBadge source={storyboard.exampleSource} />
-                    <LearnView storyboard={storyboard} showTakeaway={false} />
+                    <LearnView
+                      storyboard={storyboard}
+                      showTakeaway={false}
+                      problemKey={progressKey(problem)}
+                    />
                     <p className="font-mono text-[11px] text-muted-foreground">
                       space play/pause · ←/→ seek 5s · shift+←/→ change scene · f fullscreen
                     </p>
@@ -148,10 +153,10 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
                 )}
               </Section>
               <Section title="Hints">
-                <Hints hints={problem.hints} />
+                <Hints hints={problem.hints} problemKey={progressKey(problem)} />
               </Section>
               <Section title="Approach">
-                <ApproachToggle>
+                <ApproachToggle problemKey={progressKey(problem)}>
                   <RichText text={problem.keyIdea} className="space-y-3 leading-relaxed" />
                   <ComplexityBlock complexity={problem.complexity} />
                   {storyboard && <KeyTakeaway takeaway={storyboard.takeaway} analogy={storyboard.analogy} />}

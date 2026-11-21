@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createLocalProgressRepository, progressKey, PROGRESS_STORAGE_KEY, statusOf } from "@/lib/progress";
+import {
+  createLocalProgressRepository,
+  progressKey,
+  PROGRESS_STORAGE_KEY,
+  PROGRESS_STORAGE_KEY_V1,
+  statusOf,
+} from "@/lib/progress";
 
 /** Minimal in-memory Storage. */
 function memoryStorage(initial: Record<string, string> = {}) {
@@ -22,35 +28,69 @@ describe("ProgressRepository with storage", () => {
     expect(repo.persistent).toBe(true);
     expect(statusOf(repo.getSnapshot(), KEY)).toBe("not-started");
 
-    repo.set(KEY, "learning");
-    expect(statusOf(repo.getSnapshot(), KEY)).toBe("learning");
+    const repo2 = createLocalProgressRepository(storage, () => 1000);
+    repo2.set(KEY, "learning");
+    expect(statusOf(repo2.getSnapshot(), KEY)).toBe("learning");
     expect(JSON.parse(storage.getItem(PROGRESS_STORAGE_KEY)!)).toEqual({
-      version: 1,
-      statuses: { [KEY]: "learning" },
+      version: 2,
+      records: { [KEY]: { status: "learning", manual: true, updatedAt: 1000 } },
     });
 
     // A fresh repository (a reload) reads it back.
     expect(statusOf(createLocalProgressRepository(storage).getSnapshot(), KEY)).toBe("learning");
   });
 
-  it("removes the entry when reset to not-started", () => {
+  it("drops the status when reset to not-started, but remembers it was the learner's choice", () => {
     const storage = memoryStorage();
     const repo = createLocalProgressRepository(storage);
     repo.set(KEY, "done");
     repo.set(KEY, "not-started");
     expect(repo.getSnapshot()).toEqual({});
+    expect(repo.getRecords()[KEY]).toMatchObject({ status: "not-started", manual: true });
+  });
+
+  it("moves version 1 statuses to version 2 (as the learner's choices) and removes the old key", () => {
+    const storage = memoryStorage({
+      [PROGRESS_STORAGE_KEY_V1]: JSON.stringify({
+        version: 1,
+        statuses: { [KEY]: "done", "x/y": "learning" },
+      }),
+    });
+    const repo = createLocalProgressRepository(storage, () => 42);
+    expect(repo.getSnapshot()).toEqual({ [KEY]: "done", "x/y": "learning" });
+    expect(repo.getRecords()[KEY]).toEqual({ status: "done", manual: true, updatedAt: 42 });
+    expect(storage.getItem(PROGRESS_STORAGE_KEY_V1)).toBeNull();
+    expect(JSON.parse(storage.getItem(PROGRESS_STORAGE_KEY)!).version).toBe(2);
+  });
+
+  it("keeps the status snapshot stable when only a video position changes", () => {
+    const repo = createLocalProgressRepository(memoryStorage());
+    repo.set(KEY, "learning");
+    const before = repo.getSnapshot();
+    repo.apply({ op: "save-position", key: KEY, sceneId: "intro", seconds: 12 });
+    expect(repo.getSnapshot()).toBe(before);
+    expect(repo.getRecords()[KEY].position).toMatchObject({ sceneId: "intro", seconds: 12 });
+  });
+
+  it("clear() forgets everything (after merging into an account)", () => {
+    const storage = memoryStorage();
+    const repo = createLocalProgressRepository(storage);
+    repo.set(KEY, "done");
+    repo.clear();
+    expect(repo.getRecords()).toEqual({});
+    expect(storage.getItem(PROGRESS_STORAGE_KEY)).toBeNull();
   });
 
   it("notifies subscribers and keeps the snapshot stable when nothing changes", () => {
     const repo = createLocalProgressRepository(memoryStorage());
     const listener = vi.fn();
     const unsubscribe = repo.subscribe(listener);
-    const before = repo.getSnapshot();
-    repo.set(KEY, "not-started"); // no-op
-    expect(listener).not.toHaveBeenCalled();
-    expect(repo.getSnapshot()).toBe(before);
     repo.set(KEY, "done");
     expect(listener).toHaveBeenCalledTimes(1);
+    const before = repo.getSnapshot();
+    repo.set(KEY, "done"); // no-op
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(repo.getSnapshot()).toBe(before);
     unsubscribe();
     repo.set(KEY, "learning");
     expect(listener).toHaveBeenCalledTimes(1);
@@ -60,7 +100,7 @@ describe("ProgressRepository with storage", () => {
     for (const raw of [
       "{not json",
       JSON.stringify({ version: 99, statuses: {} }),
-      JSON.stringify({ version: 1, statuses: { [KEY]: "mastered" } }),
+      JSON.stringify({ version: 2, records: { [KEY]: { status: "mastered", manual: true, updatedAt: 1 } } }),
     ]) {
       const repo = createLocalProgressRepository(memoryStorage({ [PROGRESS_STORAGE_KEY]: raw }));
       expect(repo.getSnapshot()).toEqual({});

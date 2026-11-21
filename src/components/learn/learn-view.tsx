@@ -14,6 +14,8 @@ import { KeyTakeaway } from "./key-takeaway";
 import { PlayerControls } from "./player-controls";
 import { SceneList } from "./scene-list";
 import { Transcript } from "./transcript";
+import { useVideoProgress } from "./use-video-progress";
+import { DonePrompt, ResumePrompt } from "./video-prompts";
 
 const SEEK_SECONDS = 5;
 
@@ -39,14 +41,17 @@ function isInteractive(target: EventTarget | null): boolean {
 
 /**
  * `showTakeaway={false}` leaves out the takeaway card, for pages that hide the approach behind a spoiler toggle
- * and render `<KeyTakeaway>` there instead.
+ * and render `<KeyTakeaway>` there instead. `problemKey` ties the video to a problem's progress: playing it marks
+ * the problem "Learning", its position is saved for "Resume", and finishing it asks "Mark as done?".
  */
 export function LearnView({
   storyboard,
   showTakeaway = true,
+  problemKey,
 }: {
   storyboard: Storyboard;
   showTakeaway?: boolean;
+  problemKey?: string;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
@@ -57,6 +62,7 @@ export function LearnView({
 
   const { timings, durationInFrames } = useMemo(() => getSceneTimeline(storyboard.scenes), [storyboard]);
   const currentIndex = sceneIndexAtFrame(timings, frame);
+  const progress = useVideoProgress(problemKey, timings, durationInFrames);
 
   const inputProps = useMemo<StoryboardCompositionProps>(
     () => ({ storyboard, theme: resolvedTheme === "light" ? "light" : "dark", reducedMotion }),
@@ -115,7 +121,10 @@ export function LearnView({
   }, [timings, durationInFrames, toggleFullscreen]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div
+      id={problemKey ? "resume" : undefined}
+      className="grid scroll-mt-20 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]"
+    >
       <div className="min-w-0 space-y-6">
         <Card className="gap-0 overflow-hidden py-0">
           <div
@@ -133,6 +142,14 @@ export function LearnView({
                 durationInFrames={durationInFrames}
                 label={`${storyboard.title} video. Currently on scene ${currentIndex + 1}: ${storyboard.scenes[currentIndex].caption}`}
               />
+              {progress.resumeAt !== null && (
+                <ResumePrompt
+                  frame={progress.resumeAt}
+                  onResume={progress.resume}
+                  onStartOver={progress.startOver}
+                />
+              )}
+              {progress.askDone && <DonePrompt onDone={progress.markDone} onDismiss={progress.dismissDone} />}
             </div>
             <PlayerControls
               durationInFrames={durationInFrames}

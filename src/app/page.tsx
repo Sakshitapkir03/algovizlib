@@ -2,7 +2,14 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { getAllProblems, getCategories, getPatterns, hasVideo } from "@/lib/catalog/repository";
+import { ContinueCard } from "@/components/account/continue-card";
+import {
+  getAllProblems,
+  getCategories,
+  getPatterns,
+  getProgressIndex,
+  hasVideo,
+} from "@/lib/catalog/repository";
 
 const PRINCIPLES = [
   {
@@ -56,6 +63,7 @@ export default function Home() {
           {patterns.length} patterns · {problems.length} problems · {videos}{" "}
           {videos === 1 ? "video" : "videos"}
         </p>
+        <ContinueCard problems={getProgressIndex().problems} />
       </section>
 
       <section className="pb-16" aria-labelledby="categories-heading">

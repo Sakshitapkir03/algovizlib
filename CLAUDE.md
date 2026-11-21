@@ -6,6 +6,8 @@ A web app that teaches computer science concepts (DSA first, then system design)
 (category → pattern → problem) and short animated videos. Each video explains the **approach** through a concrete
 real-world example, not a line-by-line code walkthrough. Narration is voiced offline with ElevenLabs (stitched into one continuous
 track per video) where the budget allows and read by the browser's own voice everywhere else (see "Narration").
+Signing in (GitHub, Google, or email + password behind a flag) is optional and syncs progress and video positions
+across devices; guests keep everything in the browser (see "Progress" and "Accounts").
 
 Every video is driven by a **storyboard**: plain, typed data bound to a **trace** (the exact steps an algorithm takes
 on one example). Storyboards are hand-written or generated offline by a model (`pnpm generate:storyboards`). Either
@@ -23,6 +25,7 @@ pnpm build        # production build (static prerender)
 pnpm format       # Prettier
 pnpm generate:storyboards --pattern two-pointers --dry-run   # offline AI generation (see below)
 pnpm generate:narration --storyboard two-pointers --dry-run   # offline ElevenLabs voice-over (see "Narration")
+pnpm db:migrate   # Prisma: create/apply migrations on DATABASE_URL (dev); pnpm db:deploy applies them (production)
 ```
 
 Run `lint`, `typecheck`, `test`, and `build` before committing.
@@ -38,11 +41,15 @@ src/
     dsa/[pattern]/[problem]/ problem page (tabs: Explanation; Practice later)
     dsa/load.ts              loadPattern/loadProblem: resolve URL slugs or notFound()
     system-design/page.tsx   coming soon + planned topics
+    login, register, forgot-password, reset-password, verify-email/   auth pages (static shells, client forms)
+    account/, me/            account settings; My progress (both read the session/progress in the browser)
+    api/auth/[...nextauth]/  Auth.js;  api/progress (GET, POST one change, sendBeacon) + api/progress/merge
   components/
     ui/                      shadcn/ui (radix-nova). Slider has thumbLabel/thumbValueText for a11y
     catalog/                 difficulty badge, path breadcrumb, problem table, hints, approach toggle, progress UI
     learn/                   LearnView, VideoStage (client-only Player), controls, scene list, transcript, takeaway
     site/                    header, Cmd/Ctrl+K command palette, theme toggle/provider
+    account/                 AccountProvider (session + progress sync), user menu, verify banner, auth forms, /me
   content/
     catalog/                 categories, patterns/<slug>.ts, problems/<pattern>/<slug>.ts, index.ts
     storyboards/             hand-written storyboards + registry (index.ts)
@@ -51,7 +58,11 @@ src/
     legacy-redirects.ts      old /learn/<id> URLs (imported by next.config.ts)
   lib/
     catalog/                 Zod schemas, define*(), judgeOutput(), repository.ts (the only way pages read content)
-    progress/                ProgressRepository (localStorage, memory fallback) + useProgress hook
+    progress/                records + rules (merge, auto-status), browser/account repositories, the tab's hub
+                             (useProgress), resume math, video tracker, server store + API logic
+    auth/                    flags, validation, password (Argon2id), tokens, rate limits, store, mailer, service
+                             (the email + password flows), linking rules, deps, server actions
+    db.ts                    Prisma client (Neon in production, local Postgres in development)
     storyboard/              Zod schemas (source + resolved), defineStoryboard(), resolveStoryboard(),
                              validateStoryboard(), primitive catalog, timing/timeline helpers
     traces/                  deterministic instrumented solutions: <pattern>/<slug>.ts + registry (app code)
@@ -60,10 +71,13 @@ src/
     generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
       narration/             OFFLINE ONLY: ElevenLabs client, stitching (+ ffmpeg), MP3 duration, pipeline, CLI, store
   video/                     Remotion composition, scene renderer, primitives + registry, theme
+  auth.ts                    Auth.js config (providers, JWT callbacks, linking check)
+  generated/prisma/          Prisma client (generated on install; gitignored)
   store/player-store.ts      Zustand: mirrors PlayerRef events, exposes toggle/seekTo, volume/mute (remembered), hold
   hooks/                     useReducedMotion
 scripts/generate-storyboards.ts   the generator CLI (tsx)
 scripts/generate-narration.ts     the narration CLI (tsx)
+prisma/schema.prisma, prisma/migrations/   the data model and committed migrations (prisma.config.ts reads .env.local)
 public/audio/<storyboard>/        the stitched narration track, narration-<hash>.mp3 (served)
 narration/clips/<storyboard>/      per-scene ElevenLabs clips, <scene>-<hash>.mp3 (stitching source, not served)
 tests/                       Vitest specs (fixtures/drafts.ts builds a correct draft from any trace)
@@ -193,12 +207,115 @@ hand-computed example fails the suite. Reference solutions are test-only: nothin
 
 ## Progress
 
-`lib/progress/repository.ts` defines `ProgressRepository` (`getSnapshot`, `set`, `subscribe`, `persistent`), keyed by
-`"<pattern>/<slug>"` with statuses `not-started | learning | done`. Today it's `createLocalProgressRepository()`:
-versioned JSON in localStorage, synced across tabs via the `storage` event, falling back to memory when storage is
-missing or throws (private mode, blocked site data, quota). Components use `useProgress()` (a
-`useSyncExternalStore` hook whose server snapshot is empty, so hydration always matches). To move to a database
-after auth: implement the interface against an API and swap it in `use-progress.ts`; components don't change.
+Per problem (key `"<pattern>/<slug>"`): a status (`not-started | learning | done`), whether the learner chose it
+(`manual`), when it changed, and the last video position (`{ sceneId, seconds, updatedAt }`). Types and rules are
+in `lib/progress/records.ts` (pure, shared by browser, server, and tests):
+
+- **Changes** are `ProgressChange` ops: `set-status` (manual), `mark-learning`, `save-position`, `clear-position`,
+  applied by `applyChange()` everywhere, so the browser copy, the account copy, and the server follow one set of rules.
+- **Automatic status:** playing a problem's video, revealing a hint, or opening "Show approach" applies
+  `mark-learning`, which only changes a status that is "Not started" and wasn't chosen by the learner (a manual "Not
+  started" stays). "Done" is never set automatically: a finished video shows a non-blocking "Mark as done?". The
+  selector always wins. A one-time note by the selector explains this (`algovizlib:status-note-seen`).
+- **Merge** (guest → account, `mergeRecords`): the more advanced status wins (never a downgrade), the newer position
+  wins. The server clamps future timestamps and drops unknown problems.
+
+Where it lives (`ProgressRepository`: `getSnapshot` (statuses), `getRecords`, `set`, `apply`, `subscribe`,
+`persistent`, `kind`):
+
+- **Browser copy** (`createLocalProgressRepository`): guests, and signed-in users whose email isn't verified.
+  localStorage `algovizlib:progress:v2` (version 1 statuses are migrated once), synced across tabs, memory fallback.
+- **Account copy** (`createAccountProgressRepository`): verified users. Applies changes at once and POSTs each to
+  `/api/progress`; on page hide, `sendBeacon`. A failed write reloads from the server.
+- **The hub** (`lib/progress/use-progress.ts`): one active copy per tab. `AccountProvider` (root layout) watches the
+  session and calls `syncAccountProgress`: for a verified user it POSTs the browser copy to `/api/progress/merge`,
+  clears it, and switches to the account copy; signing out switches back to the (now empty) browser copy. Components
+  only use `useProgress()` / `useProgressRecords()` / `applyProgress()`.
+
+**Video resume** (`lib/progress/resume.ts`, `video-tracker.ts`, used by `LearnView` when given `problemKey`): the
+position is saved every 5 s while playing, on pause, on a scene change, and on page hide (beacon); not in the first
+3 s or the last 2 s; reaching the end clears it. On open, "Resume from 0:42" / "Start over" seek the player (the
+narration engine resyncs on seeks). If the video's timing changed, it resumes at the saved scene's start; if the
+scene is gone, nothing is offered. Links ending in `#resume` (from `/me` and the landing "Continue" card) resume
+automatically.
+
+## Accounts
+
+Signing in is optional; guests can use everything. Auth.js v5 (**pinned to `5.0.0-beta.32`**, with
+`@auth/prisma-adapter`), configured in `src/auth.ts`:
+
+- **Providers:** GitHub and Google, each registered only when its `AUTH_*_ID`/`_SECRET` are set; email + password
+  (Credentials) only when `AUTH_EMAIL_PASSWORD_ENABLED` is on (`lib/auth/flags.ts`: on by default locally, off by
+  default in production). When it's off, the credentials provider isn't registered, the form is hidden, the
+  register/forgot/reset/verify pages 404, and every email + password action refuses (`MESSAGES.disabled`).
+- **Sessions:** JWT in httpOnly, SameSite=Lax cookies (Secure on https); required by the credentials provider. The
+  `jwt` callback re-reads the user on every read, so `emailVerified`, name, and linked providers stay current, and a
+  session whose `sv` differs from the user's `sessionVersion` is signed out. Changing or resetting a password bumps
+  it (change-password signs out this session too and sends you to `/login?notice=password-changed`).
+- **Pages stay static.** Session and progress are read in the browser (`SessionProvider` → `/api/auth/session`), the
+  header's user menu and the `/me`, `/account`, and landing "Continue" islands are client components. Only
+  `/api/*` is dynamic.
+- **Flows** (`lib/auth/service.ts`, dependencies injected, wrapped by server actions in `lib/auth/actions.ts`):
+  register (a taken email gets the same answer and an "already have an account" email; the same Argon2 work runs),
+  verify (the email link opens `/verify-email`, the token is used only by pressing the button, a POST, so link
+  scanners can't use it up), forgot/reset (same answer for unknown emails; reset uses the token, deletes other reset
+  links, bumps `sessionVersion`, and marks the email verified), resend verification, change password. Login answers
+  "Invalid email or password." for an unknown email, a wrong password, or an account without one, and checks a
+  dummy hash when there's nothing to check (`verifyAgainstDummy`), so timing doesn't tell either.
+- **Passwords:** Argon2id (`@node-rs/argon2`, 19 MiB, t=2, p=1; PHC strings), 10–128 characters, a strength hint
+  (`lib/auth/strength.ts`, no dictionary download). Never stored, logged, or encrypted reversibly.
+- **Tokens:** 32 random bytes (base64url) in the link; only the SHA-256 hash is stored (`AuthToken`); consumed with
+  one `DELETE … RETURNING`, so it works once even under concurrent requests. Verify: 24 hours; reset: 30 minutes.
+- **Unverified email + password accounts** can sign in, but progress stays in the browser (the API answers 403) and a
+  banner offers to resend the link; verifying merges it into the account.
+- **Account linking** (`lib/auth/linking.ts`, checked in the `signIn` callback; providers set
+  `allowDangerousEmailAccountLinking` so Auth.js links by email only after this check passes): an already linked
+  provider account signs in; a valid session linking from `/account` is allowed (a session that was signed out is
+  refused); otherwise the provider must say the email is verified (Google `email_verified`; GitHub `/user/emails`'
+  `verified`), and an existing account with that email is linked only if its email is verified too. Refusals go to
+  `/login?error=account-exists | unverified-provider-email | session-expired` with a clear message. Emails are
+  lowercased everywhere (the adapter is wrapped).
+- **Rate limits** (`lib/auth/rate-limit.ts`, fixed windows in the `RateLimit` table, shared by every instance): login
+  30/15 min per IP and 10/15 min per email; register 5/h per IP and 3/h per email; forgot 10/15 min per IP and 3/h
+  per email; reset and verify per IP; resend and change-password per user; progress writes 300/min per user.
+  Locally every request has the IP "local", so repeated test sign-ins can hit the IP limit: `DELETE FROM "RateLimit"`.
+- **CSRF:** Auth.js protects its routes; server actions get Next's Origin check; `/api/progress` POSTs require a
+  same-origin `Origin` header (`sameOrigin`), on top of SameSite cookies.
+- **Email** (`lib/auth/mailer.ts`): Resend when `RESEND_API_KEY` and `EMAIL_FROM` are set; otherwise the message and
+  link are printed to the server console (development). Production refuses to run email + password without Resend
+  (links must never land in production logs). Links use `APP_URL` (else Vercel's production domain), never the
+  request's Host header.
+- **Never on the client:** `@/auth`, `@/lib/db`, the auth store/service/password/tokens/mailer/deps, and the progress
+  server code; the modules holding secrets import `server-only`, and `tests/auth-boundaries.test.ts` checks every
+  client component's imports. Client components call server actions only.
+
+**Data model** (`prisma/schema.prisma`): `User` (+ `passwordHash`, `sessionVersion`), `Account`, `Session` and
+`VerificationToken` (the adapter's shape; unused with JWT sessions and no magic links), `AuthToken` (purpose,
+`tokenHash`, `expiresAt`), `RateLimit` (`key`, `windowStart`, `count`), `Progress` (`userId` + `problemKey`, `status`,
+`statusManual`, `statusUpdatedAt`, `sceneId`, `positionSeconds`, `positionUpdatedAt`). Deleting a user cascades.
+
+**Setup.** Locally: Postgres (`brew services start postgresql@16`), `createdb algovizlib_dev algovizlib_test`, then in
+`.env.local`: `DATABASE_URL`, `DATABASE_URL_TEST`, `AUTH_SECRET` (`npx auth secret`), and for `pnpm start`
+`AUTH_TRUST_HOST=true`; `pnpm db:migrate`. Optional locally: a GitHub OAuth app with callback
+`http://localhost:3000/api/auth/callback/github`, and Google credentials with
+`http://localhost:3000/api/auth/callback/google`. Production (Vercel, Production environment): `DATABASE_URL`
+(Neon pooled), `DATABASE_URL_UNPOOLED` (Neon direct, for migrations), `AUTH_SECRET` (a new one, not the local one),
+`AUTH_GITHUB_ID`/`_SECRET` (a second GitHub OAuth app with the production callback),
+`AUTH_GOOGLE_ID`/`_SECRET`; apply migrations with `pnpm db:deploy` against the direct URL before deploying a schema
+change (the build never migrates, so previews can't touch production data).
+
+**Turning on email + password in production:** add and verify a domain you own in Resend (DNS records), then set
+`RESEND_API_KEY`, `EMAIL_FROM` (`"algovizlib <hello@that-domain>"`), `AUTH_EMAIL_PASSWORD_ENABLED=true`, and
+`APP_URL` in Vercel and redeploy (the flag is read at build time for the pages and at run time for the actions).
+Without a verified domain, Resend's free plan only delivers to the account owner's own address.
+
+Tests: `tests/auth.test.ts` (Argon2id, validation, generic login errors, rate limits, tokens single-use and expiry,
+reset/change rules, duplicate registration, the flag, email), `tests/auth-linking.test.ts`,
+`tests/auth-boundaries.test.ts`, `tests/progress.test.ts` (browser copy, v1 migration),
+`tests/progress-sync.test.ts` (auto-status, merge, the hub's guest → account switch, API access control, resume and
+the video tracker with a fake player), `tests/db.integration.test.ts` (Prisma stores, concurrent token use, shared
+rate limits, per-user isolation; runs against `DATABASE_URL_TEST`, skipped without it). No test calls a real OAuth
+provider or sends email; only `DATABASE_URL_TEST` is read from `.env.local` (`vitest.config.ts`).
 
 ## Practice mode (planned, not built)
 
@@ -665,16 +782,26 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 2. **Narration.** Built (see "Narration"); every video is voiced; voice new ones with `--missing` as the monthly free quota allows. Later, use
    ElevenLabs' word timestamps (`/with-timestamps`) to time callouts and equations, and highlight words in the
    transcript.
-3. **Database, auth, and custom questions.** Move the catalog and storyboards behind the repository into a database,
-   move progress to a server-backed `ProgressRepository` after auth, and let users paste their own question.
+3. **Database and custom questions.** Accounts and server-backed progress are built (see "Accounts"). Next: move
+   the catalog and storyboards behind the repository into the database, and let users paste their own question.
+   Email + password in production once a Resend sending domain is verified.
 4. **Practice mode.** See "Practice mode (planned)" above.
 5. **System design explainers.** `box-arrow` primitive (services, queues, caches, arrows with animated requests),
    plus traces/validators for things like consistent hashing, rate limiters, and load balancing.
-6. **Rate limiting.** Per-user and per-IP limits on generation and narration endpoints (both cost money), plus
-   caching identical requests.
+6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for
+   generation and narration endpoints (both cost money), plus caching identical requests.
 7. Planned DSA primitives: `staircase`, `house-row`, `coin-set`, with their traces.
 
 ## Gotchas
+
+- **Prisma 7** generates its client into `src/generated/prisma` (gitignored) on `pnpm install` (`postinstall`) with
+  the `prisma-client` generator and the `pg` driver adapter (`lib/db.ts`). Import from `@/generated/prisma/client`.
+  `prisma.config.ts` loads `.env.local` (the CLI doesn't). Prisma's install scripts are allowed in
+  `pnpm-workspace.yaml` (`allowBuilds`). Auth.js and Prisma packages are pinned to exact versions.
+- **Auth forms submit through `startTransition`, not `<form action>`** (`useFieldValidation().submitWith`): React
+  resets a form's fields after a `<form action>` completes, which cleared the email after a wrong password and the
+  confirm field after a server error. Sign-in, sign-out, and change-password end with a full page load
+  (`window.location.assign`) so the session in the header refreshes.
 
 - **Automated browser checks must be silent.** Launch Chrome and create contexts only through
   `scripts/browser-checks/silent.mjs` (`launchSilent(chromium)`, `silentContext(browser, options)`). It passes
