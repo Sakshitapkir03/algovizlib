@@ -5,6 +5,7 @@ import type {
   Element,
   GraphElement,
   GridElement,
+  DpTableElement,
   HeapElement,
   ItemRowElement,
   LinkedListElement,
@@ -110,6 +111,29 @@ export type HeapPanel = {
   titleTop?: number;
 };
 
+/**
+ * Where a DP table draws: cells (a row, or a grid), headers (a 1D table's column headers go under it, a 2D table's
+ * above), and, when a staircase or house-row tells the story, the region above the table where it draws, column i over
+ * cell i.
+ */
+export type DpLayout = {
+  rows: number;
+  cols: number;
+  cellWidth: number;
+  cellHeight: number;
+  /** Center-to-center distance between columns. */
+  pitch: number;
+  colX: (c: number) => number;
+  rowY: (r: number) => number;
+  /** Row headers end here (they're right-aligned before the first column). */
+  rowHeaderRight: number;
+  /** Top of the column headers' row. */
+  colHeaderTop: number;
+  /** Room above a 1D table's cells for the read arcs. */
+  arcTop: number;
+  story?: { top: number; bottom: number };
+};
+
 /** Where a call-stack draws: a column beside the tree, frames stacked from the bottom. */
 export type StackLayout = {
   left: number;
@@ -169,6 +193,7 @@ export type SceneLayout = {
   graph?: GraphLayout;
   /** One panel per heap in a "heap" element. */
   heapPanels?: HeapPanel[];
+  dp?: DpLayout;
 };
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
@@ -754,6 +779,78 @@ function layoutHeaps(
   return { panels, overflow: Math.max(0, overflow) };
 }
 
+const DP = { maxPitch: 132, maxCell: 82, arc: 58, minStory: 150, idealStory: 230 };
+
+/** A DP table, and above a 1D one the story (staircase, street) lined up with its columns. */
+function layoutDp(
+  el: DpTableElement,
+  elements: readonly Element[],
+  t: TextMetrics,
+  top: number,
+  bottomTop: number,
+): { dp: DpLayout; overflow: number } {
+  const bottom = bottomTop - 16;
+  const header = t.size(TEXT.dpHeader);
+  const value = t.size(TEXT.dpValue);
+  const headerH = header + 12;
+  const rowHeaderW =
+    Math.max(0, ...(el.rowHeaders ?? []).map((h) => t.width(h, header, "mono"))) + (el.rowHeaders ? 18 : 0);
+  const width = VIDEO_WIDTH - 2 * GRID.margin - rowHeaderW;
+  const values = el.cells.flat().map((v) => (v === null ? "" : String(v)));
+  // As wide as the widest value it holds (at least one digit).
+  const needed = Math.max(t.width("8", value, "mono"), ...values.map((v) => t.width(v, value, "mono"))) + 14;
+  const story = elements.some((e) => e.type === "staircase" || e.type === "house-row");
+  let overflow = 0;
+  let pitch: number;
+  let cellHeight: number;
+  let tableTop: number;
+  let storyRegion: { top: number; bottom: number } | undefined;
+  let colHeaderTop: number;
+  if (el.rows === 1) {
+    pitch = Math.min(DP.maxPitch, width / el.cols);
+    cellHeight = Math.max(needed, Math.min(DP.maxCell, value + 36));
+    // The read arcs rise above the cells; the column headers sit under them.
+    const tableH = DP.arc + cellHeight + 6 + headerH;
+    if (story) {
+      const room = bottom - top - tableH;
+      overflow = Math.max(0, DP.idealStory - room);
+      tableTop = Math.max(top + DP.minStory, bottom - tableH) + DP.arc;
+      storyRegion = { top, bottom: tableTop - DP.arc - 4 };
+    } else {
+      overflow = Math.max(0, tableH - (bottom - top));
+      tableTop = top + Math.max(0, (bottom - top - tableH) / 2) + DP.arc;
+    }
+    colHeaderTop = tableTop + cellHeight + 6;
+  } else {
+    const fit = Math.min(DP.maxCell + 8, width / el.cols, (bottom - top - headerH) / el.rows);
+    // Never shorter than a value (11 px on screen) or narrower than the widest one.
+    pitch = Math.max(needed + 8, value + 12, fit);
+    cellHeight = pitch - 8;
+    const tableH = headerH + el.rows * pitch;
+    overflow = Math.max(0, Math.max(tableH, headerH + el.rows * (DP.maxCell + 8)) - (bottom - top));
+    colHeaderTop = top + Math.max(0, (bottom - top - tableH) / 2);
+    tableTop = colHeaderTop + headerH;
+  }
+  const cellWidth = pitch - 8;
+  const left = GRID.margin + rowHeaderW + (width - pitch * el.cols) / 2;
+  return {
+    dp: {
+      rows: el.rows,
+      cols: el.cols,
+      cellWidth,
+      cellHeight,
+      pitch,
+      colX: (c) => left + c * pitch + 4,
+      rowY: (r) => tableTop + r * (el.rows === 1 ? 0 : pitch),
+      rowHeaderRight: left - 6,
+      colHeaderTop,
+      arcTop: tableTop - DP.arc,
+      story: storyRegion,
+    },
+    overflow,
+  };
+}
+
 export function layoutScene(elements: readonly Element[], text: TextMetrics = textMetrics()): SceneLayout {
   const t = text;
   const bottom = elements.filter((el) => bottomHeight(el, t) > 0);
@@ -776,6 +873,7 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     first.treeOverflow ?? 0,
     first.searchOverflow ?? 0,
     first.heapOverflow ?? 0,
+    first.dpOverflow ?? 0,
   );
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
@@ -790,6 +888,7 @@ function layoutWith(
   treeOverflow?: number;
   searchOverflow?: number;
   heapOverflow?: number;
+  dpOverflow?: number;
 } {
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
@@ -835,6 +934,7 @@ function layoutWith(
   else if (graphElement) ({ graph, overflow: searchOverflow } = layoutGraph(graphElement, t, bottomTop));
 
   const heapElement = elements.find((el): el is HeapElement => el.type === "heap");
+  const dpElement = elements.find((el): el is DpTableElement => el.type === "dp-table");
   const rows = elements.filter((el): el is Row => el.type === "item-row" || el.type === "bar-row");
   const layouts: Record<string, RowLayout> = {};
   const hasCounts = elements.some((el) => el.type === "count-array");
@@ -900,8 +1000,8 @@ function layoutWith(
       const bandTop = t.compact ? COMPACT_BAR_TOP : BAR_TOP;
       top = bandTop + strip;
       cardHeight = Math.min(bandTop + BAR_HEIGHT, lowest) - top;
-    } else if (single && heapElement) {
-      // With a heap below, the input is a short strip of cards under the caption.
+    } else if (single && (heapElement || dpElement)) {
+      // With a heap or a table below, the input is a short strip of cards under the caption.
       cardHeight = HEAP_ROW_CARD;
       top = captionBottom(t) + sizes.tagRoom(t) + 4;
     } else if (single) {
@@ -940,6 +1040,13 @@ function layoutWith(
       rightLimit: heap ? heapRegion.left - 10 : VIDEO_WIDTH - 16,
     };
   });
+  let dp: DpLayout | undefined;
+  let dpOverflow: number | undefined;
+  if (dpElement) {
+    const row = Object.values(layouts)[0];
+    const top = row ? row.pointerTop + pointerRoom(elements, row.rowId, t) + 6 : captionBottom(t) + 8;
+    ({ dp, overflow: dpOverflow } = layoutDp(dpElement, elements, t, top, bottomTop));
+  }
   let heapPanels: HeapPanel[] | undefined;
   let heapOverflow: number | undefined;
   if (heapElement) {
@@ -962,6 +1069,8 @@ function layoutWith(
     searchOverflow,
     heapPanels,
     heapOverflow,
+    dp,
+    dpOverflow,
   };
 }
 

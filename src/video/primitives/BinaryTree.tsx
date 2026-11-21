@@ -31,6 +31,8 @@ export function BinaryTree({ element }: { element: BinaryTreeElement }) {
   const onPath = new Set(element.path);
   const done = new Set(element.done);
   const skipped = new Set(element.skipped ?? []);
+  // Calls that repeat earlier work (a recursion's overlapping subproblems): a dotted accent border.
+  const repeats = new Set(element.repeats ?? []);
   const valueSize = text.size(TEXT.treeValue);
   const noteSize = text.size(TEXT.treeNote);
   const nullSize = text.size(TEXT.treeNull);
@@ -195,13 +197,15 @@ export function BinaryTree({ element }: { element: BinaryTreeElement }) {
         // On a phone-sized player the ✓ would cover the value: a double border marks a finished call instead.
         const border = current
           ? `5px solid ${palette.primary}`
-          : skip
-            ? `2px dashed ${palette.border}`
-            : path
-              ? `3px solid ${palette.primary}`
-              : finished && text.compact
-                ? `6px double ${palette.textMuted}`
-                : `2px solid ${palette.border}`;
+          : repeats.has(node.id) && !skip
+            ? `4px dotted ${palette.primary}`
+            : skip
+              ? `2px dashed ${palette.border}`
+              : path
+                ? `3px solid ${palette.primary}`
+                : finished && text.compact
+                  ? `6px double ${palette.textMuted}`
+                  : `2px solid ${palette.border}`;
         return (
           <div
             key={node.id}

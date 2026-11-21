@@ -8,6 +8,7 @@ import { primitiveRegistry } from "@/video/primitives/registry";
 import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
+import { dpProblems } from "./fixtures/dp-fit";
 import { heapProblems } from "./fixtures/heap-fit";
 import { searchProblems } from "./fixtures/search-fit";
 import { treeProblems } from "./fixtures/tree-fit";
@@ -54,6 +55,7 @@ describe("video text at phone width", () => {
         "counter",
         "cut",
         "deque",
+        "dp-table",
         "equation",
         "freq-table",
         "graph",
@@ -62,6 +64,7 @@ describe("video text at phone width", () => {
         "heap-tree",
         "held-value",
         "highlight",
+        "house-row",
         "item-row",
         "linked-list",
         "merge-buffer",
@@ -73,10 +76,21 @@ describe("video text at phone width", () => {
         "search-range",
         "segments",
         "sorted-region",
+        "staircase",
         "split-tree",
         "window",
       ].sort(),
     );
+  });
+
+  it("DP tables and their stories fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        dpProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+      ),
+    );
+    expect(problems).toEqual([]);
   });
 
   it("heaps fit at full size too", () => {
@@ -315,6 +329,9 @@ describe("video text at phone width", () => {
             break;
           case "heap":
             for (const problem of heapProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "dp-table":
+            for (const problem of dpProblems(scene.elements, phone)) fail(problem);
             break;
           case "grid":
           case "graph":

@@ -14,6 +14,7 @@ import type {
   ComparisonOp,
   Element,
   EquationElement,
+  DpTableElement,
   GraphElement,
   GridElement,
   LinkedListElement,
@@ -179,6 +180,18 @@ function bfsFields(bfs: Partial<TraceBfs> | GridElement | GraphElement): Record<
   };
 }
 
+/** A DP table's state field by field, in a canonical text form (empty and missing read the same). */
+function tableFields(t: Partial<Omit<DpTableElement, "type" | "id" | "enterAt">>): Record<string, string> {
+  return {
+    cells: JSON.stringify(t.cells ?? []),
+    current: JSON.stringify(t.current ?? null),
+    reads: JSON.stringify((t.reads ?? []).map((r) => ({ at: r.at, label: r.label }))),
+    chosen: JSON.stringify([...(t.chosen ?? [])].sort((a, b) => a - b)),
+    choice: JSON.stringify(t.choice ?? null),
+    answer: JSON.stringify(t.answer ?? null),
+  };
+}
+
 /** A heap in a canonical form (every field present), for comparing with a trace step. */
 const canonHeap = (heap: Partial<TraceHeap>) =>
   JSON.stringify({
@@ -227,6 +240,7 @@ function walkFields(walk: Partial<TraceTreeWalk> | BinaryTreeElement): Record<st
     ),
     results: byNode(walk.results?.map((r) => ({ node: r.node, value: r.value }))),
     badges: byNode(walk.badges?.map((b) => ({ node: b.node, text: b.text }))),
+    repeats: ids(walk.repeats),
   };
 }
 
@@ -317,6 +331,22 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           expected: showTree(expected),
           actual: showTree(el.nodes),
         });
+    };
+
+    /** A DP table's shape and headers against the trace. */
+    const checkDpShape = (el: DpTableElement) => {
+      const dp = trace.dp;
+      if (!dp) return push("This trace has no table; remove the dp-table", el.id, "cells");
+      if (el.rows !== dp.rows || el.cols !== dp.cols)
+        push("The table's size doesn't match the trace", el.id, "rows", {
+          expected: `${dp.rows}×${dp.cols}`,
+          actual: `${el.rows}×${el.cols}`,
+        });
+      if (
+        !sameJson(el.rowHeaders ?? null, dp.rowHeaders ?? null) ||
+        !sameJson(el.colHeaders ?? null, dp.colHeaders ?? null)
+      )
+        push("The table's headers don't match the trace; omit them", el.id, "colHeaders");
     };
 
     /** A grid's or graph's shape against the trace, and the grid's contents against `cells`. */
@@ -449,6 +479,30 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           );
         if (el.type === "queue")
           push("A queue needs the scene to set traceStep (its items come from the step)", el.id, "items");
+        if (el.type === "dp-table") {
+          checkDpShape(el);
+          // An unbound table is empty (the intro) or the final table (a recap), with nothing being computed.
+          const last = trace.steps.at(-1)?.table;
+          const drawn = tableFields(el);
+          const empty = tableFields({ cells: el.cells.map((row) => row.map(() => null)) });
+          const final = last ? tableFields({ cells: last.cells, answer: last.answer }) : undefined;
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!same(empty) && !same(final))
+            push(
+              "Without a traceStep, the table is empty (or the final table); omit cells/current/reads/chosen to take them from the trace",
+              el.id,
+              "cells",
+            );
+        }
+        if (el.type === "staircase" && (el.at !== undefined || el.hops?.length))
+          push("Without a traceStep, the staircase has no climber or hops; omit at/hops", el.id, "at");
+        if (el.type === "house-row" && (el.current !== undefined || el.taken.length || el.skipped.length))
+          push("Without a traceStep, the street has no plan yet; omit current/taken/skipped", el.id, "taken");
+        if (el.type === "staircase" && el.steps !== trace.row.values.length)
+          push(`The staircase has ${trace.row.values.length} steps in this trace`, el.id, "steps");
+        if (el.type === "house-row" && !sameList(el.money, trace.row.values))
+          push("The houses' cash doesn't match the trace", el.id, "money");
         if (el.type === "heap") {
           const final = trace.steps.at(-1)?.heaps ?? [];
           const expected = final.map(({ kind, items, capacity }) => canonHeap({ kind, items, capacity }));
@@ -980,6 +1034,54 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
                 expected: expected[field],
                 actual: drawn[field],
               });
+          break;
+        }
+        case "dp-table": {
+          checkDpShape(el);
+          if (!step.table) {
+            push(`Trace step ${stepIndex} has no table`, el.id, "cells");
+            break;
+          }
+          const expected = tableFields(step.table);
+          const drawn = tableFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The table's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "staircase": {
+          if (el.steps !== trace.row.values.length)
+            push(`The staircase has ${trace.row.values.length} steps in this trace`, el.id, "steps");
+          const climb = step.climb;
+          if (!climb) {
+            if (el.at !== undefined || el.hops?.length)
+              push(`Trace step ${stepIndex} has no climber; omit at/hops`, el.id, "at");
+            break;
+          }
+          if (el.at !== climb.at || !sameJson(el.hops ?? [], climb.hops ?? []))
+            push(`The climber or hops don't match trace step ${stepIndex}`, el.id, "at", {
+              expected: `at ${climb.at}${climb.hops ? `, hops ${climb.hops.map((h) => `${h.from}→${h.to}`).join(" ")}` : ""}`,
+              actual: `at ${el.at}${el.hops ? `, hops ${el.hops.map((h) => `${h.from}→${h.to}`).join(" ")}` : ""}`,
+            });
+          break;
+        }
+        case "house-row": {
+          if (!sameList(el.money, trace.row.values))
+            push("The houses' cash doesn't match the trace", el.id, "money");
+          const h = step.houses;
+          if (!h) {
+            if (el.current !== undefined || el.taken.length || el.skipped.length)
+              push(`Trace step ${stepIndex} has no plan for the street`, el.id, "taken");
+            break;
+          }
+          if (el.current !== h.current || !sameSet(el.taken, h.taken) || !sameSet(el.skipped, h.skipped))
+            push(`The street's plan doesn't match trace step ${stepIndex}`, el.id, "taken", {
+              expected: `current ${h.current ?? "none"}, take ${list(h.taken)}, skip ${list(h.skipped)}`,
+              actual: `current ${el.current ?? "none"}, take ${list(el.taken)}, skip ${list(el.skipped)}`,
+            });
           break;
         }
         case "heap": {

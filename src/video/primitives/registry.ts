@@ -10,6 +10,7 @@ import { CountArray } from "./CountArray";
 import { Counter } from "./Counter";
 import { Cut } from "./Cut";
 import { Deque } from "./Deque";
+import { DpTable } from "./DpTable";
 import { Equation } from "./Equation";
 import { FreqTable } from "./FreqTable";
 import { Graph } from "./Graph";
@@ -17,6 +18,7 @@ import { Grid } from "./Grid";
 import { Heap } from "./Heap";
 import { HeapTree } from "./HeapTree";
 import { HeldValue } from "./HeldValue";
+import { HouseRow } from "./HouseRow";
 import { Highlight } from "./Highlight";
 import { ItemRow } from "./ItemRow";
 import { LinkedList } from "./LinkedList";
@@ -30,6 +32,7 @@ import { SearchRange } from "./SearchRange";
 import { Segments } from "./Segments";
 import { SortedRegion } from "./SortedRegion";
 import { SplitTree } from "./SplitTree";
+import { Staircase } from "./Staircase";
 import { Window } from "./Window";
 
 export type PrimitiveDefinition<K extends ElementType> = {
@@ -61,6 +64,10 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   queue: { component: Queue, slot: "bottom", layer: 0 },
   // Priority queues: tree plus backing array (one or two heaps), under an optional input strip.
   heap: { component: Heap, slot: "canvas", layer: 0 },
+  // Dynamic programming: the table, and above a 1D one the story it's lined up with (steps, houses).
+  "dp-table": { component: DpTable, slot: "canvas", layer: 0 },
+  staircase: { component: Staircase, slot: "canvas", layer: -1 },
+  "house-row": { component: HouseRow, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

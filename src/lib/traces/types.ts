@@ -132,6 +132,29 @@ export type TraceStep = {
   queue?: TraceQueue;
   /** Priority queues after this step (one, or two for a two-heap design), each with this step's push or pop. */
   heaps?: TraceHeap[];
+  /** A DP table after this step (its shape and headers are `trace.dp`). See `TraceTable`. */
+  table?: TraceTable;
+  /** Climbing Stairs' staircase: where the climber stands and the hops that land on that step. */
+  climb?: { at: number; hops?: { from: number; to: number }[] };
+  /** House Robber's street: the house being decided, and the best plan so far (houses taken and skipped). */
+  houses?: { current?: number; taken: number[]; skipped: number[] };
+};
+
+/** A table cell, [row, column]. */
+export type TraceCell = [number, number];
+
+/**
+ * A DP table as it stands after a step: every cell's value (`null` = not filled yet), the cell just computed, the
+ * cells it read (each labeled with the option it stands for: "take", "coin 4", "delete"), which reads the winning
+ * option used, and that option's name. `answer` marks the cell holding the final answer.
+ */
+export type TraceTable = {
+  cells: (number | string | null)[][];
+  current?: TraceCell;
+  reads?: { at: TraceCell; label: string }[];
+  chosen?: number[];
+  choice?: string;
+  answer?: TraceCell;
 };
 
 /** A heap item: ordered by `key`, shown as `label` ("9", "(-1,1)", "4 ×3"). */
@@ -229,6 +252,8 @@ export type TraceTreeWalk = {
   results?: { node: number; value: string }[];
   /** Running state carried down to a node (the sum so far, the bounds, the best on the path). */
   badges?: { node: number; text: string }[];
+  /** Calls that repeat an earlier call's work (plain recursion's overlapping subproblems). */
+  repeats?: number[];
 };
 
 /** One open call: `label` reads like the call ("depth(5)", "depth(∅)"), `waiting` names the child it's waiting on. */
@@ -266,13 +291,19 @@ export type Trace = {
   /** "pattern/slug" of the catalog problem. */
   problem: string;
   /** The values the video animates, in display order. */
-  row: { values: TraceValue[]; display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" };
+  row: {
+    values: TraceValue[];
+    /** "stairs" and "houses" are drawn by the staircase and house-row primitives (Climbing Stairs, House Robber). */
+    display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "stairs" | "houses";
+  };
   /** A binary tree's shape (display "tree"); it never changes, steps record the walk over it. */
   tree?: { nodes: TraceTreeNode[] };
   /** A grid (display "grid"): its starting contents; steps record changes (`cells`) and the search (`bfs`). */
   grid?: TraceGrid;
   /** A graph (display "graph"): nodes and edges; steps record the search (`bfs`). */
   graph?: TraceGraph;
+  /** A DP table's shape and headers (row 0 / column 0 are often the empty prefix). */
+  dp?: { rows: number; cols: number; rowHeaders?: string[]; colHeaders?: string[] };
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */
   secondRow?: { values: TraceValue[] };
   pointerNames: string[];

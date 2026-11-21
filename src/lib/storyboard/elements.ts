@@ -12,12 +12,13 @@ import { z } from "zod";
  * it in `primitive-catalog.ts` (the model reads that), then add a component to `src/video/primitives/registry.ts`.
  * The registry and the catalog are typed so a missing entry is a compile error.
  *
- * Planned (not built yet): "staircase", "house-row", "coin-set", "box-arrow".
+ * Planned (not built yet): "coin-set", "box-arrow".
  * Sorting adds "sorted-region", "held-value", "count-array", and bar-row `moves`/`empty`; divide and conquer adds
  * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter"; sliding window adds "window",
  * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`;
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
- * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; priority queues add "heap" (built
+ * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
+ * "house-row"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -434,6 +435,8 @@ const binaryTreeShape = {
   results: z.array(z.object({ node: index, value: z.string().max(8) })).optional(),
   /** Running state carried down to a node ("sum 9", "(5, 10)"). */
   badges: z.array(z.object({ node: index, text: z.string().max(12) })).optional(),
+  /** Calls that repeat earlier work (a recursion's overlapping subproblems): a dotted accent border. */
+  repeats: z.array(index).optional(),
 };
 export const binaryTreeElementSchema = z.object(binaryTreeShape);
 export const binaryTreeSourceSchema = z.object({
@@ -617,6 +620,82 @@ export const heapSourceSchema = z.object({
   heaps: heapShape.heaps.optional(),
 });
 
+const tableCellSchema = z.tuple([index, index]);
+
+const dpTableShape = {
+  ...baseElement,
+  type: z.literal("dp-table"),
+  rows: z.number().int().min(1).max(7),
+  cols: z.number().int().min(1).max(10),
+  /** Each cell's value, row by row; null = not filled yet (drawn empty). */
+  cells: z.array(z.array(z.union([z.number().finite(), z.string().max(3)]).nullable()).max(10)).max(7),
+  /** Labels for the rows (a name like "ways", or one string's characters) and the columns (indices, amounts, characters). */
+  rowHeaders: z.array(z.string().max(6)).optional(),
+  colHeaders: z.array(z.string().max(6)).optional(),
+  /** The cell being computed (ringed). */
+  current: tableCellSchema.optional(),
+  /** The cells it reads, each named for its option ("skip", "coin 4", "delete"): an arrow each. */
+  reads: z
+    .array(z.object({ at: tableCellSchema, label: z.string().trim().min(1).max(10) }))
+    .max(4)
+    .optional(),
+  /** Which reads the winning option used (solid accent arrows; the rest dashed). */
+  chosen: z.array(index).optional(),
+  /** The winning option's name. */
+  choice: z.string().max(10).optional(),
+  /** The cell holding the final answer (✓, double border). */
+  answer: tableCellSchema.optional(),
+};
+export const dpTableElementSchema = z.object(dpTableShape);
+export const dpTableSourceSchema = z.object({
+  ...dpTableShape,
+  /** Omit everything but id/type to take the shape from the trace and the cells, reads, and choice from the step. */
+  rows: dpTableShape.rows.optional(),
+  cols: dpTableShape.cols.optional(),
+  cells: dpTableShape.cells.optional(),
+});
+
+const staircaseShape = {
+  ...baseElement,
+  type: z.literal("staircase"),
+  /** Steps 0…steps-1 (0 is the ground). */
+  steps: z.number().int().min(2).max(10),
+  /** The step the climber stands on. */
+  at: index.optional(),
+  /** Hops landing on the climber's step: arcs from `from` to `to`. */
+  hops: z
+    .array(z.object({ from: index, to: index }))
+    .max(2)
+    .optional(),
+};
+export const staircaseElementSchema = z.object(staircaseShape);
+export const staircaseSourceSchema = z.object({
+  ...staircaseShape,
+  /** Omit steps/at/hops to take them from the trace and the bound step. */
+  steps: staircaseShape.steps.optional(),
+});
+
+const houseRowShape = {
+  ...baseElement,
+  type: z.literal("house-row"),
+  /** The cash in each house, left to right. */
+  money: z.array(z.number().finite().nonnegative()).min(1).max(8),
+  /** The house being decided (ringed). */
+  current: index.optional(),
+  /** The best plan so far: houses taken (✓) and skipped (✕). */
+  taken: z.array(index).default([]),
+  skipped: z.array(index).default([]),
+  unit: z.string().max(2).default("$"),
+};
+export const houseRowElementSchema = z.object(houseRowShape);
+export const houseRowSourceSchema = z.object({
+  ...houseRowShape,
+  /** Omit money/current/taken/skipped to take them from the trace and the bound step. */
+  money: houseRowShape.money.optional(),
+  taken: houseRowShape.taken.removeDefault().optional(),
+  skipped: houseRowShape.skipped.removeDefault().optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -792,6 +871,9 @@ export const elementSchemas = [
   graphElementSchema,
   queueElementSchema,
   heapElementSchema,
+  dpTableElementSchema,
+  staircaseElementSchema,
+  houseRowElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -824,6 +906,9 @@ export const elementSourceSchemas = [
   graphSourceSchema,
   queueSourceSchema,
   heapSourceSchema,
+  dpTableSourceSchema,
+  staircaseSourceSchema,
+  houseRowSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -867,6 +952,9 @@ export type GraphElement = ElementOf<"graph">;
 export type QueueElement = ElementOf<"queue">;
 export type HeapElement = ElementOf<"heap">;
 export type HeapState = z.infer<typeof heapStateSchema>;
+export type DpTableElement = ElementOf<"dp-table">;
+export type StaircaseElement = ElementOf<"staircase">;
+export type HouseRowElement = ElementOf<"house-row">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

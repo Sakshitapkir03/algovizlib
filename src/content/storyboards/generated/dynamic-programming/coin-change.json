@@ -1,0 +1,258 @@
+{
+  "id": "dynamic-programming-coin-change",
+  "title": "Coin Change: The Fewest Coins for Every Amount",
+  "concept": "Dynamic Programming",
+  "category": "dsa",
+  "summary": "For each amount, try every coin on top of the best answer for what's left; the table makes 8 from two 4s.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "dp",
+    "array",
+    "unbounded-knapsack"
+  ],
+  "takeaway": {
+    "pattern": "Dynamic programming (min over options)",
+    "summary": "fewest[a] = 1 + the smallest fewest[a − c] over coins c ≤ a. Fill amounts from 0 up so every answer you need is already there.",
+    "timeComplexity": "O(amount × coins)",
+    "spaceComplexity": "O(amount)",
+    "whenToUse": [
+      "Fewest pieces to make a total",
+      "Greedy choices that can go wrong"
+    ]
+  },
+  "trace": {
+    "problem": "dynamic-programming/coin-change",
+    "args": [
+      [
+        1,
+        4,
+        5
+      ],
+      8
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v12",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T22:34:25.140Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "cashier",
+      "narration": "A cashier has unlimited coins of 1, 4, and 5 and must hand out exactly 8. What's the fewest number of coins?",
+      "caption": "Coins of 1, 4, and 5: the fewest that make 8",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "coins",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "coin",
+            "coin",
+            "coin"
+          ]
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "greedy",
+      "narration": "Grabbing the biggest coin first gives 5, then three 1s: four coins. Is that the best? Work out every amount from 0 up instead.",
+      "caption": "Grabbing the biggest coin first gives 5 + 1 + 1 + 1",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "coins",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "coin",
+            "coin",
+            "coin"
+          ]
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "zero",
+      "narration": "Amount 0 needs no coins at all. Every other amount will build on it.",
+      "caption": "Amount 0 needs no coins",
+      "durationInFrames": 204,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "coins",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "coin",
+            "coin",
+            "coin"
+          ]
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "one",
+      "narration": "Amount 1: only the 1 fits. One coin plus the answer for 0: one coin.",
+      "caption": "Amount 1: one coin of 1",
+      "durationInFrames": 216,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "coins",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "coin",
+            "coin",
+            "coin"
+          ]
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "coins",
+          "state": "active"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "coins"
+        }
+      ]
+    },
+    {
+      "id": "four",
+      "narration": "Amount 4: a 1 leaves 3, which needs three coins, so four in all. A single 4 leaves 0: just one coin.",
+      "caption": "Amount 4: one coin of 4 beats four 1s",
+      "durationInFrames": 300,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "coins",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "coin",
+            "coin",
+            "coin"
+          ]
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "coins",
+          "state": "active"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "coins"
+        }
+      ]
+    },
+    {
+      "id": "eight",
+      "narration": "Amount 8 tries all three coins. A 1 or a 5 each lead to four coins, but a 4 leaves 4, which needs one: two coins, 4 plus 4.",
+      "caption": "Amount 8: a 4 on top of 4's answer makes 2 coins",
+      "durationInFrames": 384,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "coins",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "coin",
+            "coin",
+            "coin"
+          ]
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "coins",
+          "state": "active"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Fewest coins",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Each amount tries every coin on top of a smaller amount's best answer, so greedy mistakes can't happen. O(amount times coins).",
+      "caption": "Try every coin on top of a smaller amount's answer",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "coins",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "coin",
+            "coin",
+            "coin"
+          ]
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    }
+  ]
+}

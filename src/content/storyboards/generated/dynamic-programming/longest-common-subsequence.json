@@ -1,0 +1,186 @@
+{
+  "id": "dynamic-programming-longest-common-subsequence",
+  "title": "Longest Common Subsequence: Two Bird-Watchers' Logs",
+  "concept": "Dynamic Programming",
+  "category": "dsa",
+  "summary": "A grid of prefixes: a match extends the diagonal by one, a mismatch keeps the better of above and left.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Two bird-watchers each log species in the order they spot them, one letter per species: STONE and NOTES. What's the longest run of species both saw in the same order, not necessarily back to back?",
+    "mapping": [
+      {
+        "real": "A species code in a log",
+        "abstract": "A character"
+      },
+      {
+        "real": "Each watcher's log",
+        "abstract": "Strings a and b"
+      },
+      {
+        "real": "Species both saw in the same order",
+        "abstract": "A common subsequence"
+      },
+      {
+        "real": "Comparing the first few entries of each log",
+        "abstract": "Cell [i][j]: prefixes of length i and j"
+      }
+    ]
+  },
+  "tags": [
+    "dp",
+    "string",
+    "2d-dp"
+  ],
+  "takeaway": {
+    "pattern": "Dynamic programming (2D table over two strings)",
+    "summary": "lcs[i][j] = diagonal + 1 when a[i − 1] = b[j − 1], else the larger of above and left. Fill row by row; the answer is the bottom-right cell.",
+    "timeComplexity": "O(m × n)",
+    "spaceComplexity": "O(m × n), or O(n) keeping two rows",
+    "whenToUse": [
+      "Comparing two sequences (diffs, DNA, versions)",
+      "Answers over every pair of prefixes"
+    ]
+  },
+  "trace": {
+    "problem": "dynamic-programming/longest-common-subsequence",
+    "args": [
+      "stone",
+      "notes"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v12",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T22:34:25.144Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "logs",
+      "narration": "Two bird-watchers log species by letter: one wrote S, T, O, N, E, the other N, O, T, E, S. What's the longest run of species both saw in the same order?",
+      "caption": "Two logs, STONE and NOTES: the longest shared order?",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "every-subset",
+      "narration": "Trying every subset of one log against the other grows exponentially. Instead, compare growing prefixes of both logs in a grid.",
+      "caption": "Checking every subset of one log is exponential",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "zeros",
+      "narration": "Each cell compares the first few entries of each log. With an empty log there's nothing in common: the top row and left column are 0.",
+      "caption": "An empty log shares nothing: the edges are 0",
+      "durationInFrames": 348,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "first-match",
+      "narration": "Fill row by row. S matches S at the end of the first row: both logs share it, so take the diagonal and add one.",
+      "caption": "S meets S: the diagonal plus one",
+      "durationInFrames": 336,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "plus",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "match"
+        }
+      ]
+    },
+    {
+      "id": "carry",
+      "narration": "T and E differ, so drop one of them: keep the larger of the cell above and the cell to the left. The 1 from the left carries over.",
+      "caption": "T against E: no match, keep the better neighbor",
+      "durationInFrames": 384,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "extend",
+      "narration": "Near the end, E matches E, and the diagonal already holds a shared 1. One plus one: a shared run of 2.",
+      "caption": "E meets E after a shared 1: the run grows to 2",
+      "durationInFrames": 300,
+      "traceStep": 24,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "plus",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "match"
+        }
+      ]
+    },
+    {
+      "id": "corner",
+      "narration": "The last cell compares both whole logs. E and S differ, so it keeps the 2 from its left: the bottom-right cell holds the answer.",
+      "caption": "The bottom-right cell covers both full logs: 2",
+      "durationInFrames": 336,
+      "traceStep": 25,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Species are characters and the logs are strings. Each cell needs only its three neighbors, so the table takes O(m times n) time.",
+      "caption": "Species are characters; the logs are two strings",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Longest shared order",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

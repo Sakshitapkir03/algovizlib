@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v11";
+export const PROMPT_VERSION = "storyboard-v12";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -59,6 +59,7 @@ ${ELEMENT_GUIDE}
 - binary-tree / call-stack: when the trace's row is a tree ("tree"), make a binary-tree the first element of every scene that shows data and OMIT nodes and the walk fields (current, nullVisit, path, done, skipped, returned, results, badges): a bound scene takes the step's walk, an unbound scene shows the bare tree. Add a call-stack (OMIT frames/kept) right after it in every bound scene. Highlights and anchored callouts on the tree use rowId = the binary-tree's id and node ids (OMIT indices). Keep the bottom stack short, because the tree needs the height: at most one equation and a counter per scene, and in the answer scene only the result (plus a counter if the step lists one). Skip callouts in tree scenes: the narration carries the reasoning.
 - grid / graph / queue: when the trace's row is a grid ("grid") or a graph ("graph"), make a grid (or graph) the first element of every scene that shows data and OMIT everything on it (rows, cols, cells, legend, nodes, edges, and the search: current, visited, frontier, levels, checks): a bound scene takes the step's search, an unbound scene the starting grid or graph. Add a queue (OMIT items/dequeued/enqueued) in every bound scene whose step lists one, with levelLabel set to the story's unit for a level ("minute", "step", "rung"). Keep the bottom stack short: the queue, plus at most a counter or an equation; in the answer scene, the result and at most one more. Skip callouts in grid and graph scenes.
 - heap: when steps list heaps, add a heap (OMIT heaps) in every bound scene; with two heaps give labels naming each half in the story. Leave it out of unbound scenes (it would show the final heaps). The input (the item-row, if the trace has a row) appears in intro scenes and in bound scenes whose step lists active items, marked with an "active" highlight (OMIT indices); don't add pointers to it, and leave it out of the answer scene. Keep the bottom stack short: at most one equation, counter, or freq-table per scene; in the answer scene, only the heap and the result. Skip callouts in heap scenes.
+- dp-table: when the trace has a table, add a dp-table (OMIT everything on it) to every scene that shows data; an unbound scene shows it empty. When the row is "stairs" or "houses", put a staircase or house-row (OMIT everything) first and the dp-table after it: they line up column by column. With coins (an item-row), mark the winning coin with an "active" highlight (OMIT indices). A step listing a tree walk with repeated calls (plain recursion) gets a scene with only a binary-tree (OMIT everything). Keep the bottom stack to at most one equation. For a one-row table, the answer scene holds the result; for a table with several rows, keep the last step's scene to the table and put the result (showsAnswer) in the closing scene, without the table. Skip callouts in table scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -173,9 +174,33 @@ function describeStep(step: TraceStep, index: number): string {
       w.returned ? `hands ${w.returned.value} up to #${w.returned.to} (from its ${w.returned.side})` : "",
       w.results?.length ? `returned: ${w.results.map((r) => `#${r.node}=${r.value}`).join(" ")}` : "",
       w.badges?.length ? `carried: ${w.badges.map((b) => `#${b.node} ${b.text}`).join(", ")}` : "",
+      w.repeats?.length ? `repeated calls: [${w.repeats.join(", ")}]` : "",
     ];
     parts.push(walk.filter(Boolean).join("; "));
   }
+  if (step.table) {
+    const t = step.table;
+    const at = (c: readonly number[]) => `[${c.join(",")}]`;
+    parts.push(
+      [
+        `table: ${t.cells.map((row) => row.map((v) => (v === null ? "_" : v)).join(" ")).join(" / ")}`,
+        t.current ? `computing ${at(t.current)}` : "",
+        t.reads?.length ? `reads ${t.reads.map((r) => `${r.label} ${at(r.at)}`).join(", ")}` : "",
+        t.choice ? `wins: ${t.choice}` : "",
+        t.answer ? `answer cell ${at(t.answer)}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  if (step.climb)
+    parts.push(
+      `climber on step ${step.climb.at}${step.climb.hops?.length ? `, hops ${step.climb.hops.map((h) => `${h.from}→${h.to}`).join(" ")}` : ""}`,
+    );
+  if (step.houses)
+    parts.push(
+      `street: ${step.houses.current !== undefined ? `deciding house ${step.houses.current}, ` : ""}take [${step.houses.taken.join(", ")}], skip [${step.houses.skipped.join(", ")}]`,
+    );
   if (step.heaps)
     parts.push(
       step.heaps
@@ -257,16 +282,28 @@ ${
                   `  #${n.id}: ${n.value} (left ${n.left === null ? "none" : `#${n.left}`}, right ${n.right === null ? "none" : `#${n.right}`})`,
               )
               .join("\n")}\nValues by id`
-          : trace.row.values.length === 0
-            ? "No row: the input is a stream of operations, so don't add an item-row"
-            : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
+          : trace.row.display === "stairs"
+            ? "Steps (use one staircase), step: number"
+            : trace.row.display === "houses"
+              ? "Houses (use one house-row), house: cash"
+              : trace.row.values.length === 0
+                ? `No row: don't add an item-row${trace.dp ? "" : " (the input is a stream of operations)"}`
+                : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
 }
 ${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}${
     trace.secondRow
       ? `\nSecond list (a second item-row with traceRow: "second"), index: value\n${trace.secondRow.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}`
       : ""
   }
-Pointer names: ${trace.pointerNames.join(", ") || "none"}
+${
+  trace.dp
+    ? `Table (use one dp-table): ${trace.dp.rows} × ${trace.dp.cols}${trace.dp.rowHeaders ? `, row headers ${JSON.stringify(trace.dp.rowHeaders)}` : ""}${trace.dp.colHeaders ? `, column headers ${JSON.stringify(trace.dp.colHeaders)}` : ""}\n`
+    : ""
+}${
+    trace.tree && trace.row.display !== "tree"
+      ? `Recursion tree (for the scenes whose step lists a tree walk), id: call\n${trace.tree.nodes.map((n) => `  #${n.id}: call on ${n.value}`).join("\n")}\n`
+      : ""
+  }Pointer names: ${trace.pointerNames.join(", ") || "none"}
 Answer: ${trace.answerDisplay}
 
 Steps (${trace.steps.length} total, ${keyCount} KEY):
@@ -293,4 +330,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV11 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV12 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

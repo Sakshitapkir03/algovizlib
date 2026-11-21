@@ -112,4 +112,9 @@ export const TEXT = {
   heapItem: 26,
   heapNote: 14,
   heapTitle: 17,
+  dpValue: 26,
+  dpHeader: 17,
+  dpLabel: 14,
+  houseCash: 22,
+  stepNumber: 18,
 } as const;

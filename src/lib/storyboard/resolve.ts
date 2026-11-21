@@ -422,6 +422,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             returned: el.returned ?? walk?.returned,
             results: el.results ?? walk?.results,
             badges: el.badges ?? walk?.badges,
+            repeats: el.repeats ?? walk?.repeats,
           };
         }
         case "call-stack": {
@@ -489,6 +490,46 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
               ),
             );
           return { ...el, heaps, slots };
+        }
+        case "dp-table": {
+          const dp = trace?.dp;
+          const rows = el.rows ?? dp?.rows;
+          const cols = el.cols ?? dp?.cols;
+          if (rows === undefined || cols === undefined) return (missing(el, "cells"), el);
+          if (step && !step.table) return (noState(el, "cells", "table"), el);
+          const t = step?.table;
+          // An unbound scene (the intro) shows the table empty.
+          const empty = Array.from({ length: rows }, () => new Array<null>(cols).fill(null));
+          return {
+            ...el,
+            rows,
+            cols,
+            cells: el.cells ?? t?.cells ?? empty,
+            rowHeaders: el.rowHeaders ?? dp?.rowHeaders,
+            colHeaders: el.colHeaders ?? dp?.colHeaders,
+            current: el.current ?? t?.current,
+            reads: el.reads ?? t?.reads,
+            chosen: el.chosen ?? t?.chosen,
+            choice: el.choice ?? t?.choice,
+            answer: el.answer ?? t?.answer,
+          };
+        }
+        case "staircase": {
+          const steps = el.steps ?? trace?.row.values.length;
+          if (steps === undefined) return (missing(el, "steps"), el);
+          return { ...el, steps, at: el.at ?? step?.climb?.at, hops: el.hops ?? step?.climb?.hops };
+        }
+        case "house-row": {
+          const money = el.money ?? (trace?.row.values as number[] | undefined);
+          if (!money) return (missing(el, "money"), el);
+          const h = step?.houses;
+          return {
+            ...el,
+            money,
+            current: el.current ?? h?.current,
+            taken: el.taken ?? h?.taken ?? [],
+            skipped: el.skipped ?? h?.skipped ?? [],
+          };
         }
         case "queue": {
           if (el.items) return el;

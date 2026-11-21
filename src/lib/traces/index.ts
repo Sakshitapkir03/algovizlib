@@ -1,3 +1,8 @@
+import { climbingStairsTrace } from "./dynamic-programming/climbing-stairs";
+import { coinChangeTrace } from "./dynamic-programming/coin-change";
+import { editDistanceTrace } from "./dynamic-programming/edit-distance";
+import { houseRobberTrace } from "./dynamic-programming/house-robber";
+import { longestCommonSubsequenceTrace } from "./dynamic-programming/longest-common-subsequence";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -93,6 +98,11 @@ const definitions = [
   topKFrequentElementsTrace,
   kClosestPointsToOriginTrace,
   findMedianFromDataStreamTrace,
+  climbingStairsTrace,
+  houseRobberTrace,
+  coinChangeTrace,
+  longestCommonSubsequenceTrace,
+  editDistanceTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

@@ -375,6 +375,11 @@ describe("selectTargets", () => {
       "heap/top-k-frequent-elements",
       "heap/k-closest-points-to-origin",
       "heap/find-median-from-data-stream",
+      "dynamic-programming/climbing-stairs",
+      "dynamic-programming/house-robber",
+      "dynamic-programming/coin-change",
+      "dynamic-programming/longest-common-subsequence",
+      "dynamic-programming/edit-distance",
     ]);
   });
 
@@ -569,7 +574,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v11");
+    expect(currentPrompts.version).toBe("storyboard-v12");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

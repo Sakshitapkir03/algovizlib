@@ -1,0 +1,211 @@
+{
+  "id": "dynamic-programming-edit-distance",
+  "title": "Edit Distance: Repainting a Shop Sign",
+  "concept": "Dynamic Programming",
+  "category": "dsa",
+  "summary": "Each cell is the fewest edits between two prefixes: free on a match, else one more than the cheapest neighbor.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A sign painter must change a shop sign from CART to ACT, one letter at a time: paint in a letter, scrape one off, or paint over one. What's the fewest changes?",
+    "mapping": [
+      {
+        "real": "The old sign and the new sign",
+        "abstract": "source and target"
+      },
+      {
+        "real": "Scraping a letter off",
+        "abstract": "Delete (the cell above)"
+      },
+      {
+        "real": "Painting a new letter in",
+        "abstract": "Insert (the cell to the left)"
+      },
+      {
+        "real": "Painting over a letter",
+        "abstract": "Replace (the diagonal)"
+      },
+      {
+        "real": "A letter that's already right",
+        "abstract": "A match: copy the diagonal"
+      }
+    ]
+  },
+  "tags": [
+    "dp",
+    "string",
+    "2d-dp"
+  ],
+  "takeaway": {
+    "pattern": "Dynamic programming (2D table over two strings)",
+    "summary": "edit[i][j] = edit[i − 1][j − 1] on a match, else 1 + min(delete, insert, replace). The edges count pure inserts and deletes.",
+    "timeComplexity": "O(m × n)",
+    "spaceComplexity": "O(m × n), or O(n) keeping two rows",
+    "whenToUse": [
+      "How different two strings are (spell check, diffs)",
+      "Three ways to change one character"
+    ]
+  },
+  "trace": {
+    "problem": "dynamic-programming/edit-distance",
+    "args": [
+      "cart",
+      "act"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v12",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T22:34:25.141Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "sign",
+      "narration": "A sign painter must turn a sign reading CART into ACT, one change at a time: scrape a letter off, paint one in, or paint over one. What's the fewest changes?",
+      "caption": "Repaint CART into ACT with the fewest changes",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "every-way",
+      "narration": "Trying every sequence of changes explodes. Instead, work out the fewest changes for every pair of beginnings of the two signs.",
+      "caption": "Trying every sequence of changes explodes",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "edges",
+      "narration": "Turning nothing into the first j letters takes j paintings: the top row. Turning i letters into nothing takes i scrapings: the left column.",
+      "caption": "From nothing: paint letters in; to nothing: scrape them off",
+      "durationInFrames": 324,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "replace",
+      "narration": "C against A: scrape costs 1 plus 1, paint-in 1 plus 1, paint over 1 plus 0. Painting over wins: 1.",
+      "caption": "C into A: painting over beats the others",
+      "durationInFrames": 288,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "replace"
+        }
+      ]
+    },
+    {
+      "id": "match",
+      "narration": "C against C: the letter is already right, so the cell copies its diagonal for free.",
+      "caption": "C meets C: no change, copy the diagonal",
+      "durationInFrames": 229,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "insert",
+      "narration": "Turning C into A, C, T: the cheapest path paints a T onto the 1 from the left: 2.",
+      "caption": "C into ACT: paint in the T",
+      "durationInFrames": 264,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "insert"
+        }
+      ]
+    },
+    {
+      "id": "delete",
+      "narration": "A against C: all three options cost 1 plus 1. Ties go to the first tried, scraping off a letter: 2.",
+      "caption": "A against C: a three-way tie, scraping goes first",
+      "durationInFrames": 288,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "delete"
+        }
+      ]
+    },
+    {
+      "id": "corner",
+      "narration": "The last T matches, so the corner copies its diagonal: 2. Scrape off the C, then paint over the R with a C.",
+      "caption": "T meets T: the whole sign takes 2 changes",
+      "durationInFrames": 312,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Scraping is delete, painting in is insert, and painting over is replace. Each cell takes the cheapest neighbor: O(m times n).",
+      "caption": "Scrape, paint in, paint over: delete, insert, replace",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Fewest changes",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

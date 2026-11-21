@@ -29,11 +29,19 @@ export function buildDraft(problemKey: string): Draft {
             ? "grid"
             : trace.row.display === "graph"
               ? "graph"
-              : "item-row";
+              : trace.row.display === "stairs"
+                ? "staircase"
+                : trace.row.display === "houses"
+                  ? "house-row"
+                  : "item-row";
   const row = (): ElementSource =>
     rowType === "linked-list"
       ? { id: "row", type: "linked-list", enterAt: 0 }
-      : rowType === "binary-tree" || rowType === "grid" || rowType === "graph"
+      : rowType === "binary-tree" ||
+          rowType === "grid" ||
+          rowType === "graph" ||
+          rowType === "staircase" ||
+          rowType === "house-row"
         ? ({ id: "row", type: rowType, enterAt: 0 } as ElementSource)
         : rowType === "bar-row"
           ? { id: "row", type: "bar-row", unit: "", enterAt: 0 }
@@ -60,13 +68,31 @@ export function buildDraft(problemKey: string): Draft {
       : [];
 
   // A trace without a row (a stream of operations) shows no item-row.
-  const rows = (): ElementSource[] => (trace.row.values.length === 0 ? [] : [row()]);
+  // A DP trace's table joins every data scene (empty when unbound).
+  const table = (): ElementSource[] =>
+    trace.dp ? [{ id: "table", type: "dp-table", enterAt: 0 } as ElementSource] : [];
+  const rows = (): ElementSource[] => [...(trace.row.values.length === 0 ? [] : [row()]), ...table()];
+  const wideTable = (trace.dp?.rows ?? 1) > 1;
+  const answerCard: ElementSource = {
+    id: "result",
+    type: "result",
+    title: "Answer",
+    showsAnswer: true,
+    enterAt: 0.5,
+    tone: "success",
+  };
   const stepScenes = trace.steps.flatMap((step, index) => {
     if (!step.key) return [];
     const last = index === trace.steps.length - 1;
     // Heap scenes mark the input with a highlight (no pointer), and the answer scene leaves the input out.
     const heapScene = step.heaps !== undefined;
-    const elements: ElementSource[] = heapScene && (last || !step.active) ? [] : [...rows(), ...second()];
+    // A recursion-tree step (Climbing Stairs' plain recursion) shows only the tree.
+    const recursion = step.tree !== undefined && trace.row.display !== "tree";
+    const elements: ElementSource[] = recursion
+      ? [{ id: "calls", type: "binary-tree", enterAt: 0 } as ElementSource]
+      : heapScene && (last || !step.active)
+        ? []
+        : [...rows(), ...second()];
     for (const name of heapScene ? [] : Object.keys(step.pointers)) {
       elements.push({
         id: `p-${name}`,
@@ -79,7 +105,7 @@ export function buildDraft(problemKey: string): Draft {
         tone: "primary",
       });
     }
-    if (step.active && !(heapScene && last))
+    if (step.active && !(heapScene && last) && rowType === "item-row")
       elements.push({ id: "active", type: "highlight", rowId: "row", state: "active", enterAt: 0 });
     if (step.found)
       elements.push({ id: "found", type: "highlight", rowId: "row", state: "found", enterAt: 0 });
@@ -123,11 +149,12 @@ export function buildDraft(problemKey: string): Draft {
     if (step.queue)
       elements.push({ id: "queue", type: "queue", label: "queue", levelLabel: "level", enterAt: 0 });
     // A tree's last scene keeps its bottom stack short (the answer, and at most a count).
-    if (step.equation && !((rowType === "binary-tree" || step.queue || step.heaps) && last))
+    if (step.equation && !((rowType === "binary-tree" || step.queue || step.heaps || step.table) && last))
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });
-    // The last step is where the answer is known: state it there (a real story does the same).
-    if (index === trace.steps.length - 1) {
+    // The last step is where the answer is known: state it there (a real story does the same). A 2D table fills
+    // the stage, so its answer card goes in the closing scene instead.
+    if (index === trace.steps.length - 1 && !wideTable) {
       elements.push({
         id: "result",
         type: "result",
@@ -175,7 +202,7 @@ export function buildDraft(problemKey: string): Draft {
         id: "pattern",
         caption: "The pattern",
         narration: "That's the two-pointer pattern.",
-        elements: rows(),
+        elements: wideTable ? [answerCard] : rows(),
       },
     ],
   };

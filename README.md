@@ -28,7 +28,9 @@ problems (the tree with the running call, the open path from the root, finished 
 traveling up the edges, and the call stack beside it), and all five Graphs (BFS) problems (a grid or graph with the
 frontier spreading one level at a time, neighbor checks with the reason each is skipped, and a queue that marks where
 each level begins), and all five Heap / Priority Queue problems (a tree and its backing array moving together as
-items sift up and down, size-k heaps, and two heaps keeping a running median). The first is
+items sift up and down, size-k heaps, and two heaps keeping a running median), and all five Dynamic Programming problems (a table filling cell by cell
+with arrows from the cells it reads, a staircase and a street lined up with their tables, and the recursion tree a
+table replaces). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach

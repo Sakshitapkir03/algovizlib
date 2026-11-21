@@ -457,6 +457,62 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: `A scene can show only one ${el.type}` });
           break;
         }
+        case "dp-table": {
+          if (el.cells.length !== el.rows || el.cells.some((row) => row.length !== el.cols))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "cells"],
+              message: `cells must be ${el.rows} rows of ${el.cols}`,
+            });
+          const inside = ([r, c]: [number, number]) => r < el.rows && c < el.cols;
+          const at = [el.current, el.answer, ...(el.reads ?? []).map((read) => read.at)];
+          if (at.some((p) => p !== undefined && !inside(p)))
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: `a cell reference is outside the ${el.rows}×${el.cols} table`,
+            });
+          if ((el.chosen ?? []).some((k) => k >= (el.reads ?? []).length))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "chosen"],
+              message: "chosen refers to a read that isn't listed",
+            });
+          if (el.rowHeaders && el.rowHeaders.length !== el.rows)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "rowHeaders"],
+              message: "one row header per row",
+            });
+          if (el.colHeaders && el.colHeaders.length !== el.cols)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "colHeaders"],
+              message: "one column header per column",
+            });
+          if (scene.elements.filter((e) => e.type === "dp-table").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one dp-table" });
+          break;
+        }
+        case "staircase":
+          if (
+            (el.at !== undefined && el.at >= el.steps) ||
+            (el.hops ?? []).some((h) => h.from >= el.steps || h.to >= el.steps)
+          )
+            ctx.addIssue({ code: "custom", path, message: `the staircase has steps 0–${el.steps - 1}` });
+          break;
+        case "house-row": {
+          const n = el.money.length;
+          if ([el.current, ...el.taken, ...el.skipped].some((i) => i !== undefined && i >= n))
+            ctx.addIssue({ code: "custom", path, message: `the street has houses 0–${n - 1}` });
+          if (el.taken.some((i) => el.taken.includes(i + 1)))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "taken"],
+              message: "two neighboring houses can't both be taken",
+            });
+          break;
+        }
         case "heap":
           el.heaps.forEach((heap, h) => {
             if ((heap.swaps ?? []).some(([a, b]) => a >= heap.items.length || b >= heap.items.length))

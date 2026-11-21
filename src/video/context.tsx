@@ -3,6 +3,7 @@ import { createContext, useContext } from "react";
 import type { Element } from "@/lib/storyboard";
 
 import type {
+  DpLayout,
   GraphLayout,
   GridLayout,
   HeapPanel,
@@ -32,6 +33,8 @@ export type SceneContextValue = {
   graph?: GraphLayout;
   /** A "heap" element's panels, when the scene has one. */
   heapPanels?: HeapPanel[];
+  /** A dp-table's geometry (and the story region above a 1D one), when the scene has one. */
+  dp?: DpLayout;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

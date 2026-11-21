@@ -1,0 +1,200 @@
+{
+  "id": "dynamic-programming-climbing-stairs",
+  "title": "Climbing Stairs: Count Each Step Once",
+  "concept": "Dynamic Programming",
+  "category": "dsa",
+  "summary": "Ways to reach step i = ways to reach i − 1 plus ways to reach i − 2; a table stops recursion from repeating itself.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "dp",
+    "counting",
+    "fibonacci"
+  ],
+  "takeaway": {
+    "pattern": "Dynamic programming (1D table)",
+    "summary": "When an answer is built from smaller answers that repeat, compute each once in a table: ways[i] = ways[i − 1] + ways[i − 2].",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n), or O(1) keeping two numbers",
+    "whenToUse": [
+      "Counting ways where each choice leads to a smaller version of the same question",
+      "Recursion that recomputes the same calls"
+    ]
+  },
+  "trace": {
+    "problem": "dynamic-programming/climbing-stairs",
+    "args": [
+      6
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v12",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T22:35:57.285Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "stairs",
+      "narration": "You're at the bottom of a staircase with 6 steps. Each move goes up 1 step or 2. How many different sequences of moves land exactly on the top?",
+      "caption": "6 steps, 1 or 2 at a time: how many ways to the top?",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "stairs",
+          "enterAt": 0,
+          "type": "staircase"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "recursion",
+      "narration": "Ways to step 6 is ways to 5 plus ways to 4, and each of those asks again. Just the top of that call tree already asks for ways to 4 twice and ways to 3 three times.",
+      "caption": "Plain recursion asks the same questions again",
+      "durationInFrames": 492,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "calls",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "memo",
+      "narration": "Write each answer down the first time. Every repeat becomes a lookup, and the calls under it never happen. That notebook is a table with one cell per step.",
+      "caption": "Remember each answer once: repeats become lookups",
+      "durationInFrames": 384,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "calls",
+          "enterAt": 0,
+          "type": "binary-tree"
+        }
+      ]
+    },
+    {
+      "id": "base",
+      "narration": "Step 0 is where you start: one way. Step 1 takes a single 1-step hop: one way.",
+      "caption": "One way to stand on step 0, one way to reach step 1",
+      "durationInFrames": 240,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "stairs",
+          "enterAt": 0,
+          "type": "staircase"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "step-2",
+      "narration": "Your last move onto step 2 was either a 1-step hop from step 1 or a 2-step hop from step 0. Add their ways: 1 plus 1 is 2.",
+      "caption": "Step 2: a hop from step 1 or a jump from step 0",
+      "durationInFrames": 384,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "stairs",
+          "enterAt": 0,
+          "type": "staircase"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "sum",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "ways"
+        }
+      ]
+    },
+    {
+      "id": "step-4",
+      "narration": "The same rule, step after step. Step 4 reads step 3 and step 2 straight from the table: 3 plus 2 is 5. Nothing is worked out twice.",
+      "caption": "Step 4 reads steps 3 and 2: 3 + 2 = 5",
+      "durationInFrames": 372,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "stairs",
+          "enterAt": 0,
+          "type": "staircase"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "sum",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "ways"
+        }
+      ]
+    },
+    {
+      "id": "top",
+      "narration": "Step 6 adds the 8 ways to step 5 and the 5 ways to step 4: 13 ways to reach the top.",
+      "caption": "Step 6: 8 + 5 = 13 ways to the top",
+      "durationInFrames": 300,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "stairs",
+          "enterAt": 0,
+          "type": "staircase"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Ways to the top",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Each step's answer comes from two smaller ones, and the table computes each just once: O(n) time instead of exponential.",
+      "caption": "Small answers, reused: that's dynamic programming",
+      "durationInFrames": 276,
+      "elements": [
+        {
+          "id": "stairs",
+          "enterAt": 0,
+          "type": "staircase"
+        },
+        {
+          "id": "table",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    }
+  ]
+}

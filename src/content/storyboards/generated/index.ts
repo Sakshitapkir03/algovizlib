@@ -6,6 +6,11 @@ import binarySearchMedianOfTwoSortedArrays from "./binary-search/median-of-two-s
 import binarySearchSearchInRotatedSortedArray from "./binary-search/search-in-rotated-sorted-array.json";
 import binarySearchSearchInsertPosition from "./binary-search/search-insert-position.json";
 import binarySearchSearchSortedArray from "./binary-search/search-sorted-array.json";
+import dynamicProgrammingClimbingStairs from "./dynamic-programming/climbing-stairs.json";
+import dynamicProgrammingCoinChange from "./dynamic-programming/coin-change.json";
+import dynamicProgrammingEditDistance from "./dynamic-programming/edit-distance.json";
+import dynamicProgrammingHouseRobber from "./dynamic-programming/house-robber.json";
+import dynamicProgrammingLongestCommonSubsequence from "./dynamic-programming/longest-common-subsequence.json";
 import graphsBfsFloodFill from "./graphs-bfs/flood-fill.json";
 import graphsBfsNumberOfIslands from "./graphs-bfs/number-of-islands.json";
 import graphsBfsRottingOranges from "./graphs-bfs/rotting-oranges.json";
@@ -51,6 +56,13 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "binary-search/search-in-rotated-sorted-array": loadStoryboard(binarySearchSearchInRotatedSortedArray),
   "binary-search/search-insert-position": loadStoryboard(binarySearchSearchInsertPosition),
   "binary-search/search-sorted-array": loadStoryboard(binarySearchSearchSortedArray),
+  "dynamic-programming/climbing-stairs": loadStoryboard(dynamicProgrammingClimbingStairs),
+  "dynamic-programming/coin-change": loadStoryboard(dynamicProgrammingCoinChange),
+  "dynamic-programming/edit-distance": loadStoryboard(dynamicProgrammingEditDistance),
+  "dynamic-programming/house-robber": loadStoryboard(dynamicProgrammingHouseRobber),
+  "dynamic-programming/longest-common-subsequence": loadStoryboard(
+    dynamicProgrammingLongestCommonSubsequence,
+  ),
   "graphs-bfs/flood-fill": loadStoryboard(graphsBfsFloodFill),
   "graphs-bfs/number-of-islands": loadStoryboard(graphsBfsNumberOfIslands),
   "graphs-bfs/rotting-oranges": loadStoryboard(graphsBfsRottingOranges),

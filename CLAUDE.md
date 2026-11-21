@@ -411,6 +411,9 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `graph`         | BFS graph in columns by level from node 0: current ringed, frontier dashed, level labels, checked edges lit (✕ if seen)                                               | canvas |
 | `queue`         | BFS queue front → back: dequeued fades struck out, enqueued slides in; a divider + "level 2" marker between levels                                                    | bottom |
 | `heap`          | priority queue: tree + backing array (one list), min/max, "size 2/2"; push sifts up and pop sifts down swap by swap; two side by side                                 | canvas |
+| `dp-table`      | DP table (row or grid, headers): unfilled cells dashed, current ringed, read arrows (winner solid), answer cell ✓                                                     | canvas |
+| `staircase`     | Climbing Stairs: numbered steps over table cells, a climber, the +1 / +2 hops onto the step as arcs                                                                   | canvas |
+| `house-row`     | House Robber: houses over table cells with their cash, neighbors linked (shared alarm), ✓ take / ✕ skip plan                                                          | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -553,8 +556,27 @@ with an "active" highlight (no pointers: there's no room on a phone). The valida
 `isHeap` lives in `traces/types.ts`. An unbound heap is the final heaps. Tones: Last Stone Weight's equal stones are
 neutral.
 
+**Dynamic Programming** (the five home problems; Counting Bits and Jump Game are cross-listed in without videos)
+added `trace.dp` (`rows`, `cols`, `rowHeaders`, `colHeaders`: a name like "ways" for a 1D table, or two strings'
+characters with "" for the empty prefix) and step state `table` (`cells` with `null` for unfilled, `current`, `reads`:
+the cells it reads, each labeled with its option, `chosen`: the reads the winning option used, `choice`, `answer`: the
+answer cell), plus `climb` (Climbing Stairs: the climber's step and the hops onto it) and `houses` (House Robber:
+the house being decided and the best plan so far, taken and skipped). Traces fill a `Table`
+(`traces/dynamic-programming/shared.ts`) one cell per step, each read already filled (tested). Row displays
+"stairs" and "houses" are drawn by the `staircase` and `house-row` primitives, column i over table cell i
+(`layoutDp` gives them the region above a 1D table, asking the bottom stack to move down for it). Climbing Stairs
+also carries `trace.tree`, the top four levels of plain recursion's call tree: its first two steps are tree walks
+with `repeats` (a new optional binary-tree field, drawn with a dotted accent border; trees without it render exactly
+as before) and, memoized, everything under a repeat `skipped`. A 1D table's reads are arcs over the row, labeled over
+each read cell; a 2D table's are short arrows between neighbors; labels show for every option when there are two,
+otherwise only for the winner. Cells are as wide as their widest value. 2D tables fill the stage on a phone, so their
+answer card goes in the closing scene (the last step's scene shows the ✓ answer cell). Tones: House Robber's winning
+skip is neutral. The validator checks the table's shape and headers, every cell, the current cell, reads, chosen
+option, and answer, and the climber/hops and the street's plan; an unbound table is empty or final, and no plan may
+take two neighbors (schema).
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
-`staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
+`coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
 ## Traces and validation
 
@@ -563,7 +585,8 @@ input and returns a `Trace` (types in `traces/types.ts`):
 
 ```ts
 Trace = {
-  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" },
+  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "stairs"
+  | "houses" },
   secondRow?: { values },
   pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
@@ -574,11 +597,13 @@ Trace = {
            links?, heap?,                                         // linked lists (see "Linked lists" above)
            tree?, stack?,                                         // trees (see "Trees (DFS)" above)
            cells?, bfs?, queue?,                                  // breadth-first search (see "Graphs (BFS)" above)
-           heaps? }[],                                            // priority queues (see "Heap / Priority Queue" above)
+           heaps?,                                                // priority queues (see "Heap / Priority Queue" above)
+           table?, climb?, houses? }[],                           // dynamic programming (see "Dynamic Programming" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
   grid?: { rows, cols, cells, legend }, graph?: { nodes, edges },   // a BFS's grid or graph
+  dp?: { rows, cols, rowHeaders?, colHeaders? },                     // a DP table's shape
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
   answerIndices?,     // when the answer is a set of positions
@@ -834,7 +859,9 @@ Matrix is a chess king crossing a board with blocked squares, and Word Ladder a 
 a time, every key on the building's register. Heap / Priority Queue: Last Stone Weight is problem-native; Kth Largest
 is a talent-show judge's two-seat shortlist, Top K Frequent a record shop's two-slot display, K Closest Points the two
 lockers nearest a courier depot, and Find Median a party host splitting arriving children into a younger and an older
-group.
+group. Dynamic Programming: Climbing Stairs, House Robber, and Coin Change are problem-native (the staircase, the
+street, the cashier, with their own numbers); Longest Common Subsequence is two bird-watchers' sighting logs, and Edit
+Distance a sign painter turning CART into ACT.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 
@@ -896,7 +923,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
    plus traces/validators for things like consistent hashing, rate limiters, and load balancing.
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for
    generation and narration endpoints (both cost money), plus caching identical requests.
-7. Planned DSA primitives: `staircase`, `house-row`, `coin-set`, with their traces.
+7. Planned DSA primitives: `coin-set` (Coin Change uses an item-row today), with its trace.
 
 ## Gotchas
 
