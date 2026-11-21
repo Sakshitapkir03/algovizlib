@@ -130,6 +130,26 @@ export type TraceStep = {
   bfs?: TraceBfs;
   /** The BFS queue after this step, front first, with what this step took off the front and added at the back. */
   queue?: TraceQueue;
+  /** Priority queues after this step (one, or two for a two-heap design), each with this step's push or pop. */
+  heaps?: TraceHeap[];
+};
+
+/** A heap item: ordered by `key`, shown as `label` ("9", "(-1,1)", "4 ×3"). */
+export type TraceHeapItem = { key: number; label: string };
+
+/**
+ * A binary heap as its array (children of i at 2i + 1 and 2i + 2) after this step. A push starts at the next free slot
+ * and sifts up; a pop takes the root, moves the last item to the root, and sifts down. `swaps` are the sift's swaps in
+ * order, so the start of the step is `items` with them undone.
+ */
+export type TraceHeap = {
+  kind: "min" | "max";
+  items: TraceHeapItem[];
+  /** The most items it keeps (a top-k heap). */
+  capacity?: number;
+  swaps?: [number, number][];
+  pushed?: TraceHeapItem;
+  popped?: TraceHeapItem;
 };
 
 /**
@@ -292,3 +312,12 @@ export function finalPositions(step: TraceStep): number[] | undefined {
 
 /** Numbers in this list, ascending (for set-like index lists). */
 export const sortedIndices = (indices: Iterable<number>) => [...indices].sort((a, b) => a - b);
+
+/** Whether `items` keep the heap property for `kind`: every parent at least as close to the root as its children. */
+export function isHeap(kind: "min" | "max", items: readonly { key: number }[]): boolean {
+  return items.every((item, i) => {
+    if (i === 0) return true;
+    const parent = items[(i - 1) >> 1];
+    return kind === "min" ? parent.key <= item.key : parent.key >= item.key;
+  });
+}

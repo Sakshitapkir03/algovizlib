@@ -5,6 +5,7 @@ import type { Element } from "@/lib/storyboard";
 import type {
   GraphLayout,
   GridLayout,
+  HeapPanel,
   ListLayout,
   Region,
   RowLayout,
@@ -29,6 +30,8 @@ export type SceneContextValue = {
   /** A BFS grid's or graph's geometry, when the scene has one. */
   grid?: GridLayout;
   graph?: GraphLayout;
+  /** A "heap" element's panels, when the scene has one. */
+  heapPanels?: HeapPanel[];
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

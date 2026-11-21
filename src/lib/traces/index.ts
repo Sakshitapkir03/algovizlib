@@ -3,6 +3,11 @@ import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
 import { shortestPathInBinaryMatrixTrace } from "./graphs-bfs/shortest-path-in-binary-matrix";
 import { wordLadderTrace } from "./graphs-bfs/word-ladder";
+import { findMedianFromDataStreamTrace } from "./heap/find-median-from-data-stream";
+import { kClosestPointsToOriginTrace } from "./heap/k-closest-points-to-origin";
+import { kthLargestElementInAnArrayTrace } from "./heap/kth-largest-element-in-an-array";
+import { lastStoneWeightTrace } from "./heap/last-stone-weight";
+import { topKFrequentElementsTrace } from "./heap/top-k-frequent-elements";
 import { kokoEatingBananasTrace } from "./binary-search/koko-eating-bananas";
 import { medianOfTwoSortedArraysTrace } from "./binary-search/median-of-two-sorted-arrays";
 import { searchInRotatedSortedArrayTrace } from "./binary-search/search-in-rotated-sorted-array";
@@ -83,6 +88,11 @@ const definitions = [
   rottingOrangesTrace,
   shortestPathInBinaryMatrixTrace,
   wordLadderTrace,
+  lastStoneWeightTrace,
+  kthLargestElementInAnArrayTrace,
+  topKFrequentElementsTrace,
+  kClosestPointsToOriginTrace,
+  findMedianFromDataStreamTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

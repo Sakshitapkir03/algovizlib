@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v10";
+export const PROMPT_VERSION = "storyboard-v11";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -58,6 +58,7 @@ ${ELEMENT_GUIDE}
 - linked-list: when the trace's row is a list ("list"), make it the first element of every scene that shows data, and OMIT nodes/rewired/fromPlaces (a bound scene takes the step's list, an unbound scene the starting list). Rewired links and moving nodes animate on their own. Give laneLabels that name each lane in your analogy. Put pointers on it with placement: "above" and rowId set to the linked-list's id, bound to the step's pointer names; a pointer the step doesn't list is null, so leave it out. Highlights on it use node ids (OMIT indices). Skip callouts in list scenes: the narration carries the reasoning. With a heap of list heads (step lists a heap), add a heap-tree in those scenes (OMIT values) and drop it once the heap is empty.
 - binary-tree / call-stack: when the trace's row is a tree ("tree"), make a binary-tree the first element of every scene that shows data and OMIT nodes and the walk fields (current, nullVisit, path, done, skipped, returned, results, badges): a bound scene takes the step's walk, an unbound scene shows the bare tree. Add a call-stack (OMIT frames/kept) right after it in every bound scene. Highlights and anchored callouts on the tree use rowId = the binary-tree's id and node ids (OMIT indices). Keep the bottom stack short, because the tree needs the height: at most one equation and a counter per scene, and in the answer scene only the result (plus a counter if the step lists one). Skip callouts in tree scenes: the narration carries the reasoning.
 - grid / graph / queue: when the trace's row is a grid ("grid") or a graph ("graph"), make a grid (or graph) the first element of every scene that shows data and OMIT everything on it (rows, cols, cells, legend, nodes, edges, and the search: current, visited, frontier, levels, checks): a bound scene takes the step's search, an unbound scene the starting grid or graph. Add a queue (OMIT items/dequeued/enqueued) in every bound scene whose step lists one, with levelLabel set to the story's unit for a level ("minute", "step", "rung"). Keep the bottom stack short: the queue, plus at most a counter or an equation; in the answer scene, the result and at most one more. Skip callouts in grid and graph scenes.
+- heap: when steps list heaps, add a heap (OMIT heaps) in every bound scene; with two heaps give labels naming each half in the story. Leave it out of unbound scenes (it would show the final heaps). The input (the item-row, if the trace has a row) appears in intro scenes and in bound scenes whose step lists active items, marked with an "active" highlight (OMIT indices); don't add pointers to it, and leave it out of the answer scene. Keep the bottom stack short: at most one equation, counter, or freq-table per scene; in the answer scene, only the heap and the result. Skip callouts in heap scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -175,6 +176,15 @@ function describeStep(step: TraceStep, index: number): string {
     ];
     parts.push(walk.filter(Boolean).join("; "));
   }
+  if (step.heaps)
+    parts.push(
+      step.heaps
+        .map(
+          (h, k) =>
+            `heap ${k + 1} (${h.kind}${h.capacity !== undefined ? `, capacity ${h.capacity}` : ""}): [${h.items.map((i) => i.label).join(", ")}]${h.pushed ? `, pushed ${h.pushed.label}` : ""}${h.popped ? `, popped ${h.popped.label}` : ""}${h.swaps?.length ? `, ${h.swaps.length} swap${h.swaps.length === 1 ? "" : "s"}` : ""}`,
+        )
+        .join(" ; "),
+    );
   if (step.cells) parts.push(`cells: ${JSON.stringify(step.cells)}`);
   if (step.bfs) {
     const b = step.bfs;
@@ -247,7 +257,9 @@ ${
                   `  #${n.id}: ${n.value} (left ${n.left === null ? "none" : `#${n.left}`}, right ${n.right === null ? "none" : `#${n.right}`})`,
               )
               .join("\n")}\nValues by id`
-          : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
+          : trace.row.values.length === 0
+            ? "No row: the input is a stream of operations, so don't add an item-row"
+            : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
 }
 ${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}${
     trace.secondRow
@@ -281,4 +293,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV10 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV11 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

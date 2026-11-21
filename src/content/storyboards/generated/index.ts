@@ -11,6 +11,11 @@ import graphsBfsNumberOfIslands from "./graphs-bfs/number-of-islands.json";
 import graphsBfsRottingOranges from "./graphs-bfs/rotting-oranges.json";
 import graphsBfsShortestPathInBinaryMatrix from "./graphs-bfs/shortest-path-in-binary-matrix.json";
 import graphsBfsWordLadder from "./graphs-bfs/word-ladder.json";
+import heapFindMedianFromDataStream from "./heap/find-median-from-data-stream.json";
+import heapKClosestPointsToOrigin from "./heap/k-closest-points-to-origin.json";
+import heapKthLargestElementInAnArray from "./heap/kth-largest-element-in-an-array.json";
+import heapLastStoneWeight from "./heap/last-stone-weight.json";
+import heapTopKFrequentElements from "./heap/top-k-frequent-elements.json";
 import linkedListMergeKSortedLists from "./linked-list/merge-k-sorted-lists.json";
 import linkedListMergeTwoSortedLists from "./linked-list/merge-two-sorted-lists.json";
 import linkedListRemoveNthNodeFromEnd from "./linked-list/remove-nth-node-from-end.json";
@@ -51,6 +56,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "graphs-bfs/rotting-oranges": loadStoryboard(graphsBfsRottingOranges),
   "graphs-bfs/shortest-path-in-binary-matrix": loadStoryboard(graphsBfsShortestPathInBinaryMatrix),
   "graphs-bfs/word-ladder": loadStoryboard(graphsBfsWordLadder),
+  "heap/find-median-from-data-stream": loadStoryboard(heapFindMedianFromDataStream),
+  "heap/k-closest-points-to-origin": loadStoryboard(heapKClosestPointsToOrigin),
+  "heap/kth-largest-element-in-an-array": loadStoryboard(heapKthLargestElementInAnArray),
+  "heap/last-stone-weight": loadStoryboard(heapLastStoneWeight),
+  "heap/top-k-frequent-elements": loadStoryboard(heapTopKFrequentElements),
   "linked-list/merge-k-sorted-lists": loadStoryboard(linkedListMergeKSortedLists),
   "linked-list/merge-two-sorted-lists": loadStoryboard(linkedListMergeTwoSortedLists),
   "linked-list/remove-nth-node-from-end": loadStoryboard(linkedListRemoveNthNodeFromEnd),

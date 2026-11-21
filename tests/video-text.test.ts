@@ -8,6 +8,7 @@ import { primitiveRegistry } from "@/video/primitives/registry";
 import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
+import { heapProblems } from "./fixtures/heap-fit";
 import { searchProblems } from "./fixtures/search-fit";
 import { treeProblems } from "./fixtures/tree-fit";
 import { MIN_TEXT_PX, PHONE_PLAYER_WIDTH, TEXT, textMetrics } from "@/video/text";
@@ -57,6 +58,7 @@ describe("video text at phone width", () => {
         "freq-table",
         "graph",
         "grid",
+        "heap",
         "heap-tree",
         "held-value",
         "highlight",
@@ -75,6 +77,16 @@ describe("video text at phone width", () => {
         "window",
       ].sort(),
     );
+  });
+
+  it("heaps fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        heapProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+      ),
+    );
+    expect(problems).toEqual([]);
   });
 
   it("grids, graphs, and queues fit at full size too", () => {
@@ -300,6 +312,9 @@ describe("video text at phone width", () => {
           }
           case "binary-tree":
             for (const problem of treeProblems(scene.elements, phone, bottomTop)) fail(problem);
+            break;
+          case "heap":
+            for (const problem of heapProblems(scene.elements, phone)) fail(problem);
             break;
           case "grid":
           case "graph":

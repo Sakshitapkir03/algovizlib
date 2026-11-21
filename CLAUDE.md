@@ -410,6 +410,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `grid`          | BFS grid: cell glyph + word (≈ water, ■ wall), current ringed, frontier dashed, levels in corners, check arrows (✕ + reason)                                          | canvas |
 | `graph`         | BFS graph in columns by level from node 0: current ringed, frontier dashed, level labels, checked edges lit (✕ if seen)                                               | canvas |
 | `queue`         | BFS queue front → back: dequeued fades struck out, enqueued slides in; a divider + "level 2" marker between levels                                                    | bottom |
+| `heap`          | priority queue: tree + backing array (one list), min/max, "size 2/2"; push sifts up and pop sifts down swap by swap; two side by side                                 | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -536,6 +537,22 @@ set by `levelLabel` ("minute", "distance", "keys"); items carry their level, so 
 with the items. No comparison in these traces would mislead, so none sets a tone. Rotting Oranges is multi-source: every
 rotten orange is queued at level 0 in the first step. As with trees, grid and graph scenes keep the bottom stack short.
 
+**Heap / Priority Queue** (the five home problems; Merge K Sorted Lists, Sliding Window Maximum, and heap sort are
+cross-listed in with their own videos) added step state `heaps`: one or two `{ kind: "min" | "max", items, capacity?,
+swaps?, pushed?, popped? }`, where `items` is the backing array after the step (each `{ key, label }`: ordered by key,
+shown as "9", "(-1,1)", "4 ×3") and `swaps` are the sift's swaps in order, so the start of the step is the array with
+them undone. Traces drive a `RecordedHeap` (`traces/heap/shared.ts`) with the reference solutions' exact sift and tie
+rules; a top-k heap may hold capacity + 1 for one step (push, then pop). The `heap` primitive is separate from
+`heap-tree` (heap sort's frames are pixel-identical before and after it was added): each heap's tree (at the shape of
+its largest size in the trace, `slots`, so it never jumps) and its array strip under it are the same list, and the
+component replays the swaps one at a time in both (a pop first lifts the root out to the right and moves the last item
+to the root). The name sits left of the array strip and the size ("size 3/2") right of it; two heaps get a title row
+with their story names ("younger half (max)"). An input strip (item-row, short cards) can sit above the heap, marked
+with an "active" highlight (no pointers: there's no room on a phone). The validator checks every heap against the step
+(kind, array, capacity, swaps, push, pop: the tree is the array) and that every drawn heap keeps the heap property;
+`isHeap` lives in `traces/types.ts`. An unbound heap is the final heaps. Tones: Last Stone Weight's equal stones are
+neutral.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `staircase` (Climbing Stairs), `house-row` (House Robber), `coin-set` (Coin Change), `box-arrow` (system design).
 
@@ -556,7 +573,8 @@ Trace = {
            search?, answers?, cuts?,                              // binary search (see "Binary search" above)
            links?, heap?,                                         // linked lists (see "Linked lists" above)
            tree?, stack?,                                         // trees (see "Trees (DFS)" above)
-           cells?, bfs?, queue? }[],                              // breadth-first search (see "Graphs (BFS)" above)
+           cells?, bfs?, queue?,                                  // breadth-first search (see "Graphs (BFS)" above)
+           heaps? }[],                                            // priority queues (see "Heap / Priority Queue" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -583,7 +601,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -813,7 +831,10 @@ every turn above them (Validate BST), record-height stations on a cable car netw
 profitable stretch of road between towns that earn or cost money (Maximum Path Sum). Graphs (BFS): Flood Fill,
 Number of Islands, and Rotting Oranges are problem-native (a paint bucket, a map, a crate); Shortest Path in a Binary
 Matrix is a chess king crossing a board with blocked squares, and Word Ladder a locksmith recutting a key one notch at
-a time, every key on the building's register.
+a time, every key on the building's register. Heap / Priority Queue: Last Stone Weight is problem-native; Kth Largest
+is a talent-show judge's two-seat shortlist, Top K Frequent a record shop's two-slot display, K Closest Points the two
+lockers nearest a courier depot, and Find Median a party host splitting arriving children into a younger and an older
+group.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

@@ -1,6 +1,13 @@
-import { finalPositions, runTrace, type Trace, type TraceStep } from "@/lib/traces";
+import { finalPositions, isHeap, runTrace, type Trace, type TraceStep } from "@/lib/traces";
 
-import type { TraceBfs, TraceLinks, TraceQueueItem, TraceTreeNode, TraceTreeWalk } from "@/lib/traces";
+import type {
+  TraceHeap,
+  TraceBfs,
+  TraceLinks,
+  TraceQueueItem,
+  TraceTreeNode,
+  TraceTreeWalk,
+} from "@/lib/traces";
 
 import type {
   BinaryTreeElement,
@@ -47,9 +54,20 @@ const positions = (indices: readonly number[]) => {
 const ranges = (groups: readonly { from: number; to: number }[]) =>
   groups.map((g) => (g.from === g.to ? `${g.from}` : `${g.from}–${g.to}`)).join(" | ");
 
-/** Engine-independent checks: every equation's arithmetic must be true. */
+/** Engine-independent checks: every equation's arithmetic must be true, and every drawn heap must be a heap. */
 function validateArithmetic(scene: Scene, issues: ValidationIssue[]) {
   for (const el of scene.elements) {
+    if (el.type === "heap")
+      el.heaps.forEach((heap, h) => {
+        if (!isHeap(heap.kind, heap.items))
+          issues.push({
+            sceneId: scene.id,
+            elementId: el.id,
+            field: `heaps.${h}.items`,
+            message: `Heap ${h + 1} breaks the ${heap.kind}-heap property: a parent must be ${heap.kind === "min" ? "no larger" : "no smaller"} than its children`,
+            actual: heap.items.map((i) => i.key).join(", "),
+          });
+      });
     if (el.type !== "equation") continue;
     const value = applyOperator(el.operator, el.terms);
     if (value !== el.result) {
@@ -160,6 +178,19 @@ function bfsFields(bfs: Partial<TraceBfs> | GridElement | GraphElement): Record<
     ),
   };
 }
+
+/** A heap in a canonical form (every field present), for comparing with a trace step. */
+const canonHeap = (heap: Partial<TraceHeap>) =>
+  JSON.stringify({
+    kind: heap.kind,
+    items: (heap.items ?? []).map((i) => ({ key: i.key, label: i.label })),
+    capacity: heap.capacity ?? null,
+    swaps: heap.swaps ?? [],
+    pushed: heap.pushed ? { key: heap.pushed.key, label: heap.pushed.label } : null,
+    popped: heap.popped ? { key: heap.popped.key, label: heap.popped.label } : null,
+  });
+const showHeap = (heap: Partial<TraceHeap>) =>
+  `${heap.kind}-heap [${(heap.items ?? []).map((i) => i.label).join(", ")}]${heap.capacity !== undefined ? ` cap ${heap.capacity}` : ""}${heap.swaps?.length ? ` swaps ${JSON.stringify(heap.swaps)}` : ""}${heap.pushed ? ` +${heap.pushed.label}` : ""}${heap.popped ? ` -${heap.popped.label}` : ""}`;
 
 const showQueue = (items: readonly TraceQueueItem[]) =>
   items.map((item) => `${item.label} (level ${item.level})`).join(", ") || "empty";
@@ -418,6 +449,17 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           );
         if (el.type === "queue")
           push("A queue needs the scene to set traceStep (its items come from the step)", el.id, "items");
+        if (el.type === "heap") {
+          const final = trace.steps.at(-1)?.heaps ?? [];
+          const expected = final.map(({ kind, items, capacity }) => canonHeap({ kind, items, capacity }));
+          if (JSON.stringify(el.heaps.map(canonHeap)) !== JSON.stringify(expected))
+            push(
+              "Without a traceStep, a heap shows the final heaps with no push or pop; omit heaps",
+              el.id,
+              "heaps",
+              { expected: final.map(showHeap).join(" | "), actual: el.heaps.map(showHeap).join(" | ") },
+            );
+        }
         if (el.type === "grid" || el.type === "graph") {
           // An unbound grid or graph is the starting one (no search yet), or the search as it ends (a recap).
           const last = trace.steps.at(-1);
@@ -938,6 +980,28 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
                 expected: expected[field],
                 actual: drawn[field],
               });
+          break;
+        }
+        case "heap": {
+          const expected = step.heaps;
+          if (!expected) {
+            push(`Trace step ${stepIndex} has no heap`, el.id, "heaps");
+            break;
+          }
+          // The tree and the array are the same list, so checking the list checks both.
+          if (el.heaps.length !== expected.length)
+            push(
+              `Trace step ${stepIndex} has ${expected.length} heap(s), not ${el.heaps.length}`,
+              el.id,
+              "heaps",
+            );
+          el.heaps.forEach((heap, h) => {
+            if (expected[h] && canonHeap(heap) !== canonHeap(expected[h]))
+              push(`Heap ${h + 1} doesn't match trace step ${stepIndex}`, el.id, `heaps.${h}`, {
+                expected: showHeap(expected[h]),
+                actual: showHeap(heap),
+              });
+          });
           break;
         }
         case "queue": {

@@ -467,6 +467,29 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             edges: el.edges ?? trace?.graph?.edges,
           } as ElementSource;
         }
+        case "heap": {
+          // An unbound scene (a recap) shows the heaps as the trace ends, with no push or pop.
+          const final = trace?.steps.at(-1)?.heaps?.map(({ kind, items, capacity }) => ({
+            kind,
+            items,
+            ...(capacity !== undefined ? { capacity } : {}),
+          }));
+          const heaps = el.heaps ?? (step ? step.heaps : final);
+          if (!heaps) return (noState(el, "heaps", "heap"), el);
+          // Each heap's largest size anywhere in the trace (counting a popped root), so its tree never changes shape.
+          const slots =
+            el.slots ??
+            heaps.map((_, h) =>
+              Math.max(
+                1,
+                ...(trace?.steps ?? []).map((s) => {
+                  const heap = s.heaps?.[h];
+                  return heap ? heap.items.length + (heap.popped ? 1 : 0) : 0;
+                }),
+              ),
+            );
+          return { ...el, heaps, slots };
+        }
         case "queue": {
           if (el.items) return el;
           if (!step?.queue) return (noState(el, "items", "queue"), el);

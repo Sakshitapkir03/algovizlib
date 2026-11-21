@@ -1,0 +1,232 @@
+{
+  "id": "heap-top-k-frequent-elements",
+  "title": "Top K Frequent Elements: A Record Shop's Two-Slot Display",
+  "concept": "Heap / Priority Queue",
+  "category": "dsa",
+  "summary": "Count each value, then keep the k highest counts in a min-heap capped at k.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A record shop logs which album each customer asks for and has a display window with room for 2 albums. It should show the two most requested.",
+    "mapping": [
+      {
+        "real": "An album number in the request log",
+        "abstract": "A value in nums"
+      },
+      {
+        "real": "Requests per album",
+        "abstract": "The count of each value"
+      },
+      {
+        "real": "The two-slot display window",
+        "abstract": "A min-heap of counts capped at k = 2"
+      },
+      {
+        "real": "The least requested album on display",
+        "abstract": "The heap's root"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "hash map",
+    "heap",
+    "bucket sort"
+  ],
+  "takeaway": {
+    "pattern": "Counting + size-k min-heap",
+    "summary": "Count with a hash map, then push (value, count) pairs into a min-heap by count; pop the root whenever it holds k + 1. What's left is the top k.",
+    "timeComplexity": "O(n + m log k) for m distinct values",
+    "spaceComplexity": "O(m)",
+    "whenToUse": [
+      "The k most common items",
+      "Ranking by a score you compute first"
+    ]
+  },
+  "trace": {
+    "problem": "heap/top-k-frequent-elements",
+    "args": [
+      [
+        4,
+        1,
+        4,
+        2,
+        1,
+        4,
+        3
+      ],
+      2
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v11",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:56:32.892Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "requests",
+      "narration": "A record shop logged seven requests for albums 4, 1, 4, 2, 1, 4, and 3. Its display has room for two. Which two albums were requested most?",
+      "caption": "Seven requests, a display with room for two albums",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "req 1",
+            "req 2",
+            "req 3",
+            "req 4",
+            "req 5",
+            "req 6",
+            "req 7"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sorting",
+      "narration": "You could rank every album by its requests, but only the top two matter, and a big shop has thousands of albums.",
+      "caption": "Sorting every album by requests ranks more than needed",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "req 1",
+            "req 2",
+            "req 3",
+            "req 4",
+            "req 5",
+            "req 6",
+            "req 7"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "count",
+      "narration": "First, tally the requests: album 4 three times, album 1 twice, albums 2 and 3 once each.",
+      "caption": "First count the requests for each album",
+      "durationInFrames": 240,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "display (min-heap)"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "freq-table",
+          "label": "requests"
+        }
+      ]
+    },
+    {
+      "id": "least-on-top",
+      "narration": "Fill the display with a min-heap by request count. Album 4 goes in, then album 1 sifts up to the root: it's the less requested of the two.",
+      "caption": "The least requested album on display sits on top",
+      "durationInFrames": 372,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "display (min-heap)"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "freq-table",
+          "label": "requests"
+        }
+      ]
+    },
+    {
+      "id": "bounce",
+      "narration": "Album 2, with one request, sifts to the root, and three albums are one too many. The root leaves: album 2 can't make the display.",
+      "caption": "Album 2 has one request: popped right back out",
+      "durationInFrames": 336,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "display (min-heap)"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "freq-table",
+          "label": "requests"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Album 3 bounces out the same way. The display holds the two most requested albums, 1 and 4.",
+      "caption": "Albums 1 and 4 stay on display",
+      "durationInFrames": 252,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "display (min-heap)"
+          ]
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Top 2 albums",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Albums are values, requests are counts, and the display is a min-heap capped at k. Counting is O(n), and each push costs O(log k).",
+      "caption": "Albums are values; the display is a size-k min-heap",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "req 1",
+            "req 2",
+            "req 3",
+            "req 4",
+            "req 5",
+            "req 6",
+            "req 7"
+          ]
+        }
+      ]
+    }
+  ]
+}

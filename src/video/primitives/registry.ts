@@ -14,6 +14,7 @@ import { Equation } from "./Equation";
 import { FreqTable } from "./FreqTable";
 import { Graph } from "./Graph";
 import { Grid } from "./Grid";
+import { Heap } from "./Heap";
 import { HeapTree } from "./HeapTree";
 import { HeldValue } from "./HeldValue";
 import { Highlight } from "./Highlight";
@@ -58,6 +59,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   grid: { component: Grid, slot: "canvas", layer: 0 },
   graph: { component: Graph, slot: "canvas", layer: 0 },
   queue: { component: Queue, slot: "bottom", layer: 0 },
+  // Priority queues: tree plus backing array (one or two heaps), under an optional input strip.
+  heap: { component: Heap, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

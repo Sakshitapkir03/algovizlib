@@ -370,6 +370,11 @@ describe("selectTargets", () => {
       "graphs-bfs/rotting-oranges",
       "graphs-bfs/shortest-path-in-binary-matrix",
       "graphs-bfs/word-ladder",
+      "heap/last-stone-weight",
+      "heap/kth-largest-element-in-an-array",
+      "heap/top-k-frequent-elements",
+      "heap/k-closest-points-to-origin",
+      "heap/find-median-from-data-stream",
     ]);
   });
 
@@ -564,7 +569,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v10");
+    expect(currentPrompts.version).toBe("storyboard-v11");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

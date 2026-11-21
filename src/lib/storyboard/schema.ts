@@ -457,6 +457,36 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: `A scene can show only one ${el.type}` });
           break;
         }
+        case "heap":
+          el.heaps.forEach((heap, h) => {
+            if ((heap.swaps ?? []).some(([a, b]) => a >= heap.items.length || b >= heap.items.length))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "heaps", h, "swaps"],
+                message: "a swap refers to a position past the heap's end",
+              });
+            // A push may take it one over capacity for a moment; the next step pops it back.
+            if (heap.capacity !== undefined && heap.items.length > heap.capacity + 1)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "heaps", h, "items"],
+                message: `the heap holds ${heap.items.length}, more than one over its capacity of ${heap.capacity}`,
+              });
+            const slots = el.slots?.[h];
+            if (slots !== undefined && slots < heap.items.length + (heap.popped ? 1 : 0))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "slots"],
+                message: "slots must cover every item",
+              });
+          });
+          if (scene.elements.filter((e) => e.type === "heap").length > 1)
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: "A scene can show only one heap element (it holds up to two heaps)",
+            });
+          break;
         case "queue":
           if (scene.elements.filter((e) => e.type === "queue").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one queue" });

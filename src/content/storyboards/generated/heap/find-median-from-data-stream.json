@@ -1,0 +1,236 @@
+{
+  "id": "heap-find-median-from-data-stream",
+  "title": "Find Median from Data Stream: Two Groups at a Children's Party",
+  "concept": "Heap / Priority Queue",
+  "category": "dsa",
+  "summary": "A max-heap holds the younger half and a min-heap the older half; their roots give the median at any moment.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Children arrive at a party one at a time, each telling their age. The host must always be able to name the middle age, so the host splits the children into a younger group and an older group of equal size.",
+    "mapping": [
+      {
+        "real": "A child's age",
+        "abstract": "A number from the stream (addNum)"
+      },
+      {
+        "real": "The younger group, oldest of them in front",
+        "abstract": "A max-heap of the lower half"
+      },
+      {
+        "real": "The older group, youngest of them in front",
+        "abstract": "A min-heap of the upper half"
+      },
+      {
+        "real": "Moving a child between groups",
+        "abstract": "Rebalancing: pop one root, push it on the other heap"
+      },
+      {
+        "real": "The middle age",
+        "abstract": "findMedian()"
+      }
+    ]
+  },
+  "tags": [
+    "design",
+    "heap",
+    "data stream"
+  ],
+  "takeaway": {
+    "pattern": "Two heaps",
+    "summary": "Keep the lower half in a max-heap and the upper half in a min-heap, sizes equal or the lower one bigger by one. The median is the lower root, or the average of both roots.",
+    "timeComplexity": "O(log n) per addNum, O(1) per findMedian",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "A running median or other middle value",
+      "Splitting a stream into a lower and an upper half"
+    ]
+  },
+  "trace": {
+    "problem": "heap/find-median-from-data-stream",
+    "args": [
+      [
+        "MedianFinder",
+        "addNum",
+        "findMedian",
+        "addNum",
+        "findMedian",
+        "addNum",
+        "findMedian",
+        "addNum",
+        "findMedian"
+      ],
+      [
+        [],
+        [
+          6
+        ],
+        [],
+        [
+          2
+        ],
+        [],
+        [
+          9
+        ],
+        [],
+        [
+          1
+        ],
+        []
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v11",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:56:32.824Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "party",
+      "narration": "Children arrive at a party one at a time, aged 6, 2, 9, and 1. After each arrival the host must name the middle age.",
+      "caption": "Children arrive one by one: what's the middle age now?",
+      "durationInFrames": 336,
+      "elements": []
+    },
+    {
+      "id": "sorting",
+      "narration": "Lining everyone up by age after each arrival works, but most of the line never changes.",
+      "caption": "Re-sorting everyone at each arrival repeats the work",
+      "durationInFrames": 229,
+      "elements": []
+    },
+    {
+      "id": "first",
+      "narration": "Instead, keep two groups. The younger group's oldest child stands in front, and the older group's youngest child stands in front. The first child, aged 6, joins the younger group.",
+      "caption": "Two groups: younger (oldest in front), older (youngest in front)",
+      "durationInFrames": 396,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "younger half (max)",
+            "older half (min)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "balance",
+      "narration": "A 2 joins the younger group, which now has two children and the older group none. Its front child, 6, moves to the older group.",
+      "caption": "The younger group got too big: its front child moves over",
+      "durationInFrames": 336,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "younger half (max)",
+            "older half (min)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "even",
+      "narration": "With one child in each group, the middle age is halfway between the two front children: 2 plus 6 is 8, half of that is 4.",
+      "caption": "Equal groups: the middle is the average of the two fronts",
+      "durationInFrames": 348,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "younger half (max)",
+            "older half (min)"
+          ]
+        },
+        {
+          "id": "middle",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "÷ 2 = 4"
+        }
+      ]
+    },
+    {
+      "id": "older",
+      "narration": "A 9 arrives. It's older than the younger group's front child, 2, so it joins the older group.",
+      "caption": "9 is older than the younger group's front: it joins the older",
+      "durationInFrames": 252,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "younger half (max)",
+            "older half (min)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "back",
+      "narration": "The older group is now bigger, so its front child, 6, moves back to the younger group. The younger group may hold the one extra child.",
+      "caption": "Now the older group is bigger: 6 moves back",
+      "durationInFrames": 348,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "younger half (max)",
+            "older half (min)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "A 1 joins the younger group, 6 moves across again, and the groups are even. The middle age is again 2 plus 6, halved: 4.",
+      "caption": "After 1 arrives: the middle age is (2 + 6) / 2 = 4",
+      "durationInFrames": 336,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "groups",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "younger half (max)",
+            "older half (min)"
+          ]
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Answers to every call",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Ages are the stream, the younger group is a max-heap, and the older group a min-heap. Adding costs O(log n); the median is always at the two roots.",
+      "caption": "Ages are numbers; the groups are a max-heap and a min-heap",
+      "durationInFrames": 372,
+      "elements": []
+    }
+  ]
+}

@@ -17,7 +17,8 @@ import { z } from "zod";
  * "segments", "split-tree", "merge-buffer", "partition", "heap-tree", and "counter"; sliding window adds "window",
  * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`;
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
- * "call-stack"; breadth-first search adds "grid", "graph", and "queue".
+ * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; priority queues add "heap" (built
+ * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
 const nonEmpty = z.string().trim().min(1);
@@ -575,6 +576,47 @@ export const queueSourceSchema = z.object({
   items: queueShape.items.optional(),
 });
 
+export const heapItemSchema = z.object({
+  /** What the heap orders by. */
+  key: z.number().finite(),
+  /** What the node and the array cell show ("9", "(-1,1)", "4 ×3"). */
+  label: z.string().trim().min(1).max(8),
+});
+
+export const heapStateSchema = z.object({
+  kind: z.enum(["min", "max"]),
+  /** The backing array; the tree is the same list (children of i at 2i + 1 and 2i + 2). */
+  items: z.array(heapItemSchema).max(15),
+  /** The most items it keeps (shown as "size 2/2"). */
+  capacity: z.number().int().positive().optional(),
+  /** This scene's sift swaps, in order (positions in the array). */
+  swaps: z
+    .array(z.tuple([index, index]))
+    .max(6)
+    .optional(),
+  /** Pushed this scene: it starts at the next free slot and sifts up. */
+  pushed: heapItemSchema.optional(),
+  /** Popped this scene: the root leaves, the last item moves to the root and sifts down. */
+  popped: heapItemSchema.optional(),
+});
+
+const heapShape = {
+  ...baseElement,
+  type: z.literal("heap"),
+  /** One heap, or two side by side (a two-heap design). */
+  heaps: z.array(heapStateSchema).min(1).max(2),
+  /** A name over each heap ("lower half (max)"); default "min-heap" / "max-heap". */
+  labels: z.array(z.string().trim().min(1).max(22)).max(2).optional(),
+  /** The most items each heap ever holds in the trace, so the tree keeps one shape across scenes. */
+  slots: z.array(z.number().int().min(1).max(15)).max(2).optional(),
+};
+export const heapElementSchema = z.object(heapShape);
+export const heapSourceSchema = z.object({
+  ...heapShape,
+  /** Omit heaps (and slots) to take the bound step's heaps (the final heaps in an unbound scene). */
+  heaps: heapShape.heaps.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -749,6 +791,7 @@ export const elementSchemas = [
   gridElementSchema,
   graphElementSchema,
   queueElementSchema,
+  heapElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -780,6 +823,7 @@ export const elementSourceSchemas = [
   gridSourceSchema,
   graphSourceSchema,
   queueSourceSchema,
+  heapSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -821,6 +865,8 @@ export type StackFrame = z.infer<typeof stackFrameSchema>;
 export type GridElement = ElementOf<"grid">;
 export type GraphElement = ElementOf<"graph">;
 export type QueueElement = ElementOf<"queue">;
+export type HeapElement = ElementOf<"heap">;
+export type HeapState = z.infer<typeof heapStateSchema>;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

@@ -1,0 +1,224 @@
+{
+  "id": "heap-last-stone-weight",
+  "title": "Last Stone Weight: Always Smash the Two Heaviest",
+  "concept": "Heap / Priority Queue",
+  "category": "dsa",
+  "summary": "A max-heap keeps the heaviest stone at the root, so each round is two pops and maybe one push.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "heap",
+    "simulation"
+  ],
+  "takeaway": {
+    "pattern": "Max-heap (priority queue)",
+    "summary": "When you repeatedly need the largest item, keep the items in a max-heap: the root is the largest, and popping or pushing costs O(log n).",
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Repeatedly taking the largest (or smallest) item",
+      "Items keep changing while you take them"
+    ]
+  },
+  "trace": {
+    "problem": "heap/last-stone-weight",
+    "args": [
+      [
+        3,
+        8,
+        5,
+        2,
+        6
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v11",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:56:32.891Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "pile",
+      "narration": "A pile holds stones weighing 3, 8, 5, 2, and 6. Each turn, smash the two heaviest. Equal stones both break; otherwise the heavier survives with the difference.",
+      "caption": "Smash the two heaviest stones until at most one is left",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "stones",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stone",
+            "stone",
+            "stone",
+            "stone",
+            "stone"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sorting",
+      "narration": "You could sort the pile every turn to find the two heaviest, but after one smash almost nothing changed, and you'd sort it all again.",
+      "caption": "Re-sorting the pile every turn is wasted work",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "stones",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stone",
+            "stone",
+            "stone",
+            "stone",
+            "stone"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "build",
+      "narration": "Instead, keep the stones in a max-heap: every stone is at least as heavy as the ones below it, so the heaviest, 8, sits at the root.",
+      "caption": "A max-heap keeps the heaviest stone on top",
+      "durationInFrames": 360,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "the pile (max-heap)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pop",
+      "narration": "Take the 8 off the top. The last stone moves to the root and sinks below heavier stones, so 6 rises to the top.",
+      "caption": "Pop 8: the last stone moves up and sinks to its place",
+      "durationInFrames": 324,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "the pile (max-heap)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "leftover",
+      "narration": "Pop 6 too. Smashing 8 and 6 leaves a stone of 2, which goes back in. It's lighter than its parent, so it stays low.",
+      "caption": "8 smashes 6: a 2 goes back in the pile",
+      "durationInFrames": 336,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "the pile (max-heap)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "round-2",
+      "narration": "Next round, 5 and 3 come off the top, and their leftover 2 goes back in. Three stones of 2 remain.",
+      "caption": "5 smashes 3: another 2 goes back",
+      "durationInFrames": 288,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "the pile (max-heap)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "equal",
+      "narration": "Two stones of 2 come off. They're equal, so both break and nothing goes back.",
+      "caption": "2 against 2: both stones break",
+      "durationInFrames": 216,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "the pile (max-heap)"
+          ]
+        },
+        {
+          "id": "smash",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "both break"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "Only one stone is left, weighing 2. That's the answer.",
+      "caption": "One stone is left: it weighs 2",
+      "durationInFrames": 156,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "the pile (max-heap)"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Last stone",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Whenever you need the largest item over and over while items change, a max-heap gives it in O(log n) per pop or push: O(n log n) in all.",
+      "caption": "Need the largest again and again? Use a max-heap",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "stones",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "stone",
+            "stone",
+            "stone",
+            "stone",
+            "stone"
+          ]
+        }
+      ]
+    }
+  ]
+}

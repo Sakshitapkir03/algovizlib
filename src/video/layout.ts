@@ -5,6 +5,7 @@ import type {
   Element,
   GraphElement,
   GridElement,
+  HeapElement,
   ItemRowElement,
   LinkedListElement,
   PointerElement,
@@ -94,6 +95,21 @@ export type GraphLayout = {
   labelRoom: number;
 };
 
+/** One heap's panel: the tree (array position → node center; its name and size sit beside the root) and the array strip under it. */
+export type HeapPanel = {
+  left: number;
+  right: number;
+  nodeWidth: number;
+  nodeHeight: number;
+  /** Center of array position `i`'s node in the tree. */
+  node: (i: number) => { x: number; y: number };
+  /** Left of array position `i`'s cell, and the strip's top. */
+  cellLeft: (i: number) => number;
+  arrayTop: number;
+  /** Where a title row above the tree starts, when the heap's name has one (two heaps side by side). */
+  titleTop?: number;
+};
+
 /** Where a call-stack draws: a column beside the tree, frames stacked from the bottom. */
 export type StackLayout = {
   left: number;
@@ -151,6 +167,8 @@ export type SceneLayout = {
   stack?: StackLayout;
   grid?: GridLayout;
   graph?: GraphLayout;
+  /** One panel per heap in a "heap" element. */
+  heapPanels?: HeapPanel[];
 };
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
@@ -190,6 +208,8 @@ export const sizes = {
     Math.max(56, ...labels.map((l) => t.width(l, t.size(TEXT.queueItem), "mono") + 18)),
   /** The queue's level markers above its items (words hidden on a phone-sized player: just the divider). */
   queueMarker: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.tag) + 8),
+  /** Under the array: each cell's index (hidden on a phone-sized player). */
+  heapIndex: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.heapNote) + 6),
   /** A call-stack frame: one line of label and note. */
   stackFrame: (t: TextMetrics) => Math.max(t.size(TEXT.stackLabel), t.size(TEXT.stackNote)) + 18,
   /** A tree node's box: big enough for a two-digit negative value. */
@@ -665,6 +685,75 @@ function layoutGraph(
   return { graph: { nodeWidth, nodeHeight, center, labelRoom }, overflow };
 }
 
+const HEAPS = { gap: 48, arrayGap: 22, maxNode: 84 };
+/** An item-row's cards above a heap. */
+const HEAP_ROW_CARD = 78;
+
+/**
+ * One panel per heap, side by side between `top` and the bottom stack: the tree (at the shape of its
+ * largest size anywhere in the trace, so it never jumps between scenes), and the array strip under it.
+ */
+function layoutHeaps(
+  el: HeapElement,
+  t: TextMetrics,
+  top: number,
+  bottomTop: number,
+): { panels: HeapPanel[]; overflow: number } {
+  const n = el.heaps.length;
+  const bottom = bottomTop - 16;
+  const width = (VIDEO_WIDTH - 2 * GRID.margin - HEAPS.gap * (n - 1)) / n;
+  const size = t.size(TEXT.heapItem);
+  const labels = el.heaps.flatMap((h) => [
+    ...h.items,
+    ...(h.popped ? [h.popped] : []),
+    ...(h.pushed ? [h.pushed] : []),
+  ]);
+  const nodeWidth = Math.max(56, ...labels.map((i) => t.width(i.label, size, "mono") + 20));
+  const nodeHeight = size + 26;
+  const index = sizes.heapIndex(t);
+  // Two heaps are narrow side by side: their names ("lower half (max)") get a row above the trees.
+  const title = n > 1 ? t.size(TEXT.heapTitle) + 16 : 0;
+  let overflow = 0;
+  const panels = el.heaps.map((heap, h) => {
+    const slots = Math.max(1, el.slots?.[h] ?? heap.items.length + (heap.popped ? 1 : 0));
+    const levels = Math.floor(Math.log2(slots)) + 1;
+    const left = GRID.margin + h * (width + HEAPS.gap);
+    const strip = HEAPS.arrayGap + nodeHeight + index;
+    const room = bottom - top - title - strip;
+    const ideal = nodeHeight * 1.9;
+    const levelGap =
+      levels > 1 ? Math.max(nodeHeight + 18, Math.min(ideal, (room - nodeHeight) / (levels - 1))) : 0;
+    const used = title + nodeHeight + (levels - 1) * levelGap + strip;
+    const wanted = title + nodeHeight + (levels - 1) * ideal + strip;
+    overflow = Math.max(overflow, Math.max(used, wanted) - (bottom - top));
+    const treeTop = top + title + Math.max(0, (room - nodeHeight - (levels - 1) * levelGap) / 2);
+    // The tree is as wide as its bottom level needs (with room between nodes), centered in the panel.
+    const treeWidth = Math.min(width, 2 ** (levels - 1) * nodeWidth * 2.4);
+    const treeLeft = left + (width - treeWidth) / 2;
+    const node = (i: number) => {
+      const depth = Math.floor(Math.log2(i + 1));
+      const k = i - (2 ** depth - 1);
+      return {
+        x: treeLeft + ((k + 0.5) * treeWidth) / 2 ** depth,
+        y: treeTop + nodeHeight / 2 + depth * levelGap,
+      };
+    };
+    const cell = nodeWidth + 6;
+    const stripLeft = left + (width - slots * cell) / 2;
+    return {
+      left,
+      right: left + width,
+      titleTop: title > 0 ? treeTop - title : undefined,
+      nodeWidth,
+      nodeHeight,
+      node,
+      cellLeft: (i: number) => stripLeft + i * cell,
+      arrayTop: treeTop + nodeHeight + (levels - 1) * levelGap + HEAPS.arrayGap,
+    };
+  });
+  return { panels, overflow: Math.max(0, overflow) };
+}
+
 export function layoutScene(elements: readonly Element[], text: TextMetrics = textMetrics()): SceneLayout {
   const t = text;
   const bottom = elements.filter((el) => bottomHeight(el, t) > 0);
@@ -681,7 +770,13 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     ),
   );
   // A linked list's lanes (or a tree's levels) that don't fit push the bottom stack down too.
-  const need = Math.max(short, first.listOverflow ?? 0, first.treeOverflow ?? 0, first.searchOverflow ?? 0);
+  const need = Math.max(
+    short,
+    first.listOverflow ?? 0,
+    first.treeOverflow ?? 0,
+    first.searchOverflow ?? 0,
+    first.heapOverflow ?? 0,
+  );
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
 }
@@ -690,7 +785,12 @@ function layoutWith(
   elements: readonly Element[],
   t: TextMetrics,
   bottomTop: number,
-): SceneLayout & { listOverflow?: number; treeOverflow?: number; searchOverflow?: number } {
+): SceneLayout & {
+  listOverflow?: number;
+  treeOverflow?: number;
+  searchOverflow?: number;
+  heapOverflow?: number;
+} {
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
   let list: ListLayout | undefined;
@@ -734,6 +834,7 @@ function layoutWith(
   if (gridElement) ({ grid, overflow: searchOverflow } = layoutGrid(gridElement, t, bottomTop));
   else if (graphElement) ({ graph, overflow: searchOverflow } = layoutGraph(graphElement, t, bottomTop));
 
+  const heapElement = elements.find((el): el is HeapElement => el.type === "heap");
   const rows = elements.filter((el): el is Row => el.type === "item-row" || el.type === "bar-row");
   const layouts: Record<string, RowLayout> = {};
   const hasCounts = elements.some((el) => el.type === "count-array");
@@ -799,6 +900,10 @@ function layoutWith(
       const bandTop = t.compact ? COMPACT_BAR_TOP : BAR_TOP;
       top = bandTop + strip;
       cardHeight = Math.min(bandTop + BAR_HEIGHT, lowest) - top;
+    } else if (single && heapElement) {
+      // With a heap below, the input is a short strip of cards under the caption.
+      cardHeight = HEAP_ROW_CARD;
+      top = captionBottom(t) + sizes.tagRoom(t) + 4;
     } else if (single) {
       cardHeight = CARD_HEIGHT;
       top = Math.min(BAND_TOP + (BAND_BOTTOM - BAND_TOP - CARD_HEIGHT) / 2 - 20, lowest - cardHeight);
@@ -835,6 +940,14 @@ function layoutWith(
       rightLimit: heap ? heapRegion.left - 10 : VIDEO_WIDTH - 16,
     };
   });
+  let heapPanels: HeapPanel[] | undefined;
+  let heapOverflow: number | undefined;
+  if (heapElement) {
+    // Under the input strip (and its pointers), else under the caption.
+    const row = Object.values(layouts)[0];
+    const top = row ? row.pointerTop + pointerRoom(elements, row.rowId, t) + 6 : captionBottom(t) + 8;
+    ({ panels: heapPanels, overflow: heapOverflow } = layoutHeaps(heapElement, t, top, bottomTop));
+  }
   return {
     rows: { ...layouts, ...listRows },
     bottomTop,
@@ -847,6 +960,8 @@ function layoutWith(
     grid,
     graph,
     searchOverflow,
+    heapPanels,
+    heapOverflow,
   };
 }
 

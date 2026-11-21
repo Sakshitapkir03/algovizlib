@@ -1,0 +1,310 @@
+{
+  "id": "heap-kth-largest-element-in-an-array",
+  "title": "Kth Largest Element: A Judge's Two-Seat Shortlist",
+  "concept": "Heap / Priority Queue",
+  "category": "dsa",
+  "summary": "A min-heap capped at k keeps the k best scores; its root, the weakest of them, is the kth largest.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A talent-show judge hears scores one at a time and keeps a shortlist of the 2 best. The weakest shortlisted score is always on top of the pile, ready to be dropped.",
+    "mapping": [
+      {
+        "real": "A contestant's score",
+        "abstract": "A value in nums"
+      },
+      {
+        "real": "The two-seat shortlist",
+        "abstract": "A min-heap capped at k = 2"
+      },
+      {
+        "real": "The weakest shortlisted score, on top",
+        "abstract": "The heap's root"
+      },
+      {
+        "real": "Dropping the weakest when a third arrives",
+        "abstract": "Popping the root when size > k"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "heap",
+    "quickselect"
+  ],
+  "takeaway": {
+    "pattern": "Size-k min-heap (top k)",
+    "summary": "Push each value; whenever the heap holds k + 1, pop the root. The heap always holds the k largest so far, and its root is the kth largest.",
+    "timeComplexity": "O(n log k)",
+    "spaceComplexity": "O(k)",
+    "whenToUse": [
+      "The kth largest or the k largest of many values",
+      "Streams where you can't keep everything"
+    ]
+  },
+  "trace": {
+    "problem": "heap/kth-largest-element-in-an-array",
+    "args": [
+      [
+        7,
+        2,
+        9,
+        4,
+        9,
+        1
+      ],
+      2
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v11",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:56:32.890Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "show",
+      "narration": "Six contestants score 7, 2, 9, 4, 9, and 1. Which score is the second best? A judge keeps a shortlist of two seats as the scores come in.",
+      "caption": "Which score is 2nd best? A judge keeps a 2-seat shortlist",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "scores",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sorting",
+      "narration": "Sorting all the scores works, but it orders everyone, even contestants who could never be in the top two.",
+      "caption": "Sorting every score just to read one is more than needed",
+      "durationInFrames": 264,
+      "elements": [
+        {
+          "id": "scores",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weakest-on-top",
+      "narration": "Keep the shortlist in a min-heap. After 7, the score 2 arrives and sifts up to the root: the weakest seat is always on top. Both seats are full.",
+      "caption": "A min-heap puts the weakest shortlisted score on top",
+      "durationInFrames": 384,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "scores",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "scores",
+          "state": "active"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drop-2",
+      "narration": "A 9 arrives, making three. Pop the root: 2 is the weakest of the three, so it can't be in the top two.",
+      "caption": "9 arrives: three is one too many, so the root 2 leaves",
+      "durationInFrames": 312,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "scores",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "scores",
+          "state": "active"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bounce",
+      "narration": "A 4 arrives. It's weaker than both shortlisted scores, so it sifts to the root and is popped straight back out.",
+      "caption": "4 is weaker than both seats: it's dropped right away",
+      "durationInFrames": 288,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "scores",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "scores",
+          "state": "active"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drop-7",
+      "narration": "Another 9 arrives. Now 7 is the weakest of the three, so the root, 7, leaves. Both seats hold a 9.",
+      "caption": "Another 9 pushes out the 7",
+      "durationInFrames": 288,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "scores",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "scores",
+          "state": "active"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "The 1 is dropped at once too. The shortlist holds the two best scores, and its root, 9, is the second best.",
+      "caption": "After every score, the root is the 2nd best: 9",
+      "durationInFrames": 300,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist"
+          ]
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "2nd largest",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Scores are values, the shortlist is a min-heap capped at k, and its root is the kth largest. Each value costs O(log k): O(n log k) in all.",
+      "caption": "Scores are values; the shortlist is a size-k min-heap",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "scores",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#1",
+            "#2",
+            "#3",
+            "#4",
+            "#5",
+            "#6"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -59,10 +59,15 @@ export function buildDraft(problemKey: string): Draft {
         ]
       : [];
 
+  // A trace without a row (a stream of operations) shows no item-row.
+  const rows = (): ElementSource[] => (trace.row.values.length === 0 ? [] : [row()]);
   const stepScenes = trace.steps.flatMap((step, index) => {
     if (!step.key) return [];
-    const elements: ElementSource[] = [row(), ...second()];
-    for (const name of Object.keys(step.pointers)) {
+    const last = index === trace.steps.length - 1;
+    // Heap scenes mark the input with a highlight (no pointer), and the answer scene leaves the input out.
+    const heapScene = step.heaps !== undefined;
+    const elements: ElementSource[] = heapScene && (last || !step.active) ? [] : [...rows(), ...second()];
+    for (const name of heapScene ? [] : Object.keys(step.pointers)) {
       elements.push({
         id: `p-${name}`,
         type: "pointer",
@@ -74,7 +79,7 @@ export function buildDraft(problemKey: string): Draft {
         tone: "primary",
       });
     }
-    if (step.active)
+    if (step.active && !(heapScene && last))
       elements.push({ id: "active", type: "highlight", rowId: "row", state: "active", enterAt: 0 });
     if (step.found)
       elements.push({ id: "found", type: "highlight", rowId: "row", state: "found", enterAt: 0 });
@@ -95,7 +100,8 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "rejected", type: "highlight", rowId: "row", state: "rejected", enterAt: 0 });
     if (step.counter) elements.push({ id: "count", type: "counter", label: "inversions", enterAt: 0 });
     if (step.window) elements.push({ id: "window", type: "window", rowId: "row", label: "sum", enterAt: 0 });
-    if (step.freq) elements.push({ id: "freq", type: "freq-table", label: "in window", enterAt: 0 });
+    if (step.freq && !(heapScene && last))
+      elements.push({ id: "freq", type: "freq-table", label: "in window", enterAt: 0 });
     if (step.deque)
       elements.push({
         id: "deque",
@@ -113,11 +119,11 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "cut2", type: "cut", rowId: "row2", enterAt: 0 });
     }
     if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
+    if (step.heaps) elements.push({ id: "heaps", type: "heap", enterAt: 0 });
     if (step.queue)
       elements.push({ id: "queue", type: "queue", label: "queue", levelLabel: "level", enterAt: 0 });
     // A tree's last scene keeps its bottom stack short (the answer, and at most a count).
-    const last = index === trace.steps.length - 1;
-    if (step.equation && !((rowType === "binary-tree" || step.queue) && last))
+    if (step.equation && !((rowType === "binary-tree" || step.queue || step.heaps) && last))
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });
     // The last step is where the answer is known: state it there (a real story does the same).
@@ -157,19 +163,19 @@ export function buildDraft(problemKey: string): Draft {
       whenToUse: [],
     },
     scenes: [
-      { id: "problem", caption: "The problem", narration: "Here is the problem.", elements: [row()] },
+      { id: "problem", caption: "The problem", narration: "Here is the problem.", elements: rows() },
       {
         id: "brute-force",
         caption: "Brute force is slow",
         narration: "Checking everything is slow.",
-        elements: [row()],
+        elements: rows(),
       },
       ...stepScenes,
       {
         id: "pattern",
         caption: "The pattern",
         narration: "That's the two-pointer pattern.",
-        elements: [row()],
+        elements: rows(),
       },
     ],
   };

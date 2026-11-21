@@ -1,0 +1,277 @@
+{
+  "id": "heap-k-closest-points-to-origin",
+  "title": "K Closest Points to Origin: The Two Lockers Nearest the Depot",
+  "concept": "Heap / Priority Queue",
+  "category": "dsa",
+  "summary": "A max-heap of squared distances, capped at k, keeps the k closest points; the farthest of them sits on top, ready to leave.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A courier depot sits at the center of a street grid. Parcel lockers are at grid spots around it, and the courier wants the 2 lockers closest to the depot.",
+    "mapping": [
+      {
+        "real": "A locker's grid spot",
+        "abstract": "A point [x, y]"
+      },
+      {
+        "real": "The depot",
+        "abstract": "The origin (0, 0)"
+      },
+      {
+        "real": "How far a locker is (squared)",
+        "abstract": "x² + y²"
+      },
+      {
+        "real": "The two-locker shortlist, farthest on top",
+        "abstract": "A max-heap capped at k = 2"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "geometry",
+    "heap"
+  ],
+  "takeaway": {
+    "pattern": "Size-k max-heap (k smallest)",
+    "summary": "To keep the k smallest, use a max-heap capped at k: its root is the largest kept, so it's the one to drop. Compare squared distances; square roots don't change the order.",
+    "timeComplexity": "O(n log k)",
+    "spaceComplexity": "O(k)",
+    "whenToUse": [
+      "The k closest, cheapest, or smallest of many items",
+      "Keeping a running best-k list"
+    ]
+  },
+  "trace": {
+    "problem": "heap/k-closest-points-to-origin",
+    "args": [
+      [
+        [
+          2,
+          3
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          0,
+          -2
+        ]
+      ],
+      2
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v11",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-21T21:57:06.519Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "lockers",
+      "narration": "A courier depot sits at the center of a street grid, with lockers at four spots around it. Which two lockers are closest to the depot?",
+      "caption": "Four lockers around the depot: which two are closest?",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "points",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "locker A",
+            "locker B",
+            "locker C",
+            "locker D"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sorting",
+      "narration": "Sorting all lockers by distance works, but only the closest two matter. Squared distance, x squared plus y squared, orders them the same and needs no square roots.",
+      "caption": "Sorting every locker by distance ranks more than needed",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "points",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "locker A",
+            "locker B",
+            "locker C",
+            "locker D"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "far-on-top",
+      "narration": "Keep a max-heap of at most two lockers by squared distance. A at 13 and B at 2 go in. Then C, at 16, sifts up to the root: the farthest is always on top.",
+      "caption": "Locker C is 16 away: the farthest kept rises to the top",
+      "durationInFrames": 456,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "points",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "locker A",
+            "locker B",
+            "locker C",
+            "locker D"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "points",
+          "state": "active"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist (max-heap)"
+          ]
+        },
+        {
+          "id": "dist",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "squared distance"
+        }
+      ]
+    },
+    {
+      "id": "drop-c",
+      "narration": "Three lockers is one too many, so pop the root. C was farthest, so it leaves at once.",
+      "caption": "Three is one too many: the farthest, C, leaves",
+      "durationInFrames": 252,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "points",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "locker A",
+            "locker B",
+            "locker C",
+            "locker D"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "points",
+          "state": "active"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist (max-heap)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drop-a",
+      "narration": "Locker D is only 4 away. With three again, the root is now A at 13, so A leaves and D stays.",
+      "caption": "Locker D at 4 pushes out A at 13",
+      "durationInFrames": 300,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "points",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "locker A",
+            "locker B",
+            "locker C",
+            "locker D"
+          ]
+        },
+        {
+          "id": "reading",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "points",
+          "state": "active"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist (max-heap)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Every locker has been considered. The shortlist holds the two closest, D and B.",
+      "caption": "The two closest lockers: D and B",
+      "durationInFrames": 204,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shortlist (max-heap)"
+          ]
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "2 closest points",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Lockers are points, the depot is the origin, and the shortlist is a max-heap capped at k, so the farthest kept is the one dropped. O(n log k).",
+      "caption": "Lockers are points; the shortlist is a size-k max-heap",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "points",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "locker A",
+            "locker B",
+            "locker C",
+            "locker D"
+          ]
+        }
+      ]
+    }
+  ]
+}

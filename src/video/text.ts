@@ -109,4 +109,7 @@ export const TEXT = {
   gridNote: 14,
   graphLabel: 24,
   queueItem: 22,
+  heapItem: 26,
+  heapNote: 14,
+  heapTitle: 17,
 } as const;
