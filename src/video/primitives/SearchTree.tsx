@@ -28,7 +28,7 @@ export function SearchTree({ element }: { element: SearchTreeElement }) {
   const folded = new Set(element.collapsed ?? []);
   const nodeSize = text.size(TEXT.searchNode);
   const labelSize = text.size(TEXT.dpLabel);
-  const { nodeWidth: w, nodeHeight: h } = search;
+  const { nodeHeight: h } = search;
   // Choice labels sit between levels: only when there's room for them (and never on a phone-sized player).
   const showEdges = !text.compact && search.levelGap >= h + labelSize * 1.8;
 
@@ -87,6 +87,7 @@ export function SearchTree({ element }: { element: SearchTreeElement }) {
         const node = element.nodes[id];
         const c = search.center(id);
         if (!c) return null;
+        const w = search.widthOf(id);
         const pruned = node.pruned !== undefined;
         const current = element.current === id;
         const solved = solutions.has(id);

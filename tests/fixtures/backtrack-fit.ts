@@ -23,18 +23,19 @@ export function backtrackProblems(
       const c = search.center(id);
       if (!c) continue;
       const label = el.nodes[id].pruned ? "✕" : el.nodes[id].label || "·";
-      if (!t.fits(label, t.size(TEXT.searchNode), search.nodeWidth - 8, "mono"))
+      const w = search.widthOf(id);
+      if (!t.fits(label, t.size(TEXT.searchNode), w - 8, "mono"))
         problems.push(`node label "${label}" is wider than its node`);
-      if (c.x - search.nodeWidth / 2 < 0 || c.x + search.nodeWidth / 2 > 1280)
-        problems.push(`node ${id} runs off the stage`);
+      if (c.x - w / 2 < 0 || c.x + w / 2 > 1280) problems.push(`node ${id} runs off the stage`);
       if (c.y - search.nodeHeight / 2 < captionBottom) problems.push(`node ${id} runs under the caption`);
       if (c.y + search.nodeHeight / 2 > bottomTop + 2) problems.push(`node ${id} runs into the bottom stack`);
-      if (grid && c.x - search.nodeWidth / 2 < grid.left + grid.cell * grid.cols + 8)
+      if (grid && c.x - w / 2 < grid.left + grid.cell * grid.cols + 8)
         problems.push(`node ${id} runs into the board`);
       for (const other of ids) {
         const d = search.center(other);
         if (other <= id || !d || Math.abs(d.y - c.y) > 1) continue;
-        if (Math.abs(d.x - c.x) < search.nodeWidth + 4) problems.push(`nodes ${id} and ${other} overlap`);
+        if (Math.abs(d.x - c.x) < (w + search.widthOf(other)) / 2 + 4)
+          problems.push(`nodes ${id} and ${other} overlap`);
       }
     }
   }

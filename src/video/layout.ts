@@ -156,7 +156,9 @@ export type PileLayout = {
 
 /** Where a search tree draws: each visible node's center (folded subtrees and unreached nodes aren't placed). */
 export type SearchLayout = {
+  /** The widest node's width; `widthOf` gives each node's own. */
   nodeWidth: number;
+  widthOf: (id: number) => number;
   nodeHeight: number;
   levelGap: number;
   center: (id: number) => { x: number; y: number } | undefined;
@@ -956,10 +958,10 @@ function layoutSearch(
   if (shown.has(0)) place(0);
   const levels = Math.max(0, ...depth.values()) + 1;
   const size = t.size(TEXT.searchNode);
-  const nodeWidth = Math.max(
-    44,
-    ...visible.map((id) => t.width(el.nodes[id].label || "·", size, "mono") + 18),
-  );
+  // Each node is as wide as its own label, so a long label next to short ones still fits.
+  const widthOf = (id: number) =>
+    Math.max(44, t.width(el.nodes[id]?.pruned ? "✕" : el.nodes[id]?.label || "·", size, "mono") + 18);
+  const nodeWidth = Math.max(44, ...visible.map(widthOf));
   const nodeHeight = size + 22;
   const region: Region = {
     left: board ? GRID.margin + (VIDEO_WIDTH - 2 * GRID.margin) * boardShare(t) + SEARCH.gap : GRID.margin,
@@ -979,6 +981,7 @@ function layoutSearch(
   return {
     search: {
       nodeWidth,
+      widthOf,
       nodeHeight,
       levelGap,
       pitch,

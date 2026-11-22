@@ -75,9 +75,7 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "dynamic-programming/coin-change": loadStoryboard(dynamicProgrammingCoinChange),
   "dynamic-programming/edit-distance": loadStoryboard(dynamicProgrammingEditDistance),
   "dynamic-programming/house-robber": loadStoryboard(dynamicProgrammingHouseRobber),
-  "dynamic-programming/longest-common-subsequence": loadStoryboard(
-    dynamicProgrammingLongestCommonSubsequence,
-  ),
+  "dynamic-programming/longest-common-subsequence": loadStoryboard(dynamicProgrammingLongestCommonSubsequence),
   "graphs-bfs/flood-fill": loadStoryboard(graphsBfsFloodFill),
   "graphs-bfs/number-of-islands": loadStoryboard(graphsBfsNumberOfIslands),
   "graphs-bfs/rotting-oranges": loadStoryboard(graphsBfsRottingOranges),
@@ -93,12 +91,8 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "linked-list/remove-nth-node-from-end": loadStoryboard(linkedListRemoveNthNodeFromEnd),
   "linked-list/reorder-list": loadStoryboard(linkedListReorderList),
   "linked-list/reverse-linked-list": loadStoryboard(linkedListReverseLinkedList),
-  "sliding-window/longest-repeating-character-replacement": loadStoryboard(
-    slidingWindowLongestRepeatingCharacterReplacement,
-  ),
-  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(
-    slidingWindowLongestSubstringWithoutRepeatingCharacters,
-  ),
+  "sliding-window/longest-repeating-character-replacement": loadStoryboard(slidingWindowLongestRepeatingCharacterReplacement),
+  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(slidingWindowLongestSubstringWithoutRepeatingCharacters),
   "sliding-window/maximum-sum-subarray-of-size-k": loadStoryboard(slidingWindowMaximumSumSubarrayOfSizeK),
   "sliding-window/minimum-window-substring": loadStoryboard(slidingWindowMinimumWindowSubstring),
   "sliding-window/sliding-window-maximum": loadStoryboard(slidingWindowSlidingWindowMaximum),

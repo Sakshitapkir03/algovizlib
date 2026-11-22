@@ -5,7 +5,7 @@ import { listText, Search } from "./shared";
 
 /**
  * At each number, take it and explore, undo, then skip it and explore. Every leaf is a complete subset, recorded as
- * found. Nodes show the subset so far (its values run together: "51" is {5, 1}). Key steps: the first take, the first
+ * found. Nodes show the subset so far ("5·1" is {5, 1}). Key steps: the first take, the first
  * subset recorded, the first undo, the first skip, the last subset, and the end.
  */
 export function subsets(nums: number[]): Trace {
@@ -13,7 +13,8 @@ export function subsets(nums: number[]): Trace {
   let firstLeaf = true;
   let firstUndo = true;
   let firstSkip = true;
-  const label = () => (search.items.length ? search.items.join("") : "∅");
+  // "5·1" is {5, 1}: a separator so it can't read as fifty-one, one character wide so it fits on a phone.
+  const label = () => (search.items.length ? search.items.join("·") : "∅");
   const dfs = (i: number) => {
     if (i === nums.length) {
       search.solve(listText(search.items));
