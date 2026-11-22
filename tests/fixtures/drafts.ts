@@ -134,8 +134,9 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
     if (step.rejected && rowType === "linked-list")
       elements.push({ id: "rejected", type: "highlight", rowId: "row", state: "rejected", enterAt: 0 });
-    // Beside a map the bottom stack keeps to the map plus one more (the equation), as the prompt asks.
-    if (step.counter && !step.map)
+    // Beside a map the bottom stack keeps to the map plus one more (the equation), and a timeline's to two of an
+    // equation, a choice, and a counter, as the prompt asks.
+    if (step.counter && !step.map && !(step.timeline && step.choice))
       elements.push({ id: "count", type: "counter", label: "inversions", enterAt: 0 });
     if (step.window) elements.push({ id: "window", type: "window", rowId: "row", label: "sum", enterAt: 0 });
     if (step.freq && !(heapScene && last))
@@ -168,6 +169,7 @@ export function buildDraft(problemKey: string): Draft {
         label: row.name,
         enterAt: 0,
       } as ElementSource);
+    if (step.timeline) elements.push({ id: "timeline", type: "timeline", enterAt: 0 } as ElementSource);
     if (step.prefixGrid) elements.push({ id: "grid", type: "prefix-grid", enterAt: 0 } as ElementSource);
     if (step.reach)
       elements.push({
@@ -221,6 +223,7 @@ export function buildDraft(problemKey: string): Draft {
           step.explore ||
           step.race ||
           step.prefixGrid ||
+          step.timeline ||
           (step.map && step.prefix)) &&
         last
       )

@@ -13,11 +13,13 @@ import type {
   LinkedListElement,
   RaceElement,
   PointerElement,
+  TimelineElement,
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
 import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
 import { prefixBand } from "./prefix-layout";
+import { layoutTimeline, TIMELINE_SPLIT } from "./timeline-layout";
 import { TEXT, textMetrics, type TextMetrics } from "./text";
 
 /**
@@ -818,10 +820,12 @@ function layoutHeaps(
   t: TextMetrics,
   top: number,
   bottomTop: number,
+  // The stage's width by default; beside a timeline, the right of the stage.
+  region: { left: number; right: number } = { left: GRID.margin, right: VIDEO_WIDTH - GRID.margin },
 ): { panels: HeapPanel[]; overflow: number } {
   const n = el.heaps.length;
   const bottom = bottomTop - 16;
-  const width = (VIDEO_WIDTH - 2 * GRID.margin - HEAPS.gap * (n - 1)) / n;
+  const width = (region.right - region.left - HEAPS.gap * (n - 1)) / n;
   const size = t.size(TEXT.heapItem);
   const labels = el.heaps.flatMap((h) => [
     ...h.items,
@@ -837,7 +841,7 @@ function layoutHeaps(
   const panels = el.heaps.map((heap, h) => {
     const slots = Math.max(1, el.slots?.[h] ?? heap.items.length + (heap.popped ? 1 : 0));
     const levels = Math.floor(Math.log2(slots)) + 1;
-    const left = GRID.margin + h * (width + HEAPS.gap);
+    const left = region.left + h * (width + HEAPS.gap);
     const strip = HEAPS.arrayGap + nodeHeight + index;
     const room = bottom - top - title - strip;
     const ideal = nodeHeight * 1.9;
@@ -1067,6 +1071,7 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     first.searchOverflow ?? 0,
     first.heapOverflow ?? 0,
     first.dpOverflow ?? 0,
+    first.timelineOverflow ?? 0,
   );
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
@@ -1082,6 +1087,7 @@ function layoutWith(
   searchOverflow?: number;
   heapOverflow?: number;
   dpOverflow?: number;
+  timelineOverflow?: number;
 } {
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
@@ -1312,11 +1318,21 @@ function layoutWith(
   }
   let heapPanels: HeapPanel[] | undefined;
   let heapOverflow: number | undefined;
+  // A timeline sits under the caption; a heap with it takes the right of the stage (only then: other heap scenes keep
+  // the full width).
+  const timelineElement = elements.find((el): el is TimelineElement => el.type === "timeline");
+  const timeline = timelineElement ? layoutTimeline(timelineElement, elements, t, bottomTop) : undefined;
   if (heapElement) {
     // Under the input strip (and its pointers), else under the caption.
     const row = Object.values(layouts)[0];
-    const top = row ? row.pointerTop + pointerRoom(elements, row.rowId, t) + 6 : captionBottom(t) + 8;
-    ({ panels: heapPanels, overflow: heapOverflow } = layoutHeaps(heapElement, t, top, bottomTop));
+    const top =
+      row && !timeline ? row.pointerTop + pointerRoom(elements, row.rowId, t) + 6 : captionBottom(t) + 8;
+    ({ panels: heapPanels, overflow: heapOverflow } = timeline
+      ? layoutHeaps(heapElement, t, top, bottomTop, {
+          left: TIMELINE_SPLIT + 24,
+          right: VIDEO_WIDTH - GRID.margin,
+        })
+      : layoutHeaps(heapElement, t, top, bottomTop));
   }
   return {
     rows: { ...layouts, ...listRows },
@@ -1333,6 +1349,7 @@ function layoutWith(
     heapOverflow,
     dp,
     dpOverflow,
+    timelineOverflow: timeline?.overflow || undefined,
     pile,
     search,
     searchOverflow: Math.max(searchOverflow ?? 0, treeSearchOverflow ?? 0) || undefined,

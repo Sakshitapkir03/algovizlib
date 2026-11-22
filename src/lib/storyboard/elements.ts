@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -977,6 +977,45 @@ export const prefixGridSourceSchema = z.object({
   marks: prefixGridShape.marks.removeDefault().optional(),
 });
 
+const timelineBarSchema = z.object({
+  id: index,
+  start: z.number().int(),
+  end: z.number().int(),
+  lane: index,
+  /** waiting, active (in play), current, done, absorbed (merged in), removed, result (part of the answer). */
+  state: z.enum(["waiting", "active", "current", "done", "absorbed", "removed", "result"]),
+  /** The lane it slides from in this scene (a sort). */
+  fromLane: index.optional(),
+});
+
+const timelineShape = {
+  ...baseElement,
+  type: z.literal("timeline"),
+  /** The axis, min to max (whole numbers), and how many lanes the bars sit on. */
+  min: z.number().int(),
+  max: z.number().int(),
+  lanes: z.number().int().min(1).max(7),
+  bars: z.array(timelineBarSchema).max(12),
+  /** Where this scene's two intervals overlap: shaded across the lanes. */
+  overlap: z.object({ start: z.number().int(), end: z.number().int() }).optional(),
+  /** A bar that grew in this scene (a merge), and the extent it grew from. */
+  grow: z.object({ id: index, start: z.number().int(), end: z.number().int() }).optional(),
+  /** A vertical marker: the query point, where the last kept interval ends. */
+  sweep: z.object({ at: z.number().int(), label: z.string().max(16) }).optional(),
+  /** Lane names in the story's words, left of the lanes (hidden on a phone-sized player). */
+  laneLabels: z.array(z.string().max(10)).max(7).default([]),
+};
+export const timelineElementSchema = z.object(timelineShape);
+export const timelineSourceSchema = z.object({
+  ...timelineShape,
+  /** Omit everything but laneLabels to take the axis from the trace and the bars from the step (an unbound scene shows
+   * the intervals as given). */
+  min: timelineShape.min.optional(),
+  max: timelineShape.max.optional(),
+  lanes: timelineShape.lanes.optional(),
+  bars: timelineShape.bars.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -1164,6 +1203,7 @@ export const elementSchemas = [
   reachElementSchema,
   prefixRowElementSchema,
   prefixGridElementSchema,
+  timelineElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1208,6 +1248,7 @@ export const elementSourceSchemas = [
   reachSourceSchema,
   prefixRowSourceSchema,
   prefixGridSourceSchema,
+  timelineSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1266,6 +1307,8 @@ export type ReachElement = ElementOf<"reach">;
 export type PrefixRowElement = ElementOf<"prefix-row">;
 export type PrefixGridElement = ElementOf<"prefix-grid">;
 export type Rect = z.infer<typeof rectSchema>;
+export type TimelineElement = ElementOf<"timeline">;
+export type TimelineBar = z.infer<typeof timelineBarSchema>;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

@@ -1,0 +1,251 @@
+{
+  "id": "intervals-non-overlapping-intervals",
+  "title": "Non-overlapping Intervals: Cancel the Fewest Workshops",
+  "concept": "Intervals",
+  "category": "dsa",
+  "summary": "Sort workshops by end time and keep each one that starts after the last kept one ends; cancel the rest.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "One studio has workshop requests for hours 1–4, 2–3, 3–6, and 5–7. Workshops can't overlap, though one may start the hour another ends. Cancel as few as possible.",
+    "mapping": [
+      {
+        "real": "A workshop request",
+        "abstract": "An interval [start, end]"
+      },
+      {
+        "real": "Requests sorted by end hour",
+        "abstract": "intervals sorted by end"
+      },
+      {
+        "real": "Cancelled workshops",
+        "abstract": "Intervals removed"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "greedy"
+  ],
+  "takeaway": {
+    "pattern": "Intervals: greedy by end",
+    "summary": "Sort by end. Keep an interval when it starts at or after the last kept end, otherwise remove it. The earliest end leaves the most room, so this keeps the most.",
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(1) besides the sort",
+    "whenToUse": [
+      "Keeping the most non-overlapping intervals",
+      "Scheduling the most jobs in one room"
+    ]
+  },
+  "trace": {
+    "problem": "intervals/non-overlapping-intervals",
+    "args": [
+      [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          5,
+          7
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v19",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T23:15:08.977Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "studio",
+      "narration": "A studio has requests for workshops at hours 1 to 4, 2 to 3, 3 to 6, and 5 to 7. They can't overlap, but one may start as another ends. How few can you cancel?",
+      "caption": "Workshops 1–4, 2–3, 3–6, 5–7 in one studio: cancel the fewest",
+      "durationInFrames": 468,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Trying every set of workshops to cancel is exponential, and comparing every pair still leaves the choice of which to drop. Instead, sort by end time and decide each one in a single pass.",
+      "caption": "Trying every set of cancellations is exponential",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "sort by end",
+          "rejected": "try every set",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "sort",
+      "narration": "Sorted by end hour: 2 to 3, 1 to 4, 3 to 6, and 5 to 7. The workshop that ends first leaves the most room for everything after it.",
+      "caption": "Sorted by end: 2–3, 1–4, 3–6, 5–7",
+      "durationInFrames": 396,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "cut",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "cancelled"
+        }
+      ]
+    },
+    {
+      "id": "keep1",
+      "narration": "Keep 2 to 3, the earliest to finish. The studio is free again from hour 3.",
+      "caption": "2–3 ends first: keep it, the studio is free from 3",
+      "durationInFrames": 229,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "cut",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "cancelled"
+        }
+      ]
+    },
+    {
+      "id": "cancel1",
+      "narration": "1 to 4 starts at 1, before the studio frees up at 3. One of them must go. Keep the one that ends sooner: finishing earlier can only leave more room for the rest.",
+      "caption": "1–4 starts at 1, before 3: cancel it, keep 2–3",
+      "durationInFrames": 444,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "overlap"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "reason": "ending sooner leaves more room for the rest",
+          "label": "keep"
+        }
+      ]
+    },
+    {
+      "id": "keep2",
+      "narration": "3 to 6 starts exactly as the studio frees up at 3, which is allowed. Keep it; the studio is now free from 6.",
+      "caption": "3–6 starts at 3, as 2–3 ends: keep it, free from 6",
+      "durationInFrames": 324,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "fits"
+        },
+        {
+          "id": "cut",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "cancelled"
+        }
+      ]
+    },
+    {
+      "id": "cancel2",
+      "narration": "5 to 7 starts before 6, so it's cancelled too. Two cancellations is the fewest possible.",
+      "caption": "5–7 starts at 5, before 6: cancel it. 2 cancelled",
+      "durationInFrames": 229,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "keep"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Cancelled",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Workshops are intervals. Sort by end, keep each one that starts at or after the last kept end, and remove the rest. O(n log n) for the sort, O(n) for the pass.",
+      "caption": "Sort by end, keep what starts after the last kept end",
+      "durationInFrames": 420,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        }
+      ]
+    }
+  ]
+}

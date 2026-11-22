@@ -1,0 +1,315 @@
+{
+  "id": "intervals-minimum-interval-to-include-each-query",
+  "title": "Minimum Interval to Include Each Query: The Shortest Shift",
+  "concept": "Intervals",
+  "category": "dsa",
+  "summary": "Answer parcels in time order: add shifts as they start, drop the shortest ones that already ended, and read the shortest one left.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Drivers' shifts cover hours 2–5, 3–4, 1–8, and 6–6. Parcels arrive at hours 3, 6, 9, and 1. Each parcel goes to the shortest shift that covers its hour, or waits (-1) if none does.",
+    "mapping": [
+      {
+        "real": "A driver's shift",
+        "abstract": "An interval [left, right]"
+      },
+      {
+        "real": "A parcel's arrival hour",
+        "abstract": "A query"
+      },
+      {
+        "real": "Shifts on hand, shortest first",
+        "abstract": "A min-heap of (size, right)"
+      },
+      {
+        "real": "The shortest covering shift's length",
+        "abstract": "The answer for that query"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting",
+    "heap",
+    "line sweep"
+  ],
+  "takeaway": {
+    "pattern": "Intervals + heap (sweep)",
+    "summary": "Sort intervals by left and queries by value. For each query, push every interval that has started, pop tops that ended before it, and the top's size is the answer (or -1).",
+    "timeComplexity": "O((n + q) log n)",
+    "spaceComplexity": "O(n + q)",
+    "whenToUse": [
+      "Many point queries over intervals",
+      "Smallest or largest covering interval per point"
+    ]
+  },
+  "trace": {
+    "problem": "intervals/minimum-interval-to-include-each-query",
+    "args": [
+      [
+        [
+          2,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          6,
+          6
+        ]
+      ],
+      [
+        3,
+        6,
+        9,
+        1
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v19",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T23:15:08.975Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "shifts",
+      "narration": "Drivers work shifts covering hours 2 to 5, 3 to 4, 1 to 8, and just 6. Parcels arrive at hours 3, 6, 9, and 1. Each one goes to the shortest shift covering its hour.",
+      "caption": "Shifts 2–5, 3–4, 1–8, 6–6; parcels at hours 3, 6, 9, 1",
+      "durationInFrames": 468,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Checking every shift for every parcel costs shifts times parcels. Instead, take the parcels in time order and keep the shifts already started in a min-heap by length.",
+      "caption": "Checking every shift for every parcel is O(n × q)",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "sweep + heap",
+          "rejected": "check every shift",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "sort",
+      "narration": "Sort the shifts by start hour, and the parcels by arrival: 1, 3, 6, 9.",
+      "caption": "Shifts by start: 1–8, 2–5, 3–4, 6–6; parcels 1, 3, 6, 9",
+      "durationInFrames": 216,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shifts (size·end)"
+          ]
+        },
+        {
+          "id": "ans",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found"
+        }
+      ]
+    },
+    {
+      "id": "q1",
+      "narration": "At hour 1, only the 1 to 8 shift has started. Push it; it's the only option, 8 hours long.",
+      "caption": "Hour 1: only 1–8 has started. Shortest is 8 hours",
+      "durationInFrames": 276,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shifts (size·end)"
+          ]
+        },
+        {
+          "id": "ans",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found"
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "narration": "By hour 3, shifts 2 to 5 and 3 to 4 have started too. The heap puts the shortest on top: 3 to 4, 2 hours, and it covers hour 3.",
+      "caption": "Hour 3: push 2–5 and 3–4. The top, 3–4, is 2 hours",
+      "durationInFrames": 408,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shifts (size·end)"
+          ]
+        },
+        {
+          "id": "ans",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found"
+        }
+      ]
+    },
+    {
+      "id": "q6",
+      "narration": "At hour 6 the one-hour shift joins and goes straight to the top. Shift 3 to 4 has ended, but it isn't on top, so it can wait.",
+      "caption": "Hour 6: push 6–6, 1 hour. It covers 6",
+      "durationInFrames": 372,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shifts (size·end)"
+          ]
+        },
+        {
+          "id": "ans",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found"
+        }
+      ]
+    },
+    {
+      "id": "pop",
+      "narration": "At hour 9, the top shift ended at 6, so pop it. A shift that ended can't cover this parcel or any later one.",
+      "caption": "Hour 9: the top, 6–6, ended at 6. Pop it",
+      "durationInFrames": 324,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shifts (size·end)"
+          ]
+        },
+        {
+          "id": "ans",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found"
+        }
+      ]
+    },
+    {
+      "id": "q9",
+      "narration": "The next tops ended at 4, 5, and 8, so they're popped too. The heap is empty: no shift covers hour 9. In the original order, the answers are 2, 1, -1, and 8.",
+      "caption": "Every shift ended before 9: the heap empties, answer -1",
+      "durationInFrames": 444,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap",
+          "labels": [
+            "shifts (size·end)"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Shortest shifts",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Shifts are intervals and parcels are queries. Sort both, push intervals as they start, pop tops that ended, and read the top's size. O((n + q) log n).",
+      "caption": "Sort both, sweep with a min-heap, pop what ended",
+      "durationInFrames": 372,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        }
+      ]
+    }
+  ]
+}

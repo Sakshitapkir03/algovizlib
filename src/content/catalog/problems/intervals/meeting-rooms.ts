@@ -11,6 +11,21 @@ export const meetingRooms = defineProblem({
 Return \`true\` if one person could attend every meeting, meaning no two meetings overlap, and \`false\` otherwise. A meeting that ends at time \`t\` and another that starts at time \`t\` don't overlap: you can walk straight from one to the next. An empty list returns \`true\`.`,
   examples: [
     {
+      input: "intervals = [[15, 16], [9, 10], [11, 13], [12, 14]]",
+      output: "false",
+      explanation:
+        "Sorted by start: [9, 10], [11, 13], [12, 14], [15, 16]. There's a gap after 10, but [12, 14] starts at 12, before [11, 13] ends at 13.",
+      args: [
+        [
+          [15, 16],
+          [9, 10],
+          [11, 13],
+          [12, 14],
+        ],
+      ],
+      expected: false,
+    },
+    {
       input: "intervals = [[9, 10], [13, 15], [10, 12]]",
       output: "true",
       explanation: "In time order: 9–10, 10–12, 13–15. The first two only touch at 10, which is allowed.",

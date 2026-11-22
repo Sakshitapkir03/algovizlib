@@ -1,0 +1,267 @@
+{
+  "id": "intervals-merge-intervals",
+  "title": "Merge Intervals: When Is the Crane Busy?",
+  "concept": "Intervals",
+  "category": "dsa",
+  "summary": "Sort the crews' crane bookings by start, then sweep once, stretching each busy period while bookings overlap it.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Four crews book a building site's one crane for hours 4–7, 1–3, 6–9, and 12–14. The site manager wants the crane's busy periods, with overlapping bookings merged.",
+    "mapping": [
+      {
+        "real": "A crew's crane booking",
+        "abstract": "An interval [start, end]"
+      },
+      {
+        "real": "Bookings sorted by start hour",
+        "abstract": "intervals sorted by start"
+      },
+      {
+        "real": "A busy period",
+        "abstract": "A merged interval"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "sorting"
+  ],
+  "takeaway": {
+    "pattern": "Intervals: sort and merge",
+    "summary": "Sort by start; keep the last merged interval. A range that starts at or before its end overlaps it: extend the end. Otherwise start a new merged range.",
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Collapsing overlapping ranges into one",
+      "Union of time slots, bookings, or covered stretches"
+    ]
+  },
+  "trace": {
+    "problem": "intervals/merge-intervals",
+    "args": [
+      [
+        [
+          4,
+          7
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          12,
+          14
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v19",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T23:15:08.973Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "site",
+      "narration": "Four crews book the site's only crane: hours 4 to 7, 1 to 3, 6 to 9, and 12 to 14. When is the crane busy, with overlapping bookings merged into one stretch?",
+      "caption": "Crane bookings 4–7, 1–3, 6–9, 12–14: when is it busy?",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "busy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Comparing every booking with every other one takes n squared checks, and merges can chain. Sorting by start puts overlapping bookings next to each other, so one pass is enough.",
+      "caption": "Comparing every pair of bookings is O(n²)",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "busy"
+          ]
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "sort, one pass",
+          "rejected": "compare every pair",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "sort",
+      "narration": "Sorted by start hour: 1 to 3, 4 to 7, 6 to 9, and 12 to 14. The busy lane at the bottom collects the merged stretches.",
+      "caption": "Sorted by start: 1–3, 4–7, 6–9, 12–14",
+      "durationInFrames": 360,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "busy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "first",
+      "narration": "The first booking, 1 to 3, opens the first busy stretch.",
+      "caption": "1–3 opens the first busy stretch",
+      "durationInFrames": 169,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "busy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gap",
+      "narration": "Next, 4 to 7 starts at 4, after the busy stretch ends at 3. There's a gap, so it opens a new stretch.",
+      "caption": "4–7 starts at 4, after the stretch ends at 3: a new stretch",
+      "durationInFrames": 312,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "busy"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new stretch"
+        }
+      ]
+    },
+    {
+      "id": "merge",
+      "narration": "Then 6 to 9 starts at 6, before the current stretch ends at 7. They overlap, so the stretch just grows to end at 9: two bookings become one busy period.",
+      "caption": "6–9 starts at 6, before 7: the stretch grows to 4–9",
+      "durationInFrames": 408,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "busy"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "merge"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "Finally 12 to 14 starts after 9, so it opens a third stretch. The crane is busy from 1 to 3, 4 to 9, and 12 to 14.",
+      "caption": "12–14 starts after 9: busy 1–3, 4–9, 12–14",
+      "durationInFrames": 372,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "busy"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Busy stretches",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Bookings are intervals. Sort by start, then each one either extends the last merged interval or starts a new one. Sorting is O(n log n), the sweep O(n).",
+      "caption": "Sort by start, then extend the last merged end or start a new one",
+      "durationInFrames": 372,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "",
+            "",
+            "",
+            "",
+            "merged"
+          ]
+        }
+      ]
+    }
+  ]
+}

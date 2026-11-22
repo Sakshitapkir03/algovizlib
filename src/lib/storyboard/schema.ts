@@ -616,6 +616,36 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one prefix-grid" });
           break;
         }
+        case "timeline": {
+          if (el.max <= el.min)
+            ctx.addIssue({ code: "custom", path: [...path, "max"], message: "the axis needs max > min" });
+          const ids = el.bars.map((b) => b.id);
+          if (new Set(ids).size !== ids.length)
+            ctx.addIssue({ code: "custom", path: [...path, "bars"], message: "bar ids must not repeat" });
+          el.bars.forEach((b, k) => {
+            if (b.start > b.end || b.start < el.min || b.end > el.max)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "bars", k],
+                message: `bar ${b.id} [${b.start}, ${b.end}] must have start ≤ end and lie on the axis ${el.min}–${el.max}`,
+              });
+            if (b.lane >= el.lanes || (b.fromLane !== undefined && b.fromLane >= el.lanes))
+              ctx.addIssue({ code: "custom", path: [...path, "bars", k, "lane"], message: `lanes are 0–${el.lanes - 1}` });
+          });
+          if (el.grow && !ids.includes(el.grow.id))
+            ctx.addIssue({ code: "custom", path: [...path, "grow"], message: `bar ${el.grow.id} isn't on the timeline` });
+          for (const [field, r] of [
+            ["overlap", el.overlap],
+            ["grow", el.grow],
+          ] as const)
+            if (r && (r.start > r.end || r.start < el.min || r.end > el.max))
+              ctx.addIssue({ code: "custom", path: [...path, field], message: `${field} must lie on the axis with start ≤ end` });
+          if (el.sweep && (el.sweep.at < el.min || el.sweep.at > el.max))
+            ctx.addIssue({ code: "custom", path: [...path, "sweep"], message: "the sweep marker must lie on the axis" });
+          if (scene.elements.filter((e) => e.type === "timeline").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one timeline" });
+          break;
+        }
         case "hash-map": {
           const keys = el.entries.map((e) => e.key);
           if (new Set(keys).size !== keys.length)

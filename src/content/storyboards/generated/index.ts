@@ -41,6 +41,11 @@ import heapKClosestPointsToOrigin from "./heap/k-closest-points-to-origin.json";
 import heapKthLargestElementInAnArray from "./heap/kth-largest-element-in-an-array.json";
 import heapLastStoneWeight from "./heap/last-stone-weight.json";
 import heapTopKFrequentElements from "./heap/top-k-frequent-elements.json";
+import intervalsInsertInterval from "./intervals/insert-interval.json";
+import intervalsMeetingRooms from "./intervals/meeting-rooms.json";
+import intervalsMergeIntervals from "./intervals/merge-intervals.json";
+import intervalsMinimumIntervalToIncludeEachQuery from "./intervals/minimum-interval-to-include-each-query.json";
+import intervalsNonOverlappingIntervals from "./intervals/non-overlapping-intervals.json";
 import linkedListMergeKSortedLists from "./linked-list/merge-k-sorted-lists.json";
 import linkedListMergeTwoSortedLists from "./linked-list/merge-two-sorted-lists.json";
 import linkedListRemoveNthNodeFromEnd from "./linked-list/remove-nth-node-from-end.json";
@@ -121,6 +126,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "heap/kth-largest-element-in-an-array": loadStoryboard(heapKthLargestElementInAnArray),
   "heap/last-stone-weight": loadStoryboard(heapLastStoneWeight),
   "heap/top-k-frequent-elements": loadStoryboard(heapTopKFrequentElements),
+  "intervals/insert-interval": loadStoryboard(intervalsInsertInterval),
+  "intervals/meeting-rooms": loadStoryboard(intervalsMeetingRooms),
+  "intervals/merge-intervals": loadStoryboard(intervalsMergeIntervals),
+  "intervals/minimum-interval-to-include-each-query": loadStoryboard(intervalsMinimumIntervalToIncludeEachQuery),
+  "intervals/non-overlapping-intervals": loadStoryboard(intervalsNonOverlappingIntervals),
   "linked-list/merge-k-sorted-lists": loadStoryboard(linkedListMergeKSortedLists),
   "linked-list/merge-two-sorted-lists": loadStoryboard(linkedListMergeTwoSortedLists),
   "linked-list/remove-nth-node-from-end": loadStoryboard(linkedListRemoveNthNodeFromEnd),

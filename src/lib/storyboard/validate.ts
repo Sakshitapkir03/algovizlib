@@ -10,6 +10,7 @@ import type {
   TraceRace,
   TraceReach,
   TracePrefixRow,
+  TraceTimelineStep,
   TracePrefixGrid,
   TraceBfs,
   TraceLinks,
@@ -275,6 +276,20 @@ function raceFields(r: Partial<TraceRace>): Record<string, string> {
     meet: JSON.stringify(r.meet ?? null),
     entry: JSON.stringify(r.entry ?? null),
     loop: JSON.stringify(r.loop ? { from: r.loop.from, to: r.loop.to } : null),
+  };
+}
+
+/** A timeline field by field, in a canonical text form. */
+function timelineFields(t: Partial<TraceTimelineStep>): Record<string, string> {
+  return {
+    bars: JSON.stringify(
+      [...(t.bars ?? [])]
+        .sort((a, b) => a.id - b.id)
+        .map((b) => [b.id, b.start, b.end, b.lane, b.state, b.fromLane ?? null]),
+    ),
+    overlap: JSON.stringify(t.overlap ? [t.overlap.start, t.overlap.end] : null),
+    grow: JSON.stringify(t.grow ? [t.grow.id, t.grow.start, t.grow.end] : null),
+    sweep: JSON.stringify(t.sweep ? [t.sweep.at, t.sweep.label] : null),
   };
 }
 
@@ -610,6 +625,26 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             el.id,
             "frames",
           );
+        if (el.type === "timeline") {
+          const shape = trace.timeline;
+          if (!shape) push("This trace has no timeline; remove it", el.id, "bars");
+          else {
+            if (el.min !== shape.min || el.max !== shape.max || el.lanes !== shape.lanes)
+              push("The timeline's axis or lanes don't match the trace; omit min/max/lanes", el.id, "min");
+            // Unbound: the intervals as given, or as the trace ends (with no overlap, growth, or marker).
+            const last = trace.steps.at(-1)?.timeline;
+            const drawn = timelineFields(el);
+            const start = timelineFields({ bars: shape.input });
+            const end = last && timelineFields({ bars: last.bars.map(({ fromLane: _f, ...b }) => b) });
+            const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+            if (!same(start) && !same(end))
+              push(
+                "Without a traceStep, the timeline shows the intervals as given (or as they end); omit bars/overlap/grow/sweep",
+                el.id,
+                "bars",
+              );
+          }
+        }
         if (el.type === "prefix-row") {
           // Unbound: empty (the intro) or the final row, with nothing built, read, or spanned this scene.
           const finals = trace.steps.flatMap((s) => s.prefix ?? []).filter((r) => r.name === el.name);
@@ -1283,6 +1318,27 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             if (drawn[field] !== expected[field])
               push(`The race's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "timeline": {
+          const shape = trace.timeline;
+          if (!shape || !step.timeline) {
+            push(`Trace step ${stepIndex} has no timeline`, el.id, "bars");
+            break;
+          }
+          if (el.min !== shape.min || el.max !== shape.max || el.lanes !== shape.lanes)
+            push("The timeline's axis or lanes don't match the trace; omit min/max/lanes", el.id, "min", {
+              expected: `${shape.min}–${shape.max}, ${shape.lanes} lanes`,
+              actual: `${el.min}–${el.max}, ${el.lanes} lanes`,
+            });
+          const want = timelineFields(step.timeline);
+          const drawn = timelineFields(el);
+          for (const field of Object.keys(want))
+            if (drawn[field] !== want[field])
+              push(`The timeline's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: want[field],
                 actual: drawn[field],
               });
           break;

@@ -564,6 +564,25 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             found: el.found ?? g?.found,
           };
         }
+        case "timeline": {
+          const shape = trace?.timeline;
+          if (el.min !== undefined && el.max !== undefined && el.lanes !== undefined && el.bars)
+            return { ...el, min: el.min, max: el.max, lanes: el.lanes, bars: el.bars };
+          if (!shape) return (missing(el, "bars"), el);
+          if (step && !step.timeline) return (noState(el, "bars", "timeline"), el);
+          const tl = step?.timeline;
+          // An unbound scene (the intro) shows the intervals as given.
+          return {
+            ...el,
+            min: el.min ?? shape.min,
+            max: el.max ?? shape.max,
+            lanes: el.lanes ?? shape.lanes,
+            bars: el.bars ?? tl?.bars ?? shape.input,
+            overlap: el.overlap ?? tl?.overlap,
+            grow: el.grow ?? tl?.grow,
+            sweep: el.sweep ?? tl?.sweep,
+          };
+        }
         case "hash-map": {
           if (el.entries && el.kind && el.display) return el;
           if (step && !step.map) return (noState(el, "entries", "map"), el);

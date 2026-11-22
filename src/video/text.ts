@@ -134,4 +134,7 @@ export const TEXT = {
   prefixValue: 24,
   prefixLabel: 15,
   prefixSign: 16,
+  /** A timeline bar's "[4, 7]" and the axis's tick labels. */
+  timelineLabel: 18,
+  timelineTick: 14,
 } as const;

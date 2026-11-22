@@ -1,0 +1,238 @@
+{
+  "id": "intervals-insert-interval",
+  "title": "Insert Interval: Adding a Road Closure",
+  "concept": "Intervals",
+  "category": "dsa",
+  "summary": "Copy the closures that end before the new one, absorb the ones it overlaps, then copy the rest.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A road crew's schedule closes a lane on days 1–2, 5–7, and 9–12, sorted and never overlapping. A new closure for days 6–10 must be added, combining any it touches.",
+    "mapping": [
+      {
+        "real": "A planned closure",
+        "abstract": "An interval in the sorted list"
+      },
+      {
+        "real": "The new closure",
+        "abstract": "newInterval"
+      },
+      {
+        "real": "The combined schedule",
+        "abstract": "The result list"
+      }
+    ]
+  },
+  "tags": [
+    "array"
+  ],
+  "takeaway": {
+    "pattern": "Intervals: insert and merge",
+    "summary": "In one pass: copy intervals that end before the new one starts, absorb those that start at or before its end (growing it), place it, and copy the rest.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Adding a range to a sorted, non-overlapping list",
+      "Updating a schedule with one new booking"
+    ]
+  },
+  "trace": {
+    "problem": "intervals/insert-interval",
+    "args": [
+      [
+        [
+          1,
+          2
+        ],
+        [
+          5,
+          7
+        ],
+        [
+          9,
+          12
+        ]
+      ],
+      [
+        6,
+        10
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v19",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T23:15:08.965Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "plan",
+      "narration": "A road crew has lane closures planned for days 1 to 2, 5 to 7, and 9 to 12. A new closure is needed for days 6 to 10. What does the combined schedule look like?",
+      "caption": "Closures on days 1–2, 5–7, 9–12; a new one for days 6–10",
+      "durationInFrames": 468,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "planned",
+            "new",
+            "combined"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could add the new closure, sort everything again, and merge from scratch. But the list is already sorted, so one pass does it: copy, absorb, then copy the rest.",
+      "caption": "Re-sorting and re-merging the whole list is more work than needed",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "planned",
+            "new",
+            "combined"
+          ]
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "one pass",
+          "rejected": "re-sort and merge",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "before",
+      "narration": "The first closure ends on day 2, before the new one starts on day 6. It can't touch it, so it's copied unchanged.",
+      "caption": "Days 1–2 end before day 6: copy them as they are",
+      "durationInFrames": 312,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "planned",
+            "new",
+            "combined"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "ends before"
+        }
+      ]
+    },
+    {
+      "id": "absorb1",
+      "narration": "Days 5 to 7 start on day 5, before the new closure ends on day 10. They overlap, so absorb them: the new closure now starts on day 5.",
+      "caption": "Days 5–7 start before day 10 ends: absorb, now 5–10",
+      "durationInFrames": 384,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "planned",
+            "new",
+            "combined"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "overlap"
+        }
+      ]
+    },
+    {
+      "id": "absorb2",
+      "narration": "Days 9 to 12 start on day 9, still before day 10. Absorb them too: the closure now runs from day 5 to day 12.",
+      "caption": "Days 9–12 start before day 10: absorb, now 5–12",
+      "durationInFrames": 336,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "planned",
+            "new",
+            "combined"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "overlap"
+        }
+      ]
+    },
+    {
+      "id": "place",
+      "narration": "Nothing is left to absorb, so place the grown closure. The schedule is days 1 to 2, then 5 to 12.",
+      "caption": "Place days 5–12: the schedule is 1–2 and 5–12",
+      "durationInFrames": 288,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "planned",
+            "new",
+            "combined"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Combined schedule",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Closures are intervals and the new one is newInterval. Copy what ends before it, absorb what starts by its end, then copy the rest. One pass, O(n) time.",
+      "caption": "Copy before, absorb overlaps, copy after: O(n)",
+      "durationInFrames": 372,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": [
+            "intervals",
+            "new",
+            "result"
+          ]
+        }
+      ]
+    }
+  ]
+}

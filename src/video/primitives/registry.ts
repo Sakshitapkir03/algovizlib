@@ -42,6 +42,7 @@ import { SortedRegion } from "./SortedRegion";
 import { SplitTree } from "./SplitTree";
 import { Stack } from "./Stack";
 import { Staircase } from "./Staircase";
+import { Timeline } from "./Timeline";
 import { Window } from "./Window";
 
 export type PrimitiveDefinition<K extends ElementType> = {
@@ -93,6 +94,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   // Prefix sums: running totals under the input (their span brackets above it), or a matrix beside its prefix grid.
   "prefix-row": { component: PrefixRow, slot: "canvas", layer: 0.5 },
   "prefix-grid": { component: PrefixGrid, slot: "canvas", layer: 0 },
+  // Intervals: bars on lanes over a number line (a heap, when there is one, sits under it).
+  timeline: { component: Timeline, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

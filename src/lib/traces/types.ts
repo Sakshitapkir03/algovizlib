@@ -160,6 +160,37 @@ export type TraceStep = {
   prefix?: TracePrefixRow[];
   /** A 2D prefix grid over `trace.matrix` as it's built, with this step's rectangles. See `TracePrefixGrid`. */
   prefixGrid?: TracePrefixGrid;
+  /** Intervals on a timeline after this step. See `TraceTimelineStep`. */
+  timeline?: TraceTimelineStep;
+};
+
+/**
+ * How an interval reads at a step: `waiting` (not reached yet), `active` (in play: the previous meeting, the last kept
+ * range, an interval in the heap), `current` (this step's), `done` (finished with), `absorbed` (merged into another),
+ * `removed` (dropped: cancelled, or ended before the query), `result` (part of the answer).
+ */
+export type TimelineBarState = "waiting" | "active" | "current" | "done" | "absorbed" | "removed" | "result";
+
+/** An interval drawn as a bar from `start` to `end` on lane `lane`; `fromLane` is where it slides from (a sort). */
+export type TraceTimelineBar = {
+  id: number;
+  start: number;
+  end: number;
+  lane: number;
+  state: TimelineBarState;
+  fromLane?: number;
+};
+
+/**
+ * Intervals after a step: every bar, the stretch where this step's two intervals overlap (`overlap`), a bar that grew
+ * this step and the extent it grew from (`grow`, a merge), and a vertical marker (`sweep`: the query point, where the
+ * last kept interval ends).
+ */
+export type TraceTimelineStep = {
+  bars: TraceTimelineBar[];
+  overlap?: { start: number; end: number };
+  grow?: { id: number; start: number; end: number };
+  sweep?: { at: number; label: string };
 };
 
 /**
@@ -475,6 +506,8 @@ export type Trace = {
   searchTree?: { nodes: TraceSearchNode[] };
   /** A DP table's shape and headers (row 0 / column 0 are often the empty prefix). */
   dp?: { rows: number; cols: number; rowHeaders?: string[]; colHeaders?: string[] };
+  /** A timeline's axis and lane count, and the intervals as given (in input order, before any sort). */
+  timeline?: { min: number; max: number; lanes: number; input: TraceTimelineBar[] };
   /** A matrix (rows of numbers) that a prefix grid is built over (Number of Submatrices That Sum to Target). */
   matrix?: number[][];
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */

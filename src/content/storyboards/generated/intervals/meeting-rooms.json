@@ -1,0 +1,172 @@
+{
+  "id": "intervals-meeting-rooms",
+  "title": "Meeting Rooms: Sort, Then Check Neighbors",
+  "concept": "Intervals",
+  "category": "dsa",
+  "summary": "Sort the meetings by start; then a clash can only be between neighbors, so one pass finds it.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "sorting"
+  ],
+  "takeaway": {
+    "pattern": "Intervals: sort by start",
+    "summary": "Sort the meetings by start time; a clash can only happen between neighbors, so check each start against the previous meeting's end in one pass.",
+    "timeComplexity": "O(n log n)",
+    "spaceComplexity": "O(1) besides the sort",
+    "whenToUse": [
+      "Checking whether any two intervals overlap",
+      "Any interval question where order by start makes neighbors the only candidates"
+    ]
+  },
+  "trace": {
+    "problem": "intervals/meeting-rooms",
+    "args": [
+      [
+        [
+          15,
+          16
+        ],
+        [
+          9,
+          10
+        ],
+        [
+          11,
+          13
+        ],
+        [
+          12,
+          14
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v19",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T23:15:08.972Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "day",
+      "narration": "Your calendar has four meetings, in no particular order: 15 to 16, 9 to 10, 11 to 13, and 12 to 14. Can you attend every one of them, start to finish?",
+      "caption": "Meetings 15–16, 9–10, 11–13, 12–14: can one person attend all?",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could compare every meeting with every other one, which is n squared checks. Instead, sort them by start time. Then a clash can only be between neighbors, and one pass checks them all.",
+      "caption": "Checking every pair of meetings is O(n²)",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "sort, one pass",
+          "rejected": "check every pair",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "sort",
+      "narration": "Sorted by start time, the meetings read 9 to 10, 11 to 13, 12 to 14, and 15 to 16. Each one only needs to start after the one before it ends.",
+      "caption": "Sorted by start: 9–10, 11–13, 12–14, 15–16",
+      "durationInFrames": 420,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        }
+      ]
+    },
+    {
+      "id": "gap",
+      "narration": "The 11 o'clock meeting starts after the 9 o'clock one ends at 10. There's even an hour free between them, so no clash.",
+      "caption": "11–13 starts at 11, after 9–10 ends at 10: a gap",
+      "durationInFrames": 312,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "no clash"
+        }
+      ]
+    },
+    {
+      "id": "clash",
+      "narration": "But the 12 o'clock meeting starts before the 11 o'clock one ends at 13. Those two overlap for an hour, so you can't attend every meeting: the answer is false.",
+      "caption": "12–14 starts at 12, before 11–13 ends at 13: a clash",
+      "durationInFrames": 396,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "clash"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Attend all?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's the intervals pattern: sort by start, and the only clash worth checking is with the previous meeting. Sorting costs O(n log n); the pass after it is O(n).",
+      "caption": "Sort by start, then compare each start with the previous end",
+      "durationInFrames": 384,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tl",
+          "enterAt": 0,
+          "type": "timeline",
+          "laneLabels": []
+        }
+      ]
+    }
+  ]
+}

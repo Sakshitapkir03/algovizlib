@@ -33,6 +33,11 @@ import { rangeSumQueriesTrace } from "./prefix-sum/range-sum-queries";
 import { subarraySumEqualsKTrace } from "./prefix-sum/subarray-sum-equals-k";
 import { productOfArrayExceptSelfTrace } from "./prefix-sum/product-of-array-except-self";
 import { submatricesThatSumToTargetTrace } from "./prefix-sum/submatrices-that-sum-to-target";
+import { meetingRoomsTrace } from "./intervals/meeting-rooms";
+import { mergeIntervalsTrace } from "./intervals/merge-intervals";
+import { insertIntervalTrace } from "./intervals/insert-interval";
+import { nonOverlappingIntervalsTrace } from "./intervals/non-overlapping-intervals";
+import { minimumIntervalToIncludeEachQueryTrace } from "./intervals/minimum-interval-to-include-each-query";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -163,6 +168,11 @@ const definitions = [
   subarraySumEqualsKTrace,
   productOfArrayExceptSelfTrace,
   submatricesThatSumToTargetTrace,
+  meetingRoomsTrace,
+  mergeIntervalsTrace,
+  insertIntervalTrace,
+  nonOverlappingIntervalsTrace,
+  minimumIntervalToIncludeEachQueryTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which
