@@ -9,6 +9,8 @@ import type {
   TraceMap,
   TraceRace,
   TraceReach,
+  TracePrefixRow,
+  TracePrefixGrid,
   TraceBfs,
   TraceLinks,
   TraceQueueItem,
@@ -273,6 +275,30 @@ function raceFields(r: Partial<TraceRace>): Record<string, string> {
     meet: JSON.stringify(r.meet ?? null),
     entry: JSON.stringify(r.entry ?? null),
     loop: JSON.stringify(r.loop ? { from: r.loop.from, to: r.loop.to } : null),
+  };
+}
+
+/** A prefix row field by field, in a canonical text form. */
+function prefixRowFields(r: Partial<TracePrefixRow>): Record<string, string> {
+  return {
+    op: JSON.stringify(r.op ?? null),
+    direction: JSON.stringify(r.direction ?? null),
+    values: JSON.stringify(r.values ?? []),
+    current: JSON.stringify(r.current ?? null),
+    reads: JSON.stringify([...(r.reads ?? [])].sort((a, b) => a - b)),
+    spans: JSON.stringify((r.spans ?? []).map((sp) => ({ from: sp.from, to: sp.to, value: sp.value }))),
+  };
+}
+
+/** A prefix grid field by field, in a canonical text form. */
+function prefixGridFields(g: Partial<TracePrefixGrid>): Record<string, string> {
+  const rect = (r: { r1: number; c1: number; r2: number; c2: number }) => [r.r1, r.c1, r.r2, r.c2];
+  return {
+    prefix: JSON.stringify(g.prefix ?? []),
+    current: JSON.stringify(g.current ?? null),
+    rects: JSON.stringify((g.rects ?? []).map((r) => [...rect(r), r.sign])),
+    marks: JSON.stringify((g.marks ?? []).map((m) => [...m.at, m.sign])),
+    found: JSON.stringify(g.found ? rect(g.found) : null),
   };
 }
 
@@ -584,6 +610,39 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             el.id,
             "frames",
           );
+        if (el.type === "prefix-row") {
+          // Unbound: empty (the intro) or the final row, with nothing built, read, or spanned this scene.
+          const finals = trace.steps.flatMap((s) => s.prefix ?? []).filter((r) => r.name === el.name);
+          const last = finals.at(-1);
+          const drawn = prefixRowFields(el);
+          const empty = prefixRowFields({ op: el.op, direction: el.direction, values: el.values.map(() => null) });
+          const end = last && prefixRowFields({ op: last.op, direction: last.direction, values: last.values });
+          const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!finals.length) push(`This trace has no prefix row "${el.name}"`, el.id, "name");
+          else if (!same(empty) && !same(end))
+            push(
+              "Without a traceStep, the prefix row is empty (or as it ends); omit values/current/reads/spans to take it from the trace",
+              el.id,
+              "values",
+            );
+        }
+        if (el.type === "prefix-grid") {
+          if (!trace.matrix || JSON.stringify(el.matrix) !== JSON.stringify(trace.matrix))
+            push("The matrix doesn't match the trace; omit matrix", el.id, "matrix");
+          const last = trace.steps.at(-1)?.prefixGrid;
+          const drawn = prefixGridFields(el);
+          const empty = prefixGridFields({
+            prefix: el.prefix.map((row, i) => row.map((_, j) => (i === 0 || j === 0 ? 0 : null))),
+          });
+          const end = last && prefixGridFields({ prefix: last.prefix });
+          const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!same(empty) && !same(end))
+            push(
+              "Without a traceStep, the prefix grid is unbuilt (or complete), with no rectangles; omit prefix/current/rects/marks/found",
+              el.id,
+              "prefix",
+            );
+        }
         if (el.type === "reach")
           push("A reach needs the scene to set traceStep (its stretch comes from the step)", el.id, "from");
         if (el.type === "queue")
@@ -1224,6 +1283,40 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             if (drawn[field] !== expected[field])
               push(`The race's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "prefix-row": {
+          checkRow(el.rowId);
+          const expected = step.prefix?.find((r) => r.name === el.name);
+          if (!expected) {
+            push(`Trace step ${stepIndex} has no prefix row "${el.name}"`, el.id, "name");
+            break;
+          }
+          const want = prefixRowFields(expected);
+          const drawn = prefixRowFields(el);
+          for (const field of Object.keys(want))
+            if (drawn[field] !== want[field])
+              push(`The prefix row's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: want[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "prefix-grid": {
+          if (!trace.matrix || JSON.stringify(el.matrix) !== JSON.stringify(trace.matrix))
+            push("The matrix doesn't match the trace; omit matrix", el.id, "matrix");
+          if (!step.prefixGrid) {
+            push(`Trace step ${stepIndex} has no prefix grid`, el.id, "prefix");
+            break;
+          }
+          const want = prefixGridFields(step.prefixGrid);
+          const drawn = prefixGridFields(el);
+          for (const field of Object.keys(want))
+            if (drawn[field] !== want[field])
+              push(`The prefix grid's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: want[field],
                 actual: drawn[field],
               });
           break;

@@ -339,6 +339,11 @@ describe("selectTargets", () => {
       "arrays-hashing/group-anagrams",
       "arrays-hashing/longest-consecutive-sequence",
       "arrays-hashing/first-missing-positive",
+      "prefix-sum/find-pivot-index",
+      "prefix-sum/range-sum-queries",
+      "prefix-sum/subarray-sum-equals-k",
+      "prefix-sum/product-of-array-except-self",
+      "prefix-sum/submatrices-that-sum-to-target",
       "sorting/bubble-sort",
       "sorting/selection-sort",
       "sorting/insertion-sort",
@@ -599,7 +604,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v17");
+    expect(currentPrompts.version).toBe("storyboard-v18");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

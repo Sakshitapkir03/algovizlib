@@ -1,0 +1,408 @@
+{
+  "id": "prefix-sum-find-pivot-index",
+  "title": "Find Pivot Index: Where the Shelf Balances",
+  "concept": "Prefix Sum",
+  "category": "dsa",
+  "summary": "Keep a running weight in the gaps between jars; then each jar's two sides are a lookup and a subtraction.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A shelf holds five jars weighing 3, 1, 5, 2, and 2 kg. It rests on a single bracket, and it balances under a jar when the weight to its left equals the weight to its right.",
+    "mapping": [
+      {
+        "real": "A jar's weight",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "The running weight in the gap before a jar",
+        "abstract": "prefix[i]"
+      },
+      {
+        "real": "The whole shelf's weight",
+        "abstract": "prefix[n], the total"
+      },
+      {
+        "real": "The jar it balances under",
+        "abstract": "The pivot index"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "prefix sum"
+  ],
+  "takeaway": {
+    "pattern": "Prefix sums",
+    "summary": "Build running totals once. The sum left of index p is prefix[p]; the sum right of it is total − prefix[p + 1]. Each index is then checked in O(1).",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1) with a running total (O(n) for the row)",
+    "whenToUse": [
+      "Comparing what's before and after each position",
+      "Many range sums over one array"
+    ]
+  },
+  "trace": {
+    "problem": "prefix-sum/find-pivot-index",
+    "args": [
+      [
+        3,
+        1,
+        5,
+        2,
+        2
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v18",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T22:16:17.719Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "shelf",
+      "narration": "A shelf holds five jars weighing 3, 1, 5, 2, and 2 kilograms. Under which jar does it balance, with as much weight to the left as to the right?",
+      "caption": "Jars of 3, 1, 5, 2, 2 kg: under which jar does the shelf balance?",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jar 0",
+            "jar 1",
+            "jar 2",
+            "jar 3",
+            "jar 4"
+          ]
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "running kg",
+          "spanLabel": ""
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "For each jar you could add up both sides from scratch: the whole shelf again and again, about n squared additions. Instead, keep a running weight, one cell in each gap between jars.",
+      "caption": "Weighing both sides for every jar re-adds the whole shelf",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jar 0",
+            "jar 1",
+            "jar 2",
+            "jar 3",
+            "jar 4"
+          ]
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "running kg",
+          "spanLabel": ""
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "The running weight starts at 0 in the gap before the first jar. After the 3 kilogram jar it reads 3. Each cell holds everything to its left.",
+      "caption": "The running weight: 0 before the first jar, 3 after it",
+      "durationInFrames": 372,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jar 0",
+            "jar 1",
+            "jar 2",
+            "jar 3",
+            "jar 4"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "jars",
+          "label": "adding",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "running kg",
+          "spanLabel": ""
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "total",
+      "narration": "Keep adding: 4, 9, 11, and 13 after the last jar. That last cell is the whole shelf.",
+      "caption": "The last cell holds the whole shelf: 13 kg",
+      "durationInFrames": 252,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jar 0",
+            "jar 1",
+            "jar 2",
+            "jar 3",
+            "jar 4"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "jars",
+          "label": "adding",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "running kg",
+          "spanLabel": ""
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "jar0",
+      "narration": "Under jar 0, the left side is the cell before it, 0. The right side is the whole shelf minus the cell after the jar: 13 minus 3, so 10. No balance.",
+      "caption": "Jar 0: left is 0, right is 13 − 3 = 10",
+      "durationInFrames": 420,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jar 0",
+            "jar 1",
+            "jar 2",
+            "jar 3",
+            "jar 4"
+          ]
+        },
+        {
+          "id": "p-p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "jars",
+          "label": "bracket",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "p"
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "running kg",
+          "spanLabel": ""
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "tips right"
+        }
+      ]
+    },
+    {
+      "id": "jar1",
+      "narration": "Under jar 1, the left is 3 and the right is 13 minus 4, so 9. Two lookups and a subtraction, nothing re-added.",
+      "caption": "Jar 1: left is 3, right is 13 − 4 = 9",
+      "durationInFrames": 312,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jar 0",
+            "jar 1",
+            "jar 2",
+            "jar 3",
+            "jar 4"
+          ]
+        },
+        {
+          "id": "p-p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "jars",
+          "label": "bracket",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "p"
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "running kg",
+          "spanLabel": ""
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "tips right"
+        }
+      ]
+    },
+    {
+      "id": "jar2",
+      "narration": "Under jar 2, the left is 4, and the right is 13 minus 9, also 4. The shelf balances at index 2.",
+      "caption": "Jar 2: left is 4, right is 13 − 9 = 4. It balances",
+      "durationInFrames": 300,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jar 0",
+            "jar 1",
+            "jar 2",
+            "jar 3",
+            "jar 4"
+          ]
+        },
+        {
+          "id": "p-p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "jars",
+          "label": "bracket",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "p"
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "running kg",
+          "spanLabel": ""
+        },
+        {
+          "id": "hit",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "jars",
+          "state": "found"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "balanced"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Pivot index",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Jars are the array, and the running weights are prefix sums. Left of p is prefix of p; right is the total minus prefix of p plus 1. Two passes: O(n) time, and O(1) space with a running total.",
+      "caption": "Jars are nums, the gaps hold prefix sums: pivot at index 2",
+      "durationInFrames": 504,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "jars",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]",
+            "nums[4]"
+          ]
+        },
+        {
+          "id": "running",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "jars",
+          "name": "prefix",
+          "label": "prefix",
+          "spanLabel": ""
+        }
+      ]
+    }
+  ]
+}

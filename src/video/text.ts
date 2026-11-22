@@ -130,4 +130,8 @@ export const TEXT = {
   /** A reach band's label ("reach 5"), its jump arc's label ("+3"), and a closed piece's length. */
   reachLabel: 18,
   jumpLabel: 17,
+  /** A prefix row's or grid's values, row labels, and the +/− signs on cells and rectangles. */
+  prefixValue: 24,
+  prefixLabel: 15,
+  prefixSign: 16,
 } as const;

@@ -134,7 +134,9 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
     if (step.rejected && rowType === "linked-list")
       elements.push({ id: "rejected", type: "highlight", rowId: "row", state: "rejected", enterAt: 0 });
-    if (step.counter) elements.push({ id: "count", type: "counter", label: "inversions", enterAt: 0 });
+    // Beside a map the bottom stack keeps to the map plus one more (the equation), as the prompt asks.
+    if (step.counter && !step.map)
+      elements.push({ id: "count", type: "counter", label: "inversions", enterAt: 0 });
     if (step.window) elements.push({ id: "window", type: "window", rowId: "row", label: "sum", enterAt: 0 });
     if (step.freq && !(heapScene && last))
       elements.push({ id: "freq", type: "freq-table", label: "in window", enterAt: 0 });
@@ -157,8 +159,24 @@ export function buildDraft(problemKey: string): Draft {
     if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
     if (step.heaps) elements.push({ id: "heaps", type: "heap", enterAt: 0 });
     if (step.race) elements.push({ id: "race", type: "race", rowId: "row", enterAt: 0 } as ElementSource);
+    for (const row of step.prefix ?? [])
+      elements.push({
+        id: `prefix-${row.name}`,
+        type: "prefix-row",
+        rowId: "row",
+        name: row.name,
+        label: row.name,
+        enterAt: 0,
+      } as ElementSource);
+    if (step.prefixGrid) elements.push({ id: "grid", type: "prefix-grid", enterAt: 0 } as ElementSource);
     if (step.reach)
-      elements.push({ id: "reach", type: "reach", rowId: "row", dimBeyond: true, enterAt: 0 } as ElementSource);
+      elements.push({
+        id: "reach",
+        type: "reach",
+        rowId: "row",
+        dimBeyond: true,
+        enterAt: 0,
+      } as ElementSource);
     if (step.choice)
       elements.push({
         id: "choice",
@@ -166,7 +184,9 @@ export function buildDraft(problemKey: string): Draft {
         reason: "A short line on why this is safe, in the story's words.",
         enterAt: 0.2,
       } as ElementSource);
-    if (step.map) elements.push({ id: "map", type: "hash-map", label: "map", enterAt: 0 } as ElementSource);
+    // A prefix row's answer scene keeps to the input, the row, and the result: the map would crowd it.
+    if (step.map && !(last && step.prefix))
+      elements.push({ id: "map", type: "hash-map", label: "map", enterAt: 0 } as ElementSource);
     if (step.explore) {
       elements.push({ id: "search", type: "search-tree", enterAt: 0 } as ElementSource);
       // The answer scene keeps to the tree and the result.
@@ -199,7 +219,9 @@ export function buildDraft(problemKey: string): Draft {
           step.table ||
           step.pile ||
           step.explore ||
-          step.race) &&
+          step.race ||
+          step.prefixGrid ||
+          (step.map && step.prefix)) &&
         last
       )
     )

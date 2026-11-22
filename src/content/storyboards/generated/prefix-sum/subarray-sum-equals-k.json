@@ -1,0 +1,497 @@
+{
+  "id": "prefix-sum-subarray-sum-equals-k",
+  "title": "Subarray Sum Equals K: Runs in a Café Ledger",
+  "concept": "Prefix Sum",
+  "category": "dsa",
+  "summary": "Track the running balance and remember every balance seen; a run nets $3 whenever an earlier balance was $3 lower.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A café's ledger lists each day's profit in dollars: 2, 1, 3, −1, 1, 2. The owner wants to know how many runs of consecutive days netted exactly $3.",
+    "mapping": [
+      {
+        "real": "A day's profit",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "The balance after a day",
+        "abstract": "prefix[i + 1]"
+      },
+      {
+        "real": "The notebook of balances seen and how often",
+        "abstract": "A hash map prefix → count"
+      },
+      {
+        "real": "A run netting $3",
+        "abstract": "A subarray summing to k"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "prefix sum",
+    "hash map"
+  ],
+  "takeaway": {
+    "pattern": "Prefix sums + hash map",
+    "summary": "A subarray ending at r sums to k when prefix[r + 1] − k equals an earlier prefix. Count earlier prefixes in a map seeded with {0: 1}, adding the count of (sum − k) at each step.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Counting subarrays with an exact sum, negatives allowed",
+      "Any time a range is the difference of two running totals"
+    ]
+  },
+  "trace": {
+    "problem": "prefix-sum/subarray-sum-equals-k",
+    "args": [
+      [
+        2,
+        1,
+        3,
+        -1,
+        1,
+        2
+      ],
+      3
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v18",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T22:16:17.735Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "cafe",
+      "narration": "A café logs each day's profit in dollars: 2, 1, 3, minus 1, 1, and 2. How many runs of consecutive days netted exactly 3 dollars?",
+      "caption": "Daily profit 2, 1, 3, −1, 1, 2: how many runs net exactly $3?",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Trying every start and end day re-adds stretches of the ledger, about n squared sums. Instead, track the running balance and remember every balance seen.",
+      "caption": "Checking every run of days re-adds the ledger: O(n²)",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        }
+      ]
+    },
+    {
+      "id": "seed",
+      "narration": "Before the first day the balance is 0, so the notebook starts with 0, seen once. That lets a run starting on day 0 be found.",
+      "caption": "Before day 0 the balance is $0: note it, seen once",
+      "durationInFrames": 348,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "balances seen"
+        }
+      ]
+    },
+    {
+      "id": "d0",
+      "narration": "After day 0 the balance is 2. A run ending today nets 3 only if some earlier balance was 2 minus 3, minus 1. None was, so note 2.",
+      "caption": "Day 0: balance 2. An earlier 2 − 3 = −1? None",
+      "durationInFrames": 384,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "ledger",
+          "label": "today",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "r"
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "balances seen"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not yet"
+        }
+      ]
+    },
+    {
+      "id": "d1",
+      "narration": "After day 1 the balance is 3. Was there an earlier balance of 0? Yes, at the start, so days 0 and 1 net 3. One run.",
+      "caption": "Day 1: balance 3. An earlier 0: days 0–1 net $3",
+      "durationInFrames": 360,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "ledger",
+          "label": "today",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "r"
+        },
+        {
+          "id": "run",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "ledger",
+          "state": "found"
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "balances seen"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "found"
+        }
+      ]
+    },
+    {
+      "id": "d2",
+      "narration": "The balance is 6, and an earlier balance of 3 exists, after day 1. So day 2 alone nets 3. Two runs.",
+      "caption": "Day 2: balance 6. An earlier 3: day 2 alone nets $3",
+      "durationInFrames": 300,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "ledger",
+          "label": "today",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "r"
+        },
+        {
+          "id": "run",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "ledger",
+          "state": "found"
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "balances seen"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "found"
+        }
+      ]
+    },
+    {
+      "id": "d4",
+      "narration": "Day 3 dips to 5, a third run. Day 4 brings the balance back to 6, and the earlier 3 means days 2 to 4 net 3. Four runs.",
+      "caption": "Day 4: balance 6 again. An earlier 3: days 2–4 net $3",
+      "durationInFrames": 384,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "ledger",
+          "label": "today",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "r"
+        },
+        {
+          "id": "run",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "ledger",
+          "state": "found"
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "balances seen"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "found"
+        }
+      ]
+    },
+    {
+      "id": "d5",
+      "narration": "The balance is 8, and an earlier 5, after day 3, means days 4 and 5 net 3. That's 5 runs, found in one pass.",
+      "caption": "Day 5: balance 8. An earlier 5: days 4–5 net $3. 5 runs",
+      "durationInFrames": 336,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4",
+            "day 5"
+          ]
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "ledger",
+          "label": "today",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "r"
+        },
+        {
+          "id": "run",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "ledger",
+          "state": "found"
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "balance",
+          "spanLabel": "$"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Runs netting $3",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Days are the array, balances are prefix sums. A run nets k when today's prefix minus an earlier one is k; a map counts those earlier prefixes. O(n) time and space.",
+      "caption": "Balances are prefix sums: count earlier prefixes equal to prefix − k",
+      "durationInFrames": 408,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "ledger",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]",
+            "nums[4]",
+            "nums[5]"
+          ]
+        },
+        {
+          "id": "bal",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "ledger",
+          "name": "prefix",
+          "label": "prefix",
+          "spanLabel": "sum"
+        }
+      ]
+    }
+  ]
+}

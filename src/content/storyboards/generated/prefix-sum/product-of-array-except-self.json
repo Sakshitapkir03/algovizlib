@@ -1,0 +1,451 @@
+{
+  "id": "prefix-sum-product-of-array-except-self",
+  "title": "Product of Array Except Self: Outfits Without One Kind",
+  "concept": "Prefix Sum",
+  "category": "dsa",
+  "summary": "Count outfits from everything before each kind and everything after it, in one pass each way, with no division.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A traveller packs 2 shirts, 3 hats, 4 pairs of shoes, and 5 scarves. For each kind, how many outfits do the other three make if that kind stays home?",
+    "mapping": [
+      {
+        "real": "How many of a kind",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "Outfits from the kinds before it",
+        "abstract": "left[i], a prefix product"
+      },
+      {
+        "real": "Outfits from the kinds after it",
+        "abstract": "right[i + 1], a suffix product"
+      },
+      {
+        "real": "Outfits with that kind left home",
+        "abstract": "out[i]"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "prefix product"
+  ],
+  "takeaway": {
+    "pattern": "Prefix and suffix products",
+    "summary": "out[i] is the product of everything before i times everything after it. A left pass stores prefix products; a right pass multiplies in suffix products. No division, so zeros are fine.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1) besides the output",
+    "whenToUse": [
+      "Everything except one position",
+      "Combining what's before and after each index"
+    ]
+  },
+  "trace": {
+    "problem": "prefix-sum/product-of-array-except-self",
+    "args": [
+      [
+        2,
+        3,
+        4,
+        5
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v18",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T22:16:17.732Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "pack",
+      "narration": "A traveller packs 2 shirts, 3 hats, 4 pairs of shoes, and 5 scarves. If one kind stays home, how many outfits do the other three make, for each kind?",
+      "caption": "2 shirts, 3 hats, 4 shoes, 5 scarves: outfits without one kind?",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "shirts",
+            "hats",
+            "shoes",
+            "scarves"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "before ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "after ×",
+          "spanLabel": "×"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Multiplying all the others for each kind repeats the work, about n squared multiplications, and dividing the total breaks on a 0. Instead: one pass from the left, one from the right.",
+      "caption": "Multiplying the other three for each kind redoes the work",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "shirts",
+            "hats",
+            "shoes",
+            "scarves"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "before ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "after ×",
+          "spanLabel": "×"
+        }
+      ]
+    },
+    {
+      "id": "l0",
+      "narration": "From the left, each cell counts the combinations of everything before it. Nothing comes before the shirts: 1, the empty product.",
+      "caption": "Left pass: nothing comes before the shirts, so 1",
+      "durationInFrames": 288,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "shirts",
+            "hats",
+            "shoes",
+            "scarves"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kinds",
+          "label": "here",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "before ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "after ×",
+          "spanLabel": "×"
+        }
+      ]
+    },
+    {
+      "id": "l3",
+      "narration": "Each cell is the one before times the next count: 2, then 6, then 24 for everything before the scarves.",
+      "caption": "Before the scarves: 2 × 3 × 4 = 24 outfits",
+      "durationInFrames": 276,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "shirts",
+            "hats",
+            "shoes",
+            "scarves"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kinds",
+          "label": "here",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "before ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "after ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "narration": "Now from the right. Nothing comes after the scarves, so that side is 1. Leaving the scarves home: 24 before them, times 1, gives 24 outfits.",
+      "caption": "Right pass: scarves stay home, 24 × 1 = 24",
+      "durationInFrames": 348,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "shirts",
+            "hats",
+            "shoes",
+            "scarves"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kinds",
+          "label": "home",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "before ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "after ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "outfits"
+        }
+      ]
+    },
+    {
+      "id": "r1",
+      "narration": "Moving left, the after side grows to 5, then 20. Leaving the hats home: 2 before them times 20 after, 40. The two cells sit on either side of the hats.",
+      "caption": "Hats stay home: 2 before × 20 after = 40",
+      "durationInFrames": 408,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "shirts",
+            "hats",
+            "shoes",
+            "scarves"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kinds",
+          "label": "home",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "before ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "after ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "outfits"
+        }
+      ]
+    },
+    {
+      "id": "r0",
+      "narration": "Finally the shirts: 1 before times 60 after, so 60 outfits. All four answers, without a single division.",
+      "caption": "Shirts stay home: 1 × 60 = 60. Answers 60, 40, 30, 24",
+      "durationInFrames": 252,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "shirts",
+            "hats",
+            "shoes",
+            "scarves"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kinds",
+          "label": "home",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "before ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "after ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Outfits per kind left home",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Kinds are the array, and the two passes are prefix and suffix products. Each answer is the cell before the item times the cell after it: O(n) time and O(1) extra space besides the output.",
+      "caption": "Before × after: out[i] = left[i] × right[i + 1]",
+      "durationInFrames": 456,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "kinds",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]"
+          ]
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "left",
+          "label": "prefix ×",
+          "spanLabel": "×"
+        },
+        {
+          "id": "right",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "kinds",
+          "name": "right",
+          "label": "suffix ×",
+          "spanLabel": "×"
+        }
+      ]
+    }
+  ]
+}

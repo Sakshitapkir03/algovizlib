@@ -31,6 +31,8 @@ import { Partition } from "./Partition";
 import { Race } from "./Race";
 import { Reach } from "./Reach";
 import { Pointer } from "./Pointer";
+import { PrefixGrid } from "./PrefixGrid";
+import { PrefixRow } from "./PrefixRow";
 import { Queue } from "./Queue";
 import { Result } from "./Result";
 import { SearchRange } from "./SearchRange";
@@ -88,6 +90,9 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   // highlights and pointers; the choice panel sits below.
   reach: { component: Reach, slot: "canvas", layer: 0.5 },
   choice: { component: Choice, slot: "bottom", layer: 0 },
+  // Prefix sums: running totals under the input (their span brackets above it), or a matrix beside its prefix grid.
+  "prefix-row": { component: PrefixRow, slot: "canvas", layer: 0.5 },
+  "prefix-grid": { component: PrefixGrid, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

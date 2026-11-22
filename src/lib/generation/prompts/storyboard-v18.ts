@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v17";
+export const PROMPT_VERSION = "storyboard-v18";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -65,6 +65,7 @@ ${ELEMENT_GUIDE}
 - hash-map: when steps list a map, add a hash-map (OMIT everything but label; name it in the story's words) under the input row in every bound scene; an unbound scene shows it empty. The second scene contrasts the slow way (a nested loop rescanning, or sorting) with one lookup. Keep the bottom stack to the map plus at most one equation or counter; in the answer scene, the map and the result. Skip callouts in map scenes.
 - race: when steps list a race (fast and slow pointers on a list), add a race (rowId = the linked-list's id; OMIT phase/moves/meet/entry/loop; give meetLabel and entryLabel in the story's words) in every scene that shows the list, with pointers bound to "slow" and "fast" (placement "above"). The second scene contrasts the slow way (remembering every node visited in a set: O(n) extra space) with two pointers in O(1) space. When the trace has a phase 2 (a "restart" step), that scene's caption and narration say WHY it works: the head is exactly as far from the loop's start as the meeting point is (going forward), so two pointers moving 1 step each arrive there together; its equation shows those two distances (verdict like "head→start = meet→start"). Keep the bottom stack to at most one equation or counter beside the list; in the answer scene, only the result. Skip callouts in race scenes.
 - choice / reach (greedy): when steps list a choice, add a choice (OMIT chosen/rejected; give label in the story's words, e.g. "change given", "next start") in every bound scene whose step lists one. In the scene for the key decision, its \`reason\` (≤ 64 characters) says WHY the greedy choice is safe for this problem, in the story's words (e.g. "starting anywhere you passed only arrives emptier"), and the narration says it too. When steps list a reach, add a reach (rowId = the input row's id; OMIT from/to/value/jump/pieces; give label: "reach", "ends") in every bound scene; set dimBeyond: true when the cards past it are out of reach. The second scene contrasts the slow way (trying every option, start, or combination) with the greedy one: it may show an unbound choice with your own chosen/rejected ("one pass" vs "try every start"). Keep the bottom stack to the choice plus at most one equation, counter, freq-table, or hash-map; in the answer scene, the result and at most one more. Skip callouts in greedy scenes.
+- prefix-row / prefix-grid (prefix sums): when steps list prefix rows, add one prefix-row per row the step lists (rowId = the input item-row's id, \`name\` = the step's row name; OMIT op/direction/values/current/reads/spans; give \`label\` and \`spanLabel\` in the story's words) in every scene that shows the input, bound or not (an unbound one shows it empty). Cell i sits on the boundary before item i, so say so once: the range of items l…r is the cell after r minus the cell before l. When steps list a prefix grid, add a prefix-grid (OMIT everything but matrixLabel/prefixLabel) to every scene. The second scene contrasts the slow way (re-adding the range for every question) with one subtraction. With a map, keep the bottom stack to the map plus one equation (no counter beside them); in the answer scene show the input, its prefix row(s), and the result, without the map or an equation. With a prefix grid, the bottom stack is the map plus at most one equation or counter, and the answer scene holds the grid and the result only. Mark the current item with an "active" highlight or one pointer, not both pointers and highlights. Skip callouts in prefix scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -196,6 +197,36 @@ function describeStep(step: TraceStep, index: number): string {
         r.meet !== undefined ? `met at ${at(r.meet)}` : "",
         r.entry !== undefined ? `loop starts at ${at(r.entry)}` : "",
         r.loop ? `loop link ${at(r.loop.from)}→${at(r.loop.to)}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  if (step.prefix)
+    for (const row of step.prefix)
+      parts.push(
+        [
+          `${row.name} (${row.direction}, ${row.op}): [${row.values.map((v) => (v === null ? "·" : v)).join(", ")}]`,
+          row.current !== undefined ? `built cell ${row.current}` : "",
+          row.reads?.length ? `reads cells ${row.reads.join(", ")}` : "",
+          ...(row.spans ?? []).map(
+            (sp) =>
+              `span cells ${sp.from}→${sp.to} (${sp.to > sp.from ? `items ${sp.from}…${sp.to - 1}` : "no items"}) = ${sp.value}`,
+          ),
+        ]
+          .filter(Boolean)
+          .join("; "),
+      );
+  if (step.prefixGrid) {
+    const g = step.prefixGrid;
+    const rect = (r: { r1: number; c1: number; r2: number; c2: number }) =>
+      `rows ${r.r1}–${r.r2} × cols ${r.c1}–${r.c2}`;
+    parts.push(
+      [
+        `prefix grid: ${g.prefix.map((row) => `[${row.map((v) => (v === null ? "·" : v)).join(" ")}]`).join(" ")}`,
+        g.current ? `current cell [${g.current.join(",")}]` : "",
+        ...g.rects.map((r) => `${r.sign} ${rect(r)}`),
+        g.found ? `found ${rect(g.found)}` : "",
       ]
         .filter(Boolean)
         .join("; "),
@@ -375,7 +406,7 @@ ${
             : trace.row.display === "houses"
               ? "Houses (use one house-row), house: cash"
               : trace.row.values.length === 0
-                ? `No row: don't add an item-row${trace.dp ? "" : " (the input is a stream of operations)"}`
+                ? `No row: don't add an item-row${trace.matrix ? `. Matrix (use a prefix-grid): ${trace.matrix.map((row) => `[${row.join(", ")}]`).join(" ")}` : trace.dp ? "" : " (the input is a stream of operations)"}`
                 : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
 }
 ${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}${
@@ -422,4 +453,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV17 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV18 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

@@ -380,47 +380,49 @@ Two forms of the same schema:
 `Element` is a Zod discriminated union on `type`. Every element has `id` and `enterAt` (0–1, a **fraction** of the
 scene's duration, so timing survives the switch to audio-driven lengths).
 
-| type            | purpose                                                                                                                                                               | slot   |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `item-row`      | labeled cards with values (product + price, `a[i]` + value, a character)                                                                                              | canvas |
-| `bar-row`       | vertical bars on a baseline; optional container `fill`, per-bar `water`, `moves` (bars slide; a swap arcs), `empty` (dashed slots), `maxValue` (one scale per video)  | canvas |
-| `pointer`       | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer                                                                               | canvas |
-| `highlight`     | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)                                                                     | canvas |
-| `callout`       | speech bubble; anchored to an item or floating at the top                                                                                                             | canvas |
-| `equation`      | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                    | bottom |
-| `result`        | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                         | bottom |
-| `sorted-region` | positions in final order (`indices`: a range or a scattered set): a shaded band per run + baseline segment, "✓ sorted" beside the row                                 | canvas |
-| `held-value`    | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                         | canvas |
-| `count-array`   | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                              | canvas |
-| `segments`      | brackets under the bars for the current split (groups drawn apart); the active group gets a thick bracket, a faint band, and "▶ level d"                              | canvas |
-| `split-tree`    | static overview of every split level at once (whole array → single values), each group a small box of its values                                                      | bottom |
-| `merge-buffer`  | merge output so far, one slot per position under the range being merged; the slot just written gets a thick border and "▲ new"                                        | canvas |
-| `partition`     | quick sort: "◆ pivot" tag above the pivot bar, dashed boundary with "◀ smaller", bars outside the range dimmed                                                        | canvas |
-| `heap-tree`     | the same array as a binary tree (children 2i+1, 2i+2) on the right; compared parent/child ringed and labeled, nodes past the heap dashed with ✓, moves match the bars | canvas |
-| `counter`       | a labeled running total with this step's "+N" (inversions here; reusable for swaps, comparisons…)                                                                     | bottom |
-| `window`        | sliding window: a bracket above the cards it covers plus a faint band, labeled with its value ("sum 13"); edges slide from the previous bound scene (`fromRange`)     | canvas |
-| `freq-table`    | character counts in the window, one cell per letter ("2"), or have/need ("1/1", ✓ when met); the changed letter gets a thick border and ▲                             | bottom |
-| `deque`         | Sliding Window Maximum's deque front → back (value + position); values removed this step crossed out and dashed, "◀ front" / "✕ back"; the maxima so far beside it    | bottom |
-| `search-range`  | binary search over a row: bracket over the cards still in play (notch over `mid`), dropped cards dimmed, dashed, ✕; a rotated list's sorted half tinted, "✓ sorted"   | canvas |
-| `number-line`   | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                      | bottom |
-| `cut`           | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                      | canvas |
-| `linked-list`   | node boxes in lanes with an arrow to each `next`, a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; pointers/highlights use node ids   | canvas |
-| `binary-tree`   | a tree by depth: running call ringed, open path in orange, finished ✓ with "↑ 3", null stubs, values travel up edges                                                  | canvas |
-| `call-stack`    | recursion frames beside the tree, bottom to top: "depth(5) waiting for left", "returns 3"; pushed frames slide in                                                     | canvas |
-| `grid`          | BFS grid: cell glyph + word (≈ water, ■ wall), current ringed, frontier dashed, levels in corners, check arrows (✕ + reason)                                          | canvas |
-| `graph`         | BFS graph in columns by level from node 0: current ringed, frontier dashed, level labels, checked edges lit (✕ if seen)                                               | canvas |
-| `queue`         | BFS queue front → back: dequeued fades struck out, enqueued slides in; a divider + "level 2" marker between levels                                                    | bottom |
-| `heap`          | priority queue: tree + backing array (one list), min/max, "size 2/2"; push sifts up and pop sifts down swap by swap; two side by side                                 | canvas |
-| `dp-table`      | DP table (row or grid, headers): unfilled cells dashed, current ringed, read arrows (winner solid), answer cell ✓                                                     | canvas |
-| `staircase`     | Climbing Stairs: numbered steps over table cells, a climber, the +1 / +2 hops onto the step as arcs                                                                   | canvas |
-| `house-row`     | House Robber: houses over table cells with their cash, neighbors linked (shared alarm), ✓ take / ✕ skip plan                                                          | canvas |
-| `stack`         | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row                            | canvas |
-| `search-tree`   | backtracking decision tree (any branching): path in orange, dead ends faded/folded, pruned stubs dashed + reason, solutions ✓                                         | canvas |
-| `partial`       | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                  | bottom |
-| `hash-map`      | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                               | bottom |
-| `race`          | fast and slow pointers over a linked-list: hop arcs "+1" / "+2" along the links, the meeting node ringed (◎ meet), the loop's start (✓), the loop link in orange      | canvas |
-| `choice`        | a greedy decision: "✓" the option taken (solid green) beside "✕" the one turned down (dashed, struck), and a one-line reason it's safe                                | bottom |
-| `reach`         | the stretch of a row a greedy scan has committed to: a band under the cards ("reach 5"), the step's jump arc over them ("+3"), closed pieces with lengths and cuts    | canvas |
+| type            | purpose                                                                                                                                                                                 | slot   |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `item-row`      | labeled cards with values (product + price, `a[i]` + value, a character)                                                                                                                | canvas |
+| `bar-row`       | vertical bars on a baseline; optional container `fill`, per-bar `water`, `moves` (bars slide; a swap arcs), `empty` (dashed slots), `maxValue` (one scale per video)                    | canvas |
+| `pointer`       | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer                                                                                                 | canvas |
+| `highlight`     | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)                                                                                       | canvas |
+| `callout`       | speech bubble; anchored to an item or floating at the top                                                                                                                               | canvas |
+| `equation`      | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                                      | bottom |
+| `result`        | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                                           | bottom |
+| `sorted-region` | positions in final order (`indices`: a range or a scattered set): a shaded band per run + baseline segment, "✓ sorted" beside the row                                                   | canvas |
+| `held-value`    | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                                           | canvas |
+| `count-array`   | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                                                | canvas |
+| `segments`      | brackets under the bars for the current split (groups drawn apart); the active group gets a thick bracket, a faint band, and "▶ level d"                                                | canvas |
+| `split-tree`    | static overview of every split level at once (whole array → single values), each group a small box of its values                                                                        | bottom |
+| `merge-buffer`  | merge output so far, one slot per position under the range being merged; the slot just written gets a thick border and "▲ new"                                                          | canvas |
+| `partition`     | quick sort: "◆ pivot" tag above the pivot bar, dashed boundary with "◀ smaller", bars outside the range dimmed                                                                          | canvas |
+| `heap-tree`     | the same array as a binary tree (children 2i+1, 2i+2) on the right; compared parent/child ringed and labeled, nodes past the heap dashed with ✓, moves match the bars                   | canvas |
+| `counter`       | a labeled running total with this step's "+N" (inversions here; reusable for swaps, comparisons…)                                                                                       | bottom |
+| `window`        | sliding window: a bracket above the cards it covers plus a faint band, labeled with its value ("sum 13"); edges slide from the previous bound scene (`fromRange`)                       | canvas |
+| `freq-table`    | character counts in the window, one cell per letter ("2"), or have/need ("1/1", ✓ when met); the changed letter gets a thick border and ▲                                               | bottom |
+| `deque`         | Sliding Window Maximum's deque front → back (value + position); values removed this step crossed out and dashed, "◀ front" / "✕ back"; the maxima so far beside it                      | bottom |
+| `search-range`  | binary search over a row: bracket over the cards still in play (notch over `mid`), dropped cards dimmed, dashed, ✕; a rotated list's sorted half tinted, "✓ sorted"                     | canvas |
+| `number-line`   | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                                        | bottom |
+| `cut`           | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                                        | canvas |
+| `linked-list`   | node boxes in lanes with an arrow to each `next`, a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; pointers/highlights use node ids                     | canvas |
+| `binary-tree`   | a tree by depth: running call ringed, open path in orange, finished ✓ with "↑ 3", null stubs, values travel up edges                                                                    | canvas |
+| `call-stack`    | recursion frames beside the tree, bottom to top: "depth(5) waiting for left", "returns 3"; pushed frames slide in                                                                       | canvas |
+| `grid`          | BFS grid: cell glyph + word (≈ water, ■ wall), current ringed, frontier dashed, levels in corners, check arrows (✕ + reason)                                                            | canvas |
+| `graph`         | BFS graph in columns by level from node 0: current ringed, frontier dashed, level labels, checked edges lit (✕ if seen)                                                                 | canvas |
+| `queue`         | BFS queue front → back: dequeued fades struck out, enqueued slides in; a divider + "level 2" marker between levels                                                                      | bottom |
+| `heap`          | priority queue: tree + backing array (one list), min/max, "size 2/2"; push sifts up and pop sifts down swap by swap; two side by side                                                   | canvas |
+| `dp-table`      | DP table (row or grid, headers): unfilled cells dashed, current ringed, read arrows (winner solid), answer cell ✓                                                                       | canvas |
+| `staircase`     | Climbing Stairs: numbered steps over table cells, a climber, the +1 / +2 hops onto the step as arcs                                                                                     | canvas |
+| `house-row`     | House Robber: houses over table cells with their cash, neighbors linked (shared alarm), ✓ take / ✕ skip plan                                                                            | canvas |
+| `stack`         | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row                                              | canvas |
+| `search-tree`   | backtracking decision tree (any branching): path in orange, dead ends faded/folded, pruned stubs dashed + reason, solutions ✓                                                           | canvas |
+| `partial`       | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                                    | bottom |
+| `hash-map`      | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                                                 | bottom |
+| `race`          | fast and slow pointers over a linked-list: hop arcs "+1" / "+2" along the links, the meeting node ringed (◎ meet), the loop's start (✓), the loop link in orange                        | canvas |
+| `choice`        | a greedy decision: "✓" the option taken (solid green) beside "✕" the one turned down (dashed, struck), and a one-line reason it's safe                                                  | bottom |
+| `reach`         | the stretch of a row a greedy scan has committed to: a band under the cards ("reach 5"), the step's jump arc over them ("+3"), closed pieces with lengths and cuts                      | canvas |
+| `prefix-row`    | running totals under an item-row, one cell per boundary (cell i between items i − 1 and i): unbuilt dashed, built ringed, spans as brackets whose edges drop to their two cells (+ / −) | canvas |
+| `prefix-grid`   | a small matrix beside its 2D prefix grid: rectangles added (+, solid accent) or subtracted (−, dashed) for inclusion-exclusion, signed prefix cells, a found rectangle ✓                | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -679,6 +681,27 @@ the choice is safe, in the narration and the choice's reason. Tones: a jump that
 farther one positive; change handed back neutral, a customer who can't get change negative; the fuel check positive
 when total gas covers total cost.
 
+**Prefix Sum** (the five home problems; Subarray Sum Equals K and Number of Submatrices That Sum to Target are also
+listed under Arrays & Hashing; no other pattern's problems are listed under Prefix Sum) added step state `prefix`: one
+or more running-total rows (`name`: "prefix", "left", "right"; `op`: "+" or "×"; `direction`: prefix, or suffix for
+products of the items from i on; `values`, one per boundary, `null` until built; `current`, `reads`, and `spans`:
+items `from`…`to − 1` answered by the cells at `from` and `to`, with the value) and `prefixGrid` (the 2D grid with its 0
+row and column, the cell built or read, the matrix rectangles added or subtracted, the signed prefix cells standing
+for them, and a `found` rectangle), plus `trace.matrix`. Traces build a `PrefixRow` (`traces/prefix-sum/shared.ts`).
+Two primitives, built apart from everything else: `prefix-row` sits under its item-row's pointers with cell i centered
+on the boundary before item i (`boundaryX` in `video/prefix-layout.ts`), so a span's bracket over the items has its
+edges exactly over its two cells (dashed guides drop to them, and for sums the later cell is marked "+" and the earlier
+"−"): the off-by-one is on screen. Up to two per item-row (Product's "before ×" and "after ×": each answer is the two
+cells flanking its item); `layoutRows` reserves the bracket strip above the cards and one band per row under the
+pointers, only with a prefix row. `prefix-grid` draws the matrix and its prefix grid side by side, matrix row r level
+with prefix row r + 1, rectangles inset so stacked ones stay apart, each sign on its rectangle's corner. Reused: the
+hash map of prefixes seen (Subarray Sum, Submatrices; a map per row pair), equation, counter, result. The schema
+checks a row has one cell per boundary, a sum's span equals the difference of its cells, spans over one row don't
+overlap, and rectangles and cells lie inside the grid; the validator checks every field against the step (an unbound
+row is empty or final, an unbound grid unbuilt or complete). The answer scene beside a map keeps to the input, the row,
+and the result: at phone width the map and an equation don't fit with it. Tones: Pivot's unequal sides are neutral,
+equal positive; a lookup that finds nothing is neutral, a match positive.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -707,13 +730,15 @@ Trace = {
            explore?, partial?,                                    // backtracking (see "Backtracking" above)
            map?,                                                  // hashing (see "Arrays & Hashing" above)
            race?,                                                 // fast and slow pointers (see "Fast & Slow Pointers" above)
-           choice?, reach? }[],                                   // greedy (see "Greedy" above)
+           choice?, reach?,                                       // greedy (see "Greedy" above)
+           prefix?, prefixGrid? }[],                              // prefix sums (see "Prefix Sum" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
   grid?: { rows, cols, cells, legend }, graph?: { nodes, edges },   // a BFS's grid or graph
   dp?: { rows, cols, rowHeaders?, colHeaders? },                     // a DP table's shape
   searchTree?: { nodes },                                            // a backtracking decision tree
+  matrix?,                                                           // a prefix grid's matrix
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
   answerIndices?,     // when the answer is a set of positions
@@ -736,7 +761,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), prefix rows (op, direction, every value, the cell built, reads, spans and their values; one cell per boundary; an unbound row is empty or final) and prefix grids (the matrix, every prefix cell, the current cell, signed rectangles and cells, the found rectangle; unbound: unbuilt or complete), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -985,7 +1010,10 @@ stones (Middle), a hiker and a runner on a looping trail, then a restart from th
 whose exit signs name the next room (Find the Duplicate), and a frog and a toad on painted stones around a pond
 (Circular Array Loop). Greedy: Lemonade Change, Gas Station, Candy, and Jump Game are problem-native (the stand's till,
 the fuel stops, the children's ratings, the squares and their jump lengths); Partition Labels is a porter loading
-carousel bags onto as many carts as possible, each family's bags on one cart.
+carousel bags onto as many carts as possible, each family's bags on one cart. Prefix Sum: a shelf of jars balancing on
+one bracket (Find Pivot Index), a hiker's altimeter read at each camp (Range Sum Queries), runs of days in a café's
+profit ledger (Subarray Sum Equals K), outfits when one kind of clothing stays home (Product of Array Except Self), and
+blocks of orchard plots holding exactly 3 crates (Number of Submatrices That Sum to Target).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -912,6 +912,71 @@ export const reachSourceSchema = z.object({
   pieces: reachShape.pieces.removeDefault().optional(),
 });
 
+const prefixSpanSchema = z.object({ from: index, to: index, value: z.number().finite() });
+
+const prefixRowShape = {
+  ...baseElement,
+  type: z.literal("prefix-row"),
+  /** The item-row it sits under: cell i is centered on the boundary before item i (cell n after the last item). */
+  rowId: nonEmpty,
+  /** Which of the step's running totals it shows ("prefix", "left", "right"). */
+  name: nonEmpty.max(12).default("prefix"),
+  /** Shown left of the row, in the story's words ("readings", "before ×"). */
+  label: z.string().max(12).default(""),
+  /** "+" running sums, "×" running products; a suffix row's cell i covers the items from i on. */
+  op: z.enum(["+", "×"]),
+  direction: z.enum(["prefix", "suffix"]),
+  /** One value per boundary (n + 1); null until it's built (drawn as a dashed empty cell). */
+  values: z.array(z.number().finite().nullable()).min(2).max(11),
+  /** The cell built in this scene (ringed). */
+  current: index.optional(),
+  /** Cells this scene reads (accent border). */
+  reads: z.array(index).max(4).optional(),
+  /** Stretches of items answered by two cells: a bracket over items from…to − 1, labeled with its value. */
+  spans: z.array(prefixSpanSchema).max(2).optional(),
+  /** Before a span's value ("climb" → "climb 8"). */
+  spanLabel: z.string().max(10).default(""),
+};
+export const prefixRowElementSchema = z.object(prefixRowShape);
+export const prefixRowSourceSchema = z.object({
+  ...prefixRowShape,
+  /** Omit op/direction/values (and current/reads/spans) to take the named row from the bound step. */
+  op: prefixRowShape.op.optional(),
+  direction: prefixRowShape.direction.optional(),
+  values: prefixRowShape.values.optional(),
+});
+
+const gridCellSchema = z.tuple([index, index]);
+const rectSchema = z.object({ r1: index, c1: index, r2: index, c2: index });
+
+const prefixGridShape = {
+  ...baseElement,
+  type: z.literal("prefix-grid"),
+  /** The matrix (rows of numbers), drawn on the left. */
+  matrix: z.array(z.array(z.number().finite()).min(1).max(4)).min(1).max(3),
+  /** Its prefix grid, one row and column larger (row 0 and column 0 are 0); null until built. On the right. */
+  prefix: z.array(z.array(z.number().finite().nullable()).min(2).max(5)).min(2).max(4),
+  /** The prefix cell built or read last (ringed). */
+  current: gridCellSchema.optional(),
+  /** Matrix rectangles this scene adds (+) or subtracts (−), outlined with their sign. */
+  rects: z.array(rectSchema.extend({ sign: z.enum(["+", "−"]) })).max(4).default([]),
+  /** The prefix cells standing for those rectangles, with their sign. */
+  marks: z.array(z.object({ at: gridCellSchema, sign: z.enum(["+", "−"]) })).max(3).default([]),
+  /** A rectangle that hit the target (double border, ✓). */
+  found: rectSchema.optional(),
+  matrixLabel: nonEmpty.max(12).default("matrix"),
+  prefixLabel: nonEmpty.max(12).default("prefix"),
+};
+export const prefixGridElementSchema = z.object(prefixGridShape);
+export const prefixGridSourceSchema = z.object({
+  ...prefixGridShape,
+  /** Omit everything but the labels to take the matrix from the trace and the grid from the step. */
+  matrix: prefixGridShape.matrix.optional(),
+  prefix: prefixGridShape.prefix.optional(),
+  rects: prefixGridShape.rects.removeDefault().optional(),
+  marks: prefixGridShape.marks.removeDefault().optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -1097,6 +1162,8 @@ export const elementSchemas = [
   raceElementSchema,
   choiceElementSchema,
   reachElementSchema,
+  prefixRowElementSchema,
+  prefixGridElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1139,6 +1206,8 @@ export const elementSourceSchemas = [
   raceSourceSchema,
   choiceSourceSchema,
   reachSourceSchema,
+  prefixRowSourceSchema,
+  prefixGridSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1194,6 +1263,9 @@ export type RaceElement = ElementOf<"race">;
 export type RaceMove = z.infer<typeof raceMoveSchema>;
 export type ChoiceElement = ElementOf<"choice">;
 export type ReachElement = ElementOf<"reach">;
+export type PrefixRowElement = ElementOf<"prefix-row">;
+export type PrefixGridElement = ElementOf<"prefix-grid">;
+export type Rect = z.infer<typeof rectSchema>;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

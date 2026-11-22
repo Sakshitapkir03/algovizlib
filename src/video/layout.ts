@@ -17,6 +17,7 @@ import type {
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
 import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
+import { prefixBand } from "./prefix-layout";
 import { TEXT, textMetrics, type TextMetrics } from "./text";
 
 /**
@@ -1158,6 +1159,9 @@ function layoutWith(
   const bufferRows = rowsWith("merge-buffer");
   // A reach draws its jump arc above the cards (over the tags) and its band under them (above the pointers).
   const reachRows = rowsWith("reach");
+  // Prefix rows sit under the pointers (one band each), and their spans' brackets above the cards.
+  const prefixCount = (rowId: string) =>
+    elements.filter((el) => el.type === "prefix-row" && el.rowId === rowId).length;
   const groupsOf = new Map(
     elements.flatMap((el) => (el.type === "segments" ? [[el.rowId, el.groups] as const] : [])),
   );
@@ -1188,14 +1192,17 @@ function layoutWith(
 
     // Stack everything under the row upward from the bottom stack: brackets, pointers, then a panel.
     const bracket = (groupsOf.has(row.id) ? BRACKET_SPACE : 0) + (reachRows.has(row.id) ? reachBelow(t) : 0);
-    const above = reachRows.has(row.id) ? reachAbove(t) : 0;
+    const prefixRows = prefixCount(row.id);
+    const above = reachRows.has(row.id) ? reachAbove(t) : prefixRows > 0 ? sizes.window(t) : 0;
     const room = pointerRoom(elements, row.id, t);
     const pointers = room > 0 ? room + 8 : 0;
     const panel = bufferRows.has(row.id)
       ? sizes.cell(t) + sizes.marker(t) + 8
       : hasCounts && soloBars
         ? sizes.countKeys(t) + sizes.cell(t) + sizes.marker(t) + 8
-        : 0;
+        : prefixRows > 0
+          ? prefixBand(t, prefixRows)
+          : 0;
     const lowest = bottomTop - 6 - panel - pointers - bracket - 8;
 
     let top: number;

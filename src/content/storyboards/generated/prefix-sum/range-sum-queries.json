@@ -1,0 +1,496 @@
+{
+  "id": "prefix-sum-range-sum-queries",
+  "title": "Range Sum Queries: Read the Altimeter Twice",
+  "concept": "Prefix Sum",
+  "category": "dsa",
+  "summary": "Write down the altimeter at every camp once; then any stretch of days is the later reading minus the earlier one.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A hiker logs each day's elevation change in hundreds of metres: up 4, down 1, up 3, up 6, up 2, and an altimeter reading at each night's camp. Friends ask how much the hike climbed over various stretches of days.",
+    "mapping": [
+      {
+        "real": "A day's elevation change",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "The altimeter reading before day i",
+        "abstract": "prefix[i]"
+      },
+      {
+        "real": "Climb over days l to r",
+        "abstract": "prefix[r + 1] − prefix[l]"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "prefix sum"
+  ],
+  "takeaway": {
+    "pattern": "Prefix sums",
+    "summary": "Build prefix[i + 1] = prefix[i] + nums[i] once; then the sum of nums[l..r] is prefix[r + 1] − prefix[l], one subtraction per query.",
+    "timeComplexity": "O(n + q)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Many range-sum questions over an array that doesn't change",
+      "Any total over a stretch: difference of two running totals"
+    ]
+  },
+  "trace": {
+    "problem": "prefix-sum/range-sum-queries",
+    "args": [
+      [
+        4,
+        -1,
+        3,
+        6,
+        2
+      ],
+      [
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          0,
+          4
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v18",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T22:22:08.229Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "hike",
+      "narration": "A hiker logs each day's elevation change, in hundreds of metres: up 4, down 1, up 3, up 6, and up 2. Friends keep asking how much the hike climbed over some stretch of days.",
+      "caption": "Five days of climbing: +4, −1, +3, +6, +2 (× 100 m)",
+      "durationInFrames": 456,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Adding up the days for every question costs a pass over the stretch each time. An altimeter does better: read it at the start and the end of a stretch, and subtract.",
+      "caption": "Re-adding the days for every question is slow",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        }
+      ]
+    },
+    {
+      "id": "first",
+      "narration": "Note the altimeter at every camp: 0 at the trailhead, before day 0, then 4 after day 0. Each reading sits between two days.",
+      "caption": "The altimeter reads 0 at the trailhead, 4 after day 0",
+      "durationInFrames": 324,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "walking",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "built",
+      "narration": "Keep going: 3, 6, 12, and 14 after the last day. One pass builds every reading.",
+      "caption": "Readings 0, 4, 3, 6, 12, 14: built in one pass",
+      "durationInFrames": 229,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "p-i",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "walking",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "q1",
+      "narration": "Days 0 to 2? The reading after day 2 is 6, the one before day 0 is 0. The climb is 6.",
+      "caption": "Days 0–2: 6 − 0 = 6",
+      "durationInFrames": 300,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "p-l",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "from",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "l"
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "to",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "r"
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "climb"
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "narration": "Days 1 to 3: the reading after day 3 is 12, and before day 1 it was 4. 12 minus 4 is 8. Mind the off-by-one: a stretch ending on day r uses the cell after it.",
+      "caption": "Days 1–3: 12 − 4 = 8",
+      "durationInFrames": 480,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "p-l",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "from",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "l"
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "to",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "r"
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "climb"
+        }
+      ]
+    },
+    {
+      "id": "q3",
+      "narration": "Just day 4: 14 minus 12, so 2.",
+      "caption": "Day 4 alone: 14 − 12 = 2",
+      "durationInFrames": 132,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "p-l",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "from",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "l"
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "to",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "r"
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "climb"
+        }
+      ]
+    },
+    {
+      "id": "q4",
+      "narration": "The whole hike: 14 minus 0, so 14. Every question took one subtraction.",
+      "caption": "The whole hike: 14 − 0 = 14",
+      "durationInFrames": 192,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "day 0",
+            "day 1",
+            "day 2",
+            "day 3",
+            "day 4"
+          ]
+        },
+        {
+          "id": "p-l",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "from",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "l"
+        },
+        {
+          "id": "p-r",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "days",
+          "label": "to",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "r"
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "altimeter",
+          "spanLabel": "climb"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Climbs",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Days are the array, and readings are prefix sums. Build them once in O(n); then each query is O(1): prefix of r plus 1, minus prefix of l.",
+      "caption": "Readings are prefix sums: sum(l..r) = prefix[r + 1] − prefix[l]",
+      "durationInFrames": 372,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "days",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]",
+            "nums[4]"
+          ]
+        },
+        {
+          "id": "alt",
+          "enterAt": 0,
+          "type": "prefix-row",
+          "rowId": "days",
+          "name": "prefix",
+          "label": "prefix",
+          "spanLabel": "sum"
+        }
+      ]
+    }
+  ]
+}

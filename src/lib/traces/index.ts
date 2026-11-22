@@ -28,6 +28,11 @@ import { gasStationTrace } from "./greedy/gas-station";
 import { jumpGameTrace } from "./greedy/jump-game";
 import { lemonadeChangeTrace } from "./greedy/lemonade-change";
 import { partitionLabelsTrace } from "./greedy/partition-labels";
+import { findPivotIndexTrace } from "./prefix-sum/find-pivot-index";
+import { rangeSumQueriesTrace } from "./prefix-sum/range-sum-queries";
+import { subarraySumEqualsKTrace } from "./prefix-sum/subarray-sum-equals-k";
+import { productOfArrayExceptSelfTrace } from "./prefix-sum/product-of-array-except-self";
+import { submatricesThatSumToTargetTrace } from "./prefix-sum/submatrices-that-sum-to-target";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -153,6 +158,11 @@ const definitions = [
   gasStationTrace,
   partitionLabelsTrace,
   candyTrace,
+  findPivotIndexTrace,
+  rangeSumQueriesTrace,
+  subarraySumEqualsKTrace,
+  productOfArrayExceptSelfTrace,
+  submatricesThatSumToTargetTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

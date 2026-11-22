@@ -10,6 +10,7 @@ import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
 import { dpProblems } from "./fixtures/dp-fit";
 import { greedyProblems } from "./fixtures/greedy-fit";
+import { prefixProblems } from "./fixtures/prefix-fit";
 import { raceProblems } from "./fixtures/race-fit";
 import { backtrackProblems } from "./fixtures/backtrack-fit";
 import { stackProblems } from "./fixtures/stack-fit";
@@ -78,6 +79,8 @@ describe("video text at phone width", () => {
         "partial",
         "partition",
         "pointer",
+        "prefix-grid",
+        "prefix-row",
         "queue",
         "race",
         "reach",
@@ -111,6 +114,16 @@ describe("video text at phone width", () => {
     const problems = storyboards.flatMap((storyboard) =>
       storyboard.scenes.flatMap((scene) =>
         greedyProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+      ),
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("prefix rows and grids fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        prefixProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
       ),
     );
     expect(problems).toEqual([]);
@@ -401,6 +414,10 @@ describe("video text at phone width", () => {
           }
           case "race":
             for (const problem of raceProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "prefix-row":
+          case "prefix-grid":
+            for (const problem of prefixProblems(scene.elements, phone)) fail(problem);
             break;
           case "choice":
           case "reach":

@@ -57,10 +57,7 @@ export function candy(ratings: number[]): Trace {
     const key = (raised && !sawRaise) || (agree && !sawAgree);
     if (raised) sawRaise = true;
     if (agree) sawAgree = true;
-    const reads = [
-      { at: cell(0, i), label: "left" },
-      ...(rise ? [{ at: cell(1, i + 1), label: "+1" }] : []),
-    ];
+    const reads = [{ at: cell(0, i), label: "left" }, ...(rise ? [{ at: cell(1, i + 1), label: "+1" }] : [])];
     const chosen = !rise ? [0] : raised ? [1] : left > right ? [0] : [0, 1];
     steps.push({
       kind: raised ? "right-raise" : "right-keep",

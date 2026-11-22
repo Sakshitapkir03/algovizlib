@@ -548,6 +548,74 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one reach" });
           break;
         }
+        case "prefix-row": {
+          const n = rows.get(el.rowId);
+          const row = scene.elements.find((e) => e.id === el.rowId);
+          if (row?.type !== "item-row" || n === undefined) {
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "rowId"],
+              message: `A prefix-row sits under an item-row in the same scene; there's no item-row "${el.rowId}"`,
+            });
+            break;
+          }
+          if (el.values.length !== n + 1) {
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "values"],
+              message: `A prefix-row has one cell per boundary: ${n + 1} for ${n} items (it has ${el.values.length})`,
+            });
+            break;
+          }
+          const cells = [el.current, ...(el.reads ?? []), ...(el.spans ?? []).flatMap((sp) => [sp.from, sp.to])];
+          if (cells.some((c) => c !== undefined && c > n))
+            ctx.addIssue({ code: "custom", path, message: `cells are 0–${n} (boundaries of ${n} items)` });
+          (el.spans ?? []).forEach((sp, k) => {
+            if (sp.from > sp.to)
+              ctx.addIssue({ code: "custom", path: [...path, "spans", k], message: "a span's from must not be after to" });
+            const [a, b] = [el.values[sp.from], el.values[sp.to]];
+            // A sum's span is the difference of its two cells (later minus earlier, for a suffix row earlier minus later).
+            if (el.op === "+" && a !== null && b !== null && a !== undefined && b !== undefined) {
+              const diff = el.direction === "prefix" ? b - a : a - b;
+              if (sp.to > sp.from && diff !== sp.value)
+                ctx.addIssue({
+                  code: "custom",
+                  path: [...path, "spans", k, "value"],
+                  message: `the span ${sp.from}–${sp.to} is ${el.direction === "prefix" ? `${b} − ${a}` : `${a} − ${b}`} = ${diff}, not ${sp.value}`,
+                });
+            }
+          });
+          const spans = scene.elements.flatMap((e) =>
+            e.type === "prefix-row" && e.rowId === el.rowId ? (e.spans ?? []).filter((sp) => sp.to > sp.from) : [],
+          );
+          if (spans.some((a, i) => spans.some((b, j) => i < j && a.from < b.to && b.from < a.to)))
+            ctx.addIssue({ code: "custom", path, message: "spans over one row must not overlap (their brackets share a strip)" });
+          if (scene.elements.filter((e) => e.type === "prefix-row" && e.rowId === el.rowId).length > 2)
+            ctx.addIssue({ code: "custom", path, message: "An item-row has at most two prefix-rows" });
+          break;
+        }
+        case "prefix-grid": {
+          const R = el.matrix.length;
+          const C = el.matrix[0].length;
+          if (el.matrix.some((row) => row.length !== C))
+            ctx.addIssue({ code: "custom", path: [...path, "matrix"], message: "every matrix row has the same length" });
+          if (el.prefix.length !== R + 1 || el.prefix.some((row) => row.length !== C + 1))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "prefix"],
+              message: `the prefix grid is (${R} + 1) × (${C} + 1) for a ${R} × ${C} matrix`,
+            });
+          const inMatrix = (r: { r1: number; c1: number; r2: number; c2: number }) =>
+            r.r1 <= r.r2 && r.c1 <= r.c2 && r.r2 < R && r.c2 < C;
+          if (el.rects.some((r) => !inMatrix(r)) || (el.found && !inMatrix(el.found)))
+            ctx.addIssue({ code: "custom", path: [...path, "rects"], message: `rectangles lie inside the ${R} × ${C} matrix (r1 ≤ r2, c1 ≤ c2)` });
+          const inPrefix = ([r, c]: [number, number]) => r <= R && c <= C;
+          if ((el.current && !inPrefix(el.current)) || el.marks.some((m) => !inPrefix(m.at)))
+            ctx.addIssue({ code: "custom", path: [...path, "marks"], message: `prefix cells are 0–${R} × 0–${C}` });
+          if (scene.elements.filter((e) => e.type === "prefix-grid").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one prefix-grid" });
+          break;
+        }
         case "hash-map": {
           const keys = el.entries.map((e) => e.key);
           if (new Set(keys).size !== keys.length)

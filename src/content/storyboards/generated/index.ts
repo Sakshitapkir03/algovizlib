@@ -46,6 +46,11 @@ import linkedListMergeTwoSortedLists from "./linked-list/merge-two-sorted-lists.
 import linkedListRemoveNthNodeFromEnd from "./linked-list/remove-nth-node-from-end.json";
 import linkedListReorderList from "./linked-list/reorder-list.json";
 import linkedListReverseLinkedList from "./linked-list/reverse-linked-list.json";
+import prefixSumFindPivotIndex from "./prefix-sum/find-pivot-index.json";
+import prefixSumProductOfArrayExceptSelf from "./prefix-sum/product-of-array-except-self.json";
+import prefixSumRangeSumQueries from "./prefix-sum/range-sum-queries.json";
+import prefixSumSubarraySumEqualsK from "./prefix-sum/subarray-sum-equals-k.json";
+import prefixSumSubmatricesThatSumToTarget from "./prefix-sum/submatrices-that-sum-to-target.json";
 import slidingWindowLongestRepeatingCharacterReplacement from "./sliding-window/longest-repeating-character-replacement.json";
 import slidingWindowLongestSubstringWithoutRepeatingCharacters from "./sliding-window/longest-substring-without-repeating-characters.json";
 import slidingWindowMaximumSumSubarrayOfSizeK from "./sliding-window/maximum-sum-subarray-of-size-k.json";
@@ -121,6 +126,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "linked-list/remove-nth-node-from-end": loadStoryboard(linkedListRemoveNthNodeFromEnd),
   "linked-list/reorder-list": loadStoryboard(linkedListReorderList),
   "linked-list/reverse-linked-list": loadStoryboard(linkedListReverseLinkedList),
+  "prefix-sum/find-pivot-index": loadStoryboard(prefixSumFindPivotIndex),
+  "prefix-sum/product-of-array-except-self": loadStoryboard(prefixSumProductOfArrayExceptSelf),
+  "prefix-sum/range-sum-queries": loadStoryboard(prefixSumRangeSumQueries),
+  "prefix-sum/subarray-sum-equals-k": loadStoryboard(prefixSumSubarraySumEqualsK),
+  "prefix-sum/submatrices-that-sum-to-target": loadStoryboard(prefixSumSubmatricesThatSumToTarget),
   "sliding-window/longest-repeating-character-replacement": loadStoryboard(slidingWindowLongestRepeatingCharacterReplacement),
   "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(slidingWindowLongestSubstringWithoutRepeatingCharacters),
   "sliding-window/maximum-sum-subarray-of-size-k": loadStoryboard(slidingWindowMaximumSumSubarrayOfSizeK),

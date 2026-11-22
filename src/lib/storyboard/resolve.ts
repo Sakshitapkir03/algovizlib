@@ -526,6 +526,44 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             pieces: el.pieces ?? r.pieces ?? [],
           };
         }
+        case "prefix-row": {
+          const pick = (st?: TraceStep) => st?.prefix?.find((r) => r.name === (el.name ?? "prefix"));
+          if (el.op && el.direction && el.values)
+            return { ...el, op: el.op, direction: el.direction, values: el.values };
+          if (step && !pick(step)) return (noState(el, "values", `prefix row "${el.name ?? "prefix"}"`), el);
+          const r = pick(step);
+          // An unbound scene (the intro) shows the row empty, shaped like the trace's.
+          const shape = r ?? trace?.steps.map(pick).find(Boolean);
+          if (!shape) return (missing(el, "values"), el);
+          return {
+            ...el,
+            op: el.op ?? shape.op,
+            direction: el.direction ?? shape.direction,
+            values: el.values ?? (r ? r.values : shape.values.map(() => null)),
+            current: el.current ?? r?.current,
+            reads: el.reads ?? r?.reads,
+            spans: el.spans ?? r?.spans,
+          };
+        }
+        case "prefix-grid": {
+          const matrix = el.matrix ?? trace?.matrix;
+          if (!matrix) return (missing(el, "matrix"), el);
+          if (step && !step.prefixGrid) return (noState(el, "prefix", "prefix grid"), el);
+          const g = step?.prefixGrid;
+          // An unbound scene shows the grid before it's built: the 0 row and column.
+          const empty = Array.from({ length: matrix.length + 1 }, (_, i) =>
+            Array.from({ length: matrix[0].length + 1 }, (_, j) => (i === 0 || j === 0 ? 0 : null)),
+          );
+          return {
+            ...el,
+            matrix,
+            prefix: el.prefix ?? g?.prefix ?? empty,
+            current: el.current ?? g?.current,
+            rects: el.rects ?? g?.rects ?? [],
+            marks: el.marks ?? g?.marks ?? [],
+            found: el.found ?? g?.found,
+          };
+        }
         case "hash-map": {
           if (el.entries && el.kind && el.display) return el;
           if (step && !step.map) return (noState(el, "entries", "map"), el);

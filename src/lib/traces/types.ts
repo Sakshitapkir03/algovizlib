@@ -156,6 +156,45 @@ export type TraceStep = {
   choice?: TraceChoice;
   /** Greedy: the stretch of the row covered so far (reach, the current piece), this step's jump, closed pieces. */
   reach?: TraceReach;
+  /** Prefix sums (or products) as they're built, one row per running total. See `TracePrefixRow`. */
+  prefix?: TracePrefixRow[];
+  /** A 2D prefix grid over `trace.matrix` as it's built, with this step's rectangles. See `TracePrefixGrid`. */
+  prefixGrid?: TracePrefixGrid;
+};
+
+/**
+ * A running total over the row, one cell per boundary: `values[i]` combines the items before position i (`values[0]`
+ * is the empty total, 0 for sums or 1 for products; `values[n]` covers every item), or, for a `suffix` row, the items
+ * from position i on (`values[n]` is the empty total), `null` until it's built. A row's
+ * `name` is what an element binds to ("prefix", "left", "right"). `current` is the cell this step built, `reads` cells
+ * this step uses, and each span is a stretch of items `from`…`to − 1` answered by the cells at boundaries `from` and
+ * `to`, with its `value` (for sums, `values[to] − values[from]`; `from = to` is an empty stretch).
+ */
+export type TracePrefixRow = {
+  name: string;
+  op: "+" | "×";
+  direction: "prefix" | "suffix";
+  values: (number | null)[];
+  current?: number;
+  reads?: number[];
+  spans?: { from: number; to: number; value: number }[];
+};
+
+/** A rectangle of matrix cells, rows r1…r2 and columns c1…c2 (inclusive). */
+export type TraceRect = { r1: number; c1: number; r2: number; c2: number };
+
+/**
+ * A 2D prefix grid: `prefix[i][j]` is the sum of matrix rows 0…i − 1 and columns 0…j − 1 (row 0 and column 0 are the
+ * empty 0s), `null` until built. `current` is the prefix cell this step built or read last; `rects` are matrix
+ * rectangles this step adds (+) or subtracts (−), and `marks` the prefix cells standing for them; `found` is a
+ * rectangle that hit the target.
+ */
+export type TracePrefixGrid = {
+  prefix: (number | null)[][];
+  current?: [number, number];
+  rects: (TraceRect & { sign: "+" | "−" })[];
+  marks: { at: [number, number]; sign: "+" | "−" }[];
+  found?: TraceRect;
 };
 
 /**
@@ -436,6 +475,8 @@ export type Trace = {
   searchTree?: { nodes: TraceSearchNode[] };
   /** A DP table's shape and headers (row 0 / column 0 are often the empty prefix). */
   dp?: { rows: number; cols: number; rowHeaders?: string[]; colHeaders?: string[] };
+  /** A matrix (rows of numbers) that a prefix grid is built over (Number of Submatrices That Sum to Target). */
+  matrix?: number[][];
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */
   secondRow?: { values: TraceValue[] };
   pointerNames: string[];
