@@ -50,6 +50,10 @@ function setup(existing: Record<string, "hand-written" | "generated"> = {}) {
       recordFailure: (p) => void failures.set(p, (failures.get(p) ?? 0) + 1),
       reset: (p) => void failures.delete(p),
     },
+    savedRepairs: (p) => {
+      const generation = written.get(p)?.generation;
+      return generation?.provider === "claude-code" ? generation.repairAttempts : 0;
+    },
     findTarget: (p) => findTarget(catalog, p),
     modelId: "claude-opus-5-5",
     now: () => new Date("2026-11-18T12:00:00.000Z"),
@@ -130,6 +134,38 @@ describe("validateDraftFiles", () => {
     expect(summary.rows[0]).toMatchObject({ status: "saved", repairs: 2 });
     expect(t.written.get(CONTAINER)?.generation?.repairAttempts).toBe(2);
     expect(t.failures.has(CONTAINER)).toBe(false);
+  });
+
+  it("saving again never lowers the recorded repairs, whatever failed in between", () => {
+    const t = setup();
+    // Gas Station's history: one failed validation, a save, then a re-save with --force after an edit.
+    validateDraftFiles([file(CONTAINER, brokenDraft())], OPTS, t.deps);
+    validateDraftFiles([file(CONTAINER, buildDraft(CONTAINER))], OPTS, t.deps);
+    expect(t.written.get(CONTAINER)?.generation?.repairAttempts).toBe(1);
+    const forced = { dryRun: false, force: true };
+    const resaved = validateDraftFiles([file(CONTAINER, buildDraft(CONTAINER))], forced, t.deps);
+    expect(resaved.rows[0]).toMatchObject({ status: "saved", repairs: 1 });
+    expect(t.written.get(CONTAINER)?.generation?.repairAttempts).toBe(1);
+    // A failure after the save adds to the count, in the dry run's report and on the next save.
+    validateDraftFiles([file(CONTAINER, brokenDraft())], forced, t.deps);
+    const dry = validateDraftFiles(
+      [file(CONTAINER, buildDraft(CONTAINER))],
+      { ...OPTS, dryRun: true },
+      t.deps,
+    );
+    expect(dry.rows[0]).toMatchObject({ repairs: 2 });
+    validateDraftFiles([file(CONTAINER, buildDraft(CONTAINER))], forced, t.deps);
+    expect(t.written.get(CONTAINER)?.generation?.repairAttempts).toBe(2);
+  });
+
+  it("a model's repairs don't carry over to a storyboard authored over it", () => {
+    const t = setup();
+    validateDraftFiles([file(CONTAINER, brokenDraft())], OPTS, t.deps);
+    validateDraftFiles([file(CONTAINER, buildDraft(CONTAINER))], OPTS, t.deps);
+    const saved = t.written.get(CONTAINER)!;
+    t.written.set(CONTAINER, { ...saved, generation: { ...saved.generation!, provider: "google" } });
+    validateDraftFiles([file(CONTAINER, buildDraft(CONTAINER))], { dryRun: false, force: true }, t.deps);
+    expect(t.written.get(CONTAINER)?.generation?.repairAttempts).toBe(0);
   });
 
   it("--dry-run validates and writes nothing", () => {

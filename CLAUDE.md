@@ -824,6 +824,8 @@ pnpm storyboards:validate-draft .cache/drafts/two-pointers/*.json --model claude
 - Valid drafts are saved exactly like generated ones (JSON, regenerated registry, cache entry) with
   `generation.provider: "claude-code"`, `model` from `--model` (default `claude-code`), the prompt version, and
   `repairAttempts` = failed validations before it passed (counted in `.cache/drafts/attempts.json`, dry runs included).
+  The log resets on save, so a re-save (`--force`) adds the failures since then to the count already recorded on the
+  saved storyboard (when this fallback wrote it): the count never drops.
   The generator's `--missing` then treats the problem as done.
 - Hand-written storyboards are never replaced; an existing generated one only with `--force`.
 - Generated JSON is in `.prettierignore`: the writer owns its formatting.

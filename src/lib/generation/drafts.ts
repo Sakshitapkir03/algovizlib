@@ -37,6 +37,12 @@ export type DraftDeps = {
   cache: GenerationCache;
   writer: StoryboardWriter;
   attempts: AttemptLog;
+  /**
+   * Repairs already recorded on the problem's saved storyboard when this fallback authored it (0 otherwise). The
+   * attempt log resets on every save, so a re-save (`--force`) adds the failures since then to this, and the count
+   * never drops.
+   */
+  savedRepairs: (problem: string) => number;
   /** The catalog target for "pattern/slug", including whether it already has a storyboard. */
   findTarget: (problem: string) => GenerationTarget | undefined;
   /** Recorded as the storyboard's `generation.model` ("claude-code" if unknown). */
@@ -59,12 +65,14 @@ export function validateDraftFiles(
   const rows: RowResult[] = files.map((file): RowResult => {
     const problem = problemKeyFromPath(file.path);
     const row: RowResult = { problem, status: "failed", repairs: 0, requests: 0, fromCache: false };
+    // Failed validations since the last save, plus those recorded when it was saved.
+    const repairsSoFar = () => deps.savedRepairs(problem) + deps.attempts.failures(problem);
     const fail = (
       issues: ValidationIssue[],
       detail = `${issues.length} issue${issues.length === 1 ? "" : "s"}`,
     ) => {
       deps.attempts.recordFailure(problem);
-      return { ...row, detail, issues, repairs: deps.attempts.failures(problem) };
+      return { ...row, detail, issues, repairs: repairsSoFar() };
     };
 
     const target = deps.findTarget(problem);
@@ -94,7 +102,7 @@ export function validateDraftFiles(
       provider: AUTHOR_PROVIDER,
       model: deps.modelId,
       generatedAt: deps.now().toISOString(),
-      repairAttempts: deps.attempts.failures(problem),
+      repairAttempts: repairsSoFar(),
     };
     const evaluation = evaluateDraft(raw, prepared.ctx, meta);
     if (!evaluation.ok) return fail(evaluation.issues);

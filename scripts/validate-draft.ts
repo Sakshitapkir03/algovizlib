@@ -62,6 +62,7 @@ function main() {
       cache: createFileCache(path.join(ROOT, ".cache/generation")),
       writer,
       attempts: createFileAttemptLog(path.join(ROOT, ".cache/drafts/attempts.json")),
+      savedRepairs: (problem) => savedRepairs(problem),
       findTarget: (problem) => findTarget(catalog, problem),
       modelId: values.model,
       now: () => new Date(),
@@ -81,3 +82,16 @@ function main() {
 }
 
 main();
+
+/** Repairs recorded on a saved storyboard this fallback authored (a model's repairs don't carry over). */
+function savedRepairs(problem: string): number {
+  try {
+    const file = path.join(ROOT, "src/content/storyboards/generated", `${problem}.json`);
+    const saved = JSON.parse(readFileSync(file, "utf8")) as {
+      generation?: { provider?: string; repairAttempts?: number };
+    };
+    return saved.generation?.provider === AUTHOR_PROVIDER ? (saved.generation.repairAttempts ?? 0) : 0;
+  } catch {
+    return 0;
+  }
+}
