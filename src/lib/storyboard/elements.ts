@@ -18,7 +18,8 @@ import { z } from "zod";
  * "freq-table", and "deque"; binary search adds "search-range", "number-line", "cut", and item-row `traceRow`;
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
- * "house-row"; stacks add "stack" (apart from "call-stack"); priority queues add "heap" (built
+ * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
+ * "search-tree" and "partial"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -740,6 +741,67 @@ export const stackSourceSchema = z.object({
   items: stackShape.items.optional(),
 });
 
+export const searchNodeSchema = z.object({
+  id: index,
+  parent: index.nullable(),
+  /** The partial solution's state ("4" left, the XOR so far, "c2"). */
+  label: z.string().max(6),
+  /** The choice that led here ("+4", "skip"). */
+  edge: z.string().max(8).optional(),
+  /** A branch cut without exploring it, and why ("6 > 4", "3 attacked"). */
+  pruned: z.string().max(14).optional(),
+});
+
+const searchTreeShape = {
+  ...baseElement,
+  type: z.literal("search-tree"),
+  /** The whole decision tree; only reached nodes are drawn. */
+  nodes: z.array(searchNodeSchema).min(1).max(40),
+  reached: z.array(index).default([]),
+  /** Root first, to the current node (drawn in the accent). */
+  path: z.array(index).default([]),
+  current: index.optional(),
+  /** Explored, with no solution below (faded). */
+  dead: z.array(index).default([]),
+  /** Complete answers (✓). */
+  solutions: z.array(index).default([]),
+  /** The node this scene stepped back from. */
+  undone: index.optional(),
+  /** Finished subtrees without a solution, folded into their root. */
+  collapsed: z.array(index).optional(),
+};
+export const searchTreeElementSchema = z.object(searchTreeShape);
+export const searchTreeSourceSchema = z.object({
+  ...searchTreeShape,
+  /** Omit everything to take the tree from the trace and the search from the step (an unbound scene shows the root). */
+  nodes: searchTreeShape.nodes.optional(),
+  reached: searchTreeShape.reached.removeDefault().optional(),
+  path: searchTreeShape.path.removeDefault().optional(),
+  dead: searchTreeShape.dead.removeDefault().optional(),
+  solutions: searchTreeShape.solutions.removeDefault().optional(),
+});
+
+const partialShape = {
+  ...baseElement,
+  type: z.literal("partial"),
+  /** The answer being built, in order. */
+  items: z.array(z.string().trim().min(1).max(8)).max(8),
+  /** The choice just added (the last item), or just taken back off. */
+  added: z.string().max(8).optional(),
+  removed: z.string().max(8).optional(),
+  /** Every answer found so far. */
+  found: z.array(z.string().trim().min(1).max(18)).max(10),
+  label: nonEmpty.max(14).default("building"),
+  foundLabel: nonEmpty.max(14).default("found"),
+};
+export const partialElementSchema = z.object(partialShape);
+export const partialSourceSchema = z.object({
+  ...partialShape,
+  /** Omit items/added/removed/found to take them from the bound step (empty when unbound). */
+  items: partialShape.items.optional(),
+  found: partialShape.found.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -919,6 +981,8 @@ export const elementSchemas = [
   staircaseElementSchema,
   houseRowElementSchema,
   stackElementSchema,
+  searchTreeElementSchema,
+  partialElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -955,6 +1019,8 @@ export const elementSourceSchemas = [
   staircaseSourceSchema,
   houseRowSourceSchema,
   stackSourceSchema,
+  searchTreeSourceSchema,
+  partialSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1002,6 +1068,9 @@ export type DpTableElement = ElementOf<"dp-table">;
 export type StaircaseElement = ElementOf<"staircase">;
 export type HouseRowElement = ElementOf<"house-row">;
 export type StackElement = ElementOf<"stack">;
+export type SearchTreeElement = ElementOf<"search-tree">;
+export type SearchNode = z.infer<typeof searchNodeSchema>;
+export type PartialElement = ElementOf<"partial">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

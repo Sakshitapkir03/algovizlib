@@ -1,0 +1,239 @@
+{
+  "id": "backtracking-n-queens",
+  "title": "N-Queens: Four Queens, No Attacks",
+  "concept": "Backtracking",
+  "category": "dsa",
+  "summary": "Place a queen row by row, skip attacked squares, and back up from dead ends.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "matrix",
+    "constraint search",
+    "pruning"
+  ],
+  "takeaway": {
+    "pattern": "Backtracking with constraint checks",
+    "summary": "Place one queen per row. Skip squares an earlier queen attacks (column or diagonal); if a row has no safe square, undo the queen above and try its next square. A queen in the last row is a solution.",
+    "timeComplexity": "O(n!) in the worst case, far less with pruning",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Placing items under rules that rule out squares",
+      "Puzzles: Sudoku, N-Queens, word search"
+    ]
+  },
+  "trace": {
+    "problem": "backtracking/n-queens",
+    "args": [
+      4
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v14",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T00:00:40.051Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "board",
+      "narration": "Place four queens on a four by four board so that no two share a row, a column, or a diagonal. Find every way.",
+      "caption": "Place 4 queens on a 4×4 board, none attacking",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        }
+      ]
+    },
+    {
+      "id": "too-many",
+      "narration": "There are 1,820 ways to drop four queens on sixteen squares. Instead, place one queen per row and skip any square already attacked.",
+      "caption": "Trying every arrangement of 4 queens is 1,820 boards",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        }
+      ]
+    },
+    {
+      "id": "first",
+      "narration": "Row zero: the first square is safe, so place a queen there.",
+      "caption": "Row 0: try the first square",
+      "durationInFrames": 180,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "queens",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "queens",
+          "foundLabel": "boards"
+        }
+      ]
+    },
+    {
+      "id": "attacked",
+      "narration": "In row one, the queen above attacks two squares, its column and its diagonal. They're cut without trying them.",
+      "caption": "Row 1: two squares are attacked, never tried",
+      "durationInFrames": 264,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "queens",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "queens",
+          "foundLabel": "boards"
+        }
+      ]
+    },
+    {
+      "id": "dead-end",
+      "narration": "With a queen in row one, column two, every square in row two is attacked. No queen fits: a dead end.",
+      "caption": "Row 2: every square is attacked. Dead end",
+      "durationInFrames": 288,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "queens",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "queens",
+          "foundLabel": "boards"
+        }
+      ]
+    },
+    {
+      "id": "undo",
+      "narration": "Back up: lift the queen from row one and move it to its next safe square.",
+      "caption": "Lift the queen from row 1 and try its next square",
+      "durationInFrames": 229,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "queens",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "queens",
+          "foundLabel": "boards"
+        }
+      ]
+    },
+    {
+      "id": "solution",
+      "narration": "That branch dies too, so the first queen moves over. Starting from column one, every row finds a safe square: the first board.",
+      "caption": "A queen in every row, no attacks: the first board",
+      "durationInFrames": 312,
+      "traceStep": 19,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "queens",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "queens",
+          "foundLabel": "boards"
+        }
+      ]
+    },
+    {
+      "id": "all",
+      "narration": "The search goes on through the last two starting squares. Branches that found nothing fold away, and a mirror-image board turns up.",
+      "caption": "Every first square tried: dead branches folded away",
+      "durationInFrames": 300,
+      "traceStep": 48,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Four queens fit in exactly two ways. Placing row by row, skipping attacked squares, and backing up from dead ends is backtracking.",
+      "caption": "Two boards: place, skip attacked squares, back up",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Valid boards",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

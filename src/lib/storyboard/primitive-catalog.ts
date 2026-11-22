@@ -66,6 +66,10 @@ export const primitiveCatalog: Record<ElementType, string> = {
     'House Robber\'s street: houses with their cash, neighbors linked by a shared alarm, the house being decided ringed, and the best plan so far marked "✓ take" or "✕ skip". House i sits over table cell i. Omit everything to take it from the trace and the step; an unbound scene shows the bare street. Put it before the dp-table.',
   stack:
     'A stack as a column beside the input, bottom to top, "top" marked: pushes drop in, pops lift out; a monotonic stack is labeled "increasing" or "decreasing". When a pop resolves an answer, an arc on the input row links the popped item to the item that resolved it ("+3", "match"), and resolved answers stay under the input; text built so far shows in a strip ("building: xyz"). Set `rowId` to the input row; omit everything else to take the step\'s stack (an unbound scene shows it empty). Use it in every bound scene of a stack trace.',
+  "search-tree":
+    'A backtracking decision tree: nodes are partial solutions (labeled with their state), edges the choices ("+4", "skip"). Omit everything to take the tree from the trace and the search from the step: nodes appear as they\'re reached, the path from the root is in the accent and the current node ringed, finished dead ends fade (big ones fold into their root), pruned branches are dashed stubs with the reason ("6 > 4"), and solutions get ✓. An unbound scene shows just the root. Use exactly one per scene in every scene of a search.',
+  partial:
+    'The answer being built, as chips ("building: 4 4"): the newest choice slides in, an undone one slides out struck through; beside it every answer found so far. Omit `items`/`added`/`removed`/`found` to take them from the step (an unbound scene shows it empty); set `label` and `foundLabel` to the story\'s words. Use it in every bound scene of a search.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

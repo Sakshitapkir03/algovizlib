@@ -380,6 +380,11 @@ describe("selectTargets", () => {
       "heap/top-k-frequent-elements",
       "heap/k-closest-points-to-origin",
       "heap/find-median-from-data-stream",
+      "backtracking/sum-of-all-subset-xor-totals",
+      "backtracking/subsets",
+      "backtracking/permutations",
+      "backtracking/combination-sum",
+      "backtracking/n-queens",
       "dynamic-programming/climbing-stairs",
       "dynamic-programming/house-robber",
       "dynamic-programming/coin-change",
@@ -579,7 +584,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v13");
+    expect(currentPrompts.version).toBe("storyboard-v14");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

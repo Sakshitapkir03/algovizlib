@@ -3,6 +3,9 @@ import { finalPositions, isHeap, keepsOrder, runTrace, type Trace, type TraceSte
 import type {
   TraceHeap,
   TracePile,
+  TraceExplore,
+  TracePartial,
+  TraceSearchNode,
   TraceBfs,
   TraceLinks,
   TraceQueueItem,
@@ -215,6 +218,40 @@ function pileFields(p: Partial<TracePile>): Record<string, string> {
     text: JSON.stringify(p.text ? { label: p.text.label, value: p.text.value } : null),
   };
 }
+
+/** A search's state field by field, in a canonical text form (empty and missing read the same). */
+function exploreFields(x: Partial<TraceExplore>): Record<string, string> {
+  const ids = (list?: readonly number[]) => JSON.stringify([...(list ?? [])].sort((a, b) => a - b));
+  return {
+    reached: ids(x.reached),
+    path: JSON.stringify(x.path ?? []),
+    current: JSON.stringify(x.current ?? null),
+    dead: ids(x.dead),
+    solutions: ids(x.solutions),
+    undone: JSON.stringify(x.undone ?? null),
+    collapsed: ids(x.collapsed),
+  };
+}
+
+function partialFields(p: Partial<TracePartial>): Record<string, string> {
+  return {
+    items: JSON.stringify(p.items ?? []),
+    added: JSON.stringify(p.added ?? null),
+    removed: JSON.stringify(p.removed ?? null),
+    found: JSON.stringify(p.found ?? []),
+  };
+}
+
+const canonSearchNodes = (nodes: readonly TraceSearchNode[]) =>
+  JSON.stringify(
+    nodes.map((n) => ({
+      id: n.id,
+      parent: n.parent,
+      label: n.label,
+      edge: n.edge ?? null,
+      pruned: n.pruned ?? null,
+    })),
+  );
 
 /** A heap in a canonical form (every field present), for comparing with a trace step. */
 const canonHeap = (heap: Partial<TraceHeap>) =>
@@ -517,6 +554,32 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               "Without a traceStep, the table is empty (or the final table); omit cells/current/reads/chosen to take them from the trace",
               el.id,
               "cells",
+            );
+        }
+        if (el.type === "search-tree" || el.type === "partial") {
+          if (
+            el.type === "search-tree" &&
+            trace.searchTree &&
+            canonSearchNodes(el.nodes) !== canonSearchNodes(trace.searchTree.nodes)
+          )
+            push("The decision tree doesn't match the trace; omit nodes", el.id, "nodes");
+          // Unbound: nothing explored yet (the root alone, an empty answer), or the search as it ends.
+          const last = trace.steps.at(-1);
+          const [drawn, start, end] =
+            el.type === "search-tree"
+              ? [
+                  exploreFields(el),
+                  exploreFields({ reached: [0], path: [0] }),
+                  last?.explore && exploreFields(last.explore),
+                ]
+              : [partialFields(el), partialFields({}), last?.partial && partialFields(last.partial)];
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!same(start) && !same(end))
+            push(
+              `Without a traceStep, the ${el.type} shows the start (or the end); omit its state to take it from the trace`,
+              el.id,
+              el.type === "search-tree" ? "reached" : "items",
             );
         }
         if (el.type === "stack") {
@@ -1065,6 +1128,38 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           for (const field of Object.keys(expected))
             if (drawn[field] !== expected[field])
               push(`The ${el.type}'s ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "search-tree": {
+          if (trace.searchTree && canonSearchNodes(el.nodes) !== canonSearchNodes(trace.searchTree.nodes))
+            push("The decision tree doesn't match the trace; omit nodes", el.id, "nodes");
+          if (!step.explore) {
+            push(`Trace step ${stepIndex} has no search`, el.id, "reached");
+            break;
+          }
+          const expected = exploreFields(step.explore);
+          const drawn = exploreFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The search's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "partial": {
+          if (!step.partial) {
+            push(`Trace step ${stepIndex} has no answer being built`, el.id, "items");
+            break;
+          }
+          const expected = partialFields(step.partial);
+          const drawn = partialFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The answer's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
                 actual: drawn[field],
               });

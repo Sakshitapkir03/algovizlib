@@ -7,6 +7,7 @@ import type {
   GridElement,
   DpTableElement,
   HeapElement,
+  SearchTreeElement,
   StackElement,
   ItemRowElement,
   LinkedListElement,
@@ -153,6 +154,17 @@ export type PileLayout = {
   textTop?: number;
 };
 
+/** Where a search tree draws: each visible node's center (folded subtrees and unreached nodes aren't placed). */
+export type SearchLayout = {
+  nodeWidth: number;
+  nodeHeight: number;
+  levelGap: number;
+  center: (id: number) => { x: number; y: number } | undefined;
+  /** Leaves' spacing: nodes on one level are at least this far apart. */
+  pitch: number;
+  region: Region;
+};
+
 /** Where a call-stack draws: a column beside the tree, frames stacked from the bottom. */
 export type StackLayout = {
   left: number;
@@ -214,6 +226,7 @@ export type SceneLayout = {
   heapPanels?: HeapPanel[];
   dp?: DpLayout;
   pile?: PileLayout;
+  search?: SearchLayout;
 };
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
@@ -352,6 +365,9 @@ function bottomHeight(el: Element, t: TextMetrics): number {
       return t.size(TEXT.countKey) + 4 + sizes.cell(t) + 4 + sizes.marker(t);
     case "queue":
       return sizes.queueMarker(t) + sizes.cell(t) + 2 + sizes.marker(t);
+    case "partial":
+      // On a phone-sized player it's one row: the chips and a count of the answers found.
+      return t.compact ? sizes.cell(t) : 2 * sizes.cell(t) + 8;
     default:
       return 0;
   }
@@ -653,10 +669,12 @@ function layoutGrid(
   el: GridElement,
   t: TextMetrics,
   bottomTop: number,
+  // A board beside a search tree takes the left part of the stage.
+  area: { left: number; right: number } = { left: GRID.margin, right: VIDEO_WIDTH - GRID.margin },
 ): { grid: GridLayout; overflow: number } {
   const top = captionBottom(t) + 8;
   const bottom = bottomTop - 16;
-  const width = VIDEO_WIDTH - 2 * GRID.margin;
+  const width = area.right - area.left;
   // Never narrower than what a cell shows: its glyphs, or a level (two digits only once a level reaches 10).
   const shown = [...el.legend.map((k) => k.glyph), ...(el.levels ?? []).map((l) => String(l.level)), "8"];
   const needed = Math.max(...shown.map((g) => t.width(g, t.size(TEXT.gridGlyph), "mono"))) + 16;
@@ -665,7 +683,10 @@ function layoutGrid(
   const cell = Math.max(needed, Math.min(GRID.maxCell, width / el.cols, (bottom - top) / (el.rows + rim)));
   const ideal = Math.min(GRID.maxCell, width / el.cols);
   const overflow = Math.max(0, Math.max(cell, ideal) * (el.rows + rim) - (bottom - top));
-  const left = (VIDEO_WIDTH - cell * el.cols) / 2;
+  const left =
+    area.right === VIDEO_WIDTH - GRID.margin && area.left === GRID.margin
+      ? (VIDEO_WIDTH - cell * el.cols) / 2
+      : area.left + (width - cell * el.cols) / 2;
   const y0 = top + Math.max(GRID.rim * cell, (bottom - top - cell * el.rows) / 2);
   return {
     grid: {
@@ -888,6 +909,92 @@ function stackColumnWidth(el: StackElement, t: TextMetrics): number {
   return Math.min(PILE.maxWidth, Math.max(PILE.minWidth, title, ...items));
 }
 
+const SEARCH = { boardShare: 0.38, compactBoardShare: 0.25, gap: 48, idealGap: 104 };
+const boardShare = (t: TextMetrics) => (t.compact ? SEARCH.compactBoardShare : SEARCH.boardShare);
+
+/** The nodes a search tree draws: reached ones, minus everything under a folded (collapsed) node. */
+export function visibleSearchNodes(el: SearchTreeElement): number[] {
+  const reached = new Set(el.reached);
+  const folded = new Set(el.collapsed ?? []);
+  const hidden = (id: number): boolean => {
+    for (let p = el.nodes[id]?.parent; p !== null && p !== undefined; p = el.nodes[p].parent)
+      if (folded.has(p)) return true;
+    return false;
+  };
+  return el.nodes.filter((n) => reached.has(n.id) && !hidden(n.id)).map((n) => n.id);
+}
+
+/**
+ * A decision tree laid out from its visible nodes: leaves spread evenly in the order the search reached them, each
+ * parent centered over its children, one level per depth. Beside a board it takes the right part of the stage.
+ */
+function layoutSearch(
+  el: SearchTreeElement,
+  t: TextMetrics,
+  bottomTop: number,
+  board: boolean,
+  below?: number,
+): { search: SearchLayout; overflow: number } {
+  const visible = visibleSearchNodes(el);
+  const shown = new Set(visible);
+  const children = new Map<number, number[]>();
+  for (const id of visible) {
+    const parent = el.nodes[id].parent;
+    if (parent !== null && shown.has(parent)) children.set(parent, [...(children.get(parent) ?? []), id]);
+  }
+  const depth = new Map<number, number>([[0, 0]]);
+  const x = new Map<number, number>();
+  let leaves = 0;
+  const place = (id: number) => {
+    const kids = children.get(id) ?? [];
+    for (const k of kids) {
+      depth.set(k, depth.get(id)! + 1);
+      place(k);
+    }
+    x.set(id, kids.length ? (x.get(kids[0])! + x.get(kids.at(-1)!)!) / 2 : leaves++);
+  };
+  if (shown.has(0)) place(0);
+  const levels = Math.max(0, ...depth.values()) + 1;
+  const size = t.size(TEXT.searchNode);
+  const nodeWidth = Math.max(
+    44,
+    ...visible.map((id) => t.width(el.nodes[id].label || "·", size, "mono") + 18),
+  );
+  const nodeHeight = size + 22;
+  const region: Region = {
+    left: board ? GRID.margin + (VIDEO_WIDTH - 2 * GRID.margin) * boardShare(t) + SEARCH.gap : GRID.margin,
+    right: VIDEO_WIDTH - GRID.margin,
+    top: below ?? captionBottom(t) + 10,
+    bottom: bottomTop - 16 - (t.compact ? 0 : t.size(TEXT.dpLabel) + 6),
+  };
+  const pitch = (region.right - region.left) / Math.max(1, leaves);
+  const room = region.bottom - region.top - nodeHeight;
+  const levelGap = levels > 1 ? Math.min(SEARCH.idealGap, Math.max(nodeHeight + 20, room / (levels - 1))) : 0;
+  const used = nodeHeight + (levels - 1) * levelGap;
+  const overflow = Math.max(
+    0,
+    Math.max(used, nodeHeight + (levels - 1) * SEARCH.idealGap) - (region.bottom - region.top),
+  );
+  const top = region.top + Math.max(0, (region.bottom - region.top - used) / 2);
+  return {
+    search: {
+      nodeWidth,
+      nodeHeight,
+      levelGap,
+      pitch,
+      region,
+      center: (id) =>
+        x.has(id)
+          ? {
+              x: region.left + (x.get(id)! + 0.5) * pitch,
+              y: top + nodeHeight / 2 + depth.get(id)! * levelGap,
+            }
+          : undefined,
+    },
+    overflow,
+  };
+}
+
 export function layoutScene(elements: readonly Element[], text: TextMetrics = textMetrics()): SceneLayout {
   const t = text;
   const bottom = elements.filter((el) => bottomHeight(el, t) > 0);
@@ -967,12 +1074,22 @@ function layoutWith(
   let searchOverflow: number | undefined;
   const gridElement = elements.find((el): el is GridElement => el.type === "grid");
   const graphElement = elements.find((el): el is GraphElement => el.type === "graph");
-  if (gridElement) ({ grid, overflow: searchOverflow } = layoutGrid(gridElement, t, bottomTop));
+  const searchElement = elements.find((el): el is SearchTreeElement => el.type === "search-tree");
+  if (gridElement)
+    ({ grid, overflow: searchOverflow } = layoutGrid(
+      gridElement,
+      t,
+      bottomTop,
+      searchElement
+        ? { left: GRID.margin, right: GRID.margin + (VIDEO_WIDTH - 2 * GRID.margin) * boardShare(t) }
+        : undefined,
+    ));
   else if (graphElement) ({ graph, overflow: searchOverflow } = layoutGraph(graphElement, t, bottomTop));
 
   const heapElement = elements.find((el): el is HeapElement => el.type === "heap");
   const dpElement = elements.find((el): el is DpTableElement => el.type === "dp-table");
   const pileElement = elements.find((el): el is StackElement => el.type === "stack");
+  const searchTreeElement = elements.find((el): el is SearchTreeElement => el.type === "search-tree");
   // A stack takes a column on the right; the input moves left of it.
   const pileWidth = pileElement ? stackColumnWidth(pileElement, t) : 0;
   const pileLeft = VIDEO_WIDTH - SIDE_MARGIN - pileWidth;
@@ -1051,8 +1168,8 @@ function layoutWith(
       // the resolve arcs, and the text strip.
       top = captionBottom(t) + sizes.tagRoom(t) + 4;
       cardHeight = Math.max(PILE.minCard, Math.min(CARD_HEIGHT, lowest - top - pileBelow));
-    } else if (single && (heapElement || dpElement)) {
-      // With a heap or a table below, the input is a short strip of cards under the caption.
+    } else if (single && (heapElement || dpElement || searchTreeElement)) {
+      // With a heap, a table, or a search tree below, the input is a short strip of cards under the caption.
       cardHeight = HEAP_ROW_CARD;
       top = captionBottom(t) + sizes.tagRoom(t) + 4;
     } else if (single) {
@@ -1091,6 +1208,15 @@ function layoutWith(
       rightLimit: heap ? heapRegion.left - 10 : VIDEO_WIDTH - 16,
     };
   });
+  let search: SearchLayout | undefined;
+  let treeSearchOverflow: number | undefined;
+  if (searchElement)
+    ({ search, overflow: treeSearchOverflow } = layoutSearch(
+      searchElement,
+      t,
+      bottomTop,
+      gridElement !== undefined,
+    ));
   let pile: PileLayout | undefined;
   if (pileElement) {
     const row = Object.values(layouts).find((r) =>
@@ -1138,12 +1264,13 @@ function layoutWith(
     treeOverflow,
     grid,
     graph,
-    searchOverflow,
     heapPanels,
     heapOverflow,
     dp,
     dpOverflow,
     pile,
+    search,
+    searchOverflow: Math.max(searchOverflow ?? 0, treeSearchOverflow ?? 0) || undefined,
   };
 }
 

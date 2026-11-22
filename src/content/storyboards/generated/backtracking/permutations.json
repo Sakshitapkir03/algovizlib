@@ -1,0 +1,249 @@
+{
+  "id": "backtracking-permutations",
+  "title": "Permutations: Every Running Order for a Relay Team",
+  "concept": "Backtracking",
+  "category": "dsa",
+  "summary": "Fill each leg with a runner not used yet; record the full order, undo the last leg, try the next runner.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A relay coach has three runners, bibs 3, 6, and 9, and wants to try every running order across the three legs.",
+    "mapping": [
+      {
+        "real": "A runner's bib",
+        "abstract": "A number in nums"
+      },
+      {
+        "real": "A leg of the relay",
+        "abstract": "A position"
+      },
+      {
+        "real": "A full running order",
+        "abstract": "A permutation"
+      },
+      {
+        "real": "Taking a runner off a leg",
+        "abstract": "Undo, freeing that number"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "permutations",
+    "recursion"
+  ],
+  "takeaway": {
+    "pattern": "Backtracking (choose, explore, undo)",
+    "summary": "For each position, try every number not used yet: mark it used, recurse, then unmark it. Each full path is one permutation.",
+    "timeComplexity": "O(n · n!)",
+    "spaceComplexity": "O(n) besides the output",
+    "whenToUse": [
+      "Every ordering of items",
+      "Choices where each item is used once"
+    ]
+  },
+  "trace": {
+    "problem": "backtracking/permutations",
+    "args": [
+      [
+        3,
+        6,
+        9
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v14",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T00:00:40.053Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "relay",
+      "narration": "A relay coach has three runners, bibs 3, 6, and 9, and wants to try every running order across the three legs.",
+      "caption": "Runners 3, 6, and 9: try every running order",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "runners",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "bib",
+            "bib",
+            "bib"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tree",
+      "narration": "Writing orders down at random misses some. Instead, fill the legs in turn with any runner not used yet: a tree of choices.",
+      "caption": "Fill the legs one at a time: a tree of choices",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "legs",
+          "foundLabel": "orders"
+        }
+      ]
+    },
+    {
+      "id": "leg-1",
+      "narration": "Leg one: try runner 3 first.",
+      "caption": "Leg 1: try runner 3 first",
+      "durationInFrames": 108,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "legs",
+          "foundLabel": "orders"
+        }
+      ]
+    },
+    {
+      "id": "first-order",
+      "narration": "Fill leg two with 6 and leg three with 9. Every leg is filled, so record 3, 6, 9.",
+      "caption": "Fill legs 2 and 3: record 3, 6, 9",
+      "durationInFrames": 264,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "legs",
+          "foundLabel": "orders"
+        }
+      ]
+    },
+    {
+      "id": "undo",
+      "narration": "Step back: take 9 off the last leg, so it's free again.",
+      "caption": "Take 9 off leg 3: free to run again",
+      "durationInFrames": 180,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "legs",
+          "foundLabel": "orders"
+        }
+      ]
+    },
+    {
+      "id": "second-order",
+      "narration": "No other runner fits leg three, so step back again and put 9 on leg two. Then 6 runs last: 3, 9, 6.",
+      "caption": "Swap legs 2 and 3: record 3, 9, 6",
+      "durationInFrames": 312,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "legs",
+          "foundLabel": "orders"
+        }
+      ]
+    },
+    {
+      "id": "new-start",
+      "narration": "Both orders starting with 3 are done. Undo back to the start and try runner 6 on leg one.",
+      "caption": "Everything starting with 3 is done: try 6 on leg 1",
+      "durationInFrames": 264,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "legs",
+          "foundLabel": "orders"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "The same pattern covers runners 6 and 9 first. Three choices, then two, then one: six running orders.",
+      "caption": "Three choices, then two, then one: 6 orders",
+      "durationInFrames": 252,
+      "traceStep": 36,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Running orders",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Runners are numbers, legs are positions, and taking a runner off frees that number. n factorial orders, built by choose, explore, undo.",
+      "caption": "Runners are numbers; orders are permutations",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "legs",
+          "foundLabel": "orders"
+        }
+      ]
+    }
+  ]
+}

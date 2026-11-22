@@ -144,7 +144,43 @@ export type TraceStep = {
    * `TracePile`.
    */
   pile?: TracePile;
+  /** A backtracking search over `trace.searchTree` after this step. See `TraceExplore`. */
+  explore?: TraceExplore;
+  /** The answer being built and the answers found so far. See `TracePartial`. */
+  partial?: TracePartial;
 };
+
+/**
+ * A decision-tree node: a partial solution. `label` is its state ("4" left, the XOR so far, the column), `edge` the
+ * choice that led to it ("+4", "skip"), and a `pruned` node is a branch cut without exploring it, with the reason.
+ */
+export type TraceSearchNode = {
+  id: number;
+  parent: number | null;
+  label: string;
+  edge?: string;
+  pruned?: string;
+};
+
+/** Where a backtracking search is: what's been reached, the path from the root, and how each branch ended. */
+export type TraceExplore = {
+  /** Nodes drawn so far (reached, or pruned). */
+  reached: number[];
+  /** Root first, to the current node. */
+  path: number[];
+  current?: number;
+  /** Explored, with no solution below. */
+  dead: number[];
+  /** Complete answers. */
+  solutions: number[];
+  /** The node this step stepped back from (the undo). */
+  undone?: number;
+  /** Fully explored subtrees without a solution, folded into their root. */
+  collapsed?: number[];
+};
+
+/** The answer being built (with the choice just added or just removed), and every answer found so far. */
+export type TracePartial = { items: string[]; added?: string; removed?: string; found: string[] };
 
 /** A stack item: shown as `label`, from input position `ref` (if any), ordered by `key` in a monotonic stack. */
 export type TracePileItem = { label: string; ref?: number; key?: number };
@@ -326,6 +362,8 @@ export type Trace = {
   grid?: TraceGrid;
   /** A graph (display "graph"): nodes and edges; steps record the search (`bfs`). */
   graph?: TraceGraph;
+  /** A backtracking search's whole decision tree (steps reveal it as they go). */
+  searchTree?: { nodes: TraceSearchNode[] };
   /** A DP table's shape and headers (row 0 / column 0 are often the empty prefix). */
   dp?: { rows: number; cols: number; rowHeaders?: string[]; colHeaders?: string[] };
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */

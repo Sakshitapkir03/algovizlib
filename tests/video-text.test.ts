@@ -9,6 +9,7 @@ import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
 import { dpProblems } from "./fixtures/dp-fit";
+import { backtrackProblems } from "./fixtures/backtrack-fit";
 import { stackProblems } from "./fixtures/stack-fit";
 import { heapProblems } from "./fixtures/heap-fit";
 import { searchProblems } from "./fixtures/search-fit";
@@ -70,11 +71,13 @@ describe("video text at phone width", () => {
         "linked-list",
         "merge-buffer",
         "number-line",
+        "partial",
         "partition",
         "pointer",
         "queue",
         "result",
         "search-range",
+        "search-tree",
         "segments",
         "sorted-region",
         "staircase",
@@ -83,6 +86,18 @@ describe("video text at phone width", () => {
         "window",
       ].sort(),
     );
+  });
+
+  it("search trees and answers being built fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        (["search-tree", "partial"] as const).flatMap((type) =>
+          backtrackProblems(scene.elements, full, type).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+        ),
+      ),
+    );
+    expect(problems).toEqual([]);
   });
 
   it("stacks fit at full size too", () => {
@@ -347,6 +362,10 @@ describe("video text at phone width", () => {
             break;
           case "stack":
             for (const problem of stackProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "search-tree":
+          case "partial":
+            for (const problem of backtrackProblems(scene.elements, phone, el.type)) fail(problem);
             break;
           case "grid":
           case "graph":

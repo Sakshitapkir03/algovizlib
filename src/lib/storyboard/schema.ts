@@ -457,6 +457,48 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: `A scene can show only one ${el.type}` });
           break;
         }
+        case "search-tree": {
+          const n = el.nodes.length;
+          if (el.nodes.some((node, k) => node.id !== k) || el.nodes[0]?.parent !== null)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "node ids must be 0, 1, 2, … with node 0 the root",
+            });
+          if (el.nodes.some((node) => node.parent !== null && node.parent >= node.id))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "a node's parent must come before it",
+            });
+          const ids = [
+            ...el.reached,
+            ...el.path,
+            ...el.dead,
+            ...el.solutions,
+            ...(el.collapsed ?? []),
+            el.current,
+            el.undone,
+          ];
+          if (ids.some((id) => id !== undefined && id >= n))
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: `the search refers to a node outside the tree (0–${n - 1})`,
+            });
+          if (
+            el.path.some((id, k) => k > 0 && el.nodes[id]?.parent !== el.path[k - 1]) ||
+            (el.path.length && el.path[0] !== 0)
+          )
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "path"],
+              message: "the path must run from the root, parent to child",
+            });
+          if (scene.elements.filter((e) => e.type === "search-tree").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one search-tree" });
+          break;
+        }
         case "stack":
           if (el.rowId) {
             for (const [k, link] of (el.links ?? []).entries()) {

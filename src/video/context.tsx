@@ -9,6 +9,7 @@ import type {
   HeapPanel,
   ListLayout,
   PileLayout,
+  SearchLayout,
   Region,
   RowLayout,
   StackLayout,
@@ -38,6 +39,8 @@ export type SceneContextValue = {
   dp?: DpLayout;
   /** A stack's column (and the room under its input row), when the scene has one. */
   pile?: PileLayout;
+  /** A search tree's node positions, when the scene has one. */
+  search?: SearchLayout;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

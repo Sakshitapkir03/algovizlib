@@ -119,4 +119,6 @@ export const TEXT = {
   stepNumber: 18,
   stackItem: 22,
   stackTitleSmall: 15,
+  searchNode: 20,
+  partialItem: 22,
 } as const;

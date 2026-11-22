@@ -72,7 +72,13 @@ export function buildDraft(problemKey: string): Draft {
   const table = (): ElementSource[] =>
     trace.dp ? [{ id: "table", type: "dp-table", enterAt: 0 } as ElementSource] : [];
   const rows = (): ElementSource[] => [...(trace.row.values.length === 0 ? [] : [row()]), ...table()];
-  const wideTable = (trace.dp?.rows ?? 1) > 1;
+  // A 2D table, or a search tree five levels deep, fills the stage: the answer card goes in the closing scene.
+  const depthOf = (id: number): number => {
+    const parent = trace.searchTree?.nodes[id].parent;
+    return parent === null || parent === undefined ? 1 : 1 + depthOf(parent);
+  };
+  const deepTree = (trace.searchTree?.nodes ?? []).some((n) => depthOf(n.id) >= 5);
+  const wideTable = (trace.dp?.rows ?? 1) > 1 || deepTree;
   const answerCard: ElementSource = {
     id: "result",
     type: "result",
@@ -88,11 +94,13 @@ export function buildDraft(problemKey: string): Draft {
     const heapScene = step.heaps !== undefined;
     // Stack scenes mark the input with a highlight too: pointers would sit where the resolve arcs go.
     const pileScene = step.pile !== undefined;
+    // Search scenes show the tree and the answer being built; only a board (a grid) stays beside the tree.
+    const searchScene = step.explore !== undefined && rowType !== "grid";
     // A recursion-tree step (Climbing Stairs' plain recursion) shows only the tree.
     const recursion = step.tree !== undefined && trace.row.display !== "tree";
     const elements: ElementSource[] = recursion
       ? [{ id: "calls", type: "binary-tree", enterAt: 0 } as ElementSource]
-      : heapScene && (last || !step.active)
+      : (heapScene && (last || !step.active)) || searchScene
         ? []
         : [...rows(), ...second()];
     for (const name of heapScene || pileScene ? [] : Object.keys(step.pointers)) {
@@ -148,6 +156,18 @@ export function buildDraft(problemKey: string): Draft {
     }
     if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
     if (step.heaps) elements.push({ id: "heaps", type: "heap", enterAt: 0 });
+    if (step.explore) {
+      elements.push({ id: "search", type: "search-tree", enterAt: 0 } as ElementSource);
+      // The answer scene keeps to the tree and the result.
+      if (!last)
+        elements.push({
+          id: "partial",
+          type: "partial",
+          label: "building",
+          foundLabel: "found",
+          enterAt: 0,
+        } as ElementSource);
+    }
     if (step.pile)
       elements.push({
         id: "stack",
@@ -161,7 +181,10 @@ export function buildDraft(problemKey: string): Draft {
     // A tree's last scene keeps its bottom stack short (the answer, and at most a count).
     if (
       step.equation &&
-      !((rowType === "binary-tree" || step.queue || step.heaps || step.table || step.pile) && last)
+      !(
+        (rowType === "binary-tree" || step.queue || step.heaps || step.table || step.pile || step.explore) &&
+        last
+      )
     )
       elements.push({ id: "eq", type: "equation", unit: "", verdict: step.kind, enterAt: 0.1 });
     elements.push({ id: "why", type: "callout", text: step.note.slice(0, 120), enterAt: 0.3 });

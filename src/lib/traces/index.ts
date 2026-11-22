@@ -8,6 +8,11 @@ import { decodeStringTrace } from "./stack/decode-string";
 import { evaluateReversePolishNotationTrace } from "./stack/evaluate-reverse-polish-notation";
 import { largestRectangleInHistogramTrace } from "./stack/largest-rectangle-in-histogram";
 import { validParenthesesTrace } from "./stack/valid-parentheses";
+import { combinationSumTrace } from "./backtracking/combination-sum";
+import { nQueensTrace } from "./backtracking/n-queens";
+import { permutationsTrace } from "./backtracking/permutations";
+import { subsetsTrace } from "./backtracking/subsets";
+import { sumOfAllSubsetXorTotalsTrace } from "./backtracking/sum-of-all-subset-xor-totals";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -113,6 +118,11 @@ const definitions = [
   evaluateReversePolishNotationTrace,
   decodeStringTrace,
   largestRectangleInHistogramTrace,
+  sumOfAllSubsetXorTotalsTrace,
+  subsetsTrace,
+  permutationsTrace,
+  combinationSumTrace,
+  nQueensTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

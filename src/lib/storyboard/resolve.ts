@@ -491,6 +491,36 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             );
           return { ...el, heaps, slots };
         }
+        case "search-tree": {
+          const nodes = el.nodes ?? trace?.searchTree?.nodes;
+          if (!nodes) return (missing(el, "nodes"), el);
+          if (step && !step.explore) return (noState(el, "reached", "search"), el);
+          const x = step?.explore;
+          // An unbound scene (the intro) shows only the root.
+          return {
+            ...el,
+            nodes,
+            reached: el.reached ?? x?.reached ?? [0],
+            path: el.path ?? x?.path ?? [0],
+            current: el.current ?? x?.current,
+            dead: el.dead ?? x?.dead ?? [],
+            solutions: el.solutions ?? x?.solutions ?? [],
+            undone: el.undone ?? x?.undone,
+            collapsed: el.collapsed ?? x?.collapsed,
+          };
+        }
+        case "partial": {
+          if (el.items) return { ...el, found: el.found ?? [] };
+          if (step && !step.partial) return (noState(el, "items", "answer being built"), el);
+          const p = step?.partial;
+          return {
+            ...el,
+            items: p?.items ?? [],
+            added: el.added ?? p?.added,
+            removed: el.removed ?? p?.removed,
+            found: el.found ?? p?.found ?? [],
+          };
+        }
         case "stack": {
           if (el.items) return el;
           if (step && !step.pile) return (noState(el, "items", "stack"), el);

@@ -1,0 +1,262 @@
+{
+  "id": "backtracking-combination-sum",
+  "title": "Combination Sum: Filling a 12-Litre Tank with Jugs",
+  "concept": "Backtracking",
+  "category": "dsa",
+  "summary": "Add jugs while they fit, record exact fills, undo, and prune any jug bigger than what's left.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A 12-litre tank must be filled exactly using 4-litre and 6-litre jugs, as many of each as needed. Which mixes of jugs fill it exactly (order doesn't matter)?",
+    "mapping": [
+      {
+        "real": "A jug size",
+        "abstract": "A candidate"
+      },
+      {
+        "real": "Litres still to fill",
+        "abstract": "The remaining target"
+      },
+      {
+        "real": "A jug too big for what's left",
+        "abstract": "A pruned branch"
+      },
+      {
+        "real": "An exact fill",
+        "abstract": "A combination"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "combinations",
+    "pruning"
+  ],
+  "takeaway": {
+    "pattern": "Backtracking with pruning",
+    "summary": "Sort the candidates; from each node try candidates from the last one used onward. Stop the loop at the first candidate bigger than what's left: everything after it is bigger too.",
+    "timeComplexity": "Exponential in target / smallest candidate, cut down by pruning",
+    "spaceComplexity": "O(target / smallest candidate) for the path",
+    "whenToUse": [
+      "Combinations that hit a target sum",
+      "Searches where a bound rules out whole branches"
+    ]
+  },
+  "trace": {
+    "problem": "backtracking/combination-sum",
+    "args": [
+      [
+        4,
+        6
+      ],
+      12
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v14",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T00:00:40.046Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "tank",
+      "narration": "A 12-litre tank must be filled exactly with 4-litre and 6-litre jugs, as many of each as needed. Which mixes of jugs work?",
+      "caption": "Fill 12 litres exactly with 4 L and 6 L jugs",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "jugs",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "jug",
+            "jug"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tree",
+      "narration": "Pour one jug at a time and track the litres left. To avoid counting the same mix twice, only pour jugs at least as big as the last one.",
+      "caption": "Pour jug by jug: a tree of choices, nodes show litres left",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "poured",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "poured",
+          "foundLabel": "exact fills"
+        }
+      ]
+    },
+    {
+      "id": "first-jug",
+      "narration": "Start with a 4-litre jug: 12 minus 4 leaves 8.",
+      "caption": "Pour a 4 L jug: 8 litres left",
+      "durationInFrames": 156,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "poured",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "poured",
+          "foundLabel": "exact fills"
+        },
+        {
+          "id": "left",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "left"
+        }
+      ]
+    },
+    {
+      "id": "exact",
+      "narration": "Two more 4-litre jugs bring it to 0 left: an exact fill. Record 4, 4, 4.",
+      "caption": "Two more 4s: exactly full. Record 4, 4, 4",
+      "durationInFrames": 229,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "poured",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "poured",
+          "foundLabel": "exact fills"
+        }
+      ]
+    },
+    {
+      "id": "undo",
+      "narration": "Step back: pour the last 4 back out, leaving 4 litres to fill, and try the next jug size.",
+      "caption": "Pour the last 4 back out: 4 litres left again",
+      "durationInFrames": 264,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "poured",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "poured",
+          "foundLabel": "exact fills"
+        }
+      ]
+    },
+    {
+      "id": "prune",
+      "narration": "A 6-litre jug is more than the 4 left, and nothing after it is smaller. That whole branch is cut without trying it.",
+      "caption": "A 6 L jug won't fit in 4: cut the branch",
+      "durationInFrames": 312,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "poured",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "poured",
+          "foundLabel": "exact fills"
+        },
+        {
+          "id": "too-big",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "too big"
+        }
+      ]
+    },
+    {
+      "id": "sixes",
+      "narration": "Back at the start, pour a 6-litre jug, then another: 0 left. Record 6, 6.",
+      "caption": "Starting with a 6 L jug: 6 + 6 fills it",
+      "durationInFrames": 216,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "poured",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "poured",
+          "foundLabel": "exact fills"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Every branch is finished or cut. Two mixes fill the tank exactly: three 4s, or two 6s.",
+      "caption": "Two exact fills: 4 + 4 + 4 and 6 + 6",
+      "durationInFrames": 240,
+      "traceStep": 16,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Exact fills",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Jugs are candidates and litres left is the remaining target. Sorting lets one too-big jug prune every bigger one: backtracking with pruning.",
+      "caption": "Jugs are candidates; litres left is the target",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "poured",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "poured",
+          "foundLabel": "exact fills"
+        }
+      ]
+    }
+  ]
+}

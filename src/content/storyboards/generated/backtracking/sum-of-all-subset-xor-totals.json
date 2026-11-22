@@ -1,0 +1,256 @@
+{
+  "id": "backtracking-sum-of-all-subset-xor-totals",
+  "title": "Sum of All Subset XOR Totals: Every Mix of Tint Pots",
+  "concept": "Backtracking",
+  "category": "dsa",
+  "summary": "Walk the take-or-skip tree; each leaf is one mix, and its XOR total joins the running sum.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A painter has tint pots coded 2 and 5. Adding a pot flips certain color channels, so a mix's shade code is the XOR of its pots' codes. What do the shade codes of every possible mix, including no pots, add up to?",
+    "mapping": [
+      {
+        "real": "A tint pot's code",
+        "abstract": "A number in nums"
+      },
+      {
+        "real": "A mix of pots",
+        "abstract": "A subset"
+      },
+      {
+        "real": "Flipping channels",
+        "abstract": "XOR"
+      },
+      {
+        "real": "Adding or leaving out a pot",
+        "abstract": "Take or skip: one branch each"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "subsets",
+    "xor"
+  ],
+  "takeaway": {
+    "pattern": "Backtracking (take or skip)",
+    "summary": "At each item, branch twice: take it, then skip it. Every leaf is one subset; carry its running value down so each leaf costs nothing extra.",
+    "timeComplexity": "O(2ⁿ)",
+    "spaceComplexity": "O(n) for the path",
+    "whenToUse": [
+      "Visiting every subset",
+      "Small inputs where all combinations matter"
+    ]
+  },
+  "trace": {
+    "problem": "backtracking/sum-of-all-subset-xor-totals",
+    "args": [
+      [
+        2,
+        5
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v14",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T00:00:40.056Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "pots",
+      "narration": "A painter has two tint pots, coded 2 and 5. A mix's shade code is the XOR of its pots. Add up the codes of every mix, including the empty one.",
+      "caption": "Pots 2 and 5: add up the shade code of every mix",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "pots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "pot A",
+            "pot B"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "branching",
+      "narration": "Each pot is either in the mix or out, so the mixes form a tree: one level per pot, two branches each.",
+      "caption": "Each pot: in or out. That's a tree of choices",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "mix",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "in the mix",
+          "foundLabel": "mixes"
+        }
+      ]
+    },
+    {
+      "id": "take-2",
+      "narration": "Start with pot 2 in. The shade code so far is 0 XOR 2, which is 2.",
+      "caption": "Take pot 2: the shade code is 2",
+      "durationInFrames": 240,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "mix",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "in the mix",
+          "foundLabel": "mixes"
+        },
+        {
+          "id": "sum",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "sum"
+        }
+      ]
+    },
+    {
+      "id": "first-mix",
+      "narration": "Add pot 5 as well: 2 XOR 5 is 7. Every pot is decided, so this mix is done, and 7 joins the sum.",
+      "caption": "Both pots: 2 XOR 5 = 7, the first mix",
+      "durationInFrames": 324,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "mix",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "in the mix",
+          "foundLabel": "mixes"
+        },
+        {
+          "id": "sum",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "sum"
+        }
+      ]
+    },
+    {
+      "id": "undo",
+      "narration": "Back up one level and take pot 5 out, so the other branch can try leaving it out.",
+      "caption": "Back up: take pot 5 out again",
+      "durationInFrames": 252,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "mix",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "in the mix",
+          "foundLabel": "mixes"
+        },
+        {
+          "id": "sum",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "sum"
+        }
+      ]
+    },
+    {
+      "id": "skip",
+      "narration": "Skipping pot 5 leaves the code at 2: another mix, another 2 for the sum. The same happens on the side without pot 2.",
+      "caption": "Skip pot 5: the code stays 2",
+      "durationInFrames": 324,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "mix",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "in the mix",
+          "foundLabel": "mixes"
+        },
+        {
+          "id": "sum",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "sum"
+        }
+      ]
+    },
+    {
+      "id": "total",
+      "narration": "All four mixes are visited: codes 7, 2, 5, and 0. Their sum is 14.",
+      "caption": "Four mixes: 7 + 2 + 5 + 0 = 14",
+      "durationInFrames": 216,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Sum of codes",
+          "showsAnswer": true,
+          "tone": "success"
+        },
+        {
+          "id": "sum",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "sum"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Pots are numbers, mixes are subsets, and flipping channels is XOR. Take-or-skip backtracking visits all 2 to the n subsets once.",
+      "caption": "Pots are numbers; mixes are subsets",
+      "durationInFrames": 288,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "mix",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "in the mix",
+          "foundLabel": "mixes"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,249 @@
+{
+  "id": "backtracking-subsets",
+  "title": "Subsets: Every Way to Pack a Picnic Basket",
+  "concept": "Backtracking",
+  "category": "dsa",
+  "summary": "Take or skip each item in turn; every path to the bottom is one subset.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Three picnic items, numbered 5, 1, and 8, can each go in the basket or stay home. List every possible basket, from empty to everything.",
+    "mapping": [
+      {
+        "real": "A picnic item",
+        "abstract": "A number in nums"
+      },
+      {
+        "real": "A packed basket",
+        "abstract": "A subset"
+      },
+      {
+        "real": "Packing or leaving an item",
+        "abstract": "Take or skip: a branch"
+      },
+      {
+        "real": "Unpacking the last item to try without it",
+        "abstract": "Undo (backtrack)"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "subsets",
+    "recursion"
+  ],
+  "takeaway": {
+    "pattern": "Backtracking (take or skip)",
+    "summary": "Decide each item in order: take it and recurse, undo, then skip it and recurse. Each leaf records one subset.",
+    "timeComplexity": "O(n · 2ⁿ)",
+    "spaceComplexity": "O(n) besides the output",
+    "whenToUse": [
+      "Generating every subset",
+      "Choices that are each in or out"
+    ]
+  },
+  "trace": {
+    "problem": "backtracking/subsets",
+    "args": [
+      [
+        5,
+        1,
+        8
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v14",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T00:00:40.055Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "basket",
+      "narration": "Three picnic items, numbered 5, 1, and 8, can each go in the basket or stay home. How do you list every possible basket, without missing or repeating one?",
+      "caption": "Items 5, 1, and 8: list every possible basket",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "items",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "item",
+            "item",
+            "item"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tree",
+      "narration": "Guessing baskets at random misses some and repeats others. Instead, decide one item at a time: pack it or leave it. That's a tree.",
+      "caption": "Decide one item at a time: a tree of choices",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "basket",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "basket",
+          "foundLabel": "listed"
+        }
+      ]
+    },
+    {
+      "id": "take-5",
+      "narration": "Start by packing item 5.",
+      "caption": "Pack 5 first",
+      "durationInFrames": 96,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "basket",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "basket",
+          "foundLabel": "listed"
+        }
+      ]
+    },
+    {
+      "id": "full",
+      "narration": "Pack 1, then 8. Every item is decided, so list the basket: 5, 1, 8.",
+      "caption": "Pack 1 and 8 too: list the full basket",
+      "durationInFrames": 216,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "basket",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "basket",
+          "foundLabel": "listed"
+        }
+      ]
+    },
+    {
+      "id": "undo",
+      "narration": "Now step back: unpack the 8, the most recent choice.",
+      "caption": "Unpack 8 to try the basket without it",
+      "durationInFrames": 156,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "basket",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "basket",
+          "foundLabel": "listed"
+        }
+      ]
+    },
+    {
+      "id": "skip",
+      "narration": "This time leave 8 at home, which leads to the basket 5, 1.",
+      "caption": "Leave 8 at home: a different basket",
+      "durationInFrames": 192,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "basket",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "basket",
+          "foundLabel": "listed"
+        }
+      ]
+    },
+    {
+      "id": "empty",
+      "narration": "Packing and unpacking the same way covers the rest. The last path leaves every item home: the empty basket, the eighth.",
+      "caption": "The last path leaves everything home: the empty basket",
+      "durationInFrames": 288,
+      "traceStep": 28,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "basket",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "basket",
+          "foundLabel": "listed"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Three items, two choices each: eight baskets, each listed exactly once.",
+      "caption": "Every path through the tree is one basket: 8 in all",
+      "durationInFrames": 169,
+      "traceStep": 29,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Baskets",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Items are numbers, baskets are subsets, and unpacking is the undo of backtracking. 2 to the n subsets, each built in O(n).",
+      "caption": "Items are numbers; baskets are subsets",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "tree",
+          "enterAt": 0,
+          "type": "search-tree"
+        },
+        {
+          "id": "basket",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "basket",
+          "foundLabel": "listed"
+        }
+      ]
+    }
+  ]
+}

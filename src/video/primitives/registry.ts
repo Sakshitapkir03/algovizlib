@@ -24,11 +24,13 @@ import { ItemRow } from "./ItemRow";
 import { LinkedList } from "./LinkedList";
 import { MergeBuffer } from "./MergeBuffer";
 import { NumberLine } from "./NumberLine";
+import { Partial } from "./Partial";
 import { Partition } from "./Partition";
 import { Pointer } from "./Pointer";
 import { Queue } from "./Queue";
 import { Result } from "./Result";
 import { SearchRange } from "./SearchRange";
+import { SearchTree } from "./SearchTree";
 import { Segments } from "./Segments";
 import { SortedRegion } from "./SortedRegion";
 import { SplitTree } from "./SplitTree";
@@ -71,6 +73,9 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   "house-row": { component: HouseRow, slot: "canvas", layer: 0 },
   // A stack's column on the right, plus its resolve arcs, answers, and text strip under the input row.
   stack: { component: Stack, slot: "canvas", layer: 1.5 },
+  // Backtracking: the decision tree (beside a board when there is one) and the answer being built, below.
+  "search-tree": { component: SearchTree, slot: "canvas", layer: 0 },
+  partial: { component: Partial, slot: "bottom", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

@@ -31,7 +31,9 @@ each level begins), and all five Heap / Priority Queue problems (a tree and its 
 items sift up and down, size-k heaps, and two heaps keeping a running median), and all five Dynamic Programming problems (a table filling cell by cell
 with arrows from the cells it reads, a staircase and a street lined up with their tables, and the recursion tree a
 table replaces), and all five Stack problems (a stack column beside the input, monotonic stacks whose pops link each
-item to its answer, and the rectangle each popped bar resolves). The first is
+item to its answer, and the rectangle each popped bar resolves), and all five Backtracking problems (a decision tree
+that grows choice by choice, with dead ends folded away, pruned branches and their reasons, and the answer being built
+and undone; N-Queens on its board). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach
