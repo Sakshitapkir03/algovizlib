@@ -350,6 +350,11 @@ describe("selectTargets", () => {
       "two-pointers/valid-palindrome",
       "two-pointers/container-with-most-water",
       "two-pointers/trapping-rain-water",
+      "fast-slow-pointers/linked-list-cycle",
+      "fast-slow-pointers/middle-of-the-linked-list",
+      "fast-slow-pointers/linked-list-cycle-ii",
+      "fast-slow-pointers/find-the-duplicate-number",
+      "fast-slow-pointers/circular-array-loop",
       "sliding-window/maximum-sum-subarray-of-size-k",
       "sliding-window/longest-substring-without-repeating-characters",
       "sliding-window/longest-repeating-character-replacement",
@@ -589,7 +594,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v15");
+    expect(currentPrompts.version).toBe("storyboard-v16");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

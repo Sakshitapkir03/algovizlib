@@ -1,0 +1,368 @@
+{
+  "id": "fast-slow-pointers-linked-list-cycle",
+  "title": "Linked List Cycle: A Jogger and a Sprinter",
+  "concept": "Fast & Slow Pointers",
+  "category": "dsa",
+  "summary": "Two runners at different speeds can tell whether a route loops without remembering a single checkpoint.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A running route passes checkpoints 4, 8, 15, 16, and 23. Each sign only shows the next checkpoint, and after 23 the route might end or might bend back onto the track.",
+    "mapping": [
+      {
+        "real": "A checkpoint",
+        "abstract": "A node"
+      },
+      {
+        "real": "The sign to the next checkpoint",
+        "abstract": "next"
+      },
+      {
+        "real": "The jogger, one checkpoint at a time",
+        "abstract": "slow"
+      },
+      {
+        "real": "The sprinter, two at a time",
+        "abstract": "fast"
+      }
+    ]
+  },
+  "tags": [
+    "linked-list",
+    "floyd's cycle detection"
+  ],
+  "takeaway": {
+    "pattern": "Fast and slow pointers (Floyd's cycle check)",
+    "summary": "Move slow one node and fast two. If fast runs off the end there's no cycle; if they ever meet, there is.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Checking whether a linked list loops",
+      "Any chain of next steps that might repeat"
+    ]
+  },
+  "trace": {
+    "problem": "fast-slow-pointers/linked-list-cycle",
+    "args": [
+      [
+        4,
+        8,
+        15,
+        16,
+        23
+      ],
+      2
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v16",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T17:09:11.517Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "route",
+      "narration": "A running route passes checkpoints 4, 8, 15, 16 and 23. Each sign only shows the next checkpoint. Does the route end, or loop forever?",
+      "caption": "Checkpoints 4, 8, 15, 16, 23: does the route loop?",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "route"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "notebook",
+      "narration": "You could write down every checkpoint and stop at a repeat, but that notebook grows with the route. Two runners need no notebook at all.",
+      "caption": "Writing down every checkpoint needs O(n) memory",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "route"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "info",
+          "enterAt": 0.3,
+          "type": "result",
+          "title": "Notebook",
+          "value": "O(n)",
+          "detail": "one entry per checkpoint",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "A jogger moves one checkpoint per round, a sprinter two. On a road that ends, the sprinter gets there first. On a loop, the sprinter must catch the jogger.",
+      "caption": "A jogger (+1) and a sprinter (+2) start at 4",
+      "durationInFrames": 384,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "route"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "jogger",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "sprinter",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "round-1",
+      "narration": "Round one: the jogger steps to 8, the sprinter jumps to 15.",
+      "caption": "Round 1: jogger to 8, sprinter to 15",
+      "durationInFrames": 180,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "route"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "jogger",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "sprinter",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "rounds",
+          "enterAt": 0.2,
+          "type": "counter",
+          "label": "rounds"
+        }
+      ]
+    },
+    {
+      "id": "round-2",
+      "narration": "Round two: jogger at 15, sprinter at 23. Both are on the loop now, and the sprinter is one checkpoint behind.",
+      "caption": "Round 2: both are on the loop, sprinter 1 behind",
+      "durationInFrames": 288,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "route"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "jogger",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "sprinter",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "rounds",
+          "enterAt": 0.2,
+          "type": "counter",
+          "label": "rounds"
+        }
+      ]
+    },
+    {
+      "id": "meet",
+      "narration": "The sprinter gains exactly one checkpoint per round, so it can't jump over the jogger. Round three: both land on 16. They met, so the route loops: true.",
+      "caption": "They meet at 16: the route loops",
+      "durationInFrames": 372,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "route"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "jogger",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "sprinter",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Loops?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "map-back",
+      "narration": "Checkpoints are nodes. The jogger is slow, moving one node; the sprinter is fast, moving two. Fast hits the end: no cycle. They meet: a cycle. O(n) time, O(1) space.",
+      "caption": "Checkpoints are nodes: slow +1, fast +2, O(1) space",
+      "durationInFrames": 396,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "list"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "fast",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    }
+  ]
+}

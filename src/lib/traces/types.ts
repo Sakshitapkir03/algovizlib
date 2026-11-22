@@ -150,6 +150,36 @@ export type TraceStep = {
   partial?: TracePartial;
   /** A hash map or set after this step, with this step's lookup and change. See `TraceMap`. */
   map?: TraceMap;
+  /** Fast and slow pointers over a linked list: this step's moves, the meeting node, the loop. See `TraceRace`. */
+  race?: TraceRace;
+};
+
+/**
+ * One pointer's move in a fast-and-slow race: from node `from` to node `to` (null: it ran off the end), through the
+ * nodes in `path` (fast passes one on its way), `hops` links in all. `blocked` is a node it refused to step onto
+ * (Circular Array Loop: a jump the other way), after its last hop.
+ */
+export type TraceRaceMove = {
+  pointer: string;
+  from: number;
+  to: number | null;
+  path: number[];
+  hops: number;
+  blocked?: number;
+};
+
+/**
+ * A fast-and-slow race over a linked list (`links`): phase 1 runs slow (1 hop) and fast (2 hops) until they meet or
+ * fast runs off the end; phase 2 (finding where a loop starts) moves a pointer restarted at the head and the one left
+ * at the meeting node 1 hop each. `meet` is the node where they met, `entry` the loop's first node once it's known,
+ * and `loop` the link that closes the loop (`from.next = to`), when the step names it.
+ */
+export type TraceRace = {
+  phase: 1 | 2;
+  moves: TraceRaceMove[];
+  meet?: number;
+  entry?: number;
+  loop?: { from: number; to: number };
 };
 
 /**

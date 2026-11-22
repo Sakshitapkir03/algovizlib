@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -828,6 +828,45 @@ export const hashMapSourceSchema = z.object({
   entries: hashMapShape.entries.optional(),
 });
 
+const raceMoveSchema = z.object({
+  /** The trace pointer that moved ("slow", "fast"). */
+  pointer: nonEmpty.max(12),
+  /** Node ids (as in the linked-list): from, through `path`, to `to` (null: it ran off the end). */
+  from: index,
+  to: index.nullable(),
+  path: z.array(index).max(3),
+  /** Links taken: 1 for slow, 2 for fast (fewer when it's refused or runs out). */
+  hops: z.number().int().min(0).max(4),
+  /** A node it refused to step onto after its last hop (a jump the other way). */
+  blocked: index.optional(),
+});
+
+const raceShape = {
+  ...baseElement,
+  type: z.literal("race"),
+  /** The linked-list the race runs on. */
+  rowId: nonEmpty,
+  /** 1: slow 1 hop, fast 2, until they meet; 2: one restarted at the head, both 1 hop, until they meet again. */
+  phase: z.union([z.literal(1), z.literal(2)]),
+  /** This scene's moves, drawn as hop arcs ("+1", "+2"). */
+  moves: z.array(raceMoveSchema).max(2),
+  /** Where the pointers met (ringed), and where the loop starts once it's known. */
+  meet: index.optional(),
+  entry: index.optional(),
+  /** The link that closes the loop (`from.next = to`), drawn in the accent. */
+  loop: z.object({ from: index, to: index }).optional(),
+  /** Short words for the markers, in the story's terms. */
+  meetLabel: nonEmpty.max(12).default("meet"),
+  entryLabel: nonEmpty.max(14).default("loop start"),
+};
+export const raceElementSchema = z.object(raceShape);
+export const raceSourceSchema = z.object({
+  ...raceShape,
+  /** Omit phase/moves/meet/entry/loop to take them from the bound step (an unbound scene shows no moves). */
+  phase: raceShape.phase.optional(),
+  moves: raceShape.moves.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -1010,6 +1049,7 @@ export const elementSchemas = [
   searchTreeElementSchema,
   partialElementSchema,
   hashMapElementSchema,
+  raceElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1049,6 +1089,7 @@ export const elementSourceSchemas = [
   searchTreeSourceSchema,
   partialSourceSchema,
   hashMapSourceSchema,
+  raceSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1100,6 +1141,8 @@ export type SearchTreeElement = ElementOf<"search-tree">;
 export type SearchNode = z.infer<typeof searchNodeSchema>;
 export type PartialElement = ElementOf<"partial">;
 export type HashMapElement = ElementOf<"hash-map">;
+export type RaceElement = ElementOf<"race">;
+export type RaceMove = z.infer<typeof raceMoveSchema>;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v15";
+export const PROMPT_VERSION = "storyboard-v16";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -63,6 +63,7 @@ ${ELEMENT_GUIDE}
 - stack: when steps list a stack, add a stack (set rowId to the input row's id, OMIT everything else) in every bound scene; an unbound scene shows it empty. Mark the item being read with an "active" highlight (OMIT indices) instead of pointers: the space under the row holds the resolve arcs and answers. A matched pair can use a "found" highlight. Keep the bottom stack to at most one equation or counter, and in the answer scene the result and at most a counter. Skip callouts in stack scenes.
 - search-tree / partial: when steps list a search, add a search-tree (OMIT everything) and a partial (OMIT items/added/removed/found; give label and foundLabel in the story's words) to every bound scene; an unbound scene shows just the root and an empty answer. Leave the input item-row out of search scenes (the partial shows what's chosen); a grid (a board) stays beside the tree. Keep the bottom stack to the partial plus at most one equation or counter. In the answer scene, drop the partial and show the result; if the tree is five or more levels deep, put the result in the closing scene instead (no tree there). Skip callouts in search scenes.
 - hash-map: when steps list a map, add a hash-map (OMIT everything but label; name it in the story's words) under the input row in every bound scene; an unbound scene shows it empty. The second scene contrasts the slow way (a nested loop rescanning, or sorting) with one lookup. Keep the bottom stack to the map plus at most one equation or counter; in the answer scene, the map and the result. Skip callouts in map scenes.
+- race: when steps list a race (fast and slow pointers on a list), add a race (rowId = the linked-list's id; OMIT phase/moves/meet/entry/loop; give meetLabel and entryLabel in the story's words) in every scene that shows the list, with pointers bound to "slow" and "fast" (placement "above"). The second scene contrasts the slow way (remembering every node visited in a set: O(n) extra space) with two pointers in O(1) space. When the trace has a phase 2 (a "restart" step), that scene's caption and narration say WHY it works: the head is exactly as far from the loop's start as the meeting point is (going forward), so two pointers moving 1 step each arrive there together; its equation shows those two distances (verdict like "head→start = meet→start"). Keep the bottom stack to at most one equation or counter beside the list; in the answer scene, only the result. Skip callouts in race scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -180,6 +181,24 @@ function describeStep(step: TraceStep, index: number): string {
       w.repeats?.length ? `repeated calls: [${w.repeats.join(", ")}]` : "",
     ];
     parts.push(walk.filter(Boolean).join("; "));
+  }
+  if (step.race) {
+    const r = step.race;
+    const at = (id: number | null) => (id === null ? "null" : `#${id}`);
+    parts.push(
+      [
+        `race phase ${r.phase}`,
+        ...r.moves.map(
+          (m) =>
+            `${m.pointer} ${[m.from, ...m.path, m.to].map(at).join("→")} (+${m.hops})${m.blocked !== undefined ? ` refused ${at(m.blocked)}` : ""}`,
+        ),
+        r.meet !== undefined ? `met at ${at(r.meet)}` : "",
+        r.entry !== undefined ? `loop starts at ${at(r.entry)}` : "",
+        r.loop ? `loop link ${at(r.loop.from)}→${at(r.loop.to)}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
   }
   if (step.map) {
     const m = step.map;
@@ -384,4 +403,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV15 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV16 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

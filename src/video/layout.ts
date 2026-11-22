@@ -11,6 +11,7 @@ import type {
   StackElement,
   ItemRowElement,
   LinkedListElement,
+  RaceElement,
   PointerElement,
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
@@ -62,6 +63,12 @@ export type ListLayout = {
   nullSide: (node: { lane: number; slot: number }) => "right" | "left";
   /** Lanes with something in them this scene (empty lanes take no room and lose their label). */
   present: boolean[];
+  /**
+   * With a race: per lane, the baseline its hop arcs start from (just above the pointers), how high each level of
+   * arc rises (slow's arcs one level, fast's two), and the top of the marker row under the lane (below the loop
+   * arrow), where "meet" and "loop start" go.
+   */
+  race?: { hopBase: number[]; hopLevel: number; markerTop: number[]; markerHeight: number };
 };
 
 /** Where a binary tree draws: node centers by id, plus geometry for stubs and annotations. */
@@ -233,6 +240,11 @@ export type SceneLayout = {
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
 export const sizes = {
+  /** One level of a race's hop arcs: room for a "+2" label. */
+  /** On a phone-sized player the labels are dropped: the number of humps shows the hops. */
+  hopLevel: (t: TextMetrics) => (t.compact ? 18 : t.size(TEXT.hopLabel) + 16),
+  /** A race's marker row ("◎ meet") under a lane; none on a phone, where the ring's border carries it. */
+  raceMarker: (t: TextMetrics) => (t.compact ? 0 : t.size(TEXT.raceMarker) + 12),
   pointer: (t: TextMetrics) => ARROW + t.size(TEXT.pointer) + 18,
   barLabel: (t: TextMetrics) => t.size(TEXT.barValue) + 10,
   heldCard: (t: TextMetrics) => t.size(TEXT.heldValue) + 14 + (t.compact ? 0 : t.size(TEXT.heldLabel) + 2),
@@ -433,12 +445,26 @@ function layoutList(
   // A lane with nothing in it (its nodes all moved on, none sliding out of it now) takes no room.
   const present = Array.from({ length: lanes }, (_, lane) => places.some((p) => p.lane === lane));
   const shown = present.filter(Boolean).length;
+  // A race keeps room for both of its pointers on one node (they start and meet together), its hop arcs above
+  // them, and a marker row under the lane, in every scene, so the lane never jumps between scenes.
+  const race = elements.find((el): el is RaceElement => el.type === "race" && el.rowId === list.id);
+  const pointersOn = (lane: number) =>
+    race
+      ? Math.max(
+          pointerDepthOn(elements, list.id, "above", inLane(lane)),
+          elements.filter((el) => el.type === "pointer" && el.rowId === list.id && el.placement === "above")
+            .length,
+        )
+      : pointerDepthOn(elements, list.id, "above", inLane(lane));
+  const hopStrip = race ? 2 * sizes.hopLevel(t) + 6 : 0;
   const above = Array.from({ length: lanes }, (_, lane) =>
-    present[lane] ? pointersAbove(pointerDepthOn(elements, list.id, "above", inLane(lane)), t) : 0,
+    present[lane] ? pointersAbove(pointersOn(lane), t) + hopStrip : 0,
   );
   const tags = t.compact ? 0 : t.size(TEXT.tag) + 12;
+  const underLane = (lane: number) => Math.max(highlighted(lane) ? tags : 0, curves(lane) ? LIST.dip : 0);
+  const markerRow = race && !t.compact ? sizes.raceMarker(t) + 4 : 0;
   const below = Array.from({ length: lanes }, (_, lane) =>
-    present[lane] ? Math.max(highlighted(lane) ? tags : 0, curves(lane) ? LIST.dip : 0) + 4 : 0,
+    present[lane] ? underLane(lane) + markerRow + 4 : 0,
   );
 
   const bandTop = captionBottom(t) + 8;
@@ -519,6 +545,16 @@ function layoutList(
       dip: LIST.dip,
       nullSide,
       present,
+      ...(race
+        ? {
+            race: {
+              hopBase: laneTops.map((top, lane) => top - pointersAbove(pointersOn(lane), t) - 2),
+              hopLevel: sizes.hopLevel(t),
+              markerTop: laneTops.map((top, lane) => top + nodeHeight + underLane(lane) + 4),
+              markerHeight: sizes.raceMarker(t),
+            },
+          }
+        : {}),
     },
     row,
     heap,

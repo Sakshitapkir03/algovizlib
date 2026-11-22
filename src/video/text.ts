@@ -99,6 +99,9 @@ export const TEXT = {
   listDummy: 18,
   listNull: 15,
   laneLabel: 15,
+  /** A race's hop labels ("+2") and its meet / loop-start markers. */
+  hopLabel: 16,
+  raceMarker: 15,
   treeValue: 30,
   treeNote: 15,
   treeNull: 13,

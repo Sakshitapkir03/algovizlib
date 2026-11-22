@@ -1,0 +1,472 @@
+{
+  "id": "fast-slow-pointers-linked-list-cycle-ii",
+  "title": "Linked List Cycle II: Where the Trail Loop Begins",
+  "concept": "Fast & Slow Pointers",
+  "category": "dsa",
+  "summary": "After a hiker and a runner meet on a looping trail, one restart from the trailhead finds exactly where the loop begins.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A trail from a parking lot passes markers 10, 20, 30, 40, 50, and 60, and after 60 it rejoins itself somewhere. A ranger wants to post a sign where the loop begins.",
+    "mapping": [
+      {
+        "real": "A trail marker",
+        "abstract": "A node"
+      },
+      {
+        "real": "The hiker, one marker at a time",
+        "abstract": "slow"
+      },
+      {
+        "real": "The runner, two at a time",
+        "abstract": "fast"
+      },
+      {
+        "real": "The trailhead",
+        "abstract": "The head"
+      },
+      {
+        "real": "Where the loop begins",
+        "abstract": "The cycle's entry node"
+      }
+    ]
+  },
+  "tags": [
+    "linked-list",
+    "floyd's cycle detection"
+  ],
+  "takeaway": {
+    "pattern": "Fast and slow pointers, two phases (Floyd)",
+    "summary": "Let slow and fast meet inside the loop, then restart one at the head and move both one step: they meet at the loop's start, because both are the same distance from it.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Finding where a linked list's cycle begins",
+      "Any repeating chain where you need the first repeated element"
+    ]
+  },
+  "trace": {
+    "problem": "fast-slow-pointers/linked-list-cycle-ii",
+    "args": [
+      [
+        10,
+        20,
+        30,
+        40,
+        50,
+        60
+      ],
+      2
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v16",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T17:09:11.515Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "trail",
+      "narration": "A trail passes markers 10 to 60, then rejoins itself somewhere. A ranger wants to post a sign where the loop begins.",
+      "caption": "Markers 10 to 60, then the trail rejoins itself",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "notebook",
+      "narration": "Noting every marker until one repeats would find it, but the notes grow with the trail. Two walkers and one clever restart need none.",
+      "caption": "Remembering every marker costs O(n) memory",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "info",
+          "enterAt": 0.3,
+          "type": "result",
+          "title": "Notes",
+          "value": "O(n)",
+          "detail": "one per marker",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "A hiker moves one marker per round and a runner two. Both start at 10.",
+      "caption": "A hiker (+1) and a runner (+2) leave the trailhead",
+      "durationInFrames": 216,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hiker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "runner",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "closing-in",
+      "narration": "By round three both are on the loop. The hiker is on 40, and the runner, already round the bend at 30, is one marker behind.",
+      "caption": "Round 3: both on the loop, the runner 1 behind",
+      "durationInFrames": 348,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hiker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "runner",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "1 behind"
+        }
+      ]
+    },
+    {
+      "id": "meet",
+      "narration": "Round four: both land on 50. There is a loop, but 50 isn't its start. The start is somewhere behind them.",
+      "caption": "They meet at 50, which isn't where the loop begins",
+      "durationInFrames": 288,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hiker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "runner",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "caught up"
+        }
+      ]
+    },
+    {
+      "id": "why",
+      "narration": "Here's why one restart works. The runner went twice as far, and the extra is whole laps. So the trailhead and the meeting point are equally far from the loop's start: two markers each.",
+      "caption": "Trailhead → loop start = meeting point → loop start",
+      "durationInFrames": 444,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hiker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "runner",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.1,
+          "type": "equation",
+          "unit": "",
+          "verdict": "head→start = meet→start"
+        }
+      ]
+    },
+    {
+      "id": "walk",
+      "narration": "So the hiker goes back to the trailhead, the runner waits at 50, and now both walk one marker at a time: 20 and 60.",
+      "caption": "Both move 1: the hiker to 20, the runner to 60",
+      "durationInFrames": 336,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hiker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "runner",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "entry",
+      "narration": "One more step and both reach 30 together. That's where the loop begins, index 2.",
+      "caption": "Both reach 30: the loop begins at index 2",
+      "durationInFrames": 216,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "trail"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hiker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "runner",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Loop starts at",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "map-back",
+      "narration": "Markers are nodes. Phase one: slow and fast meet in the loop. Phase two: slow restarts at the head, both move one node, and they meet at the loop's start. O(n) time, O(1) space.",
+      "caption": "Markers are nodes: meet, restart at head, step both by 1",
+      "durationInFrames": 444,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "list"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "fast",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    }
+  ]
+}

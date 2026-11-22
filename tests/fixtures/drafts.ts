@@ -156,6 +156,7 @@ export function buildDraft(problemKey: string): Draft {
     }
     if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
     if (step.heaps) elements.push({ id: "heaps", type: "heap", enterAt: 0 });
+    if (step.race) elements.push({ id: "race", type: "race", rowId: "row", enterAt: 0 } as ElementSource);
     if (step.map) elements.push({ id: "map", type: "hash-map", label: "map", enterAt: 0 } as ElementSource);
     if (step.explore) {
       elements.push({ id: "search", type: "search-tree", enterAt: 0 } as ElementSource);
@@ -183,7 +184,13 @@ export function buildDraft(problemKey: string): Draft {
     if (
       step.equation &&
       !(
-        (rowType === "binary-tree" || step.queue || step.heaps || step.table || step.pile || step.explore) &&
+        (rowType === "binary-tree" ||
+          step.queue ||
+          step.heaps ||
+          step.table ||
+          step.pile ||
+          step.explore ||
+          step.race) &&
         last
       )
     )

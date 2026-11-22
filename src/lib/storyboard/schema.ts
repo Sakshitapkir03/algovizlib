@@ -457,6 +457,60 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: `A scene can show only one ${el.type}` });
           break;
         }
+        case "race": {
+          const list = scene.elements.find((e) => e.type === "linked-list" && e.id === el.rowId);
+          if (!list || list.type !== "linked-list") {
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "rowId"],
+              message: `A race runs on a linked-list in the same scene; there's no linked-list "${el.rowId}"`,
+            });
+            break;
+          }
+          const next = new Map(list.nodes.map((node) => [node.id, node.next]));
+          const has = (id: number) => next.has(id);
+          el.moves.forEach((move, k) => {
+            // Every hop must follow a real link: from → path… → to.
+            const stops = [move.from, ...move.path, move.to];
+            const follows = stops.every((id, j) => j === 0 || next.get(stops[j - 1] as number) === id);
+            if (
+              !has(move.from) ||
+              move.path.some((id) => !has(id)) ||
+              !follows ||
+              move.hops !== stops.length - 1
+            )
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "moves", k],
+                message: `${move.pointer}'s move doesn't follow the list's links (${stops.map((id) => id ?? "null").join(" → ")}, ${move.hops} hops)`,
+              });
+            if (move.blocked !== undefined && (move.to === null || next.get(move.to) !== move.blocked))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "moves", k, "blocked"],
+                message: `${move.pointer} can only be refused the node its last stop links to`,
+              });
+          });
+          for (const [field, id] of [
+            ["meet", el.meet],
+            ["entry", el.entry],
+          ] as const)
+            if (id !== undefined && !has(id))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, field],
+                message: `node ${id} isn't in the list`,
+              });
+          if (el.loop && next.get(el.loop.from) !== el.loop.to)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "loop"],
+              message: `the loop's link ${el.loop.from} → ${el.loop.to} isn't in the list`,
+            });
+          if (scene.elements.filter((e) => e.type === "race").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one race" });
+          break;
+        }
         case "hash-map": {
           const keys = el.entries.map((e) => e.key);
           if (new Set(keys).size !== keys.length)

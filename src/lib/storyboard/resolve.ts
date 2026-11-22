@@ -491,6 +491,22 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             );
           return { ...el, heaps, slots };
         }
+        case "race": {
+          if (el.phase !== undefined && el.moves) return { ...el, phase: el.phase, moves: el.moves };
+          if (step && !step.race) return (noState(el, "moves", "race"), el);
+          const r = step?.race;
+          // An unbound scene (the intro) shows no moves, with the loop as the trace starts.
+          const first = trace?.steps.find((s) => s.race)?.race;
+          if (!r && !first) return (missing(el, "moves"), el);
+          return {
+            ...el,
+            phase: el.phase ?? r?.phase ?? 1,
+            moves: el.moves ?? r?.moves ?? [],
+            meet: el.meet ?? r?.meet,
+            entry: el.entry ?? r?.entry,
+            loop: el.loop ?? (r ? r.loop : first?.loop),
+          };
+        }
         case "hash-map": {
           if (el.entries && el.kind && el.display) return el;
           if (step && !step.map) return (noState(el, "entries", "map"), el);

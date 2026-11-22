@@ -27,6 +27,7 @@ import { MergeBuffer } from "./MergeBuffer";
 import { NumberLine } from "./NumberLine";
 import { Partial } from "./Partial";
 import { Partition } from "./Partition";
+import { Race } from "./Race";
 import { Pointer } from "./Pointer";
 import { Queue } from "./Queue";
 import { Result } from "./Result";
@@ -59,6 +60,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   "bar-row": { component: BarRow, slot: "canvas", layer: 0 },
   // Nodes and arrows; highlights ring the nodes and pointers sit above them.
   "linked-list": { component: LinkedList, slot: "canvas", layer: 0 },
+  // Fast and slow pointers: hop arcs, the meeting node, and the loop, over the list and under its pointers.
+  race: { component: Race, slot: "canvas", layer: 1 },
   // Nodes, edges, and notes; highlights ring the nodes. The call stack is a column beside it.
   "binary-tree": { component: BinaryTree, slot: "canvas", layer: 0 },
   "call-stack": { component: CallStack, slot: "canvas", layer: 0 },

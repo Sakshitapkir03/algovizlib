@@ -13,12 +13,12 @@ The list is described by \`values\`, the node values from the head in order, and
 Return the index (counting from 0 at the head) of the node where the loop begins, or \`-1\` if the list has no loop. Don't modify the list.`,
   examples: [
     {
-      input: "values = [10, 20, 30, 40, 50, 60], pos = 3",
-      output: "3",
+      input: "values = [10, 20, 30, 40, 50, 60], pos = 2",
+      output: "2",
       explanation:
-        "After 60 the list returns to 40, so the loop is 40 → 50 → 60 → 40 and it begins at index 3.",
-      args: [[10, 20, 30, 40, 50, 60], 3],
-      expected: 3,
+        "After 60 the list returns to 30, so the loop is 30 → 40 → 50 → 60 → 30 and it begins at index 2.",
+      args: [[10, 20, 30, 40, 50, 60], 2],
+      expected: 2,
     },
     {
       input: "values = [1, 2], pos = 0",

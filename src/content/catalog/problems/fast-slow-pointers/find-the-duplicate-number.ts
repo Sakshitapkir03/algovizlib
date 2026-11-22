@@ -11,6 +11,14 @@ export const findTheDuplicateNumber = defineProblem({
 Return that repeated value. Don't modify \`nums\`, and use only a constant amount of extra memory.`,
   examples: [
     {
+      input: "nums = [4, 3, 1, 4, 2]",
+      output: "4",
+      explanation:
+        "Five numbers drawn from 1 to 4, and 4 appears at indices 0 and 3. Following i → nums[i] from index 0 gives 0 → 4 → 2 → 1 → 3 → 4, a loop that starts at 4.",
+      args: [[4, 3, 1, 4, 2]],
+      expected: 4,
+    },
+    {
       input: "nums = [2, 5, 1, 3, 4, 5]",
       output: "5",
       explanation: "Six numbers drawn from 1 to 5, and 5 is the one that shows up twice.",

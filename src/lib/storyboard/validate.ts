@@ -7,6 +7,7 @@ import type {
   TracePartial,
   TraceSearchNode,
   TraceMap,
+  TraceRace,
   TraceBfs,
   TraceLinks,
   TraceQueueItem,
@@ -253,6 +254,26 @@ const canonSearchNodes = (nodes: readonly TraceSearchNode[]) =>
       pruned: n.pruned ?? null,
     })),
   );
+
+/** A fast-and-slow race field by field, in a canonical text form. */
+function raceFields(r: Partial<TraceRace>): Record<string, string> {
+  return {
+    phase: JSON.stringify(r.phase ?? 1),
+    moves: JSON.stringify(
+      (r.moves ?? []).map((m) => ({
+        pointer: m.pointer,
+        from: m.from,
+        to: m.to,
+        path: m.path,
+        hops: m.hops,
+        blocked: m.blocked ?? null,
+      })),
+    ),
+    meet: JSON.stringify(r.meet ?? null),
+    entry: JSON.stringify(r.entry ?? null),
+    loop: JSON.stringify(r.loop ? { from: r.loop.from, to: r.loop.to } : null),
+  };
+}
 
 /** A hash map's state field by field, in a canonical text form. */
 function mapFields(m: Partial<TraceMap>): Record<string, string> {
@@ -567,6 +588,22 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               "Without a traceStep, the table is empty (or the final table); omit cells/current/reads/chosen to take them from the trace",
               el.id,
               "cells",
+            );
+        }
+        if (el.type === "race") {
+          const drawn = raceFields(el);
+          const first = trace.steps.find((s) => s.race)?.race;
+          const start = raceFields({ loop: first?.loop });
+          const startBare = raceFields({});
+          const last = trace.steps.at(-1)?.race;
+          const end = last && raceFields({ ...last, moves: [] });
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!same(start) && !same(startBare) && !same(end))
+            push(
+              "Without a traceStep, the race shows no moves (as it starts, or as it ends); omit moves to take it from the trace",
+              el.id,
+              "moves",
             );
         }
         if (el.type === "hash-map") {
@@ -1157,6 +1194,21 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           for (const field of Object.keys(expected))
             if (drawn[field] !== expected[field])
               push(`The ${el.type}'s ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "race": {
+          if (!step.race) {
+            push(`Trace step ${stepIndex} has no race`, el.id, "moves");
+            break;
+          }
+          const expected = raceFields(step.race);
+          const drawn = raceFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The race's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
                 actual: drawn[field],
               });

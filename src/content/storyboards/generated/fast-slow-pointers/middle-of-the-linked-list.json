@@ -1,0 +1,374 @@
+{
+  "id": "fast-slow-pointers-middle-of-the-linked-list",
+  "title": "Middle of the Linked List: A Walker and a Hopper",
+  "concept": "Fast & Slow Pointers",
+  "category": "dsa",
+  "summary": "When one friend hops two stones for every one the other takes, the slower friend is in the middle when the faster one reaches the far bank.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Two friends cross a stream on stepping stones numbered 2, 4, 6, 8, and 10, and want to stop on the middle stone without counting the stones first.",
+    "mapping": [
+      {
+        "real": "A stepping stone",
+        "abstract": "A node"
+      },
+      {
+        "real": "The walker, one stone at a time",
+        "abstract": "slow"
+      },
+      {
+        "real": "The hopper, two stones at a time",
+        "abstract": "fast"
+      },
+      {
+        "real": "The far bank",
+        "abstract": "The end of the list (null)"
+      }
+    ]
+  },
+  "tags": [
+    "linked-list"
+  ],
+  "takeaway": {
+    "pattern": "Fast and slow pointers",
+    "summary": "Move slow one node and fast two while fast and the node after it exist. Fast always covers twice the distance, so slow stops in the middle.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Finding the middle of a list in one pass",
+      "Splitting a list in half (merge sort, reorder, palindrome checks)"
+    ]
+  },
+  "trace": {
+    "problem": "fast-slow-pointers/middle-of-the-linked-list",
+    "args": [
+      [
+        2,
+        4,
+        6,
+        8,
+        10
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v16",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T17:09:11.518Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "stream",
+      "narration": "Two friends cross a stream on stones 2, 4, 6, 8 and 10. They want to stop on the middle stone, but nobody has counted the stones.",
+      "caption": "Stones 2, 4, 6, 8, 10: stop on the middle one",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "stones"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "two-passes",
+      "narration": "You could cross once to count the stones, then walk back to the halfway one. That's two passes. One crossing is enough if the friends move at different speeds.",
+      "caption": "Counting first means crossing twice",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "stones"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "info",
+          "enterAt": 0.3,
+          "type": "result",
+          "title": "Count, then walk",
+          "value": "2 passes",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "Both start on stone 2. Each round the walker steps one stone and the hopper jumps two.",
+      "caption": "The walker takes 1 stone, the hopper 2",
+      "durationInFrames": 240,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "stones"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "walker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hopper",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "round-1",
+      "narration": "Round one: the walker is on 4, one stone along; the hopper is on 6, two stones along. Twice as far.",
+      "caption": "Round 1: the hopper is twice as far along",
+      "durationInFrames": 288,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "stones"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "walker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hopper",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "twice as far"
+        }
+      ]
+    },
+    {
+      "id": "round-2",
+      "narration": "Round two: the walker reaches 6 and the hopper reaches 10, the last stone. Still exactly twice as far.",
+      "caption": "Round 2: hopper on the last stone, 2 × 2 = 4",
+      "durationInFrames": 264,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "stones"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "walker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hopper",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "twice as far"
+        }
+      ]
+    },
+    {
+      "id": "middle",
+      "narration": "The hopper can't jump two more, so the walker has covered half the stones and stands on the middle one, 6. The answer is the list from there: 6, 8, 10.",
+      "caption": "The hopper can't jump on: the walker is on the middle",
+      "durationInFrames": 408,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "stones"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "walker",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "hopper",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "middle",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "From the middle",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "map-back",
+      "narration": "Stones are nodes, the walker is slow and the hopper is fast. Loop while fast and fast.next exist; slow ends on the middle, the second one for even lengths. One pass, O(1) space.",
+      "caption": "Stones are nodes: slow +1, fast +2, stop when fast can't",
+      "durationInFrames": 432,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "list"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "fast",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    }
+  ]
+}

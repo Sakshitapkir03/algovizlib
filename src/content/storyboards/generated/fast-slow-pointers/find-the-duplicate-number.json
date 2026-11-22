@@ -1,0 +1,472 @@
+{
+  "id": "fast-slow-pointers-find-the-duplicate-number",
+  "title": "Find the Duplicate Number: Two Signs to One Room",
+  "concept": "Fast & Slow Pointers",
+  "category": "dsa",
+  "summary": "Read each value as a sign to the next room: the room two signs point to is where the walk starts circling, and Floyd's two phases find it.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A gallery has rooms 0 to 4. Each room's exit sign names the next room: room 0 says 4, room 1 says 3, room 2 says 1, room 3 says 4, room 4 says 2. Two signs name the same room.",
+    "mapping": [
+      {
+        "real": "Room i",
+        "abstract": "Index i"
+      },
+      {
+        "real": "Room i's exit sign",
+        "abstract": "nums[i], the next index"
+      },
+      {
+        "real": "The room two signs point to",
+        "abstract": "The duplicate value"
+      },
+      {
+        "real": "The visitor and the guide",
+        "abstract": "slow and fast"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "floyd's cycle detection"
+  ],
+  "takeaway": {
+    "pattern": "Fast and slow pointers on an implicit list",
+    "summary": "Treat i → nums[i] as a linked list from index 0. The duplicate has two arrows into it, so it's where the walk enters its loop: meet with slow and fast, restart slow at 0, and step both by one.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Values that are valid indices into the same array",
+      "Finding a repeat without extra memory or changing the input"
+    ]
+  },
+  "trace": {
+    "problem": "fast-slow-pointers/find-the-duplicate-number",
+    "args": [
+      [
+        4,
+        3,
+        1,
+        4,
+        2
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v16",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T17:09:11.514Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "gallery",
+      "narration": "A gallery has rooms 0 to 4, and each room's exit sign names the next room. Two signs name the same room. Which one?",
+      "caption": "Each room's sign names the next room: two name the same one",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "checklist",
+      "narration": "Ticking off rooms or sorting the signs finds it, but needs extra memory or moves the signs. Following signs works with two walkers.",
+      "caption": "Ticking off rooms needs a list as long as the gallery",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "info",
+          "enterAt": 0.3,
+          "type": "result",
+          "title": "Checklist",
+          "value": "O(n)",
+          "detail": "or sorting moves the signs",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "No sign names room 0, so start there. From room 0 the signs lead 4, 2, 1, 3, and then round the same rooms again.",
+      "caption": "Follow the signs from room 0, which no sign names",
+      "durationInFrames": 336,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "visitor",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "guide",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "round-1",
+      "narration": "A visitor follows one sign per round, a guide two. Round one: visitor in room 4, guide in room 2.",
+      "caption": "The visitor follows 1 sign, the guide 2",
+      "durationInFrames": 276,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "visitor",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "guide",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "rounds",
+          "enterAt": 0.2,
+          "type": "counter",
+          "label": "rounds"
+        }
+      ]
+    },
+    {
+      "id": "closing-in",
+      "narration": "Inside the loop the guide gains one room per round. After round three it's one room behind.",
+      "caption": "Round 3: the guide is 1 room behind",
+      "durationInFrames": 240,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "visitor",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "guide",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "1 behind"
+        }
+      ]
+    },
+    {
+      "id": "meet",
+      "narration": "Round four: both are in room 3. The loop is confirmed, but room 3 isn't where it starts.",
+      "caption": "They meet in room 3, inside the loop",
+      "durationInFrames": 252,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "visitor",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "guide",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "caught up"
+        }
+      ]
+    },
+    {
+      "id": "why",
+      "narration": "Why the restart works: the guide's extra distance is whole laps, so room 0 and room 3 are equally far from the loop's start, one sign each. Visitor back to room 0.",
+      "caption": "Room 0 → loop start = room 3 → loop start: 1 sign each",
+      "durationInFrames": 420,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "visitor",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "guide",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.1,
+          "type": "equation",
+          "unit": "",
+          "verdict": "room 0→loop = meet→loop"
+        }
+      ]
+    },
+    {
+      "id": "found",
+      "narration": "Both follow one sign and arrive in room 4 together. Two signs point there, so the duplicate is 4.",
+      "caption": "Both follow 1 sign and reach room 4: the duplicate",
+      "durationInFrames": 264,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "rooms"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "visitor",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "guide",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "two signs"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Duplicate",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "map-back",
+      "narration": "Rooms are indices and signs are nums[i]. Slow and fast meet, slow restarts at 0, both step once, and they meet at the duplicate. O(n) time, O(1) space, array untouched.",
+      "caption": "Rooms are indices, signs are nums[i]: Floyd in O(1) space",
+      "durationInFrames": 396,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "indices"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "fast",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
 import { dpProblems } from "./fixtures/dp-fit";
+import { raceProblems } from "./fixtures/race-fit";
 import { backtrackProblems } from "./fixtures/backtrack-fit";
 import { stackProblems } from "./fixtures/stack-fit";
 import { heapProblems } from "./fixtures/heap-fit";
@@ -76,6 +77,7 @@ describe("video text at phone width", () => {
         "partition",
         "pointer",
         "queue",
+        "race",
         "result",
         "search-range",
         "search-tree",
@@ -384,6 +386,9 @@ describe("video text at phone width", () => {
             if (width > 1280 - 24) fail(`the map is wider than the stage (${Math.round(width)}px)`);
             break;
           }
+          case "race":
+            for (const problem of raceProblems(scene.elements, phone)) fail(problem);
+            break;
           case "search-tree":
           case "partial":
             for (const problem of backtrackProblems(scene.elements, phone, el.type)) fail(problem);

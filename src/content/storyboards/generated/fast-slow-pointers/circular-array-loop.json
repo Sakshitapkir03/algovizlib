@@ -1,0 +1,442 @@
+{
+  "id": "fast-slow-pointers-circular-array-loop",
+  "title": "Circular Array Loop: Frogs Around a Pond",
+  "concept": "Fast & Slow Pointers",
+  "category": "dsa",
+  "summary": "Race a slow and a fast jumper from each stone, refuse any jump that changes direction, and rule out every stone of a failed start.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Five stones sit in a ring around a pond, numbered 0 to 4. Each is painted with a jump: −1, +1, +1, +3, −1, where + means clockwise and − counterclockwise. Is there a loop of two or more stones that only ever jumps one way?",
+    "mapping": [
+      {
+        "real": "Stone i",
+        "abstract": "Index i"
+      },
+      {
+        "real": "Its painted jump",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "Going round the pond",
+        "abstract": "Wrapping around the array"
+      },
+      {
+        "real": "The frog and the toad",
+        "abstract": "slow and fast"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "floyd's cycle detection",
+    "simulation"
+  ],
+  "takeaway": {
+    "pattern": "Fast and slow pointers on an implicit list",
+    "summary": "Each index jumps to exactly one next index, so race slow and fast from each start, refusing jumps that switch direction or land on themselves. If they meet, the loop is valid; if not, rule out the start's whole path.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Arrays where each value says where to go next",
+      "Cycle checks with extra rules on which steps count"
+    ]
+  },
+  "trace": {
+    "problem": "fast-slow-pointers/circular-array-loop",
+    "args": [
+      [
+        -1,
+        1,
+        1,
+        3,
+        -1
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v16",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T17:09:11.507Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "pond",
+      "narration": "Five stones ring a pond, painted −1, +1, +1, +3, −1: plus jumps clockwise, minus counterclockwise. Is there a loop of two or more stones that never changes direction?",
+      "caption": "Stones −1, +1, +1, +3, −1 around a pond: any one-way loop?",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "ring"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    },
+    {
+      "id": "brute",
+      "narration": "Following jumps from every stone while remembering the stones you saw costs memory, and repeats work. A race uses no memory, and a failed path is never walked again.",
+      "caption": "Tracing every start and remembering stones is slow",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "ring"
+          ]
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "info",
+          "enterAt": 0.3,
+          "type": "result",
+          "title": "Trace every start",
+          "value": "O(n²)",
+          "detail": "and a list of visited stones",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "fail",
+      "narration": "From stone 0, only counterclockwise jumps count. The frog reaches stone 4, but the toad's next jump would land on 3, a clockwise stone. That start fails, and stones 0 and 4 are ruled out.",
+      "caption": "From stone 0 (−1): stone 4's −1 leads to a +3. Ruled out",
+      "durationInFrames": 456,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "ring"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "frog",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "toad",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        }
+      ]
+    },
+    {
+      "id": "start-1",
+      "narration": "Next start: stone 1, plus one. Now only clockwise jumps count.",
+      "caption": "Start again from stone 1: only clockwise jumps count",
+      "durationInFrames": 169,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "ring"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "frog",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "toad",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        }
+      ]
+    },
+    {
+      "id": "round-1",
+      "narration": "Round one: the frog hops to stone 2, the toad to 3. Every jump clockwise.",
+      "caption": "Frog +1 to stone 2, toad +2 to stone 3",
+      "durationInFrames": 216,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "ring"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "frog",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "toad",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        },
+        {
+          "id": "rounds",
+          "enterAt": 0.2,
+          "type": "counter",
+          "label": "rounds"
+        }
+      ]
+    },
+    {
+      "id": "round-2",
+      "narration": "Round two: the frog reaches 3, and the toad wraps round the pond to stone 2, one stone behind.",
+      "caption": "The toad wraps round to stone 2: 1 behind the frog",
+      "durationInFrames": 264,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "ring"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "frog",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "toad",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        },
+        {
+          "id": "gap",
+          "enterAt": 0.25,
+          "type": "equation",
+          "unit": "",
+          "verdict": "1 behind"
+        }
+      ]
+    },
+    {
+      "id": "meet",
+      "narration": "Round three: both land on stone 1. Stones 1, 2 and 3 form a clockwise loop of three stones, so the answer is true.",
+      "caption": "They meet on stone 1: a clockwise loop 1 → 2 → 3",
+      "durationInFrames": 324,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "ring"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "frog",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "toad",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "One-way loop?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "map-back",
+      "narration": "Stones are indices and the paint is nums[i]. Race slow and fast from each start, refusing jumps that switch direction; rule out failed paths. O(n) time, O(1) space.",
+      "caption": "Stones are indices: race slow and fast, rule out failures",
+      "durationInFrames": 372,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "indices"
+          ]
+        },
+        {
+          "id": "p-slow",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "slow",
+          "placement": "above",
+          "tone": "primary",
+          "binds": "slow"
+        },
+        {
+          "id": "p-fast",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "list",
+          "label": "fast",
+          "placement": "above",
+          "tone": "secondary",
+          "binds": "fast"
+        },
+        {
+          "id": "race",
+          "enterAt": 0,
+          "type": "race",
+          "rowId": "list",
+          "meetLabel": "meet",
+          "entryLabel": "loop start"
+        }
+      ]
+    }
+  ]
+}

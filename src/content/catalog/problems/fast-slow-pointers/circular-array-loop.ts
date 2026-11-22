@@ -16,6 +16,14 @@ A valid loop is a sequence of indices that you keep jumping through forever, whe
 Return \`true\` if \`nums\` contains at least one valid loop, and \`false\` otherwise.`,
   examples: [
     {
+      input: "nums = [-1, 1, 1, 3, -1]",
+      output: "true",
+      explanation:
+        "Index 0 jumps back to 4, but 4 jumps back to 3, which jumps forward: no loop from there. Index 1 jumps to 2, 2 to 3, and 3 jumps 3 forward, wrapping to 1: a forward loop of three indices.",
+      args: [[-1, 1, 1, 3, -1]],
+      expected: true,
+    },
+    {
       input: "nums = [3, 1, -2, 2, 1]",
       output: "true",
       explanation:

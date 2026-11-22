@@ -18,6 +18,11 @@ import { nQueensTrace } from "./backtracking/n-queens";
 import { permutationsTrace } from "./backtracking/permutations";
 import { subsetsTrace } from "./backtracking/subsets";
 import { sumOfAllSubsetXorTotalsTrace } from "./backtracking/sum-of-all-subset-xor-totals";
+import { circularArrayLoopTrace } from "./fast-slow-pointers/circular-array-loop";
+import { findTheDuplicateNumberTrace } from "./fast-slow-pointers/find-the-duplicate-number";
+import { linkedListCycleTrace } from "./fast-slow-pointers/linked-list-cycle";
+import { linkedListCycleIiTrace } from "./fast-slow-pointers/linked-list-cycle-ii";
+import { middleOfTheLinkedListTrace } from "./fast-slow-pointers/middle-of-the-linked-list";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -133,6 +138,11 @@ const definitions = [
   groupAnagramsTrace,
   longestConsecutiveSequenceTrace,
   firstMissingPositiveTrace,
+  linkedListCycleTrace,
+  middleOfTheLinkedListTrace,
+  linkedListCycleIiTrace,
+  findTheDuplicateNumberTrace,
+  circularArrayLoopTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

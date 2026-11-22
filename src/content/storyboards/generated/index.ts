@@ -21,6 +21,11 @@ import dynamicProgrammingCoinChange from "./dynamic-programming/coin-change.json
 import dynamicProgrammingEditDistance from "./dynamic-programming/edit-distance.json";
 import dynamicProgrammingHouseRobber from "./dynamic-programming/house-robber.json";
 import dynamicProgrammingLongestCommonSubsequence from "./dynamic-programming/longest-common-subsequence.json";
+import fastSlowPointersCircularArrayLoop from "./fast-slow-pointers/circular-array-loop.json";
+import fastSlowPointersFindTheDuplicateNumber from "./fast-slow-pointers/find-the-duplicate-number.json";
+import fastSlowPointersLinkedListCycle from "./fast-slow-pointers/linked-list-cycle.json";
+import fastSlowPointersLinkedListCycleIi from "./fast-slow-pointers/linked-list-cycle-ii.json";
+import fastSlowPointersMiddleOfTheLinkedList from "./fast-slow-pointers/middle-of-the-linked-list.json";
 import graphsBfsFloodFill from "./graphs-bfs/flood-fill.json";
 import graphsBfsNumberOfIslands from "./graphs-bfs/number-of-islands.json";
 import graphsBfsRottingOranges from "./graphs-bfs/rotting-oranges.json";
@@ -85,9 +90,12 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "dynamic-programming/coin-change": loadStoryboard(dynamicProgrammingCoinChange),
   "dynamic-programming/edit-distance": loadStoryboard(dynamicProgrammingEditDistance),
   "dynamic-programming/house-robber": loadStoryboard(dynamicProgrammingHouseRobber),
-  "dynamic-programming/longest-common-subsequence": loadStoryboard(
-    dynamicProgrammingLongestCommonSubsequence,
-  ),
+  "dynamic-programming/longest-common-subsequence": loadStoryboard(dynamicProgrammingLongestCommonSubsequence),
+  "fast-slow-pointers/circular-array-loop": loadStoryboard(fastSlowPointersCircularArrayLoop),
+  "fast-slow-pointers/find-the-duplicate-number": loadStoryboard(fastSlowPointersFindTheDuplicateNumber),
+  "fast-slow-pointers/linked-list-cycle": loadStoryboard(fastSlowPointersLinkedListCycle),
+  "fast-slow-pointers/linked-list-cycle-ii": loadStoryboard(fastSlowPointersLinkedListCycleIi),
+  "fast-slow-pointers/middle-of-the-linked-list": loadStoryboard(fastSlowPointersMiddleOfTheLinkedList),
   "graphs-bfs/flood-fill": loadStoryboard(graphsBfsFloodFill),
   "graphs-bfs/number-of-islands": loadStoryboard(graphsBfsNumberOfIslands),
   "graphs-bfs/rotting-oranges": loadStoryboard(graphsBfsRottingOranges),
@@ -103,12 +111,8 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "linked-list/remove-nth-node-from-end": loadStoryboard(linkedListRemoveNthNodeFromEnd),
   "linked-list/reorder-list": loadStoryboard(linkedListReorderList),
   "linked-list/reverse-linked-list": loadStoryboard(linkedListReverseLinkedList),
-  "sliding-window/longest-repeating-character-replacement": loadStoryboard(
-    slidingWindowLongestRepeatingCharacterReplacement,
-  ),
-  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(
-    slidingWindowLongestSubstringWithoutRepeatingCharacters,
-  ),
+  "sliding-window/longest-repeating-character-replacement": loadStoryboard(slidingWindowLongestRepeatingCharacterReplacement),
+  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(slidingWindowLongestSubstringWithoutRepeatingCharacters),
   "sliding-window/maximum-sum-subarray-of-size-k": loadStoryboard(slidingWindowMaximumSumSubarrayOfSizeK),
   "sliding-window/minimum-window-substring": loadStoryboard(slidingWindowMinimumWindowSubstring),
   "sliding-window/sliding-window-maximum": loadStoryboard(slidingWindowSlidingWindowMaximum),

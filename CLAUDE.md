@@ -418,6 +418,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `search-tree`   | backtracking decision tree (any branching): path in orange, dead ends faded/folded, pruned stubs dashed + reason, solutions ✓                                         | canvas |
 | `partial`       | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                  | bottom |
 | `hash-map`      | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                               | bottom |
+| `race`          | fast and slow pointers over a linked-list: hop arcs "+1" / "+2" along the links, the meeting node ringed (◎ meet), the loop's start (✓), the loop link in orange      | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -631,6 +632,28 @@ lookup. The validator checks the map's kind, display, entries in order, lookup a
 against every step; the schema rejects a lookup whose result disagrees with the entries, and a set with values. An
 unbound map is empty. Tones: a lookup that finds nothing is neutral; a found partner or a new longest run positive.
 
+**Fast & Slow Pointers** (the five home problems; Reorder List is cross-listed in with its video; Cycle, Cycle II, and
+Middle are also listed under Linked List, Find the Duplicate under Binary Search) added step state `race`: `phase` (1:
+slow takes 1 hop and fast 2 until they meet or fast runs off the end; 2: one restarted at the head, both 1 hop),
+`moves` (each pointer's `from`, `path` through the nodes it passed, `to` (null: off the end), `hops`, and `blocked`: a
+node it refused to step onto), `meet`, `entry` (the loop's start, once phase 2 finds it), and `loop` (the link that
+closes the loop). Traces drive a `Race` (`traces/fast-slow-pointers/shared.ts`) over a `ListState`: `move` follows real
+`next` links hop by hop. Arrays read as lists use the same view: Find the Duplicate draws the indices the walk from 0
+reaches, in walk order (index i → nums[i]); Circular Array Loop draws every index in order, labeled with its index and
+jump ("3:+3"), refused jumps the other way, and rules out a failed start's path with a `rejected` highlight. The
+`race` primitive is drawn over the `linked-list` (whose frames are pixel-identical before and after; the link geometry
+moved to `video/list-links.ts`): hop arcs above the pointers (slow's at the first level in the accent, fast's at the
+second, neutral), "+N" over the last hop (fast's moves to its first hop when both end on one), the meeting node ringed
+dashed sky with "◎ meet", the loop's start ringed solid green with "✓ loop start" (the words from `meetLabel` /
+`entryLabel`), and the loop link traced in the accent with "↺ loop". The layout (`layoutList`, only with a race)
+reserves the hop strip, two pointer levels, and a marker row under the loop arrow in every scene, so the lane never
+jumps; on a phone-sized player the labels and the marker row are dropped (humps show the hops; a dashed ring is the
+meeting, a solid one the loop's start). The schema checks every move follows the scene's links and the loop is a real
+link; the validator checks phase, moves, meet, entry, and loop against the step (an unbound race shows no moves).
+Cycle II and Find the Duplicate meet away from the loop's start (tested), and their restart scene explains why phase
+2 works with an equation of the two distances (head → start = meet → start). Tones: the gap closing to 0 is positive,
+other rounds neutral.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -657,7 +680,8 @@ Trace = {
            table?, climb?, houses?,                               // dynamic programming (see "Dynamic Programming" above)
            pile?,                                                 // stacks (see "Stack" above)
            explore?, partial?,                                    // backtracking (see "Backtracking" above)
-           map? }[],                                              // hashing (see "Arrays & Hashing" above)
+           map?,                                                  // hashing (see "Arrays & Hashing" above)
+           race? }[],                                             // fast and slow pointers (see "Fast & Slow Pointers" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -686,7 +710,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -928,7 +952,10 @@ N-Queens is problem-native (the board); Subset XOR Totals is a painter's tint po
 picnic basket, Permutations a relay team's running orders, and Combination Sum filling a 12-litre tank with 4 L and 6 L
 jugs. Arrays & Hashing: Two Sum is a puzzle-swap host's register of who has arrived, Valid Anagram two Scrabble
 racks and one tally, Group Anagrams magnetic-letter words on trays labeled by their letters, Longest Consecutive
-Sequence runs of taken parking spots, and First Missing Positive keys put back in their own numbered lockers.
+Sequence runs of taken parking spots, and First Missing Positive keys put back in their own numbered lockers. Fast & Slow Pointers: a jogger and a sprinter on a route that may loop (Cycle), a walker and a hopper on stepping
+stones (Middle), a hiker and a runner on a looping trail, then a restart from the trailhead (Cycle II), gallery rooms
+whose exit signs name the next room (Find the Duplicate), and a frog and a toad on painted stones around a pond
+(Circular Array Loop).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 
