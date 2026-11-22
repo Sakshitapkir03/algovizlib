@@ -5,6 +5,7 @@ import type { ElementOf, ElementType } from "@/lib/storyboard";
 import { BarRow } from "./BarRow";
 import { BinaryTree } from "./BinaryTree";
 import { Callout } from "./Callout";
+import { Choice } from "./Choice";
 import { CallStack } from "./CallStack";
 import { CountArray } from "./CountArray";
 import { Counter } from "./Counter";
@@ -28,6 +29,7 @@ import { NumberLine } from "./NumberLine";
 import { Partial } from "./Partial";
 import { Partition } from "./Partition";
 import { Race } from "./Race";
+import { Reach } from "./Reach";
 import { Pointer } from "./Pointer";
 import { Queue } from "./Queue";
 import { Result } from "./Result";
@@ -82,6 +84,10 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   partial: { component: Partial, slot: "bottom", layer: 0 },
   // Hashing: the map or set under the input.
   "hash-map": { component: HashMap, slot: "bottom", layer: 0 },
+  // Greedy: the stretch committed to (band under the cards, jump arc over them, dashing cards out of reach), under
+  // highlights and pointers; the choice panel sits below.
+  reach: { component: Reach, slot: "canvas", layer: 0.5 },
+  choice: { component: Choice, slot: "bottom", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

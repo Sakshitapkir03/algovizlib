@@ -16,6 +16,7 @@ import type {
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
+import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
 import { TEXT, textMetrics, type TextMetrics } from "./text";
 
 /**
@@ -388,6 +389,8 @@ function bottomHeight(el: Element, t: TextMetrics): number {
     case "partial":
       // On a phone-sized player it's one row: the chips and a count of the answers found.
       return t.compact ? sizes.cell(t) : 2 * sizes.cell(t) + 8;
+    case "choice":
+      return layoutChoice(el, t).height;
     default:
       return 0;
   }
@@ -1153,6 +1156,8 @@ function layoutWith(
   // A search range draws the same bracket (and label) above the cards as a sliding window.
   const windowRows = new Set([...rowsWith("window"), ...rowsWith("search-range")]);
   const bufferRows = rowsWith("merge-buffer");
+  // A reach draws its jump arc above the cards (over the tags) and its band under them (above the pointers).
+  const reachRows = rowsWith("reach");
   const groupsOf = new Map(
     elements.flatMap((el) => (el.type === "segments" ? [[el.rowId, el.groups] as const] : [])),
   );
@@ -1182,7 +1187,8 @@ function layoutWith(
     }
 
     // Stack everything under the row upward from the bottom stack: brackets, pointers, then a panel.
-    const bracket = groupsOf.has(row.id) ? BRACKET_SPACE : 0;
+    const bracket = (groupsOf.has(row.id) ? BRACKET_SPACE : 0) + (reachRows.has(row.id) ? reachBelow(t) : 0);
+    const above = reachRows.has(row.id) ? reachAbove(t) : 0;
     const room = pointerRoom(elements, row.id, t);
     const pointers = room > 0 ? room + 8 : 0;
     const panel = bufferRows.has(row.id)
@@ -1217,7 +1223,8 @@ function layoutWith(
     } else if (single && mapElement) {
       // Above a hash map: under the caption, full-height cards (their labels are positions the map refers to) when
       // there's room, shorter when the map and the bottom stack need it.
-      top = captionBottom(t) + sizes.tagRoom(t) + 4;
+      strip = above;
+      top = captionBottom(t) + Math.max(sizes.tagRoom(t) + 4, above);
       cardHeight = Math.max(HEAP_ROW_CARD, Math.min(CARD_HEIGHT, lowest - top));
     } else if (single && (heapElement || dpElement || searchTreeElement)) {
       // With a heap, a table, or a search tree below, the input is a short strip of cards under the caption.
@@ -1228,8 +1235,8 @@ function layoutWith(
       top = Math.min(BAND_TOP + (BAND_BOTTOM - BAND_TOP - CARD_HEIGHT) / 2 - 20, lowest - cardHeight);
       // A sliding window's bracket and label sit above the cards (and their highlight tags). Keep them under a
       // two-line caption, shortening the cards if a tall bottom stack leaves less room.
-      if (windowRows.has(row.id)) {
-        strip = sizes.window(t);
+      if (windowRows.has(row.id) || above > 0) {
+        strip = above || sizes.window(t);
         const minTop = captionBottom(t) + strip;
         if (top < minTop) {
           top = minTop;

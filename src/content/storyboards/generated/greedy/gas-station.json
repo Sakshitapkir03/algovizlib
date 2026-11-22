@@ -1,0 +1,394 @@
+{
+  "id": "greedy-gas-station",
+  "title": "Gas Station: Skip Every Stop You Ran Dry From",
+  "concept": "Greedy",
+  "category": "dsa",
+  "summary": "Drive one lap of bookkeeping with a running tank; when it runs dry, every stop since the start is ruled out at once.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "circular",
+    "running sum"
+  ],
+  "takeaway": {
+    "pattern": "Greedy",
+    "summary": "Keep a running tank from a candidate start. When it drops below zero after stop i, no stop up to i can work, so make i + 1 the candidate and reset the tank. The candidate works if total gas covers total cost.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "A failure rules out a whole stretch of candidates at once",
+      "Circular routes with a running balance"
+    ]
+  },
+  "trace": {
+    "problem": "greedy/gas-station",
+    "args": [
+      [
+        2,
+        3,
+        1,
+        4,
+        2
+      ],
+      [
+        1,
+        2,
+        4,
+        2,
+        3
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v17",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T20:57:33.550Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "road",
+      "narration": "Five fuel stops, numbered 0 to 4, sit on a circular road. Each card shows the fuel at that stop, and what driving on to the next stop burns. The tank starts empty. Where can a full lap start?",
+      "caption": "Five stops on a loop: where can a full lap start?",
+      "durationInFrames": 504,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could try each stop as the start and drive the whole lap: n laps, O(n²). Greedy finds it in one pass with a running tank.",
+      "caption": "Trying every start means a lap for each stop",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "one pass",
+          "rejected": "a lap per start",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "begin",
+      "narration": "Start at stop 0: take 2, burn 1 on the way, and the tank holds 1. At stop 1 it grows to 2.",
+      "caption": "Start at stop 0: take 2, burn 1, the tank holds 1",
+      "durationInFrames": 312,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        },
+        {
+          "id": "start",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "start"
+        },
+        {
+          "id": "here",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "here",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "i"
+        },
+        {
+          "id": "tank",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "tank"
+        }
+      ]
+    },
+    {
+      "id": "dry",
+      "narration": "At stop 2 you take only 1 but need 4, so the tank would read minus 1. Starting at stop 0 fails.",
+      "caption": "Stop 2: take 1, burn 4, the tank would hit −1",
+      "durationInFrames": 300,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        },
+        {
+          "id": "start",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "start"
+        },
+        {
+          "id": "here",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "here",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "i"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "fuel",
+          "state": "rejected"
+        },
+        {
+          "id": "tank",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "tank"
+        }
+      ]
+    },
+    {
+      "id": "skip",
+      "narration": "Should you try stops 1 and 2 next? No. You reached each of them with fuel to spare and still ran dry, so starting there empty only gets you to stop 2 with less. Jump straight to stop 3 with an empty tank.",
+      "caption": "Don't retry stops 1 and 2: start again at stop 3",
+      "durationInFrames": 552,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        },
+        {
+          "id": "start",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "start"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "fuel",
+          "state": "rejected"
+        },
+        {
+          "id": "tank",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "tank"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "reason": "starting at 1 or 2 only reaches stop 2 with less fuel",
+          "label": "next start"
+        }
+      ]
+    },
+    {
+      "id": "run",
+      "narration": "From stop 3 the tank reads 2, then 1 after stop 4. The scan has reached the last stop.",
+      "caption": "From stop 3 the tank reads 2, then 1 after stop 4",
+      "durationInFrames": 264,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        },
+        {
+          "id": "start",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "start"
+        },
+        {
+          "id": "here",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "here",
+          "placement": "below",
+          "tone": "secondary",
+          "binds": "i"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "fuel",
+          "state": "rejected"
+        },
+        {
+          "id": "tank",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "tank"
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "narration": "One check finishes the job: all the fuel, 12, covers the whole lap's cost, 12. Every stop before 3 is ruled out, so stop 3 is the start.",
+      "caption": "All the fuel, 12, covers the whole lap, 12: start at 3",
+      "durationInFrames": 372,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        },
+        {
+          "id": "start",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "fuel",
+          "label": "start",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "start"
+        },
+        {
+          "id": "win",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "fuel",
+          "state": "found"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "enough fuel"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Start at stop",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's the greedy move: one failure rules out every stop since the start, so a single pass with a running tank finds the answer. O(n) time and O(1) space.",
+      "caption": "Greedy: running dry rules out every stop since the start",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "fuel",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "burn 1",
+            "burn 2",
+            "burn 4",
+            "burn 2",
+            "burn 3"
+          ]
+        },
+        {
+          "id": "rule",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "skip past a failure",
+          "rejected": "retry each stop",
+          "label": "rule"
+        }
+      ]
+    }
+  ]
+}

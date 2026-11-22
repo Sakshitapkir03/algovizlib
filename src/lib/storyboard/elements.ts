@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -867,6 +867,51 @@ export const raceSourceSchema = z.object({
   moves: raceShape.moves.optional(),
 });
 
+const choiceShape = {
+  ...baseElement,
+  type: z.literal("choice"),
+  /** The option the greedy step takes, in the problem's terms ("$10 + $5", "start at 3"). */
+  chosen: nonEmpty.max(24),
+  /** The option it turns down ("$5 + $5 + $5"). */
+  rejected: z.string().trim().min(1).max(24).optional(),
+  /** Why taking it is safe, in the story's words (under the options; hidden on a phone-sized player). */
+  reason: z.string().trim().min(1).max(64).optional(),
+  label: nonEmpty.max(16).default("greedy choice"),
+};
+export const choiceElementSchema = z.object(choiceShape);
+export const choiceSourceSchema = z.object({
+  ...choiceShape,
+  /** Omit chosen/rejected to take them from the bound step. */
+  chosen: choiceShape.chosen.optional(),
+});
+
+const reachShape = {
+  ...baseElement,
+  type: z.literal("reach"),
+  /** The item-row it covers. */
+  rowId: nonEmpty,
+  /** The stretch committed to so far (inclusive; `to = from - 1` when there's none): a band under the cards. */
+  from: index,
+  to: z.number().int().min(-1),
+  /** Shown after the label at the band's end ("reach 5", even past the last card). */
+  value: z.union([z.number().finite(), z.string().max(6)]).optional(),
+  label: z.string().max(10).default("reach"),
+  /** This step's arc from the current card to the card it reaches, labeled ("+3", "last e"). */
+  jump: z.object({ from: index, to: index, label: z.string().trim().min(1).max(8) }).optional(),
+  /** Closed pieces: a bracket each under the cards with its length, and a cut line after it. */
+  pieces: z.array(rangeSchema).max(8).default([]),
+  /** Dash the cards past the band: out of reach. */
+  dimBeyond: z.boolean().default(false),
+};
+export const reachElementSchema = z.object(reachShape);
+export const reachSourceSchema = z.object({
+  ...reachShape,
+  /** Omit from/to (and value/jump/pieces) to take them from the bound step. */
+  from: index.optional(),
+  to: reachShape.to.optional(),
+  pieces: reachShape.pieces.removeDefault().optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -1050,6 +1095,8 @@ export const elementSchemas = [
   partialElementSchema,
   hashMapElementSchema,
   raceElementSchema,
+  choiceElementSchema,
+  reachElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1090,6 +1137,8 @@ export const elementSourceSchemas = [
   partialSourceSchema,
   hashMapSourceSchema,
   raceSourceSchema,
+  choiceSourceSchema,
+  reachSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1143,6 +1192,8 @@ export type PartialElement = ElementOf<"partial">;
 export type HashMapElement = ElementOf<"hash-map">;
 export type RaceElement = ElementOf<"race">;
 export type RaceMove = z.infer<typeof raceMoveSchema>;
+export type ChoiceElement = ElementOf<"choice">;
+export type ReachElement = ElementOf<"reach">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

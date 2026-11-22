@@ -8,6 +8,7 @@ import type {
   TraceSearchNode,
   TraceMap,
   TraceRace,
+  TraceReach,
   TraceBfs,
   TraceLinks,
   TraceQueueItem,
@@ -272,6 +273,17 @@ function raceFields(r: Partial<TraceRace>): Record<string, string> {
     meet: JSON.stringify(r.meet ?? null),
     entry: JSON.stringify(r.entry ?? null),
     loop: JSON.stringify(r.loop ? { from: r.loop.from, to: r.loop.to } : null),
+  };
+}
+
+/** A reach field by field, in a canonical text form. */
+function reachFields(r: Partial<TraceReach>): Record<string, string> {
+  const empty = r.to !== undefined && r.from !== undefined && r.to < r.from;
+  return {
+    range: JSON.stringify(empty ? { empty: true, from: r.from } : { from: r.from, to: r.to }),
+    value: JSON.stringify(r.value === undefined ? null : String(r.value)),
+    jump: JSON.stringify(r.jump ? { from: r.jump.from, to: r.jump.to, label: r.jump.label } : null),
+    pieces: JSON.stringify((r.pieces ?? []).map((p) => ({ from: p.from, to: p.to }))),
   };
 }
 
@@ -572,6 +584,8 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             el.id,
             "frames",
           );
+        if (el.type === "reach")
+          push("A reach needs the scene to set traceStep (its stretch comes from the step)", el.id, "from");
         if (el.type === "queue")
           push("A queue needs the scene to set traceStep (its items come from the step)", el.id, "items");
         if (el.type === "dp-table") {
@@ -1209,6 +1223,35 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           for (const field of Object.keys(expected))
             if (drawn[field] !== expected[field])
               push(`The race's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "choice": {
+          if (!step.choice) {
+            push(`Trace step ${stepIndex} makes no greedy choice`, el.id, "chosen");
+            break;
+          }
+          for (const field of ["chosen", "rejected"] as const)
+            if ((el[field] ?? null) !== (step.choice[field] ?? null))
+              push(`The choice's ${field} option doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: step.choice[field] ?? "none",
+                actual: el[field] ?? "none",
+              });
+          break;
+        }
+        case "reach": {
+          checkRow(el.rowId);
+          if (!step.reach) {
+            push(`Trace step ${stepIndex} has no reach`, el.id, "from");
+            break;
+          }
+          const expected = reachFields(step.reach);
+          const drawn = reachFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The reach's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
                 actual: drawn[field],
               });

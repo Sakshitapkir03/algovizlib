@@ -375,6 +375,11 @@ describe("selectTargets", () => {
       "linked-list/remove-nth-node-from-end",
       "linked-list/reorder-list",
       "linked-list/merge-k-sorted-lists",
+      "greedy/lemonade-change",
+      "greedy/jump-game",
+      "greedy/gas-station",
+      "greedy/partition-labels",
+      "greedy/candy",
       "trees-dfs/maximum-depth-of-binary-tree",
       "trees-dfs/path-sum",
       "trees-dfs/validate-binary-search-tree",
@@ -594,7 +599,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v16");
+    expect(currentPrompts.version).toBe("storyboard-v17");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

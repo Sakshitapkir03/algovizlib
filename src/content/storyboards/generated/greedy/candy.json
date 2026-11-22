@@ -1,0 +1,326 @@
+{
+  "id": "greedy-candy",
+  "title": "Candy: One Pass From Each Side, Then the Larger",
+  "concept": "Greedy",
+  "category": "dsa",
+  "summary": "Satisfy the left-neighbor rule in one pass and the right-neighbor rule in another, giving each child the larger of the two counts.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "two passes"
+  ],
+  "takeaway": {
+    "pattern": "Greedy",
+    "summary": "Left to right, give each child 1 more than the left neighbor if rated higher, else 1. Right to left, raise it to 1 more than the right neighbor if rated higher. The larger of the two satisfies both rules, and nothing smaller could.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "A rule that looks both ways: split it into two one-sided passes",
+      "Each item needs the minimum that satisfies all its constraints"
+    ]
+  },
+  "trace": {
+    "problem": "greedy/candy",
+    "args": [
+      [
+        1,
+        3,
+        2,
+        2,
+        1
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v17",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T21:03:53.698Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "line",
+      "narration": "Five children stand in a line, rated 1, 3, 2, 2, 1. Each gets at least one candy, and a child rated higher than a neighbor must get more than that neighbor. What's the fewest candy in total?",
+      "caption": "Five children rated 1, 3, 2, 2, 1: the fewest candies?",
+      "durationInFrames": 492,
+      "elements": [
+        {
+          "id": "kids",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "kid 0",
+            "kid 1",
+            "kid 2",
+            "kid 3",
+            "kid 4"
+          ]
+        },
+        {
+          "id": "candies",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Bumping children one at a time, whoever breaks a rule, can ripple back and forth. Instead, handle one side at a time: a pass from the left, then one from the right.",
+      "caption": "Bumping one child at a time can ripple back and forth",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "kids",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "kid 0",
+            "kid 1",
+            "kid 2",
+            "kid 3",
+            "kid 4"
+          ]
+        },
+        {
+          "id": "candies",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "two passes",
+          "rejected": "bump and recheck",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "rise",
+      "narration": "Left to right, each child looks only at the left neighbor. The first child gets 1. Rated 3 beats the 1 beside it, so one more: 2.",
+      "caption": "Left pass: rated 3 beats 1, so 1 + 1 = 2",
+      "durationInFrames": 360,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "kids",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "kid 0",
+            "kid 1",
+            "kid 2",
+            "kid 3",
+            "kid 4"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kids",
+          "label": "giving",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "candies",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "candies"
+        }
+      ]
+    },
+    {
+      "id": "drop",
+      "narration": "Rated 2 is lower than its left neighbor, so the left rule asks for nothing extra: 1. The rest of this pass gives 1 each.",
+      "caption": "Rated 2 is below 3: back to the minimum, 1",
+      "durationInFrames": 336,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "kids",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "kid 0",
+            "kid 1",
+            "kid 2",
+            "kid 3",
+            "kid 4"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kids",
+          "label": "giving",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "candies",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "candies"
+        }
+      ]
+    },
+    {
+      "id": "raise",
+      "narration": "Now right to left, in the second row. Rated 2 at kid 3 beats the 1 on its right, so it needs 2, but the left pass gave only 1. Take the larger: it keeps both rules, and anything less breaks one.",
+      "caption": "Right pass: rated 2 beats the 1 on its right, so 2",
+      "durationInFrames": 540,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "kids",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "kid 0",
+            "kid 1",
+            "kid 2",
+            "kid 3",
+            "kid 4"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kids",
+          "label": "giving",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "candies",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "reason": "the larger count keeps both rules; anything less breaks one",
+          "label": "candies"
+        }
+      ]
+    },
+    {
+      "id": "agree",
+      "narration": "Rated 3 beats the 2 on its right too, which also asks for 2. Taking the larger never gives more than some rule demands, so the total stays as small as possible.",
+      "caption": "Rated 3: both rules ask for 2, so it stays 2",
+      "durationInFrames": 420,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "kids",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "kid 0",
+            "kid 1",
+            "kid 2",
+            "kid 3",
+            "kid 4"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "kids",
+          "label": "giving",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "candies",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "candies"
+        }
+      ]
+    },
+    {
+      "id": "total",
+      "narration": "Add up the final row: 1, 2, 1, 2, and 1.",
+      "caption": "Add the final row: 1 + 2 + 1 + 2 + 1 = 7",
+      "durationInFrames": 169,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "kids",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "kid 0",
+            "kid 1",
+            "kid 2",
+            "kid 3",
+            "kid 4"
+          ]
+        },
+        {
+          "id": "candies",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "fewest"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Seven candies is the answer. Split a two-sided rule into two one-sided passes and keep the larger count: O(n) time and O(n) space.",
+      "caption": "7 candies: one pass per side, then the larger",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Fewest candies",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

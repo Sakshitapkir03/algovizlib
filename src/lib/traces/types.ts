@@ -152,6 +152,30 @@ export type TraceStep = {
   map?: TraceMap;
   /** Fast and slow pointers over a linked list: this step's moves, the meeting node, the loop. See `TraceRace`. */
   race?: TraceRace;
+  /** Greedy: the option this step took and the one it turned down. See `TraceChoice`. */
+  choice?: TraceChoice;
+  /** Greedy: the stretch of the row covered so far (reach, the current piece), this step's jump, closed pieces. */
+  reach?: TraceReach;
+};
+
+/**
+ * A greedy decision: the option taken (`chosen`, e.g. "$10 + $5") and the one turned down (`rejected`, e.g. "3 × $5"),
+ * in the problem's own terms. Why the choice is safe is the storyboard's to say (the choice panel's `reason`).
+ */
+export type TraceChoice = { chosen: string; rejected?: string };
+
+/**
+ * A stretch of the row the greedy scan has committed to: Jump Game's reachable prefix (`from` 0 to the farthest
+ * index, `value` the farthest index even past the end) or Partition Labels' open piece (`from` its start, `to` the
+ * last occurrence it must reach; `to = from - 1` once it's closed). `jump` is this step's arc from the current item to
+ * the position it reaches (clamped to the row) with a short label ("+3", "last e"); `pieces` are closed pieces.
+ */
+export type TraceReach = {
+  from: number;
+  to: number;
+  value?: number | string;
+  jump?: { from: number; to: number; label: string };
+  pieces?: { from: number; to: number }[];
 };
 
 /**

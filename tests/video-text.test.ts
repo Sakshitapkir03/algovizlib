@@ -9,6 +9,7 @@ import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
 import { dpProblems } from "./fixtures/dp-fit";
+import { greedyProblems } from "./fixtures/greedy-fit";
 import { raceProblems } from "./fixtures/race-fit";
 import { backtrackProblems } from "./fixtures/backtrack-fit";
 import { stackProblems } from "./fixtures/stack-fit";
@@ -54,6 +55,7 @@ describe("video text at phone width", () => {
         "binary-tree",
         "call-stack",
         "callout",
+        "choice",
         "count-array",
         "counter",
         "cut",
@@ -78,6 +80,7 @@ describe("video text at phone width", () => {
         "pointer",
         "queue",
         "race",
+        "reach",
         "result",
         "search-range",
         "search-tree",
@@ -98,6 +101,16 @@ describe("video text at phone width", () => {
         (["search-tree", "partial"] as const).flatMap((type) =>
           backtrackProblems(scene.elements, full, type).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
         ),
+      ),
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("greedy choices and reaches fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        greedyProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
       ),
     );
     expect(problems).toEqual([]);
@@ -388,6 +401,10 @@ describe("video text at phone width", () => {
           }
           case "race":
             for (const problem of raceProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "choice":
+          case "reach":
+            for (const problem of greedyProblems(scene.elements, phone)) fail(problem);
             break;
           case "search-tree":
           case "partial":

@@ -507,6 +507,25 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             loop: el.loop ?? (r ? r.loop : first?.loop),
           };
         }
+        case "choice": {
+          if (el.chosen) return { ...el, chosen: el.chosen };
+          if (!step?.choice) return (noState(el, "chosen", "greedy choice"), el);
+          return { ...el, chosen: step.choice.chosen, rejected: el.rejected ?? step.choice.rejected };
+        }
+        case "reach": {
+          if (el.from !== undefined && el.to !== undefined)
+            return { ...el, from: el.from, to: el.to, pieces: el.pieces ?? [] };
+          if (!step?.reach) return (noState(el, "from", "reach"), el);
+          const r = step.reach;
+          return {
+            ...el,
+            from: el.from ?? r.from,
+            to: el.to ?? r.to,
+            value: el.value ?? r.value,
+            jump: el.jump ?? r.jump,
+            pieces: el.pieces ?? r.pieces ?? [],
+          };
+        }
         case "hash-map": {
           if (el.entries && el.kind && el.display) return el;
           if (step && !step.map) return (noState(el, "entries", "map"), el);

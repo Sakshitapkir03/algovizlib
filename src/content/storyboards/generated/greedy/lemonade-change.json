@@ -1,0 +1,346 @@
+{
+  "id": "greedy-lemonade-change",
+  "title": "Lemonade Change: Spend the $10 First",
+  "concept": "Greedy",
+  "category": "dsa",
+  "summary": "Serve customers in order, and when a $20 needs $15 back, hand over a $10 and a $5 so the $5s stay free for later.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "simulation"
+  ],
+  "takeaway": {
+    "pattern": "Greedy",
+    "summary": "Count your $5 and $10 bills. A $10 takes one $5; a $20 takes $10 + $5 when you can, three $5s only otherwise, because a $5 can serve any later customer and a $10 can't.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Each step has a choice that keeps more options open later",
+      "You must decide on the spot, in order, without undoing"
+    ]
+  },
+  "trace": {
+    "problem": "greedy/lemonade-change",
+    "args": [
+      [
+        5,
+        5,
+        5,
+        5,
+        10,
+        20,
+        10
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v17",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T20:57:33.555Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "stand",
+      "narration": "Every cup of lemonade costs $5, and the till starts empty. Seven customers pay with these bills, in this order. Can every one of them get exact change?",
+      "caption": "A $5 lemonade stand, 7 customers, an empty till",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "bills",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "$",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "A $20 needs $15 back, which you can give in two ways. Trying both at every $20 doubles the cases each time. Greedy makes one choice per customer and never looks back.",
+      "caption": "Trying every way to make change branches at each $20",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "bills",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "$",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th"
+          ]
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "one choice each",
+          "rejected": "try every way",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "first",
+      "narration": "The first customer pays $5, so no change is needed and the $5 goes in the till. The next three also pay with $5.",
+      "caption": "A $5 pays exactly: it goes into the till",
+      "durationInFrames": 324,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "bills",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "$",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bills",
+          "label": "paying",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bills",
+          "state": "active"
+        },
+        {
+          "id": "till",
+          "enterAt": 0,
+          "type": "freq-table",
+          "label": "till"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "$",
+          "verdict": "no change"
+        }
+      ]
+    },
+    {
+      "id": "ten",
+      "narration": "Then a $10 arrives: hand back one $5. The till now holds three $5s and one $10.",
+      "caption": "A $10 gets one $5 back: three $5s and a $10 left",
+      "durationInFrames": 240,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "bills",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "$",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bills",
+          "label": "paying",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bills",
+          "state": "active"
+        },
+        {
+          "id": "till",
+          "enterAt": 0,
+          "type": "freq-table",
+          "label": "till"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "change"
+        }
+      ]
+    },
+    {
+      "id": "twenty",
+      "narration": "A $20 needs $15 back: three $5s, or a $10 and a $5. Give the $10, because a $5 can make change for anyone, while a $10 is no help to a customer paying $10. Two $5s stay in the till.",
+      "caption": "$20 needs $15: give $10 + $5, not three $5s",
+      "durationInFrames": 528,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "bills",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "$",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bills",
+          "label": "paying",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bills",
+          "state": "active"
+        },
+        {
+          "id": "till",
+          "enterAt": 0,
+          "type": "freq-table",
+          "label": "till"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "reason": "a $5 helps any customer; a $10 can't help a $10",
+          "label": "change"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "The last customer pays $10, and a saved $5 goes back. Everyone got exact change, so the answer is true. Three $5s at the $20 would have left nothing for this customer.",
+      "caption": "The last $10 gets a saved $5: everyone served",
+      "durationInFrames": 420,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "bills",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "$",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bills",
+          "label": "paying",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bills",
+          "state": "active"
+        },
+        {
+          "id": "till",
+          "enterAt": 0,
+          "type": "freq-table",
+          "label": "till"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Everyone gets change?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's the greedy pattern: at each step, take the choice that keeps the most options open. Here that means spending the $10 first. One pass is O(n) time, and two counts are O(1) space.",
+      "caption": "Greedy: spend the bill that's least useful later",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "bills",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "$",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th"
+          ]
+        },
+        {
+          "id": "rule",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "$10 first",
+          "rejected": "$5s first",
+          "label": "rule"
+        }
+      ]
+    }
+  ]
+}

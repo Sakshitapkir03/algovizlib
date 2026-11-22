@@ -23,6 +23,11 @@ import { findTheDuplicateNumberTrace } from "./fast-slow-pointers/find-the-dupli
 import { linkedListCycleTrace } from "./fast-slow-pointers/linked-list-cycle";
 import { linkedListCycleIiTrace } from "./fast-slow-pointers/linked-list-cycle-ii";
 import { middleOfTheLinkedListTrace } from "./fast-slow-pointers/middle-of-the-linked-list";
+import { candyTrace } from "./greedy/candy";
+import { gasStationTrace } from "./greedy/gas-station";
+import { jumpGameTrace } from "./greedy/jump-game";
+import { lemonadeChangeTrace } from "./greedy/lemonade-change";
+import { partitionLabelsTrace } from "./greedy/partition-labels";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -143,6 +148,11 @@ const definitions = [
   linkedListCycleIiTrace,
   findTheDuplicateNumberTrace,
   circularArrayLoopTrace,
+  lemonadeChangeTrace,
+  jumpGameTrace,
+  gasStationTrace,
+  partitionLabelsTrace,
+  candyTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

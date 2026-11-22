@@ -511,6 +511,43 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one race" });
           break;
         }
+        case "choice":
+          if (scene.elements.filter((e) => e.type === "choice").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one choice" });
+          break;
+        case "reach": {
+          const row = scene.elements.find((e) => e.id === el.rowId);
+          if (row?.type !== "item-row") {
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "rowId"],
+              message: `A reach covers an item-row in the same scene; there's no item-row "${el.rowId}"`,
+            });
+            break;
+          }
+          if (el.to < el.from - 1)
+            ctx.addIssue({ code: "custom", path, message: "to must be at least from - 1 (nothing covered)" });
+          else if (el.to >= el.from) {
+            checkIndex(el.rowId, el.from, [...path, "from"]);
+            checkIndex(el.rowId, el.to, [...path, "to"]);
+          }
+          if (el.jump) {
+            checkIndex(el.rowId, el.jump.from, [...path, "jump", "from"]);
+            checkIndex(el.rowId, el.jump.to, [...path, "jump", "to"]);
+          }
+          el.pieces.forEach((piece, k) => {
+            checkIndex(el.rowId, piece.to, [...path, "pieces", k, "to"]);
+            if (piece.from > piece.to || (k > 0 && piece.from <= el.pieces[k - 1].to))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "pieces", k],
+                message: "pieces go left to right without overlapping (from ≤ to)",
+              });
+          });
+          if (scene.elements.filter((e) => e.type === "reach").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one reach" });
+          break;
+        }
         case "hash-map": {
           const keys = el.entries.map((e) => e.key);
           if (new Set(keys).size !== keys.length)

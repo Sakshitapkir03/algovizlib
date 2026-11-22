@@ -1,0 +1,514 @@
+{
+  "id": "greedy-partition-labels",
+  "title": "Partition Labels: Close the Cart When Every Family Is Aboard",
+  "concept": "Greedy",
+  "category": "dsa",
+  "summary": "Load bags in order onto as many carts as possible, stretching each cart to its families' last bags and closing it the moment it's complete.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Bags roll off an airport carousel tagged by family: a, b, a, c, d, c, e, f, g, e. A porter loads them in order onto as many carts as possible, but each family's bags must ride on the same cart.",
+    "mapping": [
+      {
+        "real": "A bag's family tag",
+        "abstract": "A character s[i]"
+      },
+      {
+        "real": "Where a family's last bag sits",
+        "abstract": "last[c], the last index of c"
+      },
+      {
+        "real": "A cart",
+        "abstract": "A piece of the partition"
+      },
+      {
+        "real": "Bags on each cart",
+        "abstract": "The lengths returned"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "hash map",
+    "intervals"
+  ],
+  "takeaway": {
+    "pattern": "Greedy",
+    "summary": "Record each letter's last index. Scan, extending the current piece's end to the last index of every letter you meet; when the scan reaches the end, cut there. Cutting as early as possible gives the most pieces.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1) (26 letters)",
+    "whenToUse": [
+      "Splitting into the most pieces where items must stay together",
+      "Each item stretches a running boundary"
+    ]
+  },
+  "trace": {
+    "problem": "greedy/partition-labels",
+    "args": [
+      "abacdcefge"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v17",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T20:57:33.556Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "carousel",
+      "narration": "Bags roll off a carousel tagged by family: a, b, a, c, d, c, e, f, g, e. Load them in order onto as many carts as possible, with each family's bags together.",
+      "caption": "10 bags tagged by family: fill as many carts as possible",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Nine gaps between bags give 512 ways to split them, far too many to check. Instead, note where each family's last bag is, then walk the line once.",
+      "caption": "Trying every way to split 10 bags: 512 options",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "one walk",
+          "rejected": "try every split",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "a",
+      "narration": "The first bag is family a, and its last bag is at 2, so this cart must run at least to 2.",
+      "caption": "Family a's last bag is at 2: this cart runs to 2",
+      "durationInFrames": 300,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "id": "porter",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bags",
+          "label": "porter",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "cart",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "bags",
+          "label": "cart to",
+          "dimBeyond": false
+        },
+        {
+          "id": "last",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "last bag"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "cart end"
+        }
+      ]
+    },
+    {
+      "id": "cut1",
+      "narration": "At bag 2 the cart's end is reached: every family on board has had its last bag. Nothing ahead belongs here, so closing now is safe, and closing early leaves room for more carts.",
+      "caption": "At bag 2 every family aboard is complete: cut",
+      "durationInFrames": 444,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "id": "porter",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bags",
+          "label": "porter",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "cart",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "bags",
+          "label": "cart to",
+          "dimBeyond": false
+        },
+        {
+          "id": "full",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bags",
+          "state": "found"
+        },
+        {
+          "id": "last",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "last bag"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "reason": "no family on this cart has a bag further on",
+          "label": "cart end"
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "narration": "A new cart starts at bag 3. Family c's last bag is at 5, so it runs to 5, and family d, at 4, fits inside.",
+      "caption": "Family c's last bag is at 5: the new cart runs to 5",
+      "durationInFrames": 348,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "id": "porter",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bags",
+          "label": "porter",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "cart",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "bags",
+          "label": "cart to",
+          "dimBeyond": false
+        },
+        {
+          "id": "last",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "last bag"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "cart end"
+        }
+      ]
+    },
+    {
+      "id": "cut2",
+      "narration": "At bag 5 the end is reached again, so the porter closes a second cart of 3.",
+      "caption": "Bag 5 completes the second cart: cut, 3 bags",
+      "durationInFrames": 240,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "id": "porter",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bags",
+          "label": "porter",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "cart",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "bags",
+          "label": "cart to",
+          "dimBeyond": false
+        },
+        {
+          "id": "full",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bags",
+          "state": "found"
+        },
+        {
+          "id": "last",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "last bag"
+        }
+      ]
+    },
+    {
+      "id": "e",
+      "narration": "Bag 6 is family e, whose last bag is the very last one, so this cart runs to 9. Families f and g fit inside.",
+      "caption": "Family e's last bag is at 9: this cart runs to the end",
+      "durationInFrames": 336,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "id": "porter",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bags",
+          "label": "porter",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "cart",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "bags",
+          "label": "cart to",
+          "dimBeyond": false
+        },
+        {
+          "id": "last",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "last bag"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "cart end"
+        }
+      ]
+    },
+    {
+      "id": "cut3",
+      "narration": "At bag 9 the walk ends with a final cut: three carts, holding 3, 3, and 4 bags.",
+      "caption": "Bag 9 closes the last cart: 3, 3, and 4 bags",
+      "durationInFrames": 252,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "id": "porter",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "bags",
+          "label": "porter",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "cart",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "bags",
+          "label": "cart to",
+          "dimBeyond": false
+        },
+        {
+          "id": "full",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "bags",
+          "state": "found"
+        },
+        {
+          "id": "last",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "last bag"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Bags per cart",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Back to the string: bags are characters, families are letters, carts are pieces. Stretch each piece to its letters' last positions and cut at its end. O(n) time, O(1) space.",
+      "caption": "Bags are letters, carts are pieces: s splits into 3, 3, 4",
+      "durationInFrames": 396,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "bags",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "s[0]",
+            "s[1]",
+            "s[2]",
+            "s[3]",
+            "s[4]",
+            "s[5]",
+            "s[6]",
+            "s[7]",
+            "s[8]",
+            "s[9]"
+          ]
+        },
+        {
+          "id": "cart",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "bags",
+          "label": "piece to",
+          "dimBeyond": false
+        }
+      ]
+    }
+  ]
+}

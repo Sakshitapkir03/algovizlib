@@ -31,6 +31,11 @@ import graphsBfsNumberOfIslands from "./graphs-bfs/number-of-islands.json";
 import graphsBfsRottingOranges from "./graphs-bfs/rotting-oranges.json";
 import graphsBfsShortestPathInBinaryMatrix from "./graphs-bfs/shortest-path-in-binary-matrix.json";
 import graphsBfsWordLadder from "./graphs-bfs/word-ladder.json";
+import greedyCandy from "./greedy/candy.json";
+import greedyGasStation from "./greedy/gas-station.json";
+import greedyJumpGame from "./greedy/jump-game.json";
+import greedyLemonadeChange from "./greedy/lemonade-change.json";
+import greedyPartitionLabels from "./greedy/partition-labels.json";
 import heapFindMedianFromDataStream from "./heap/find-median-from-data-stream.json";
 import heapKClosestPointsToOrigin from "./heap/k-closest-points-to-origin.json";
 import heapKthLargestElementInAnArray from "./heap/kth-largest-element-in-an-array.json";
@@ -101,6 +106,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "graphs-bfs/rotting-oranges": loadStoryboard(graphsBfsRottingOranges),
   "graphs-bfs/shortest-path-in-binary-matrix": loadStoryboard(graphsBfsShortestPathInBinaryMatrix),
   "graphs-bfs/word-ladder": loadStoryboard(graphsBfsWordLadder),
+  "greedy/candy": loadStoryboard(greedyCandy),
+  "greedy/gas-station": loadStoryboard(greedyGasStation),
+  "greedy/jump-game": loadStoryboard(greedyJumpGame),
+  "greedy/lemonade-change": loadStoryboard(greedyLemonadeChange),
+  "greedy/partition-labels": loadStoryboard(greedyPartitionLabels),
   "heap/find-median-from-data-stream": loadStoryboard(heapFindMedianFromDataStream),
   "heap/k-closest-points-to-origin": loadStoryboard(heapKClosestPointsToOrigin),
   "heap/kth-largest-element-in-an-array": loadStoryboard(heapKthLargestElementInAnArray),

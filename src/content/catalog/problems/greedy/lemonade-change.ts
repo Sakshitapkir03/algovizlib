@@ -11,6 +11,14 @@ export const lemonadeChange = defineProblem({
 Return \`true\` if you can hand every customer the correct change, and \`false\` as soon as any customer can't be given exact change.`,
   examples: [
     {
+      input: "bills = [5, 5, 5, 5, 10, 20, 10]",
+      output: "true",
+      explanation:
+        "After the $10 you hold three $5s and one $10. The $20 gets $10 + $5 back, leaving two $5s, so the last $10 customer still gets a $5. Paying the $20 with three $5s would have left none.",
+      args: [[5, 5, 5, 5, 10, 20, 10]],
+      expected: true,
+    },
+    {
       input: "bills = [5, 5, 10, 5, 20]",
       output: "true",
       explanation:

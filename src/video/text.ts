@@ -124,4 +124,10 @@ export const TEXT = {
   stackTitleSmall: 15,
   searchNode: 20,
   partialItem: 22,
+  /** A greedy choice's options ("✓ $10 + $5") and the reason under them. */
+  choiceItem: 22,
+  choiceReason: 18,
+  /** A reach band's label ("reach 5"), its jump arc's label ("+3"), and a closed piece's length. */
+  reachLabel: 18,
+  jumpLabel: 17,
 } as const;

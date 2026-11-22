@@ -1,0 +1,351 @@
+{
+  "id": "greedy-jump-game",
+  "title": "Jump Game: Keep the Farthest Reach",
+  "concept": "Greedy",
+  "category": "dsa",
+  "summary": "Instead of trying routes, carry one number, the farthest square any route reaches, and check it covers the last square.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "array",
+    "reachability"
+  ],
+  "takeaway": {
+    "pattern": "Greedy",
+    "summary": "Scan left to right keeping the farthest index reachable. If the scan passes it you're stuck; otherwise extend it with i + nums[i]. Once it covers the last index, the answer is true.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Reachability where everything before a reachable point is reachable too",
+      "One running number can stand for many choices"
+    ]
+  },
+  "trace": {
+    "problem": "greedy/jump-game",
+    "args": [
+      [
+        3,
+        1,
+        0,
+        2,
+        4
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v17",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T20:57:33.552Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "board",
+      "narration": "You stand on the first square. Each number says how far you may jump forward from there, so up to 3 from here. Can you land on the last square?",
+      "caption": "Squares 3, 1, 0, 2, 4: can you land on the last one?",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "squares",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "sq 0",
+            "sq 1",
+            "sq 2",
+            "sq 3",
+            "sq 4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could try every route, jump by jump, but routes branch at every square. Greedy keeps one number instead: the farthest square any route has reached so far.",
+      "caption": "Trying every route branches at every square",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "squares",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "sq 0",
+            "sq 1",
+            "sq 2",
+            "sq 3",
+            "sq 4"
+          ]
+        },
+        {
+          "id": "plan",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "keep one reach",
+          "rejected": "try every route",
+          "label": "plan"
+        }
+      ]
+    },
+    {
+      "id": "zero",
+      "narration": "From square 0 you can jump up to 3, so every square up to 3 is reachable. The reach is now 3.",
+      "caption": "From square 0, jump up to 3: reach 3",
+      "durationInFrames": 300,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "squares",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "sq 0",
+            "sq 1",
+            "sq 2",
+            "sq 3",
+            "sq 4"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "squares",
+          "label": "you",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "squares",
+          "state": "active"
+        },
+        {
+          "id": "reach",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "squares",
+          "label": "reach",
+          "dimBeyond": true
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "farther"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "keep"
+        }
+      ]
+    },
+    {
+      "id": "one",
+      "narration": "From square 1, a jump of 1 gets only to square 2. That's short of 3, so keep the reach at 3.",
+      "caption": "From square 1, only up to 2: the reach stays 3",
+      "durationInFrames": 300,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "squares",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "sq 0",
+            "sq 1",
+            "sq 2",
+            "sq 3",
+            "sq 4"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "squares",
+          "label": "you",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "squares",
+          "state": "active"
+        },
+        {
+          "id": "reach",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "squares",
+          "label": "reach",
+          "dimBeyond": true
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "shorter"
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "label": "keep"
+        }
+      ]
+    },
+    {
+      "id": "two",
+      "narration": "Square 2 holds a 0, a dead end on its own. It doesn't matter: if you can reach a square, you can reach every square before it, so a reach of 3 means some route skips past this 0.",
+      "caption": "A 0 on square 2, but the reach already passes it",
+      "durationInFrames": 504,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "squares",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "sq 0",
+            "sq 1",
+            "sq 2",
+            "sq 3",
+            "sq 4"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "squares",
+          "label": "you",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "squares",
+          "state": "active"
+        },
+        {
+          "id": "reach",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "squares",
+          "label": "reach",
+          "dimBeyond": true
+        },
+        {
+          "id": "pick",
+          "enterAt": 0,
+          "type": "choice",
+          "reason": "reachable squares form one unbroken stretch from the start",
+          "label": "keep"
+        }
+      ]
+    },
+    {
+      "id": "three",
+      "narration": "From square 3 a jump of 2 reaches 5, past the last square at 4. So the answer is true.",
+      "caption": "From square 3, reach 5: past the last square",
+      "durationInFrames": 276,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "squares",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "sq 0",
+            "sq 1",
+            "sq 2",
+            "sq 3",
+            "sq 4"
+          ]
+        },
+        {
+          "id": "you",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "squares",
+          "label": "you",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "reach",
+          "enterAt": 0,
+          "type": "reach",
+          "rowId": "squares",
+          "label": "reach",
+          "dimBeyond": true
+        },
+        {
+          "id": "goal",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "squares",
+          "state": "found"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Can you reach the end?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "The greedy idea: never commit to a route, just keep the farthest reach. If the scan ever stands past it, you're stuck. One pass is O(n) time and O(1) space.",
+      "caption": "Greedy: keep the farthest reach in one pass",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "squares",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "sq 0",
+            "sq 1",
+            "sq 2",
+            "sq 3",
+            "sq 4"
+          ]
+        },
+        {
+          "id": "rule",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "farthest reach",
+          "rejected": "every route",
+          "label": "rule"
+        }
+      ]
+    }
+  ]
+}

@@ -9,7 +9,8 @@ import { FONT_MONO, FONT_SANS } from "../theme";
 
 /**
  * A running total: label, value, and what this step added ("+3"), which pops in after the card. Reusable for any
- * count a trace keeps (inversions, swaps, comparisons). A zero change is shown as "+0" in muted text.
+ * count a trace keeps (inversions, swaps, comparisons, a fuel tank). A zero change is shown as "+0" in muted text,
+ * a drop as "−3".
  */
 export function Counter({ element }: { element: CounterElement }) {
   const { palette, reducedMotion, text } = useScene();
@@ -68,7 +69,7 @@ export function Counter({ element }: { element: CounterElement }) {
             transform: `scale(${scale})`,
           }}
         >
-          +{element.delta}
+          {element.delta < 0 ? `−${-element.delta}` : `+${element.delta}`}
         </span>
       ) : null}
     </div>

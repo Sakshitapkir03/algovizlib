@@ -11,6 +11,17 @@ export const gasStation = defineProblem({
 Return the index of the stop where you should start so that you can drive one full lap clockwise and arrive back at that stop without the tank ever going below zero along the way (arriving at a stop with exactly \`0\` is fine). If no starting stop works, return \`-1\`. The inputs are chosen so that at most one starting stop works.`,
   examples: [
     {
+      input: "gas = [2, 3, 1, 4, 2], cost = [1, 2, 4, 2, 3]",
+      output: "3",
+      explanation:
+        "Starting at stop 0 the tank reads 1, then 2, then runs dry leaving stop 2. Starting at stop 3 it reads 2, 1, 2, 3 on arrival at stops 4, 0, 1, 2, and 0 back at stop 3.",
+      args: [
+        [2, 3, 1, 4, 2],
+        [1, 2, 4, 2, 3],
+      ],
+      expected: 3,
+    },
+    {
       input: "gas = [3, 1, 4, 2, 5], cost = [4, 3, 1, 4, 3]",
       output: "2",
       explanation:

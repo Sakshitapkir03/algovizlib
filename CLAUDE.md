@@ -419,6 +419,8 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `partial`       | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                  | bottom |
 | `hash-map`      | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                               | bottom |
 | `race`          | fast and slow pointers over a linked-list: hop arcs "+1" / "+2" along the links, the meeting node ringed (◎ meet), the loop's start (✓), the loop link in orange      | canvas |
+| `choice`        | a greedy decision: "✓" the option taken (solid green) beside "✕" the one turned down (dashed, struck), and a one-line reason it's safe                                | bottom |
+| `reach`         | the stretch of a row a greedy scan has committed to: a band under the cards ("reach 5"), the step's jump arc over them ("+3"), closed pieces with lengths and cuts    | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -654,6 +656,29 @@ Cycle II and Find the Duplicate meet away from the loop's start (tested), and th
 2 works with an equation of the two distances (head → start = meet → start). Tones: the gap closing to 0 is positive,
 other rounds neutral.
 
+**Greedy** (the five home problems; Non-overlapping Intervals is cross-listed in without a video; Jump Game is also listed under Dynamic Programming, Partition Labels under Intervals) added step
+state `choice` (`chosen`, the option the step takes, and `rejected`, the one it turns down, in the problem's terms:
+"$10 + $5" vs "$5 + $5 + $5", "start at 3" vs "start at 1–2") and `reach` (`from`/`to`: the stretch committed to,
+Jump Game's reachable prefix or Partition Labels' open piece, `to = from − 1` once it's cut; `value`, the farthest
+index even past the end; `jump`, this step's arc from the current item with a label; `pieces`, the closed pieces).
+Two primitives, built apart from everything else: `choice`, a bottom panel ("✓" solid green, "✕" dashed and struck,
+then `reason`: why the choice is safe, in the story's words; written by the storyboard, not checked, and hidden on a
+phone, where the options stack when they don't fit side by side; an unbound choice is free text, for the slow-way
+contrast), and `reach` over an item-row (a band in the accent under the cards, labeled inside it or beside it, closed
+pieces as green brackets with their lengths and a dashed cut after each, the jump arc over the highlight tags, and
+`dimBeyond` dashing the cards out of reach; `layoutRows` reserves the arc strip above and the band below, only with a
+reach). Their geometry lives in `video/greedy-layout.ts`, shared with the fit checks. The rest is reused: Lemonade
+Change's till is a `freq-table` ("$5", "$10"), Gas Station's tank a `counter` (a drop now shows "−3", which no earlier
+video had) over two item-rows (fuel, and the cost to the next stop as `traceRow: "second"`), Partition Labels' last
+positions a `hash-map` (cells), and Candy a two-row `dp-table` ("left", then "both": the larger of the left count and
+the right neighbor's + 1). Lemonade Change and Gas Station got new first examples that make the decision matter (a $20
+paid with $10 + $5 leaves the $5 the last customer needs; a start that runs dry two stops in, so two stops are
+skipped). The validator checks a choice's options and every reach field against the step (a reach needs a bound
+step). Every video's second scene contrasts trying every option with one greedy pass, and its key decision says why
+the choice is safe, in the narration and the choice's reason. Tones: a jump that doesn't beat the reach is neutral, a
+farther one positive; change handed back neutral, a customer who can't get change negative; the fuel check positive
+when total gas covers total cost.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -681,7 +706,8 @@ Trace = {
            pile?,                                                 // stacks (see "Stack" above)
            explore?, partial?,                                    // backtracking (see "Backtracking" above)
            map?,                                                  // hashing (see "Arrays & Hashing" above)
-           race? }[],                                             // fast and slow pointers (see "Fast & Slow Pointers" above)
+           race?,                                                 // fast and slow pointers (see "Fast & Slow Pointers" above)
+           choice?, reach? }[],                                   // greedy (see "Greedy" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -710,7 +736,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -955,7 +981,9 @@ racks and one tally, Group Anagrams magnetic-letter words on trays labeled by th
 Sequence runs of taken parking spots, and First Missing Positive keys put back in their own numbered lockers. Fast & Slow Pointers: a jogger and a sprinter on a route that may loop (Cycle), a walker and a hopper on stepping
 stones (Middle), a hiker and a runner on a looping trail, then a restart from the trailhead (Cycle II), gallery rooms
 whose exit signs name the next room (Find the Duplicate), and a frog and a toad on painted stones around a pond
-(Circular Array Loop).
+(Circular Array Loop). Greedy: Lemonade Change, Gas Station, Candy, and Jump Game are problem-native (the stand's till,
+the fuel stops, the children's ratings, the squares and their jump lengths); Partition Labels is a porter loading
+carousel bags onto as many carts as possible, each family's bags on one cart.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 
