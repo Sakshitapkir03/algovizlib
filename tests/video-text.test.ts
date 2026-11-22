@@ -62,6 +62,7 @@ describe("video text at phone width", () => {
         "freq-table",
         "graph",
         "grid",
+        "hash-map",
         "heap",
         "heap-tree",
         "held-value",
@@ -363,6 +364,26 @@ describe("video text at phone width", () => {
           case "stack":
             for (const problem of stackProblems(scene.elements, phone)) fail(problem);
             break;
+          case "hash-map": {
+            const t = phone;
+            const cell = (s: string) => t.width(s, t.size(TEXT.countCell), "mono") + 20;
+            const width =
+              t.width(el.label, t.size(TEXT.panelLabel)) +
+              14 +
+              (el.display === "rows"
+                ? Math.max(
+                    0,
+                    ...el.entries.map(
+                      (e) => cell(e.key) + (el.kind === "map" ? cell(e.value ?? "") + 60 : 0),
+                    ),
+                  ) + 160
+                : el.entries.reduce(
+                    (sum, e) => sum + cell(el.kind === "map" ? `${e.key}:${e.value ?? ""}` : e.key) + 10,
+                    0,
+                  ) + 120);
+            if (width > 1280 - 24) fail(`the map is wider than the stage (${Math.round(width)}px)`);
+            break;
+          }
           case "search-tree":
           case "partial":
             for (const problem of backtrackProblems(scene.elements, phone, el.type)) fail(problem);

@@ -1,0 +1,257 @@
+{
+  "id": "arrays-hashing-first-missing-positive",
+  "title": "First Missing Positive: Every Key in Its Own Locker",
+  "concept": "Arrays & Hashing",
+  "category": "dsa",
+  "summary": "Use the array as its own lookup table: swap each value into slot value − 1, then the first wrong slot names the gap.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Three lockers, numbered 1 to 3, hold keys tagged 4, 1, and 2. Each key belongs in the locker with its number. Which is the smallest locker number whose key is missing?",
+    "mapping": [
+      {
+        "real": "Locker number",
+        "abstract": "Slot i holds value i + 1"
+      },
+      {
+        "real": "A key's tag",
+        "abstract": "A value in nums"
+      },
+      {
+        "real": "Moving a key to its own locker",
+        "abstract": "Swapping nums[i] into slot nums[i] − 1"
+      },
+      {
+        "real": "The first locker without its key",
+        "abstract": "The first missing positive"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "in-place hashing",
+    "cyclic sort"
+  ],
+  "takeaway": {
+    "pattern": "Cyclic sort (the array as a hash table)",
+    "summary": "Value v belongs in slot v − 1. Swap each in-range value into its slot, ignoring values out of range; then the first slot i not holding i + 1 means i + 1 is missing, else n + 1.",
+    "timeComplexity": "O(n): each swap puts one value in its final slot",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Values 1…n that index into the array itself",
+      "Missing or duplicate numbers with O(1) extra space"
+    ]
+  },
+  "trace": {
+    "problem": "arrays-hashing/first-missing-positive",
+    "args": [
+      [
+        4,
+        1,
+        2
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v15",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T01:11:00.538Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "lockers",
+      "narration": "Three lockers, numbered 1 to 3, hold keys tagged 4, 1, and 2. Each key belongs in the locker with its number. What's the smallest number whose key is missing?",
+      "caption": "Lockers 1–3 hold keys tagged 4, 1, and 2: which key is missing?",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "locker 1",
+            "locker 2",
+            "locker 3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Searching every locker for key 1, then key 2, and so on is a nested loop. A separate lookup table needs extra space. Instead, the lockers are the lookup table: put each key in its own locker.",
+      "caption": "Searching for 1, then 2, then 3 is a nested loop",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "locker 1",
+            "locker 2",
+            "locker 3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "too-big",
+      "narration": "Locker 1 holds key 4, but there's no locker 4, so it can't be put anywhere. Leave it for now.",
+      "caption": "Key 4 has no locker here: leave it",
+      "durationInFrames": 276,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "locker 1",
+            "locker 2",
+            "locker 3"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "keys",
+          "state": "active"
+        }
+      ]
+    },
+    {
+      "id": "swap-1",
+      "narration": "Locker 2 holds key 1. Swap it into locker 1, where it belongs; key 4 comes back to locker 2.",
+      "caption": "Key 1 swaps into locker 1",
+      "durationInFrames": 276,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "locker 1",
+            "locker 2",
+            "locker 3"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "keys",
+          "state": "active"
+        },
+        {
+          "id": "home",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "keys",
+          "label": "home"
+        }
+      ]
+    },
+    {
+      "id": "swap-2",
+      "narration": "Key 4 still can't move. Locker 3 holds key 2: swap it into locker 2, and key 4 ends up in locker 3.",
+      "caption": "Key 2 swaps into locker 2",
+      "durationInFrames": 312,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "locker 1",
+            "locker 2",
+            "locker 3"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "keys",
+          "state": "active"
+        },
+        {
+          "id": "home",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "keys",
+          "label": "home"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Now check the lockers in order. Lockers 1 and 2 hold their own keys, but locker 3 holds key 4. So 3 is the first missing key.",
+      "caption": "Locker 3 holds key 4, not 3: key 3 is missing",
+      "durationInFrames": 360,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "locker 1",
+            "locker 2",
+            "locker 3"
+          ]
+        },
+        {
+          "id": "gap",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "keys",
+          "state": "rejected"
+        },
+        {
+          "id": "home",
+          "enterAt": 0,
+          "type": "sorted-region",
+          "rowId": "keys",
+          "label": "home"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "First missing",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Lockers are array slots: value v lives at slot v minus 1. Each swap places one value for good, so it's O(n) time with no extra space.",
+      "caption": "Lockers are slots; the array is its own lookup table",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "bar-row",
+          "unit": "",
+          "labels": [
+            "locker 1",
+            "locker 2",
+            "locker 3"
+          ]
+        }
+      ]
+    }
+  ]
+}

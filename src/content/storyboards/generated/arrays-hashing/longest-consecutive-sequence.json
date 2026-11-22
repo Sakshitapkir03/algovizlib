@@ -1,0 +1,403 @@
+{
+  "id": "arrays-hashing-longest-consecutive-sequence",
+  "title": "Longest Consecutive Sequence: Runs of Taken Parking Spots",
+  "concept": "Arrays & Hashing",
+  "category": "dsa",
+  "summary": "Put every spot in a set; walk a run only from its start, one lookup per next spot.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A parking attendant's list of taken spots reads 12, 4, 200, 1, 3, 2, 13, 11, in the order cars arrived. What's the longest run of neighboring spot numbers that are all taken?",
+    "mapping": [
+      {
+        "real": "A taken spot number",
+        "abstract": "A value in nums"
+      },
+      {
+        "real": "The attendant's board of taken spots",
+        "abstract": "A hash set"
+      },
+      {
+        "real": "A run of neighboring taken spots",
+        "abstract": "A consecutive sequence"
+      },
+      {
+        "real": "The first spot of a run (the one below is free)",
+        "abstract": "x with x − 1 not in the set"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "hash set"
+  ],
+  "takeaway": {
+    "pattern": "Hash set lookups",
+    "summary": "Put the values in a set. Only a value whose predecessor is missing starts a run; walk each run up from its start with one lookup per step. Every value is visited a constant number of times.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Runs or chains among unsorted values",
+      "Avoiding a sort with O(1) membership checks"
+    ]
+  },
+  "trace": {
+    "problem": "arrays-hashing/longest-consecutive-sequence",
+    "args": [
+      [
+        12,
+        4,
+        200,
+        1,
+        3,
+        2,
+        13,
+        11
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v15",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T01:11:00.546Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "garage",
+      "narration": "A parking attendant's list of taken spots reads 12, 4, 200, 1, 3, 2, 13, and 11. What's the longest run of neighboring spots that are all taken?",
+      "caption": "Taken spots 12, 4, 200, 1, 3, 2, 13, 11: the longest run?",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Sorting the list first costs n log n, and searching the list for each next spot is a nested loop. Instead, put every spot on a board where one look says taken or free.",
+      "caption": "Sorting first, or searching the list for each neighbor, is slower",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        }
+      ]
+    },
+    {
+      "id": "board",
+      "narration": "First, mark all eight spots on the board.",
+      "caption": "Every taken spot goes on the board",
+      "durationInFrames": 132,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        }
+      ]
+    },
+    {
+      "id": "not-start",
+      "narration": "Spot 12: one look shows 11 is taken, so 12 isn't the start of a run. Skip it. Its run will be walked from its start.",
+      "caption": "12: spot 11 is taken, so 12 isn't where a run starts",
+      "durationInFrames": 348,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "spots",
+          "state": "active"
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "longest"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "Spot 4 is skipped the same way, and 200 is a run of one. Spot 1: spot 0 is free, so a run starts at 1. Walk up.",
+      "caption": "1: spot 0 is free, so a run starts here. Walk up",
+      "durationInFrames": 372,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "spots",
+          "state": "active"
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "longest"
+        }
+      ]
+    },
+    {
+      "id": "run-of-four",
+      "narration": "Spots 2, 3, and 4 are taken, one look each, and 5 is free. That's a run of four, the longest so far.",
+      "caption": "2, 3, 4 taken, 5 free: a run of 4",
+      "durationInFrames": 312,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        },
+        {
+          "id": "len",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "longest yet"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "longest"
+        }
+      ]
+    },
+    {
+      "id": "shorter",
+      "narration": "Later, 11 starts another run: 12 and 13 are taken, 14 is free. A run of three, not longer than four.",
+      "caption": "From 11: 12 and 13 taken, 14 free. Only 3",
+      "durationInFrames": 288,
+      "traceStep": 16,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        },
+        {
+          "id": "len",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "shorter"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "longest"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Every spot was checked once as a possible start and walked at most once: the longest run is four spots.",
+      "caption": "Each spot was looked at a few times at most: the longest run is 4",
+      "durationInFrames": 276,
+      "traceStep": 17,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Longest run",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Spots are values and the board is a hash set. Starting runs only where the predecessor is missing keeps it O(n), with no sorting.",
+      "caption": "Spots are values; the board is a hash set",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "spots",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1st",
+            "2nd",
+            "3rd",
+            "4th",
+            "5th",
+            "6th",
+            "7th",
+            "8th"
+          ]
+        },
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "taken"
+        }
+      ]
+    }
+  ]
+}

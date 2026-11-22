@@ -6,6 +6,7 @@ import type {
   TraceExplore,
   TracePartial,
   TraceSearchNode,
+  TraceMap,
   TraceBfs,
   TraceLinks,
   TraceQueueItem,
@@ -252,6 +253,18 @@ const canonSearchNodes = (nodes: readonly TraceSearchNode[]) =>
       pruned: n.pruned ?? null,
     })),
   );
+
+/** A hash map's state field by field, in a canonical text form. */
+function mapFields(m: Partial<TraceMap>): Record<string, string> {
+  return {
+    kind: JSON.stringify(m.kind ?? null),
+    display: JSON.stringify(m.display ?? null),
+    entries: JSON.stringify((m.entries ?? []).map((e) => ({ key: e.key, value: e.value ?? null }))),
+    lookup: JSON.stringify(m.lookup ? { key: m.lookup.key, found: m.lookup.found } : null),
+    inserted: JSON.stringify(m.inserted ?? null),
+    updated: JSON.stringify(m.updated ? { key: m.updated.key, from: m.updated.from } : null),
+  };
+}
 
 /** A heap in a canonical form (every field present), for comparing with a trace step. */
 const canonHeap = (heap: Partial<TraceHeap>) =>
@@ -554,6 +567,22 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               "Without a traceStep, the table is empty (or the final table); omit cells/current/reads/chosen to take them from the trace",
               el.id,
               "cells",
+            );
+        }
+        if (el.type === "hash-map") {
+          const shape = trace.steps.find((s) => s.map)?.map;
+          const drawn = mapFields(el);
+          const empty = mapFields({ kind: shape?.kind, display: shape?.display });
+          const lastMap = trace.steps.at(-1)?.map;
+          const end =
+            lastMap && mapFields({ kind: lastMap.kind, display: lastMap.display, entries: lastMap.entries });
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!same(empty) && !same(end))
+            push(
+              "Without a traceStep, the map is empty (or as it ends); omit entries to take it from the trace",
+              el.id,
+              "entries",
             );
         }
         if (el.type === "search-tree" || el.type === "partial") {
@@ -1128,6 +1157,21 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           for (const field of Object.keys(expected))
             if (drawn[field] !== expected[field])
               push(`The ${el.type}'s ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "hash-map": {
+          if (!step.map) {
+            push(`Trace step ${stepIndex} has no map`, el.id, "entries");
+            break;
+          }
+          const expected = mapFields(step.map);
+          const drawn = mapFields(el);
+          for (const field of Object.keys(expected))
+            if (drawn[field] !== expected[field])
+              push(`The map's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
                 actual: drawn[field],
               });

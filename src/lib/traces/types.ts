@@ -148,6 +148,22 @@ export type TraceStep = {
   explore?: TraceExplore;
   /** The answer being built and the answers found so far. See `TracePartial`. */
   partial?: TracePartial;
+  /** A hash map or set after this step, with this step's lookup and change. See `TraceMap`. */
+  map?: TraceMap;
+};
+
+/**
+ * A hash map (or set: entries without values) in insertion order, drawn as rows ("key → value", a bucket's list of
+ * items) or compact cells ("l:1"). `lookup` is this step's question and its answer; `inserted` the key added and
+ * `updated` the key whose value changed (and what it was).
+ */
+export type TraceMap = {
+  kind: "map" | "set";
+  display: "rows" | "cells";
+  entries: { key: string; value?: string }[];
+  lookup?: { key: string; found: boolean };
+  inserted?: string;
+  updated?: { key: string; from: string };
 };
 
 /**

@@ -1,0 +1,394 @@
+{
+  "id": "arrays-hashing-valid-anagram",
+  "title": "Valid Anagram: Two Scrabble Racks, One Tally",
+  "concept": "Arrays & Hashing",
+  "category": "dsa",
+  "summary": "One tally of letters: the first rack adds, the second subtracts, and every count must end at zero.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Two players' Scrabble racks spell LISTEN and SILENT. Do they hold exactly the same tiles, each the same number of times?",
+    "mapping": [
+      {
+        "real": "A tile on the first rack",
+        "abstract": "A letter of s"
+      },
+      {
+        "real": "A tile on the second rack",
+        "abstract": "A letter of t"
+      },
+      {
+        "real": "The tally sheet: letter → count",
+        "abstract": "A hash map of counts"
+      },
+      {
+        "real": "Every count back to zero",
+        "abstract": "t is an anagram of s"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "hash map",
+    "counting"
+  ],
+  "takeaway": {
+    "pattern": "Counting with a hash map",
+    "summary": "Count each letter of s up and each letter of t down in one map. The strings are anagrams exactly when every count ends at 0.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(alphabet)",
+    "whenToUse": [
+      "Comparing two multisets",
+      "Checking counts without sorting"
+    ]
+  },
+  "trace": {
+    "problem": "arrays-hashing/valid-anagram",
+    "args": [
+      "listen",
+      "silent"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v15",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T01:11:00.549Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "racks",
+      "narration": "Two Scrabble racks spell listen and silent. Do they hold exactly the same tiles, each the same number of times?",
+      "caption": "LISTEN and SILENT: the same tiles?",
+      "durationInFrames": 276,
+      "elements": [
+        {
+          "id": "first",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "second",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "traceRow": "second",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "tally"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could hunt for each tile on the other rack, a nested loop, or sort both racks first. Instead, keep one tally: the first rack counts up, the second counts down.",
+      "caption": "Hunting each tile on the other rack, or sorting both, is slower",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "first",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "second",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "traceRow": "second",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "tally"
+        }
+      ]
+    },
+    {
+      "id": "first-pair",
+      "narration": "Position one: L from the first rack makes L plus one. S from the second rack makes S minus one.",
+      "caption": "L counts up, S counts down",
+      "durationInFrames": 276,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "first",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "second",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "traceRow": "second",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "first",
+          "state": "active"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "tally"
+        }
+      ]
+    },
+    {
+      "id": "same",
+      "narration": "Both racks have I here. Up one, down one: I stays at zero.",
+      "caption": "Both racks have I here: up and down, it stays 0",
+      "durationInFrames": 192,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "first",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "second",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "traceRow": "second",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "first",
+          "state": "active"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "tally"
+        }
+      ]
+    },
+    {
+      "id": "cross",
+      "narration": "Now the first rack's S cancels the S counted down earlier, and the second rack's L cancels the first L. Both are back to zero: position doesn't matter.",
+      "caption": "S and L cancel out, though they sat in different places",
+      "durationInFrames": 372,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "first",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "second",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "traceRow": "second",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "first",
+          "state": "active"
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "tally"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "T, E, and N cancel the same way. Every count ends at zero, so the racks hold the same tiles: an anagram.",
+      "caption": "Every count is back to 0: the same tiles",
+      "durationInFrames": 300,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "first",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "second",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "traceRow": "second",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "tally"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Anagram?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Tiles are letters and the tally is a hash map from letter to count. One pass over both words: O(n), no sorting.",
+      "caption": "Tiles are letters; the tally is a hash map of counts",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "first",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "second",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "traceRow": "second",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "tally",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "tally"
+        }
+      ]
+    }
+  ]
+}

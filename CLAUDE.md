@@ -417,6 +417,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `stack`         | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row                            | canvas |
 | `search-tree`   | backtracking decision tree (any branching): path in orange, dead ends faded/folded, pruned stubs dashed + reason, solutions ✓                                         | canvas |
 | `partial`       | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                  | bottom |
+| `hash-map`      | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                               | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -613,6 +614,23 @@ checks the tree's shape and every search field against the step, and the answer 
 found); an unbound tree shows the root (or the final search) and an unbound answer is empty. Tones: Combination Sum's
 too-big candidate is negative (the branch is cut).
 
+**Arrays & Hashing** (the five home problems; Longest Substring Without Repeating Characters and Top K Frequent
+are cross-listed in with their videos, LRU Cache, LFU Cache, Subarray Sum Equals K, and Number of Submatrices That
+Sum to Target without, and First Missing Positive is also listed under Sorting) added step state `map`: `kind` ("map" |
+"set"), `display` ("rows": one "key → value" line per entry, a group's items in the value; "cells": compact chips),
+`entries` in insertion order, `lookup` (the key asked for and whether it was there), `inserted`, and `updated` (with
+its old value). Traces read and write a `RecordedMap` (`traces/arrays-hashing/shared.ts`) like the reference
+solutions do. The `hash-map` primitive is a bottom panel under the input: the key looked up is ringed with "✓ found"
+or "✗ not found" (a key that isn't there shows as a dashed ghost), a new entry slides in marked "new", an updated
+value shows its old value struck through. Above a hash map, the input row sits under the caption with full-height
+cards when there's room (their labels are positions the map refers to), shrinking on a phone. Group Anagrams keys each
+word by its letters in order ("opst"; the reference counts letters: the same grouping); Valid Anagram shows its two
+words as two item-rows and one count map; First Missing Positive is a cyclic sort on a `bar-row` (its existing swap
+moves and final positions). Every video's second scene contrasts the slow way (a nested loop or a sort) with one
+lookup. The validator checks the map's kind, display, entries in order, lookup and result, inserted and updated keys
+against every step; the schema rejects a lookup whose result disagrees with the entries, and a set with values. An
+unbound map is empty. Tones: a lookup that finds nothing is neutral; a found partner or a new longest run positive.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -638,7 +656,8 @@ Trace = {
            heaps?,                                                // priority queues (see "Heap / Priority Queue" above)
            table?, climb?, houses?,                               // dynamic programming (see "Dynamic Programming" above)
            pile?,                                                 // stacks (see "Stack" above)
-           explore?, partial? }[],                                // backtracking (see "Backtracking" above)
+           explore?, partial?,                                    // backtracking (see "Backtracking" above)
+           map? }[],                                              // hashing (see "Arrays & Hashing" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -667,7 +686,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -907,7 +926,9 @@ Parentheses is a packer shutting nested boxes with matching lids, Evaluate RPN a
 knitting pattern's repeat brackets, and Largest Rectangle the widest banner across a row of rooftops. Backtracking:
 N-Queens is problem-native (the board); Subset XOR Totals is a painter's tint pots whose codes XOR, Subsets packing a
 picnic basket, Permutations a relay team's running orders, and Combination Sum filling a 12-litre tank with 4 L and 6 L
-jugs.
+jugs. Arrays & Hashing: Two Sum is a puzzle-swap host's register of who has arrived, Valid Anagram two Scrabble
+racks and one tally, Group Anagrams magnetic-letter words on trays labeled by their letters, Longest Consecutive
+Sequence runs of taken parking spots, and First Missing Positive keys put back in their own numbered lockers.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

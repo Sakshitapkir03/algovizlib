@@ -156,6 +156,7 @@ export function buildDraft(problemKey: string): Draft {
     }
     if (step.stack) elements.push({ id: "stack", type: "call-stack", label: "call stack", enterAt: 0 });
     if (step.heaps) elements.push({ id: "heaps", type: "heap", enterAt: 0 });
+    if (step.map) elements.push({ id: "map", type: "hash-map", label: "map", enterAt: 0 } as ElementSource);
     if (step.explore) {
       elements.push({ id: "search", type: "search-tree", enterAt: 0 } as ElementSource);
       // The answer scene keeps to the tree and the result.

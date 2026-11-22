@@ -1,0 +1,295 @@
+{
+  "id": "arrays-hashing-group-anagrams",
+  "title": "Group Anagrams: Trays Labeled by Their Letters",
+  "concept": "Arrays & Hashing",
+  "category": "dsa",
+  "summary": "Each word's letters in order make a label; one lookup finds its tray or starts a new one.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A fridge holds magnetic-letter words: stop, pots, rat, tops, art, cat. Words made of the same letters belong on the same tray, and each tray is labeled with its letters in alphabetical order.",
+    "mapping": [
+      {
+        "real": "A magnet word",
+        "abstract": "A string in words"
+      },
+      {
+        "real": "A tray's label: the letters in order",
+        "abstract": "The key: sorted letters"
+      },
+      {
+        "real": "The wall of labeled trays",
+        "abstract": "A hash map: key → group"
+      },
+      {
+        "real": "A tray's words",
+        "abstract": "One group of anagrams"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "hash map",
+    "sorting"
+  ],
+  "takeaway": {
+    "pattern": "Grouping with a hash map",
+    "summary": "Compute a key every member of a group shares (sorted letters, or letter counts) and put each item in the bucket for its key: one lookup per item.",
+    "timeComplexity": "O(n · k log k) with sorted keys, k the word length",
+    "spaceComplexity": "O(n · k)",
+    "whenToUse": [
+      "Grouping items that are equal under some rearrangement",
+      "Bucketing by a computed signature"
+    ]
+  },
+  "trace": {
+    "problem": "arrays-hashing/group-anagrams",
+    "args": [
+      [
+        "stop",
+        "pots",
+        "rat",
+        "tops",
+        "art",
+        "cat"
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v15",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T01:11:00.543Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "fridge",
+      "narration": "Six magnet words: stop, pots, rat, tops, art, and cat. Words made of the same letters belong together. How do you group them?",
+      "caption": "Six magnet words: group the ones with the same letters",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "trays",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "trays"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Comparing each new word with a word from every group so far is a nested loop. Instead, label each tray with its letters in order, so a word finds its tray in one look.",
+      "caption": "Comparing each word with every group is a nested loop",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "trays",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "trays"
+        }
+      ]
+    },
+    {
+      "id": "stop",
+      "narration": "Stop, letters in order, is o p s t. No tray has that label yet, so start one.",
+      "caption": "stop → label 'opst': no tray yet, so start one",
+      "durationInFrames": 252,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "words",
+          "state": "active"
+        },
+        {
+          "id": "trays",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "trays"
+        }
+      ]
+    },
+    {
+      "id": "pots",
+      "narration": "Pots also sorts to o p s t. One look finds that tray, and pots joins stop.",
+      "caption": "pots → 'opst' too: one look finds stop's tray",
+      "durationInFrames": 240,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "words",
+          "state": "active"
+        },
+        {
+          "id": "trays",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "trays"
+        }
+      ]
+    },
+    {
+      "id": "rat",
+      "narration": "Rat sorts to a r t, a label no tray has yet, so a second tray starts.",
+      "caption": "rat → 'art': a new label, a new tray",
+      "durationInFrames": 240,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "words",
+          "state": "active"
+        },
+        {
+          "id": "trays",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "trays"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "narration": "Tops joins the first tray, art joins rat, and cat starts a third. Every word was filed with one lookup: three groups.",
+      "caption": "Three trays: stop pots tops, rat art, cat",
+      "durationInFrames": 300,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "trays",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "trays"
+        },
+        {
+          "id": "result",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Groups",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Words are strings, sorted letters are the key, and the trays are a hash map from key to group. One lookup per word.",
+      "caption": "Words are strings; tray labels are hash map keys",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ]
+        },
+        {
+          "id": "trays",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "trays"
+        }
+      ]
+    }
+  ]
+}

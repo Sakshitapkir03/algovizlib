@@ -70,6 +70,8 @@ export const primitiveCatalog: Record<ElementType, string> = {
     'A backtracking decision tree: nodes are partial solutions (labeled with their state), edges the choices ("+4", "skip"). Omit everything to take the tree from the trace and the search from the step: nodes appear as they\'re reached, the path from the root is in the accent and the current node ringed, finished dead ends fade (big ones fold into their root), pruned branches are dashed stubs with the reason ("6 > 4"), and solutions get ✓. An unbound scene shows just the root. Use exactly one per scene in every scene of a search.',
   partial:
     'The answer being built, as chips ("building: 4 4"): the newest choice slides in, an undone one slides out struck through; beside it every answer found so far. Omit `items`/`added`/`removed`/`found` to take them from the step (an unbound scene shows it empty); set `label` and `foundLabel` to the story\'s words. Use it in every bound scene of a search.',
+  "hash-map":
+    'A hash map or set under the input: entries in the order they were added, as rows ("6 → #3", a group\'s words "opst → stop, pots") or compact cells ("l:1"). Omit everything but `label` to take the step\'s map: the key just looked up is ringed with "✓ found" or "✗ not found", a new entry slides in marked "new", and a changed value shows its old value struck through. An unbound scene shows it empty. Use it in every bound scene of a hashing trace.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };

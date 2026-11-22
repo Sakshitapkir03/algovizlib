@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v14";
+export const PROMPT_VERSION = "storyboard-v15";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -62,6 +62,7 @@ ${ELEMENT_GUIDE}
 - dp-table: when the trace has a table, add a dp-table (OMIT everything on it) to every scene that shows data; an unbound scene shows it empty. When the row is "stairs" or "houses", put a staircase or house-row (OMIT everything) first and the dp-table after it: they line up column by column. With coins (an item-row), mark the winning coin with an "active" highlight (OMIT indices). A step listing a tree walk with repeated calls (plain recursion) gets a scene with only a binary-tree (OMIT everything). Keep the bottom stack to at most one equation. For a one-row table, the answer scene holds the result; for a table with several rows, keep the last step's scene to the table and put the result (showsAnswer) in the closing scene, without the table. Skip callouts in table scenes.
 - stack: when steps list a stack, add a stack (set rowId to the input row's id, OMIT everything else) in every bound scene; an unbound scene shows it empty. Mark the item being read with an "active" highlight (OMIT indices) instead of pointers: the space under the row holds the resolve arcs and answers. A matched pair can use a "found" highlight. Keep the bottom stack to at most one equation or counter, and in the answer scene the result and at most a counter. Skip callouts in stack scenes.
 - search-tree / partial: when steps list a search, add a search-tree (OMIT everything) and a partial (OMIT items/added/removed/found; give label and foundLabel in the story's words) to every bound scene; an unbound scene shows just the root and an empty answer. Leave the input item-row out of search scenes (the partial shows what's chosen); a grid (a board) stays beside the tree. Keep the bottom stack to the partial plus at most one equation or counter. In the answer scene, drop the partial and show the result; if the tree is five or more levels deep, put the result in the closing scene instead (no tree there). Skip callouts in search scenes.
+- hash-map: when steps list a map, add a hash-map (OMIT everything but label; name it in the story's words) under the input row in every bound scene; an unbound scene shows it empty. The second scene contrasts the slow way (a nested loop rescanning, or sorting) with one lookup. Keep the bottom stack to the map plus at most one equation or counter; in the answer scene, the map and the result. Skip callouts in map scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -179,6 +180,19 @@ function describeStep(step: TraceStep, index: number): string {
       w.repeats?.length ? `repeated calls: [${w.repeats.join(", ")}]` : "",
     ];
     parts.push(walk.filter(Boolean).join("; "));
+  }
+  if (step.map) {
+    const m = step.map;
+    parts.push(
+      [
+        `${m.kind}: ${m.entries.map((e) => (e.value !== undefined ? `${e.key}→${e.value}` : e.key)).join(", ") || "empty"}`,
+        m.lookup ? `looked up ${m.lookup.key}: ${m.lookup.found ? "found" : "not found"}` : "",
+        m.inserted ? `added ${m.inserted}` : "",
+        m.updated ? `changed ${m.updated.key} (was ${m.updated.from})` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
   }
   if (step.explore) {
     const x = step.explore;
@@ -370,4 +384,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV14 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV15 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

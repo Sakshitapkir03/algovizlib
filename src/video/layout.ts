@@ -284,6 +284,8 @@ export const sizes = {
   stackedPointer: (t: TextMetrics) => t.size(TEXT.pointer) + 18 + 6,
 };
 export const NUMBER_GAP = 8;
+/** Between a hash map's rows. */
+export const MAP_ROW_GAP = 6;
 
 /**
  * Pointers under a row that share a position stack downward in storyboard order (low, mid, and high can all land
@@ -367,6 +369,10 @@ function bottomHeight(el: Element, t: TextMetrics): number {
       return t.size(TEXT.countKey) + 4 + sizes.cell(t) + 4 + sizes.marker(t);
     case "queue":
       return sizes.queueMarker(t) + sizes.cell(t) + 2 + sizes.marker(t);
+    case "hash-map":
+      return el.display === "rows"
+        ? Math.max(1, el.entries.length) * (sizes.cell(t) + MAP_ROW_GAP) - MAP_ROW_GAP
+        : sizes.cell(t) + 4 + sizes.marker(t);
     case "partial":
       // On a phone-sized player it's one row: the chips and a count of the answers found.
       return t.compact ? sizes.cell(t) : 2 * sizes.cell(t) + 8;
@@ -1093,6 +1099,7 @@ function layoutWith(
   const dpElement = elements.find((el): el is DpTableElement => el.type === "dp-table");
   const pileElement = elements.find((el): el is StackElement => el.type === "stack");
   const searchTreeElement = elements.find((el): el is SearchTreeElement => el.type === "search-tree");
+  const mapElement = elements.some((el) => el.type === "hash-map");
   // A stack takes a column on the right; the input moves left of it.
   const pileWidth = pileElement ? stackColumnWidth(pileElement, t) : 0;
   const pileLeft = VIDEO_WIDTH - SIDE_MARGIN - pileWidth;
@@ -1171,6 +1178,11 @@ function layoutWith(
       // the resolve arcs, and the text strip.
       top = captionBottom(t) + sizes.tagRoom(t) + 4;
       cardHeight = Math.max(PILE.minCard, Math.min(CARD_HEIGHT, lowest - top - pileBelow));
+    } else if (single && mapElement) {
+      // Above a hash map: under the caption, full-height cards (their labels are positions the map refers to) when
+      // there's room, shorter when the map and the bottom stack need it.
+      top = captionBottom(t) + sizes.tagRoom(t) + 4;
+      cardHeight = Math.max(HEAP_ROW_CARD, Math.min(CARD_HEIGHT, lowest - top));
     } else if (single && (heapElement || dpElement || searchTreeElement)) {
       // With a heap, a table, or a search tree below, the input is a short strip of cards under the caption.
       cardHeight = HEAP_ROW_CARD;

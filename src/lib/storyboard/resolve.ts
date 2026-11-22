@@ -491,6 +491,23 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             );
           return { ...el, heaps, slots };
         }
+        case "hash-map": {
+          if (el.entries && el.kind && el.display) return el;
+          if (step && !step.map) return (noState(el, "entries", "map"), el);
+          const m = step?.map;
+          // An unbound scene (the intro) shows the map empty, shaped like the trace's.
+          const shape = m ?? trace?.steps.find((s) => s.map)?.map;
+          if (!shape) return (missing(el, "entries"), el);
+          return {
+            ...el,
+            kind: el.kind ?? shape.kind,
+            display: el.display ?? shape.display,
+            entries: el.entries ?? m?.entries ?? [],
+            lookup: el.lookup ?? m?.lookup,
+            inserted: el.inserted ?? m?.inserted,
+            updated: el.updated ?? m?.updated,
+          };
+        }
         case "search-tree": {
           const nodes = el.nodes ?? trace?.searchTree?.nodes;
           if (!nodes) return (missing(el, "nodes"), el);

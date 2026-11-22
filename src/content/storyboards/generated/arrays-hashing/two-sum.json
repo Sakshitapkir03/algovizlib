@@ -1,0 +1,324 @@
+{
+  "id": "arrays-hashing-two-sum",
+  "title": "Two Sum: The Host's Register at a Puzzle Swap",
+  "concept": "Arrays & Hashing",
+  "category": "dsa",
+  "summary": "Each arrival asks one question, \"is my partner here?\", and the register answers in one look.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Collectors arrive at a puzzle swap holding numbered pieces: 8, 3, 11, 6, and 2. Two pieces that add up to 9 complete a set. The host keeps a register of who has arrived and where they're standing.",
+    "mapping": [
+      {
+        "real": "A collector's piece number",
+        "abstract": "nums[j]"
+      },
+      {
+        "real": "The number that would complete 9",
+        "abstract": "target − nums[j]"
+      },
+      {
+        "real": "The host's register: number → where they stand",
+        "abstract": "A hash map: value → index"
+      },
+      {
+        "real": "The matching pair of collectors",
+        "abstract": "The answer [i, j]"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "hash map"
+  ],
+  "takeaway": {
+    "pattern": "Hash map lookup",
+    "summary": "Walk once. For each value, look up target − value in a map of values already seen; if it's there, that's the pair, otherwise store this value with its index.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Finding a partner or complement for each item",
+      "Replacing a nested scan with one lookup"
+    ]
+  },
+  "trace": {
+    "problem": "arrays-hashing/two-sum",
+    "args": [
+      [
+        8,
+        3,
+        11,
+        6,
+        2
+      ],
+      9
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v15",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-22T01:11:00.547Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "swap",
+      "narration": "Collectors arrive at a puzzle swap with pieces numbered 8, 3, 11, 6, and 2. Two pieces that add up to 9 complete a set. Which two?",
+      "caption": "Pieces 8, 3, 11, 6, 2: which two complete 9?",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "pieces",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "register",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "register"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Each newcomer could walk around asking every collector already here, which is a nested loop, about n squared questions. Instead, the host keeps a register, and each newcomer asks it just once.",
+      "caption": "Asking everyone already here: a nested loop",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "pieces",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "register",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "register"
+        }
+      ]
+    },
+    {
+      "id": "eight",
+      "narration": "The 8 needs a 1. One look: no 1 in the register yet. So write down 8 at position 0.",
+      "caption": "8 needs a 1: not in the register. Write 8 down",
+      "durationInFrames": 276,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "pieces",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "pieces",
+          "label": "arriving",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "register",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "register"
+        },
+        {
+          "id": "need",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "needed"
+        }
+      ]
+    },
+    {
+      "id": "three",
+      "narration": "The 3 needs a 6. Not in the register, so write down 3 at position 1.",
+      "caption": "3 needs a 6: not here yet. Write 3 down",
+      "durationInFrames": 229,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "pieces",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "pieces",
+          "label": "arriving",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "register",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "register"
+        },
+        {
+          "id": "need",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "needed"
+        }
+      ]
+    },
+    {
+      "id": "eleven",
+      "narration": "The 11 would need minus 2. Nobody has that, so 11 goes in the register too.",
+      "caption": "11 needs −2: no one has that. Write 11 down",
+      "durationInFrames": 229,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "pieces",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "now",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "pieces",
+          "label": "arriving",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "j"
+        },
+        {
+          "id": "register",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "register"
+        },
+        {
+          "id": "need",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "needed"
+        }
+      ]
+    },
+    {
+      "id": "six",
+      "narration": "The 6 needs a 3, and one look finds 3 at position 1. The pair is positions 1 and 3, without rechecking anyone.",
+      "caption": "6 needs a 3: the register has it at #1. Found",
+      "durationInFrames": 312,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "pieces",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "pair",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "pieces",
+          "state": "found"
+        },
+        {
+          "id": "register",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "register"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Positions",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Pieces are values and the register is a hash map from value to position. One pass, one lookup each: O(n) instead of O(n squared).",
+      "caption": "Pieces are values; the register is a hash map",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "pieces",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "register",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "register"
+        }
+      ]
+    }
+  ]
+}

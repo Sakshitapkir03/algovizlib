@@ -8,6 +8,11 @@ import { decodeStringTrace } from "./stack/decode-string";
 import { evaluateReversePolishNotationTrace } from "./stack/evaluate-reverse-polish-notation";
 import { largestRectangleInHistogramTrace } from "./stack/largest-rectangle-in-histogram";
 import { validParenthesesTrace } from "./stack/valid-parentheses";
+import { firstMissingPositiveTrace } from "./arrays-hashing/first-missing-positive";
+import { groupAnagramsTrace } from "./arrays-hashing/group-anagrams";
+import { longestConsecutiveSequenceTrace } from "./arrays-hashing/longest-consecutive-sequence";
+import { twoSumTrace } from "./arrays-hashing/two-sum";
+import { validAnagramTrace } from "./arrays-hashing/valid-anagram";
 import { combinationSumTrace } from "./backtracking/combination-sum";
 import { nQueensTrace } from "./backtracking/n-queens";
 import { permutationsTrace } from "./backtracking/permutations";
@@ -123,6 +128,11 @@ const definitions = [
   permutationsTrace,
   combinationSumTrace,
   nQueensTrace,
+  twoSumTrace,
+  validAnagramTrace,
+  groupAnagramsTrace,
+  longestConsecutiveSequenceTrace,
+  firstMissingPositiveTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

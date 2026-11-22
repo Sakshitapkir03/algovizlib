@@ -457,6 +457,32 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: `A scene can show only one ${el.type}` });
           break;
         }
+        case "hash-map": {
+          const keys = el.entries.map((e) => e.key);
+          if (new Set(keys).size !== keys.length)
+            ctx.addIssue({ code: "custom", path: [...path, "entries"], message: "each key appears once" });
+          if (el.kind === "set" && el.entries.some((e) => e.value !== undefined))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "entries"],
+              message: "a set's entries have no values",
+            });
+          for (const [field, key] of [
+            ["inserted", el.inserted],
+            ["updated", el.updated?.key],
+          ] as const)
+            if (key !== undefined && !keys.includes(key))
+              ctx.addIssue({ code: "custom", path: [...path, field], message: `"${key}" isn't in the map` });
+          if (el.lookup && keys.includes(el.lookup.key) !== el.lookup.found && el.inserted !== el.lookup.key)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "lookup"],
+              message: `the lookup for "${el.lookup.key}" says ${el.lookup.found ? "found" : "not found"}, but the map ${keys.includes(el.lookup.key) ? "has" : "doesn't have"} it`,
+            });
+          if (scene.elements.filter((e) => e.type === "hash-map").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one hash-map" });
+          break;
+        }
         case "search-tree": {
           const n = el.nodes.length;
           if (el.nodes.some((node, k) => node.id !== k) || el.nodes[0]?.parent !== null)

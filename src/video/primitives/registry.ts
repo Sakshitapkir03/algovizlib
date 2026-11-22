@@ -15,6 +15,7 @@ import { Equation } from "./Equation";
 import { FreqTable } from "./FreqTable";
 import { Graph } from "./Graph";
 import { Grid } from "./Grid";
+import { HashMap } from "./HashMap";
 import { Heap } from "./Heap";
 import { HeapTree } from "./HeapTree";
 import { HeldValue } from "./HeldValue";
@@ -76,6 +77,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   // Backtracking: the decision tree (beside a board when there is one) and the answer being built, below.
   "search-tree": { component: SearchTree, slot: "canvas", layer: 0 },
   partial: { component: Partial, slot: "bottom", layer: 0 },
+  // Hashing: the map or set under the input.
+  "hash-map": { component: HashMap, slot: "bottom", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

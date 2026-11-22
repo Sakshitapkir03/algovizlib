@@ -334,6 +334,11 @@ describe("selectTargets", () => {
         p.storyboardId ? "hand-written" : p.slug === "three-sum" ? "generated" : undefined,
     };
     expect(selectTargets({ ...base, missing: true }, withGenerated).map((t) => t.key)).toEqual([
+      "arrays-hashing/two-sum",
+      "arrays-hashing/valid-anagram",
+      "arrays-hashing/group-anagrams",
+      "arrays-hashing/longest-consecutive-sequence",
+      "arrays-hashing/first-missing-positive",
       "sorting/bubble-sort",
       "sorting/selection-sort",
       "sorting/insertion-sort",
@@ -584,7 +589,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v14");
+    expect(currentPrompts.version).toBe("storyboard-v15");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -802,6 +802,32 @@ export const partialSourceSchema = z.object({
   found: partialShape.found.optional(),
 });
 
+const hashMapShape = {
+  ...baseElement,
+  type: z.literal("hash-map"),
+  kind: z.enum(["map", "set"]),
+  /** "rows": one "key → value" line per entry (a bucket's items in the value); "cells": compact key:value chips. */
+  display: z.enum(["rows", "cells"]),
+  /** In insertion order. */
+  entries: z
+    .array(z.object({ key: z.string().trim().min(1).max(10), value: z.string().max(24).optional() }))
+    .max(10),
+  /** This scene's lookup: the key asked for and whether it was there. */
+  lookup: z.object({ key: z.string().trim().min(1).max(10), found: z.boolean() }).optional(),
+  /** The key added in this scene (it slides in), or the key whose value changed (and what it was). */
+  inserted: z.string().max(10).optional(),
+  updated: z.object({ key: z.string().max(10), from: z.string().max(24) }).optional(),
+  label: nonEmpty.max(16).default("map"),
+};
+export const hashMapElementSchema = z.object(hashMapShape);
+export const hashMapSourceSchema = z.object({
+  ...hashMapShape,
+  /** Omit everything but label to take the map from the bound step (an unbound scene shows it empty). */
+  kind: hashMapShape.kind.optional(),
+  display: hashMapShape.display.optional(),
+  entries: hashMapShape.entries.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -983,6 +1009,7 @@ export const elementSchemas = [
   stackElementSchema,
   searchTreeElementSchema,
   partialElementSchema,
+  hashMapElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1021,6 +1048,7 @@ export const elementSourceSchemas = [
   stackSourceSchema,
   searchTreeSourceSchema,
   partialSourceSchema,
+  hashMapSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1071,6 +1099,7 @@ export type StackElement = ElementOf<"stack">;
 export type SearchTreeElement = ElementOf<"search-tree">;
 export type SearchNode = z.infer<typeof searchNodeSchema>;
 export type PartialElement = ElementOf<"partial">;
+export type HashMapElement = ElementOf<"hash-map">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
