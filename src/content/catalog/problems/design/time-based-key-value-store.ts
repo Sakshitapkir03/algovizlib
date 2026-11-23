@@ -16,6 +16,27 @@ The timestamps passed to \`set\` strictly increase across all calls.`,
   examples: [
     {
       input:
+        'TimeMap, set("color", "red", 1), set("color", "teal", 4), set("color", "gold", 7), set("color", "red", 9), get("color", 6), get("color", 0), get("color", 12)',
+      output: 'null, null, null, null, null, "teal", "", "red"',
+      explanation:
+        'At time 6 the latest change was "teal" (set at 4; "gold" only comes at 7). Nothing was set by time 0. From time 9 on the color is "red" again.',
+      args: [
+        ["TimeMap", "set", "set", "set", "set", "get", "get", "get"],
+        [
+          [],
+          ["color", "red", 1],
+          ["color", "teal", 4],
+          ["color", "gold", 7],
+          ["color", "red", 9],
+          ["color", 6],
+          ["color", 0],
+          ["color", 12],
+        ],
+      ],
+      expected: [null, null, null, null, null, "teal", "", "red"],
+    },
+    {
+      input:
         'TimeMap, set("color", "red", 2), set("color", "blue", 5), get("color", 1), get("color", 2), get("color", 4), get("color", 9)',
       output: 'null, null, null, "", "red", "red", "blue"',
       explanation:

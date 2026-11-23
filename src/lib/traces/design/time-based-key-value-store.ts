@@ -7,7 +7,7 @@ import { Calls, opStep } from "./shared";
 /**
  * A map from key to its history, a list of (timestamp, value) pairs. set appends, and because set timestamps only
  * increase the list stays sorted, so get binary-searches it for the last timestamp ≤ the query (or "" when there's
- * none). The map shows a key's history as "2:red 5:blue"; the row is the history's timestamps, and each search step
+ * none). The map shows how long a key's history is ("4 entries"); the row is the history's timestamps, and each search step
  * checks one of them (`search` over the row). Sets all use one key and come before every get, so the row is the same
  * in every get scene. Key steps: the second set (the history stays sorted), every get's answer, and the first search
  * whose last check finds a later entry (it and everything after are too late). Tones: a
@@ -20,8 +20,9 @@ export function timeBasedKeyValueStore(operations: string[], args: (string | num
   const steps: TraceStep[] = [];
   const record = (step: Omit<TraceStep, "pointers" | "op" | "map">) =>
     steps.push({ ...opStep(calls, step), map: map.snapshot() });
+  // The map shows how long a key's history is; the row (the timestamps) shows the entries themselves.
   const show = (h: { times: number[]; values: string[] }) =>
-    h.times.map((t, i) => `${t}:${h.values[i]}`).join(" ");
+    `${h.times.length} ${h.times.length === 1 ? "entry" : "entries"}`;
 
   let checkedLater = false;
   operations.forEach((op, k) => {
@@ -145,7 +146,8 @@ export const timeBasedKeyValueStoreTrace: TraceDefinition<[string[], (string | n
         .array(z.enum(["TimeMap", "set", "get"]))
         .min(2)
         .max(10),
-      z.array(z.array(z.union([z.string().max(6), z.number().int().min(1).max(99)])).max(3)),
+      // Times from 0: a get at time 0 asks before the first possible set.
+      z.array(z.array(z.union([z.string().max(6), z.number().int().min(0).max(99)])).max(3)),
     ])
     .refine(([ops]) => ops[0] === "TimeMap" && !ops.slice(1).includes("TimeMap"), "one store, made first")
     .refine(([ops, args]) => {

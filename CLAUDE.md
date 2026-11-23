@@ -818,7 +818,7 @@ primitive: Min Stack's (value, min) pairs in a `stack`; the queue's in and out s
 second with `traceStack: "second"`); LRU's map (`hash-map` rows, key → value) and recency list (`linked-list`, front =
 most recent, nodes "key:value"); LFU's map (key → "70 ×1": value and uses), one lane per use count (an LFU bucket is a
 small LRU list, oldest first; a used key slides to the next lane), and a `counter` for the fewest uses; TimeMap's map
-(key → "2:red 5:blue") and the one set key's history as an item-row (timestamps as values, the stored values as
+(key → "4 entries", the history's length) and the one set key's history as an item-row (timestamps as values, the stored values as
 labels) with a `search-range`. An eviction is its own step, the outgoing node marked `rejected`, before the insert.
 A linked list's nodes may carry `prev` (a doubly linked list): the list then draws each back link on the lower track
 and raises the forward arrows (`DOUBLY_NEXT`); lists without `prev` are drawn exactly as before. The `op-log`
@@ -1175,8 +1175,9 @@ Schedule, Network Delay Time, and Alien Dictionary are problem-native (the cours
 links, the alien word list); Find if Path Exists is villages joining clans under chiefs as roads are built, and
 Redundant Connection a crew wiring substations, each reporting to a hub, where the spare cable joins two that already
 share one. Data Structure Design: LRU Cache, LFU Cache, and Time Based Key-Value Store are problem-native (the caches
-and the store, with their own calls); Min Stack is a warehouse stack of crates whose tags record the lightest crate at
-or below them, and Implement Queue using Stacks a diner's pancakes, stacked as they cook and flipped onto the serving
+and the store, with their own calls; TimeMap's first example sets one key at times 1, 4, 7, 9 and gets at 6, 0, and 12,
+so a search is two or three probes deep); Min Stack is a stack of pancakes, each with a sticky note giving the smallest
+size at or below it, and Implement Queue using Stacks a diner's pancakes, stacked as they cook and flipped onto the serving
 plate when it runs empty, so the first made is on top.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".

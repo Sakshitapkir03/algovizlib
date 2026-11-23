@@ -1,27 +1,27 @@
 {
   "id": "design-min-stack",
-  "title": "Min Stack: Every Crate Knows the Lightest Below",
+  "title": "Min Stack: Every Pancake Knows the Smallest Below",
   "concept": "Data Structure Design",
   "category": "dsa",
-  "summary": "Store each value with the minimum at or below it, so the minimum is always on top and a pop restores the old one for free.",
+  "summary": "Each pancake carries a note of the smallest size at or below it, so the minimum is always on top and a pop restores the old one for free.",
   "exampleSource": "analogy",
   "analogy": {
-    "scenario": "A warehouse stacks crates; a forklift reaches only the top one. Each crate's tag records its weight and the lightest crate at or below it, so the foreman reads the lightest crate in the stack off the top tag.",
+    "scenario": "A cook stacks pancakes of different sizes and can only take the top one. Each pancake carries a sticky note with its size and the smallest size at or below it, so the smallest in the stack is always written on the top note.",
     "mapping": [
       {
-        "real": "crate on the stack",
+        "real": "pancake on the stack",
         "abstract": "pushed value"
       },
       {
-        "real": "tag: (weight, lightest so far)",
+        "real": "sticky note: (size, smallest so far)",
         "abstract": "pair (value, current min)"
       },
       {
-        "real": "taking the top crate off",
+        "real": "taking the top pancake off",
         "abstract": "pop()"
       },
       {
-        "real": "reading the top tag",
+        "real": "reading the top note",
         "abstract": "getMin() / top()"
       }
     ]
@@ -77,15 +77,15 @@
     "promptVersion": "storyboard-v23",
     "provider": "claude-code",
     "model": "claude-opus-5-5",
-    "generatedAt": "2026-11-23T16:40:43.905Z",
+    "generatedAt": "2026-11-23T21:31:58.362Z",
     "repairAttempts": 0
   },
   "scenes": [
     {
       "id": "problem",
-      "narration": "A forklift stacks crates and can only reach the top one. The foreman keeps asking for the lightest crate in the stack, and every answer must be instant.",
-      "caption": "Stacked crates: which is the lightest, without unstacking?",
-      "durationInFrames": 372,
+      "narration": "A cook stacks pancakes and can only take the top one. Diners keep asking for the smallest pancake in the stack, and every answer must be instant.",
+      "caption": "Stacked pancakes: which is the smallest, without unstacking?",
+      "durationInFrames": 360,
       "elements": [
         {
           "id": "log",
@@ -97,15 +97,15 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         }
       ]
     },
     {
       "id": "slow",
-      "narration": "Checking every crate is O(n), and one note saying the lightest goes stale when that crate is taken off. Instead, each tag records the lightest crate at or below it: the stack stays a stack, and the top tag answers in O(1).",
-      "caption": "Scanning is O(n); one note breaks when that crate leaves",
-      "durationInFrames": 540,
+      "narration": "Checking every pancake is O(n), and a single note saying which is smallest goes stale when that pancake is taken. Instead, each pancake's note records the smallest at or below it, so the top note answers in O(1).",
+      "caption": "Scanning is O(n); one note breaks when that pancake leaves",
+      "durationInFrames": 492,
       "elements": [
         {
           "id": "log",
@@ -117,14 +117,14 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         },
         {
           "id": "costs",
           "enterAt": 0,
           "type": "result",
           "title": "scan the stack: O(n)",
-          "value": "tag every crate: O(1)",
+          "value": "note every pancake: O(1)",
           "showsAnswer": false,
           "tone": "info"
         }
@@ -132,9 +132,9 @@
     },
     {
       "id": "first",
-      "narration": "The first crate weighs 6, so its tag reads 6 and 6.",
-      "caption": "The first crate, 6 kg, is the lightest so far: (6, 6)",
-      "durationInFrames": 180,
+      "narration": "The first pancake is size 6, so its note reads 6 and 6.",
+      "caption": "The first pancake, size 6, is the smallest so far: (6, 6)",
+      "durationInFrames": 192,
       "traceStep": 1,
       "elements": [
         {
@@ -147,14 +147,14 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         }
       ]
     },
     {
       "id": "lighter",
-      "narration": "Next comes 2, lighter than the 6 recorded below it, so this tag records a new lightest: 2.",
-      "caption": "A 2 kg crate is lighter than 6: its tag says 2",
+      "narration": "Next comes 2, smaller than the 6 noted below it, so this note records a new smallest: 2.",
+      "caption": "A size-2 pancake is smaller than 6: its note says 2",
       "durationInFrames": 252,
       "traceStep": 2,
       "elements": [
@@ -168,21 +168,21 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         },
         {
           "id": "cmp",
           "enterAt": 0,
           "type": "equation",
           "unit": "",
-          "verdict": "new lightest"
+          "verdict": "new smallest"
         }
       ]
     },
     {
       "id": "heavier",
-      "narration": "Then 8, heavier than 2, so its tag copies the lightest from below: 8 and 2.",
-      "caption": "An 8 kg crate isn't lighter: its tag keeps 2",
+      "narration": "Then 8, bigger than 2, so its note copies the smallest from below: 8 and 2.",
+      "caption": "A size-8 pancake isn't smaller: its note keeps 2",
       "durationInFrames": 229,
       "traceStep": 3,
       "elements": [
@@ -196,7 +196,7 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         },
         {
           "id": "cmp",
@@ -209,8 +209,8 @@
     },
     {
       "id": "min",
-      "narration": "Asking for the lightest just reads the top tag: 2, in constant time.",
-      "caption": "getMin(): read the top tag, 2, with no search",
+      "narration": "Asking for the smallest just reads the top note: 2, in constant time.",
+      "caption": "getMin(): read the top note, 2, with no search",
       "durationInFrames": 192,
       "traceStep": 4,
       "elements": [
@@ -224,14 +224,14 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         }
       ]
     },
     {
       "id": "pop-min",
-      "narration": "The 8 comes off, then the 2 itself. Nothing is recomputed: the tag underneath was written before 2 arrived, and it says 6.",
-      "caption": "The 2 kg crate leaves; the tag below already says 6",
+      "narration": "The 8 comes off, then the 2 itself. Nothing is recomputed: the note underneath was written before 2 arrived, and it says 6.",
+      "caption": "The size-2 pancake leaves; the note below already says 6",
       "durationInFrames": 312,
       "traceStep": 7,
       "elements": [
@@ -245,14 +245,14 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         }
       ]
     },
     {
       "id": "last",
       "narration": "So the last getMin reads 6 straight off the top.",
-      "caption": "getMin(): the top tag now says 6",
+      "caption": "getMin(): the top note now says 6",
       "durationInFrames": 156,
       "traceStep": 8,
       "elements": [
@@ -266,13 +266,13 @@
           "id": "stack",
           "enterAt": 0,
           "type": "stack",
-          "label": "(kg, lightest)"
+          "label": "(size, smallest)"
         }
       ]
     },
     {
       "id": "pattern",
-      "narration": "In code, each crate is a pair of value and minimum so far. push, pop, top, and getMin are all O(1), using O(n) space for the pairs.",
+      "narration": "In code, each pancake is a pair of value and minimum so far. push, pop, top, and getMin are all O(1), using O(n) space for the pairs.",
       "caption": "Each pair is (value, min so far): every call is O(1)",
       "durationInFrames": 360,
       "elements": [

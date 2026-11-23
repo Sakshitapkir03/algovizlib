@@ -65,11 +65,12 @@ describe("design traces", () => {
     const { trace } = traceFor(TIME);
     expect(trace.ops!.slice(0, 4)).toEqual([
       { call: "TimeMap()", output: "—" },
-      { call: 'set("color", "red", 2)', output: "—" },
-      { call: 'set("color", "blue", 5)', output: "—" },
-      { call: 'get("color", 1)', output: '""' },
+      { call: 'set("color", "red", 1)', output: "—" },
+      { call: 'set("color", "teal", 4)', output: "—" },
+      { call: 'set("color", "gold", 7)', output: "—" },
     ]);
-    expect(trace.answerDisplay).toBe('null, null, null, "", "red", "red", "blue"');
+    expect(trace.ops![6]).toEqual({ call: 'get("color", 0)', output: '""' });
+    expect(trace.answerDisplay).toBe('null, null, null, null, null, "teal", "", "red"');
   });
 
   it("LRU Cache: a hit moves the node to the front, and a full cache evicts the back node", () => {
@@ -127,15 +128,19 @@ describe("design traces", () => {
 
   it("TimeMap: a get binary-searches the sorted history for the last time at or before the query", () => {
     const { trace } = traceFor(TIME);
-    expect(trace.row.values).toEqual([2, 5]);
-    const get4 = trace.steps.filter((s) => s.op!.current === 5);
-    expect(get4.map((s) => s.search)).toEqual([
-      { from: 0, to: 1, mid: 0 },
-      { from: 1, to: 1, mid: 1 },
-      { from: 1, to: 0 },
+    expect(trace.row.values).toEqual([1, 4, 7, 9]);
+    // get at 6: two probes (4 fits, 7 is too late), then the answer, teal at 4.
+    const get6 = trace.steps.filter((s) => s.op!.current === 5);
+    expect(get6.map((s) => s.search)).toEqual([
+      { from: 0, to: 3, mid: 1 },
+      { from: 2, to: 3, mid: 2 },
+      { from: 2, to: 1 },
     ]);
-    expect(get4.map((s) => s.equation?.tone)).toEqual(["positive", "neutral", undefined]);
-    expect(get4.at(-1)!.found).toEqual([0]);
+    expect(get6.map((s) => s.equation?.tone)).toEqual(["positive", "neutral", undefined]);
+    expect(get6.at(-1)!.found).toEqual([1]);
+    // Before the first set and after the last: two probes left, three probes right.
+    expect(trace.steps.filter((s) => s.op!.current === 6 && s.search?.mid !== undefined)).toHaveLength(2);
+    expect(trace.steps.filter((s) => s.op!.current === 7 && s.search?.mid !== undefined)).toHaveLength(3);
   });
 
   it("DoublyList keeps prev and next consistent through unlinks, moves, and removals", () => {
@@ -280,8 +285,13 @@ describe("design storyboards", () => {
   it("a long call shortens on a phone: no spaces or quotes, then without a key every call shares", () => {
     expect(compactCall('set("color", "red", 2)')).toBe("set(color,red,2)");
     const forms = opLogForms(traceFor(TIME).trace.ops!);
-    expect(forms.at(-1)!.labels.slice(0, 4)).toEqual(["TimeMap()", "set(red,2)", "set(blue,5)", "get(1)"]);
-    expect(forms.at(-1)!.outputs.slice(3)).toEqual(['""', "red", "red", "blue"]);
+    expect(forms.at(-1)!.labels.slice(0, 4)).toEqual([
+      "TimeMap()",
+      "set(red,1)",
+      "set(teal,4)",
+      "set(gold,7)",
+    ]);
+    expect(forms.at(-1)!.outputs.slice(5)).toEqual(["teal", '""', "red"]);
     // Without a shared key (a cache's numeric keys), there is no third form.
     expect(opLogForms(traceFor(LRU).trace.ops!)).toHaveLength(2);
   });
