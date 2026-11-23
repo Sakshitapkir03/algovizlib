@@ -31,7 +31,15 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/generated/**"]),
+  // .claude/worktrees: Claude Code worktrees, each a full checkout of the repo.
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "src/generated/**",
+    ".claude/worktrees/**",
+  ]),
 ]);
 
 export default eslintConfig;
