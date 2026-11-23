@@ -67,7 +67,7 @@
     "promptVersion": "storyboard-v23",
     "provider": "claude-code",
     "model": "claude-opus-5-5",
-    "generatedAt": "2026-11-23T16:43:48.896Z",
+    "generatedAt": "2026-11-23T21:15:43.149Z",
     "repairAttempts": 0
   },
   "scenes": [
@@ -260,13 +260,6 @@
           "label": "answer"
         },
         {
-          "id": "hit",
-          "enterAt": 0,
-          "type": "highlight",
-          "rowId": "row",
-          "state": "found"
-        },
-        {
           "id": "map",
           "enterAt": 0,
           "type": "hash-map",
@@ -305,13 +298,6 @@
           "label": "answer"
         },
         {
-          "id": "hit",
-          "enterAt": 0,
-          "type": "highlight",
-          "rowId": "row",
-          "state": "found"
-        },
-        {
           "id": "map",
           "enterAt": 0,
           "type": "hash-map",
@@ -348,13 +334,6 @@
           "type": "search-range",
           "rowId": "row",
           "label": "answer"
-        },
-        {
-          "id": "hit",
-          "enterAt": 0,
-          "type": "highlight",
-          "rowId": "row",
-          "state": "found"
         },
         {
           "id": "map",

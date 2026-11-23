@@ -836,7 +836,11 @@ calls and outputs against `trace.ops`, the running call, and how many outputs ar
 second stack against `secondPile`, and each node's `prev`. The op log with every output filled in reveals the answer
 (the list of outputs is too long for a result card on a phone), so these videos close with an info card. Every
 video's second scene contrasts a simpler design with the combination; tones: Min Stack's new minimum is positive and
-keeping the old one neutral, TimeMap's entry at or before the query positive and a later one neutral.
+keeping the old one neutral, TimeMap's entry at or before the query positive and a later one neutral. On a phone a
+doubly linked list keeps its lane names (LFU's "1 use", "2 uses": nothing else tells the lists apart), and a stack
+beside an op log tags popped items "off", not "out" (a queue's stacks are named "in" and "out"); lists and stacks
+elsewhere are unchanged. Time Based Key-Value Store marks its answer with the search range's "answer" marker only: a
+"found" highlight on a card the empty range has already ruled out read as both crossed out and matched.
 
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).

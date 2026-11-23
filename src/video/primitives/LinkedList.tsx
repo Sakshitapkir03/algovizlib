@@ -163,7 +163,7 @@ export function LinkedList({ element }: { element: LinkedListElement }) {
     // A full-stage box (not a zero-size wrapper): its fading layer then has real bounds, and Chrome paints every
     // node and arrow in it.
     <div style={{ position: "absolute", inset: 0, opacity: p }}>
-      {(text.compact ? [] : (element.laneLabels ?? [])).map((label, lane) =>
+      {(text.compact && !doubly ? [] : (element.laneLabels ?? [])).map((label, lane) =>
         list.laneTops[lane] === undefined || !label || !list.present[lane] ? null : (
           <div
             key={`lane-${lane}`}

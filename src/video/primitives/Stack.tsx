@@ -205,7 +205,8 @@ export function Stack({ element }: { element: StackElement }) {
                 color: palette.textMuted,
               }}
             >
-              out
+              {/* Beside an op log, a queue's stacks are named "in" and "out": a popped item says "off" instead. */}
+              {pile.titled ? "off" : "out"}
             </div>
           ) : null,
         ),

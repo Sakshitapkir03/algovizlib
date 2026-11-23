@@ -520,7 +520,10 @@ function layoutList(
 
   // Lane labels sit at the left of their lane (dropped on a phone-sized player: the caption carries the story).
   const labelSize = t.size(TEXT.laneLabel);
-  const labels = t.compact ? [] : (list.laneLabels ?? []);
+  // Lane names are dropped on a phone, except in a doubly linked list (LFU's "1 use", "2 uses"), where only the names
+  // tell the lists apart.
+  const doubly = list.nodes.some((n) => n.prev !== undefined);
+  const labels = t.compact && !doubly ? [] : (list.laneLabels ?? []);
   const labelWidth =
     labels.length > 0 ? Math.max(...labels.map((l) => t.width(l, labelSize, "mono"))) + 16 : 0;
   const left = stageLeft + labelWidth;
