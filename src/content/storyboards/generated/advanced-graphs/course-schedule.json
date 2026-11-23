@@ -1,0 +1,218 @@
+{
+  "id": "advanced-graphs-course-schedule",
+  "title": "Course Schedule: Taking What's Free",
+  "concept": "Advanced Graphs",
+  "category": "dsa",
+  "summary": "Count each course's unmet prerequisites, take courses whose count is zero, and spot the cycle when the queue runs dry.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "graph",
+    "topological sort",
+    "cycle detection"
+  ],
+  "takeaway": {
+    "pattern": "Topological sort (Kahn's algorithm)",
+    "summary": "Repeatedly take a node with no incoming arrows and remove its arrows. If the queue empties before every node is taken, the nodes left sit on a cycle.",
+    "timeComplexity": "O(V + E)",
+    "spaceComplexity": "O(V + E)",
+    "whenToUse": [
+      "Tasks with prerequisites: find an order or prove there is none",
+      "Detecting a cycle in a directed graph"
+    ]
+  },
+  "trace": {
+    "problem": "advanced-graphs/course-schedule",
+    "args": [
+      5,
+      [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          4,
+          0
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v22",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T15:05:43.947Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Five courses, numbered 0 to 4. An arrow runs from each prerequisite to the course that needs it: 0 before 1 and 4, 1 before 2, 2 before 3, and 3 before 1. Can you finish them all?",
+      "caption": "Five courses, with arrows from each prerequisite",
+      "durationInFrames": 492,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Checking every order of five courses means 120 orders. Instead, count how many prerequisites each course still has, and take any course whose count is zero.",
+      "caption": "Checking all 120 orders is slow",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "The badge on each course is how many arrows still point into it. Only course 0 has none, so it goes in the queue.",
+      "caption": "Badges count unmet prerequisites: only 0 is ready",
+      "durationInFrames": 324,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "ready",
+          "levelLabel": "round"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "taken",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "take-0",
+      "narration": "Take course 0. Its arrows are used up, so courses 1 and 4 each lose a prerequisite. Course 4 reaches zero and joins the queue; course 1 still waits on 3.",
+      "caption": "Take 0: course 4 reaches zero and joins the queue",
+      "durationInFrames": 408,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "ready",
+          "levelLabel": "round"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "taken",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "take-4",
+      "narration": "Take course 4. Nothing depends on it, and now the queue is empty.",
+      "caption": "Take 4: nothing depends on it, and the queue is empty",
+      "durationInFrames": 192,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "ready",
+          "levelLabel": "round"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "taken",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "stuck",
+      "narration": "Two courses taken out of five. Courses 1, 2, and 3 each wait on another of the three, a cycle, so none of them can ever reach zero. The answer is false.",
+      "caption": "Only 2 of 5 taken: 1, 2, and 3 wait on each other",
+      "durationInFrames": 420,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "taken",
+          "foundLabel": "found",
+          "showFound": false
+        },
+        {
+          "id": "count",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "impossible"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "This is topological sort with Kahn's algorithm: keep taking a node with no incoming arrows. If the queue empties before every node is taken, the rest sit on a cycle. It runs in O(V + E) time.",
+      "caption": "Kahn's algorithm: take what's free, and catch cycles",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Can every course be finished?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

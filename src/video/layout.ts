@@ -15,6 +15,8 @@ import type {
   PointerElement,
   TimelineElement,
   TrieElement,
+  DigraphElement,
+  UnionFindElement,
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
@@ -23,6 +25,8 @@ import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
 import { prefixBand } from "./prefix-layout";
 import { layoutTimeline, TIMELINE_SPLIT } from "./timeline-layout";
 import { layoutTrie, type TrieShape } from "./trie-layout";
+import { layoutForest, type ForestShape } from "./forest-layout";
+import { layoutNetwork, type NetworkShape } from "./network-layout";
 import { TEXT, textMetrics, type TextMetrics } from "./text";
 
 /**
@@ -245,7 +249,14 @@ export type SceneLayout = {
   search?: SearchLayout;
   /** A trie's geometry, when the scene has one. */
   trie?: TrieShape;
+  /** A digraph's geometry, when the scene has one. */
+  network?: NetworkShape;
+  /** A union-find's trees, when the scene has one. */
+  forest?: ForestShape;
 };
+
+/** Beside a heap, a digraph takes the stage left of this x and the heap the right. */
+export const NETWORK_SPLIT = 700;
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
 export const sizes = {
@@ -818,6 +829,20 @@ const HEAPS = { gap: 48, arrayGap: 22, maxNode: 84 };
 /** An item-row's cards above a heap. */
 const HEAP_ROW_CARD = 78;
 
+/** How far right of the root a popped root's far edge reaches, in node widths (`Heap`: out 1.7, plus half a box). */
+export const POP_OUT = 2.2;
+
+/** A heap's node width: as wide as its widest label (pushed and popped items included). */
+export function heapNodeWidth(el: HeapElement, t: TextMetrics): number {
+  const size = t.size(TEXT.heapItem);
+  const labels = el.heaps.flatMap((h) => [
+    ...h.items,
+    ...(h.popped ? [h.popped] : []),
+    ...(h.pushed ? [h.pushed] : []),
+  ]);
+  return Math.max(56, ...labels.map((i) => t.width(i.label, size, "mono") + 20));
+}
+
 /**
  * One panel per heap, side by side between `top` and the bottom stack: the tree (at the shape of its
  * largest size anywhere in the trace, so it never jumps between scenes), and the array strip under it.
@@ -834,12 +859,7 @@ function layoutHeaps(
   const bottom = bottomTop - 16;
   const width = (region.right - region.left - HEAPS.gap * (n - 1)) / n;
   const size = t.size(TEXT.heapItem);
-  const labels = el.heaps.flatMap((h) => [
-    ...h.items,
-    ...(h.popped ? [h.popped] : []),
-    ...(h.pushed ? [h.pushed] : []),
-  ]);
-  const nodeWidth = Math.max(56, ...labels.map((i) => t.width(i.label, size, "mono") + 20));
+  const nodeWidth = heapNodeWidth(el, t);
   const nodeHeight = size + 26;
   const index = sizes.heapIndex(t);
   // Two heaps are narrow side by side: their names ("lower half (max)") get a row above the trees.
@@ -1080,6 +1100,8 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     first.dpOverflow ?? 0,
     first.timelineOverflow ?? 0,
     first.trieOverflow ?? 0,
+    first.networkOverflow ?? 0,
+    first.forestOverflow ?? 0,
   );
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
@@ -1097,6 +1119,8 @@ function layoutWith(
   dpOverflow?: number;
   timelineOverflow?: number;
   trieOverflow?: number;
+  networkOverflow?: number;
+  forestOverflow?: number;
 } {
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
@@ -1140,6 +1164,8 @@ function layoutWith(
   const graphElement = elements.find((el): el is GraphElement => el.type === "graph");
   const searchElement = elements.find((el): el is SearchTreeElement => el.type === "search-tree");
   const trieElement = elements.find((el): el is TrieElement => el.type === "trie");
+  const digraphElement = elements.find((el): el is DigraphElement => el.type === "digraph");
+  const forestElement = elements.find((el): el is UnionFindElement => el.type === "union-find");
   if (gridElement)
     ({ grid, overflow: searchOverflow } = layoutGrid(
       gridElement,
@@ -1250,8 +1276,12 @@ function layoutWith(
       strip = above;
       top = captionBottom(t) + Math.max(sizes.tagRoom(t) + 4, above);
       cardHeight = Math.max(HEAP_ROW_CARD, Math.min(CARD_HEIGHT, lowest - top));
-    } else if (single && (heapElement || dpElement || searchTreeElement || trieElement)) {
-      // With a heap, a table, a search tree, or a trie below, the input is a short strip of cards under the caption.
+    } else if (
+      single &&
+      (heapElement || dpElement || searchTreeElement || trieElement || digraphElement || forestElement)
+    ) {
+      // With a heap, a table, a search tree, a trie, or a graph below, the input is a short strip of cards under the
+      // caption.
       cardHeight = HEAP_ROW_CARD;
       top = captionBottom(t) + sizes.tagRoom(t) + 4;
     } else if (single) {
@@ -1344,6 +1374,24 @@ function layoutWith(
     });
     trieOverflow = trie.overflow || undefined;
   }
+  let network: NetworkShape | undefined;
+  let forest: ForestShape | undefined;
+  {
+    // Under the input row (and its pointers) if there is one, else under the caption; left of a heap.
+    const row = Object.values(layouts)[0];
+    const top = row ? row.pointerTop + pointerRoom(elements, row.rowId, t) + 6 : captionBottom(t) + 8;
+    const right = heapElement ? NETWORK_SPLIT : VIDEO_WIDTH - GRID.margin;
+    const region = { x: GRID.margin, y: top, w: right - GRID.margin, h: bottomTop - 12 - top };
+    if (digraphElement) network = layoutNetwork(digraphElement, t, region);
+    // With nothing under them, the trees may use the stage down to its bottom margin (centered in it).
+    const empty = !elements.some((el) => bottomHeight(el, t) > 0);
+    if (forestElement)
+      forest = layoutForest(
+        forestElement,
+        t,
+        empty ? { ...region, h: VIDEO_HEIGHT - BOTTOM_MARGIN - top } : region,
+      );
+  }
   let heapPanels: HeapPanel[] | undefined;
   let heapOverflow: number | undefined;
   // A timeline sits under the caption; a heap with it takes the right of the stage (only then: other heap scenes keep
@@ -1360,7 +1408,17 @@ function layoutWith(
           left: TIMELINE_SPLIT + 24,
           right: VIDEO_WIDTH - GRID.margin,
         })
-      : layoutHeaps(heapElement, t, top, bottomTop));
+      : network
+        ? // Beside a graph: the right of the stage, from the top, narrow enough that a popped root (which steps
+          // out 1.7 node widths right of the root) stays on the stage.
+          layoutHeaps(heapElement, t, captionBottom(t) + 8, bottomTop, {
+            left: NETWORK_SPLIT + 24,
+            right: Math.min(
+              VIDEO_WIDTH - GRID.margin,
+              2 * (VIDEO_WIDTH - 8 - POP_OUT * heapNodeWidth(heapElement, t)) - (NETWORK_SPLIT + 24),
+            ),
+          })
+        : layoutHeaps(heapElement, t, top, bottomTop));
   }
   return {
     rows: { ...layouts, ...listRows },
@@ -1380,6 +1438,10 @@ function layoutWith(
     timelineOverflow: timeline?.overflow || undefined,
     trie,
     trieOverflow,
+    network,
+    networkOverflow: network?.overflow || undefined,
+    forest,
+    forestOverflow: forest?.overflow || undefined,
     pile,
     search,
     searchOverflow: Math.max(searchOverflow ?? 0, treeSearchOverflow ?? 0) || undefined,

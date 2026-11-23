@@ -166,10 +166,67 @@ export type TraceStep = {
   bits?: TraceBits;
   /** A trie after this step, with the walk through it. See `TraceTrie`. */
   trie?: TraceTrie;
+  /** A directed (often weighted) graph after this step: node and edge states, in-degree badges. See `TraceNetwork`. */
+  network?: TraceNetwork;
+  /** Union-find after this step: every element's parent, this step's finds, compression, and union. See `TraceForest`. */
+  forest?: TraceForest;
+};
+
+/**
+ * How a graph node reads at a step: `idle`, `ready` (waiting in the queue or heap), `current` (being processed),
+ * `done` (taken, or settled for good), `stuck` (can never be taken: it sits on a cycle).
+ */
+export type NetworkNodeState = "idle" | "ready" | "current" | "done" | "stuck";
+
+/**
+ * How an edge reads at a step: `idle`; `new` (found this step: Alien Dictionary's comparisons); `used` (removed by
+ * Kahn's algorithm once its source is taken); `better` (a relaxation that improved the target's distance); `worse`
+ * (a relaxation that didn't).
+ */
+export type NetworkEdgeState = "idle" | "new" | "used" | "better" | "worse";
+
+/**
+ * A graph node at a fixed spot on a small grid (`x` columns, `y` rows, fractions allowed; the trace picks them so the
+ * picture never moves), with an optional `badge` ("in 2").
+ */
+export type TraceNetworkNode = {
+  id: number;
+  label: string;
+  x: number;
+  y: number;
+  badge?: string;
+  state: NetworkNodeState;
+};
+export type TraceNetworkEdge = { from: number; to: number; weight?: number; state: NetworkEdgeState };
+
+/** A directed graph (arrows `from` → `to`) or an undirected one, as it stands after a step. */
+export type TraceNetwork = { directed: boolean; nodes: TraceNetworkNode[]; edges: TraceNetworkEdge[] };
+
+/**
+ * Union-find over elements 0…n-1 (shown as `labels`): `parents[i]` is i's parent (a root is its own parent), `sizes`
+ * each root's group size when the algorithm unions by size. This step's `finds` each walk a parent chain from an
+ * element to its root (`path`, as the chain stood before the step's compression); `compressed` are the parent links
+ * path halving rewired (`node` pointed at `from`, now at `to`); `union` is the root that now points at another root;
+ * `same` is the root two elements already shared (nothing to join).
+ */
+export type TraceForest = {
+  labels: string[];
+  parents: number[];
+  sizes?: number[];
+  finds?: { path: number[] }[];
+  compressed?: { node: number; from: number; to: number }[];
+  union?: { child: number; parent: number };
+  same?: number;
 };
 
 /** A trie node: id 0 is the root (letter ""); `end` marks a word ending here; `note` is data it holds ("re", "cat"). */
-export type TraceTrieNode = { id: number; parent: number | null; letter: string; end: boolean; note?: string };
+export type TraceTrieNode = {
+  id: number;
+  parent: number | null;
+  letter: string;
+  end: boolean;
+  note?: string;
+};
 
 /**
  * A trie as it stands after a step (nodes in creation order; ids never change), and the walk: `path` from the root to
@@ -535,7 +592,7 @@ export type Trace = {
   row: {
     values: TraceValue[];
     /** "stairs" and "houses" are drawn by the staircase and house-row primitives (Climbing Stairs, House Robber). */
-    display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "stairs" | "houses";
+    display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "network" | "stairs" | "houses";
   };
   /** A binary tree's shape (display "tree"); it never changes, steps record the walk over it. */
   tree?: { nodes: TraceTreeNode[] };
@@ -549,6 +606,8 @@ export type Trace = {
   dp?: { rows: number; cols: number; rowHeaders?: string[]; colHeaders?: string[] };
   /** A timeline's axis and lane count, and the intervals as given (in input order, before any sort). */
   timeline?: { min: number; max: number; lanes: number; input: TraceTimelineBar[] };
+  /** A directed graph as given (every node and edge idle): what an unbound digraph shows. */
+  network?: TraceNetwork;
   /** A matrix (rows of numbers) that a prefix grid is built over (Number of Submatrices That Sum to Target). */
   matrix?: number[][];
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */

@@ -11,6 +11,24 @@ export const findIfPathExistsInGraph = defineProblem({
 Given two nodes \`source\` and \`destination\`, return \`true\` if you can walk from \`source\` to \`destination\` along the edges, and \`false\` otherwise. A node can always reach itself.`,
   examples: [
     {
+      input: "n = 6, edges = [[0, 1], [1, 2], [3, 4], [4, 2]], source = 4, destination = 0",
+      output: "true",
+      explanation:
+        "Edge 4-2 joins the group {3, 4} to the group {0, 1, 2}, so 4 reaches 0 (for example 4 → 2 → 1 → 0). Node 5 has no edges and stays alone.",
+      args: [
+        6,
+        [
+          [0, 1],
+          [1, 2],
+          [3, 4],
+          [4, 2],
+        ],
+        4,
+        0,
+      ],
+      expected: true,
+    },
+    {
       input: "n = 6, edges = [[0, 1], [1, 2], [3, 4], [4, 5]], source = 0, destination = 2",
       output: "true",
       explanation: "Walk 0 → 1 → 2.",

@@ -1,0 +1,294 @@
+{
+  "id": "advanced-graphs-redundant-connection",
+  "title": "Redundant Connection: The Spare Cable",
+  "concept": "Advanced Graphs",
+  "category": "dsa",
+  "summary": "Cables go in one by one with union-find; the first cable whose ends already report to the same hub closes the loop.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A crew wires five substations, numbered 1 to 5, laying cables in a fixed order. Each substation reports to a hub; a new cable between two substations that already report to the same hub would close a loop, so it's the spare one to remove.",
+    "mapping": [
+      {
+        "real": "A substation",
+        "abstract": "A node"
+      },
+      {
+        "real": "A cable",
+        "abstract": "An edge"
+      },
+      {
+        "real": "Reporting to",
+        "abstract": "An arrow to the parent"
+      },
+      {
+        "real": "The head hub",
+        "abstract": "The root (find)"
+      },
+      {
+        "real": "The spare cable",
+        "abstract": "The redundant edge"
+      }
+    ]
+  },
+  "tags": [
+    "graph",
+    "union-find",
+    "cycle detection"
+  ],
+  "takeaway": {
+    "pattern": "Union-find",
+    "summary": "Add edges in order with union-find; the first edge whose endpoints already share a root closes the cycle, and every other cycle edge came before it.",
+    "timeComplexity": "O(n · α(n))",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Finding the edge that closes a cycle in an undirected graph",
+      "Connectivity while edges arrive in order"
+    ]
+  },
+  "trace": {
+    "problem": "advanced-graphs/redundant-connection",
+    "args": [
+      [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          5
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v22",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T15:05:43.954Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A crew lays five cables between five substations: 1 to 2, 2 to 3, 3 to 4, 1 to 4, and 1 to 5. Five substations need only four cables, so one closes a loop. Which loop cable comes last?",
+      "caption": "Five substations, five cables: one is spare",
+      "durationInFrames": 516,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "cable 1",
+            "cable 2",
+            "cable 3",
+            "cable 4",
+            "cable 5"
+          ]
+        },
+        {
+          "id": "hubs",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "hub"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Removing each cable and testing whether everything still connects repeats the work every time. Instead, track which hub each substation reports to as cables go in.",
+      "caption": "Don't remove each cable and retest the rest",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "cable 1",
+            "cable 2",
+            "cable 3",
+            "cable 4",
+            "cable 5"
+          ]
+        },
+        {
+          "id": "hubs",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "hub"
+        }
+      ]
+    },
+    {
+      "id": "cable-1",
+      "narration": "Each substation starts as its own hub. Cable 1 to 2 joins them: 1 now reports to 2.",
+      "caption": "Cable 1–2: substation 1 reports to 2",
+      "durationInFrames": 252,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "cable 1",
+            "cable 2",
+            "cable 3",
+            "cable 4",
+            "cable 5"
+          ]
+        },
+        {
+          "id": "cable",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "hubs",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "hub"
+        }
+      ]
+    },
+    {
+      "id": "cable-2",
+      "narration": "Cable 2 to 3: the hubs are 2 and 3, different, so hub 2 now reports to 3.",
+      "caption": "Cable 2–3: hub 2 now reports to 3",
+      "durationInFrames": 252,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "cable 1",
+            "cable 2",
+            "cable 3",
+            "cable 4",
+            "cable 5"
+          ]
+        },
+        {
+          "id": "cable",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "hubs",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "hub"
+        }
+      ]
+    },
+    {
+      "id": "cable-3",
+      "narration": "Cable 3 to 4 makes hub 3 report to 4. The chain is now 1, 2, 3, 4.",
+      "caption": "Cable 3–4: hub 3 reports to 4, a long chain",
+      "durationInFrames": 252,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "cable 1",
+            "cable 2",
+            "cable 3",
+            "cable 4",
+            "cable 5"
+          ]
+        },
+        {
+          "id": "cable",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "hubs",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "hub"
+        }
+      ]
+    },
+    {
+      "id": "spare",
+      "narration": "Cable 1 to 4. A find climbs from 1 through 2 and 3 to hub 4, pointing 1 at 3 to shorten the next climb. Substation 4 is the hub itself. Same hub: this cable closes the loop, and every earlier loop cable came before it.",
+      "caption": "Cable 1–4: both ends already reach hub 4",
+      "durationInFrames": 588,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "cable 1",
+            "cable 2",
+            "cable 3",
+            "cable 4",
+            "cable 5"
+          ]
+        },
+        {
+          "id": "spare",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "rejected"
+        },
+        {
+          "id": "hubs",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "hub"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Substations are nodes, cables are edges, and hubs are union-find roots. The first edge whose ends share a root is the redundant one, found in nearly O(n) time.",
+      "caption": "Substations are nodes, cables edges, hubs roots",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Spare cable",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

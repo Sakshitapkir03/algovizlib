@@ -17,6 +17,8 @@ import type {
 } from "./layout";
 import type { TextMetrics } from "./text";
 import type { TrieShape } from "./trie-layout";
+import type { ForestShape } from "./forest-layout";
+import type { NetworkShape } from "./network-layout";
 import type { VideoPalette } from "./theme";
 
 export type SceneContextValue = {
@@ -44,6 +46,10 @@ export type SceneContextValue = {
   search?: SearchLayout;
   /** A trie's node positions, when the scene has one. */
   trie?: TrieShape;
+  /** A digraph's node and edge geometry, when the scene has one. */
+  network?: NetworkShape;
+  /** A union-find's trees (before and after the scene's work), when the scene has one. */
+  forest?: ForestShape;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

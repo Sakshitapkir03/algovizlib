@@ -13,6 +13,8 @@ import type {
   TraceTimelineStep,
   TraceBits,
   TraceTrie,
+  TraceNetwork,
+  TraceForest,
   TracePrefixGrid,
   TraceBfs,
   TraceLinks,
@@ -299,6 +301,34 @@ function trieFields(t: Partial<TraceTrie>): Record<string, string> {
     branches: JSON.stringify(ids(t.branches)),
     hits: JSON.stringify(ids(t.hits)),
     pruned: JSON.stringify((t.pruned ?? []).map(node)),
+  };
+}
+
+/** A directed graph field by field, in a canonical text form (nodes by id, edges by their ends). */
+function networkFields(g: Partial<TraceNetwork>): Record<string, string> {
+  const nodes = [...(g.nodes ?? [])]
+    .sort((a, b) => a.id - b.id)
+    .map((n) => [n.id, n.label, n.x, n.y, n.badge ?? null, n.state]);
+  const edges = [...(g.edges ?? [])]
+    .map((e) => [e.from, e.to, e.weight ?? null, e.state] as const)
+    .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  return {
+    directed: JSON.stringify(g.directed ?? null),
+    nodes: JSON.stringify(nodes),
+    edges: JSON.stringify(edges),
+  };
+}
+
+/** A union-find field by field, in a canonical text form. */
+function forestFields(f: Partial<TraceForest>): Record<string, string> {
+  return {
+    labels: JSON.stringify(f.labels ?? []),
+    parents: JSON.stringify(f.parents ?? []),
+    sizes: JSON.stringify(f.sizes ?? null),
+    finds: JSON.stringify((f.finds ?? []).map((x) => x.path)),
+    compressed: JSON.stringify((f.compressed ?? []).map((c) => [c.node, c.from, c.to])),
+    union: JSON.stringify(f.union ? [f.union.child, f.union.parent] : null),
+    same: JSON.stringify(f.same ?? null),
   };
 }
 
@@ -671,9 +701,49 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           const drawn = trieFields(el);
           const empty = trieFields({ nodes: [{ id: 0, parent: null, letter: "", end: false }], path: [0] });
           const end = last && trieFields({ nodes: last.nodes, path: [0] });
-          const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
           if (!same(empty) && !same(end))
-            push("Without a traceStep, the trie is empty (or as it ends, with no walk); omit nodes and the walk", el.id, "nodes");
+            push(
+              "Without a traceStep, the trie is empty (or as it ends, with no walk); omit nodes and the walk",
+              el.id,
+              "nodes",
+            );
+        }
+        if (el.type === "digraph") {
+          // Unbound: the graph as given, or as it ends.
+          const drawn = networkFields(el);
+          const options = [trace.network, trace.steps.at(-1)?.network]
+            .filter(Boolean)
+            .map((g) => networkFields(g!));
+          if (!options.some((f) => Object.keys(drawn).every((k) => drawn[k] === f[k])))
+            push(
+              "Without a traceStep, the digraph is the graph as given (or as it ends); omit directed, nodes, and edges",
+              el.id,
+              "nodes",
+            );
+        }
+        if (el.type === "union-find") {
+          // Unbound: every element alone, or the forest as it ends, with no work shown.
+          const last = trace.steps.at(-1)?.forest;
+          const start = trace.steps.find((st) => st.forest)?.forest;
+          const drawn = forestFields(el);
+          const alone =
+            start &&
+            forestFields({
+              labels: start.labels,
+              parents: start.labels.map((_, i) => i),
+              sizes: start.sizes && start.labels.map(() => 1),
+            });
+          const end = last && forestFields({ labels: last.labels, parents: last.parents, sizes: last.sizes });
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!same(alone) && !same(end))
+            push(
+              "Without a traceStep, the union-find shows every element alone (or the forest as it ends, with no finds or union); omit labels and parents",
+              el.id,
+              "parents",
+            );
         }
         if (el.type === "bits")
           push("A bits panel needs the scene to set traceStep (its rows come from the step)", el.id, "rows");
@@ -688,7 +758,8 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             const drawn = timelineFields(el);
             const start = timelineFields({ bars: shape.input });
             const end = last && timelineFields({ bars: last.bars.map(({ fromLane: _f, ...b }) => b) });
-            const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+            const same = (f?: Record<string, string>) =>
+              f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
             if (!same(start) && !same(end))
               push(
                 "Without a traceStep, the timeline shows the intervals as given (or as they end); omit bars/overlap/grow/sweep",
@@ -702,9 +773,15 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           const finals = trace.steps.flatMap((s) => s.prefix ?? []).filter((r) => r.name === el.name);
           const last = finals.at(-1);
           const drawn = prefixRowFields(el);
-          const empty = prefixRowFields({ op: el.op, direction: el.direction, values: el.values.map(() => null) });
-          const end = last && prefixRowFields({ op: last.op, direction: last.direction, values: last.values });
-          const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          const empty = prefixRowFields({
+            op: el.op,
+            direction: el.direction,
+            values: el.values.map(() => null),
+          });
+          const end =
+            last && prefixRowFields({ op: last.op, direction: last.direction, values: last.values });
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
           if (!finals.length) push(`This trace has no prefix row "${el.name}"`, el.id, "name");
           else if (!same(empty) && !same(end))
             push(
@@ -722,7 +799,8 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             prefix: el.prefix.map((row, i) => row.map((_, j) => (i === 0 || j === 0 ? 0 : null))),
           });
           const end = last && prefixGridFields({ prefix: last.prefix });
-          const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          const same = (f?: Record<string, string>) =>
+            f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
           if (!same(empty) && !same(end))
             push(
               "Without a traceStep, the prefix grid is unbuilt (or complete), with no rectangles; omit prefix/current/rects/marks/found",
@@ -1384,6 +1462,36 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           for (const field of Object.keys(want))
             if (drawn[field] !== want[field])
               push(`The trie's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: want[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "digraph": {
+          if (!step.network) {
+            push(`Trace step ${stepIndex} has no network`, el.id, "nodes");
+            break;
+          }
+          const want = networkFields(step.network);
+          const drawn = networkFields(el);
+          for (const field of Object.keys(want))
+            if (drawn[field] !== want[field])
+              push(`The digraph's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: want[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "union-find": {
+          if (!step.forest) {
+            push(`Trace step ${stepIndex} has no union-find`, el.id, "parents");
+            break;
+          }
+          const want = forestFields(step.forest);
+          const drawn = forestFields(el);
+          for (const field of Object.keys(want))
+            if (drawn[field] !== want[field])
+              push(`The union-find's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: want[field],
                 actual: drawn[field],
               });

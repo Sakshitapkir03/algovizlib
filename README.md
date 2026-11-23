@@ -44,7 +44,9 @@ difference of two cells, left and right product passes, and a 2D prefix grid bui
 shifts for the queries), and all five Bit Manipulation problems (numbers as aligned rows of bits, operations worked
 column by column with the flipped bits marked, shifts sliding, and a visited mask growing one bit per move), and all five Trie problems (a prefix tree growing letter by letter, words
 ending on double rings, missing children marked, wildcards branching, and a word-search board walked together with
-the trie). The first is
+the trie), and all five Advanced Graphs problems (a directed graph whose in-degree badges count down as Kahn's
+algorithm takes nodes and strands a cycle, Dijkstra settling servers from a min-heap with improving, losing, and stale
+relaxations, and union-find trees merging by size with their find paths compressed). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach

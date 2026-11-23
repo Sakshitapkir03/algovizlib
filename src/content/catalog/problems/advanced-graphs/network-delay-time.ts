@@ -11,6 +11,25 @@ export const networkDelayTime = defineProblem({
 Server \`k\` broadcasts a message at time \`0\`, and every server forwards it along all of its outgoing links as soon as it arrives. Return the time at which the last server receives the message. If some server can never receive it, return \`-1\`.`,
   examples: [
     {
+      input: "times = [[1, 2, 4], [1, 3, 1], [3, 2, 2], [2, 4, 2], [4, 3, 1], [4, 5, 1]], n = 5, k = 1",
+      output: "6",
+      explanation:
+        "Server 3 gets it at 1, server 2 at 3 (through 3, sooner than the direct 4), server 4 at 5, and server 5 at 6, the last arrival.",
+      args: [
+        [
+          [1, 2, 4],
+          [1, 3, 1],
+          [3, 2, 2],
+          [2, 4, 2],
+          [4, 3, 1],
+          [4, 5, 1],
+        ],
+        5,
+        1,
+      ],
+      expected: 6,
+    },
+    {
       input: "times = [[1, 2, 4], [1, 3, 1], [3, 2, 2], [2, 4, 1]], n = 4, k = 1",
       output: "4",
       explanation:

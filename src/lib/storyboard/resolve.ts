@@ -609,6 +609,39 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             pruned: el.pruned ?? tr?.pruned,
           };
         }
+        case "digraph": {
+          if (el.nodes && el.edges && el.directed !== undefined)
+            return { ...el, nodes: el.nodes, edges: el.edges, directed: el.directed };
+          if (step && !step.network) return (noState(el, "nodes", "network"), el);
+          // An unbound scene (the intro) shows the graph as given.
+          const g = step?.network ?? trace?.network;
+          if (!g) return (noState(el, "nodes", "network"), el);
+          return {
+            ...el,
+            directed: el.directed ?? g.directed,
+            nodes: el.nodes ?? g.nodes,
+            edges: el.edges ?? g.edges,
+          };
+        }
+        case "union-find": {
+          if (el.labels && el.parents) return { ...el, labels: el.labels, parents: el.parents };
+          if (step && !step.forest) return (noState(el, "parents", "union-find"), el);
+          const f = step?.forest;
+          const start = trace?.steps.find((s) => s.forest)?.forest;
+          if (!f && !start) return (noState(el, "parents", "union-find"), el);
+          // An unbound scene (the intro) shows every element alone.
+          const labels = el.labels ?? (f ?? start)!.labels;
+          return {
+            ...el,
+            labels,
+            parents: el.parents ?? f?.parents ?? labels.map((_, i) => i),
+            sizes: el.sizes ?? f?.sizes ?? (start?.sizes ? labels.map(() => 1) : undefined),
+            finds: el.finds ?? f?.finds,
+            compressed: el.compressed ?? f?.compressed,
+            union: el.union ?? f?.union,
+            same: el.same ?? f?.same,
+          };
+        }
         case "hash-map": {
           if (el.entries && el.kind && el.display) return el;
           if (step && !step.map) return (noState(el, "entries", "map"), el);

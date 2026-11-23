@@ -144,4 +144,13 @@ export const TEXT = {
   /** A trie node's letter, and the note beside a word's end ("re"). */
   trieLetter: 30,
   trieNote: 16,
+  /** A digraph node's label, its badge ("in 2"), and an edge's weight. */
+  networkLabel: 28,
+  networkBadge: 17,
+  networkWeight: 20,
+  /** The ✓ / ✕ beside a done or stuck node (and a union-find's already-joined root). */
+  networkGlyph: 28,
+  /** A union-find element's label, and the note over a root ("chief · 3"). */
+  forestLabel: 28,
+  forestNote: 16,
 } as const;

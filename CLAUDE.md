@@ -426,6 +426,8 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `timeline`      | intervals as bars on lanes over a number line: waiting, active, current, done, absorbed (merged in), removed (✕), result (✓); sorts slide, merges grow, overlaps shaded, a sweep marker | canvas |
 | `bits`          | numbers as rows of bits in aligned columns (place values or bit meanings above), the operator before each result row, changed bits highlighted, shifts sliding, decimals beside         | bottom |
 | `trie`          | a prefix tree of letter nodes by depth: word ends double-ringed with ✓ (and a note), the root-to-current path in orange, new nodes pop in, a missing child as a dashed ✕ stub           | canvas |
+| `digraph`       | a directed graph at fixed spots: arrows with weights, in-degree badges ("in 2"), ready dashed, current ringed, done ✓, stuck ✕; edges new, used (faint), better ✓, worse ✕              | canvas |
+| `union-find`    | union-find as trees: arrows up to parents, roots with "chief · 3", find paths lit, compressed links ghosted and redrawn, unions sliding trees together, a shared root ✕                 | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -763,6 +765,41 @@ that isn't a word, and a miss. The validator checks every node (letter, parent, 
 missing, branch, hit, and pruned nodes; the schema checks the path follows edges, siblings don't share a letter, and a
 missing child really is missing. An unbound trie is empty (the root) or the final trie. No comparisons, so no tones.
 
+**Advanced Graphs** (the five home problems; Number of Islands is cross-listed in with its video; Course Schedule and
+Find if Path Exists are also listed under Graphs (BFS), Network Delay Time under Heap) added step state `network` (a
+directed graph after the step: every node's `label`, fixed spot `x`/`y` on a small grid, optional `badge` ("in 2"), and
+`state`: idle, ready (in the queue or heap), current, done, stuck (on a cycle); every edge's `weight` and `state`: idle,
+new (found this step), used (removed by Kahn's algorithm), better / worse (a relaxation that did or didn't improve))
+plus `trace.network` (the graph as given, what an unbound digraph shows), and `forest` (union-find: `labels`, `parents`,
+`sizes` when unioning by size, this step's `finds` (each the parent chain from an element to its root, as it stood
+before that find's halving), `compressed` links (`node` from → to), the `union` (a root now pointing at another
+root), and `same` (the root two elements already share)). Traces drive a `Network` and a `Forest`
+(`traces/advanced-graphs/shared.ts`): Kahn's algorithm, Dijkstra, and union-find exactly like the reference
+solutions (path halving `parent[x] = parent[parent[x]]`; Find if Path Exists unions by size, Redundant Connection
+doesn't). Dijkstra keeps a table of best times and pushes only improvements (the reference pushes every unsettled
+neighbor; same answers, tested), so a relaxation that loses is visible; stale pops are skipped. Spots come from
+`layers()`: columns by hops from the sources, nodes with no edges on a row of their own, so nothing moves between
+scenes. Two primitives, built apart from everything else: `digraph` (`video/network-layout.ts`; the BFS `graph` is
+untouched) draws circles as large as their labels need, a badge tag up and right of each node (just its number on a
+phone), and quadratic edges: straight, bowed apart for a pair of opposite arrows, arched away from the middle when an
+arrow points left (Course Schedule's 3 → 1), and bowed around any node in the way; weight pills sit on the curve
+with ✓ / ✕ for better / worse. `union-find` (`video/forest-layout.ts`) lays the trees out twice, before and after the
+step's work (the union undone, compressed links pointed back), at one scale, and slides between them a beat into the
+scene; find paths are lit from the start, a rewired link ghosts out dashed as its shortcut draws in, roots carry a note
+("chief · 3"; the size alone on a phone), a shared root gets a dashed rose ring and ✕; with an empty bottom stack the
+trees use the stage down to its bottom margin. Reused: queue (Kahn's ready list, `levelLabel` "round": a node's round
+is how many takes deep it was freed), partial (the order, `showFound: false`), heap (Dijkstra's (time, server)
+candidates, on the right of the stage beside a graph, `NETWORK_SPLIT`, narrow enough that a popped root stays on the
+stage; other heap videos keep their layout), hash-map cells (best times: an improvement shows the old time struck),
+equation, item-row (the words, or the edges as cards). Course Schedule and Network Delay Time got first examples that
+show a cycle (two courses taken, three stuck) and a relaxation that improves, one that doesn't, and a stale entry;
+Find if Path Exists got one where union by size matters and the query compresses a path. The schema checks a digraph's
+ids, spots, and edges (no duplicates, no self-loops) and that a union-find's parents form a forest, before and after,
+that each find follows parent links to a root, and that a union joins two roots; the validator checks every node,
+badge, edge, and state, and every parent, size, find, compression, union, and shared root, against the step (unbound:
+the graph as given or as it ends; every element alone or the final forest). Tones: an improvement is positive (`<`), a
+loss or a stale pop neutral; a size comparison neutral; fewer courses taken than exist negative.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -773,8 +810,8 @@ input and returns a `Trace` (types in `traces/types.ts`):
 
 ```ts
 Trace = {
-  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "stairs"
-  | "houses" },
+  problem: "pattern/slug", row: { values, display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "network"
+  | "stairs" | "houses" },
   secondRow?: { values },
   pointerNames,
   steps: { kind, key, pointers: { left: 0, right: 6 }, note, equation?, active?, rejected?, found?, fill?, water?,
@@ -795,7 +832,8 @@ Trace = {
            prefix?, prefixGrid?,                                  // prefix sums (see "Prefix Sum" above)
            timeline?,                                             // intervals (see "Intervals" above)
            bits?,                                                 // bit manipulation (see "Bit Manipulation" above)
-           trie? }[],                                             // tries (see "Trie" above)
+           trie?,                                                 // tries (see "Trie" above)
+           network?, forest? }[],                                 // advanced graphs (see "Advanced Graphs" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -804,6 +842,7 @@ Trace = {
   searchTree?: { nodes },                                            // a backtracking decision tree
   matrix?,                                                           // a prefix grid's matrix
   timeline?: { min, max, lanes, input },                             // an interval trace's axis and intervals
+  network?,                                                          // a directed graph as given (unbound digraphs)
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
   answerIndices?,     // when the answer is a set of positions
@@ -826,7 +865,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), prefix rows (op, direction, every value, the cell built, reads, spans and their values; one cell per boundary; an unbound row is empty or final) and prefix grids (the matrix, every prefix cell, the current cell, signed rectangles and cells, the found rectangle; unbound: unbuilt or complete), timelines (axis, lanes, every bar's range, lane, state, and slide, the overlap, a merge's growth, the sweep marker; unbound: as given or as they end), bits panels (width, and every row's name, value, operator, rule, changed bits, and slide; a bits panel needs a bound step), tries (every node, the path, created, missing, branch, hit, and pruned nodes; unbound: empty or final), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), prefix rows (op, direction, every value, the cell built, reads, spans and their values; one cell per boundary; an unbound row is empty or final) and prefix grids (the matrix, every prefix cell, the current cell, signed rectangles and cells, the found rectangle; unbound: unbuilt or complete), timelines (axis, lanes, every bar's range, lane, state, and slide, the overlap, a merge's growth, the sweep marker; unbound: as given or as they end), bits panels (width, and every row's name, value, operator, rule, changed bits, and slide; a bits panel needs a bound step), tries (every node, the path, created, missing, branch, hit, and pruned nodes; unbound: empty or final), digraphs (direction, every node's label, spot, badge, and state, every edge's weight and state; unbound: as given or as it ends) and union-finds (labels, parents, sizes, finds, compressed links, the union, the shared root; unbound: every element alone or the final forest), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -1087,7 +1126,11 @@ where every member scans three times but one guest (Single Number II), a countin
 Integers), and a night guard checking every room of a gallery with a lamp per room checked (Shortest Path Visiting All
 Nodes). Trie: Word Search II is problem-native (the board); Longest Common Prefix is boats sailing a river delta until
 it first splits, Implement Trie a mailroom's cubbies (one letter per level, a flag where a name ends), Design Add and
-Search Words a crossword helper's blank squares, and Replace Words a stenographer's shorthand stems.
+Search Words a crossword helper's blank squares, and Replace Words a stenographer's shorthand stems. Advanced Graphs: Course
+Schedule, Network Delay Time, and Alien Dictionary are problem-native (the courses and prerequisites, the servers and
+links, the alien word list); Find if Path Exists is villages joining clans under chiefs as roads are built, and
+Redundant Connection a crew wiring substations, each reporting to a hub, where the spare cable joins two that already
+share one.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

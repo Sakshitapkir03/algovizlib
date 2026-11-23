@@ -71,7 +71,17 @@ export function buildDraft(problemKey: string): Draft {
   // A DP trace's table joins every data scene (empty when unbound).
   const table = (): ElementSource[] =>
     trace.dp ? [{ id: "table", type: "dp-table", enterAt: 0 } as ElementSource] : [];
-  const rows = (): ElementSource[] => [...(trace.row.values.length === 0 ? [] : [row()]), ...table()];
+  // A graph trace's digraph, or a union-find's trees, joins every data scene too (as given when unbound).
+  const forestTrace = trace.steps.some((st) => st.forest);
+  const graphs = (): ElementSource[] => [
+    ...(trace.network ? [{ id: "graph", type: "digraph", enterAt: 0 } as ElementSource] : []),
+    ...(forestTrace ? [{ id: "forest", type: "union-find", enterAt: 0 } as ElementSource] : []),
+  ];
+  const rows = (): ElementSource[] => [
+    ...(trace.row.values.length === 0 ? [] : [row()]),
+    ...table(),
+    ...graphs(),
+  ];
   // A 2D table, or a search tree five levels deep, fills the stage: the answer card goes in the closing scene.
   const depthOf = (id: number): number => {
     const parent = trace.searchTree?.nodes[id].parent;
@@ -79,7 +89,13 @@ export function buildDraft(problemKey: string): Draft {
   };
   const deepTree = (trace.searchTree?.nodes ?? []).some((n) => depthOf(n.id) >= 5);
   // A trie (five levels on a phone) leaves no room for a card under it either.
-  const wideTable = (trace.dp?.rows ?? 1) > 1 || deepTree || trace.steps.some((st) => st.trie);
+  // So does a graph or a union-find: their bottom stacks are full, or the trees need the height.
+  const wideTable =
+    (trace.dp?.rows ?? 1) > 1 ||
+    deepTree ||
+    trace.steps.some((st) => st.trie) ||
+    trace.network !== undefined ||
+    forestTrace;
   const answerCard: ElementSource = {
     id: "result",
     type: "result",
@@ -92,7 +108,8 @@ export function buildDraft(problemKey: string): Draft {
     if (!step.key) return [];
     const last = index === trace.steps.length - 1;
     // Heap scenes mark the input with a highlight (no pointer), and the answer scene leaves the input out.
-    const heapScene = step.heaps !== undefined;
+    // (Beside a graph, the heap leaves the graph in place.)
+    const heapScene = step.heaps !== undefined && !step.network;
     // Stack scenes mark the input with a highlight too: pointers would sit where the resolve arcs go.
     // Trie scenes too: a pointer under the input row costs the height a deep trie needs on a phone.
     const pileScene = step.pile !== undefined || step.trie !== undefined;
@@ -134,7 +151,7 @@ export function buildDraft(problemKey: string): Draft {
       elements.push({ id: "partition", type: "partition", rowId: "row", label: "pivot", enterAt: 0 });
     if (step.heapSize !== undefined || (step.heap && step.heap.length > 0))
       elements.push({ id: "heap", type: "heap-tree", enterAt: 0 });
-    if (step.rejected && rowType === "linked-list")
+    if (step.rejected && (rowType === "linked-list" || step.forest))
       elements.push({ id: "rejected", type: "highlight", rowId: "row", state: "rejected", enterAt: 0 });
     // Beside a map the bottom stack keeps to the map plus one more (the equation), and a timeline's to two of an
     // equation, a choice, and a counter, as the prompt asks.
@@ -215,6 +232,16 @@ export function buildDraft(problemKey: string): Draft {
       } as ElementSource);
     if (step.queue)
       elements.push({ id: "queue", type: "queue", label: "queue", levelLabel: "level", enterAt: 0 });
+    // A topological order being built (no "found" row: the order is the whole answer).
+    if (step.partial && step.network)
+      elements.push({
+        id: "order",
+        type: "partial",
+        label: "order",
+        foundLabel: "found",
+        showFound: false,
+        enterAt: 0,
+      } as ElementSource);
     // A tree's last scene keeps its bottom stack short (the answer, and at most a count).
     if (
       step.equation &&

@@ -48,6 +48,11 @@ import { implementTrieTrace } from "./trie/implement-trie";
 import { designAddAndSearchWordsTrace } from "./trie/design-add-and-search-words";
 import { replaceWordsTrace } from "./trie/replace-words";
 import { wordSearchIITrace } from "./trie/word-search-ii";
+import { findIfPathExistsInGraphTrace } from "./advanced-graphs/find-if-path-exists-in-graph";
+import { courseScheduleTrace } from "./advanced-graphs/course-schedule";
+import { networkDelayTimeTrace } from "./advanced-graphs/network-delay-time";
+import { redundantConnectionTrace } from "./advanced-graphs/redundant-connection";
+import { alienDictionaryTrace } from "./advanced-graphs/alien-dictionary";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -193,6 +198,11 @@ const definitions = [
   designAddAndSearchWordsTrace,
   replaceWordsTrace,
   wordSearchIITrace,
+  findIfPathExistsInGraphTrace,
+  courseScheduleTrace,
+  networkDelayTimeTrace,
+  redundantConnectionTrace,
+  alienDictionaryTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

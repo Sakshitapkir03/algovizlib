@@ -567,12 +567,20 @@ export const sceneSchema = z
             });
             break;
           }
-          const cells = [el.current, ...(el.reads ?? []), ...(el.spans ?? []).flatMap((sp) => [sp.from, sp.to])];
+          const cells = [
+            el.current,
+            ...(el.reads ?? []),
+            ...(el.spans ?? []).flatMap((sp) => [sp.from, sp.to]),
+          ];
           if (cells.some((c) => c !== undefined && c > n))
             ctx.addIssue({ code: "custom", path, message: `cells are 0–${n} (boundaries of ${n} items)` });
           (el.spans ?? []).forEach((sp, k) => {
             if (sp.from > sp.to)
-              ctx.addIssue({ code: "custom", path: [...path, "spans", k], message: "a span's from must not be after to" });
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "spans", k],
+                message: "a span's from must not be after to",
+              });
             const [a, b] = [el.values[sp.from], el.values[sp.to]];
             // A sum's span is the difference of its two cells (later minus earlier, for a suffix row earlier minus later).
             if (el.op === "+" && a !== null && b !== null && a !== undefined && b !== undefined) {
@@ -586,10 +594,16 @@ export const sceneSchema = z
             }
           });
           const spans = scene.elements.flatMap((e) =>
-            e.type === "prefix-row" && e.rowId === el.rowId ? (e.spans ?? []).filter((sp) => sp.to > sp.from) : [],
+            e.type === "prefix-row" && e.rowId === el.rowId
+              ? (e.spans ?? []).filter((sp) => sp.to > sp.from)
+              : [],
           );
           if (spans.some((a, i) => spans.some((b, j) => i < j && a.from < b.to && b.from < a.to)))
-            ctx.addIssue({ code: "custom", path, message: "spans over one row must not overlap (their brackets share a strip)" });
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: "spans over one row must not overlap (their brackets share a strip)",
+            });
           if (scene.elements.filter((e) => e.type === "prefix-row" && e.rowId === el.rowId).length > 2)
             ctx.addIssue({ code: "custom", path, message: "An item-row has at most two prefix-rows" });
           break;
@@ -598,7 +612,11 @@ export const sceneSchema = z
           const R = el.matrix.length;
           const C = el.matrix[0].length;
           if (el.matrix.some((row) => row.length !== C))
-            ctx.addIssue({ code: "custom", path: [...path, "matrix"], message: "every matrix row has the same length" });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "matrix"],
+              message: "every matrix row has the same length",
+            });
           if (el.prefix.length !== R + 1 || el.prefix.some((row) => row.length !== C + 1))
             ctx.addIssue({
               code: "custom",
@@ -608,10 +626,18 @@ export const sceneSchema = z
           const inMatrix = (r: { r1: number; c1: number; r2: number; c2: number }) =>
             r.r1 <= r.r2 && r.c1 <= r.c2 && r.r2 < R && r.c2 < C;
           if (el.rects.some((r) => !inMatrix(r)) || (el.found && !inMatrix(el.found)))
-            ctx.addIssue({ code: "custom", path: [...path, "rects"], message: `rectangles lie inside the ${R} × ${C} matrix (r1 ≤ r2, c1 ≤ c2)` });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "rects"],
+              message: `rectangles lie inside the ${R} × ${C} matrix (r1 ≤ r2, c1 ≤ c2)`,
+            });
           const inPrefix = ([r, c]: [number, number]) => r <= R && c <= C;
           if ((el.current && !inPrefix(el.current)) || el.marks.some((m) => !inPrefix(m.at)))
-            ctx.addIssue({ code: "custom", path: [...path, "marks"], message: `prefix cells are 0–${R} × 0–${C}` });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "marks"],
+              message: `prefix cells are 0–${R} × 0–${C}`,
+            });
           if (scene.elements.filter((e) => e.type === "prefix-grid").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one prefix-grid" });
           break;
@@ -630,18 +656,34 @@ export const sceneSchema = z
                 message: `bar ${b.id} [${b.start}, ${b.end}] must have start ≤ end and lie on the axis ${el.min}–${el.max}`,
               });
             if (b.lane >= el.lanes || (b.fromLane !== undefined && b.fromLane >= el.lanes))
-              ctx.addIssue({ code: "custom", path: [...path, "bars", k, "lane"], message: `lanes are 0–${el.lanes - 1}` });
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "bars", k, "lane"],
+                message: `lanes are 0–${el.lanes - 1}`,
+              });
           });
           if (el.grow && !ids.includes(el.grow.id))
-            ctx.addIssue({ code: "custom", path: [...path, "grow"], message: `bar ${el.grow.id} isn't on the timeline` });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "grow"],
+              message: `bar ${el.grow.id} isn't on the timeline`,
+            });
           for (const [field, r] of [
             ["overlap", el.overlap],
             ["grow", el.grow],
           ] as const)
             if (r && (r.start > r.end || r.start < el.min || r.end > el.max))
-              ctx.addIssue({ code: "custom", path: [...path, field], message: `${field} must lie on the axis with start ≤ end` });
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, field],
+                message: `${field} must lie on the axis with start ≤ end`,
+              });
           if (el.sweep && (el.sweep.at < el.min || el.sweep.at > el.max))
-            ctx.addIssue({ code: "custom", path: [...path, "sweep"], message: "the sweep marker must lie on the axis" });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "sweep"],
+              message: "the sweep marker must lie on the axis",
+            });
           if (scene.elements.filter((e) => e.type === "timeline").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one timeline" });
           break;
@@ -661,10 +703,18 @@ export const sceneSchema = z
                   message: `${v} doesn't fit ${el.width} bits (${lo} to ${hi})`,
                 });
             if ((row.changed ?? []).some((b) => b >= el.width))
-              ctx.addIssue({ code: "custom", path: [...path, "rows", k, "changed"], message: `bit positions are 0–${el.width - 1}` });
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "rows", k, "changed"],
+                message: `bit positions are 0–${el.width - 1}`,
+              });
           });
           if (el.bitLabels && el.bitLabels.length !== el.width)
-            ctx.addIssue({ code: "custom", path: [...path, "bitLabels"], message: `one label per bit: ${el.width}` });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "bitLabels"],
+              message: `one label per bit: ${el.width}`,
+            });
           if (scene.elements.filter((e) => e.type === "bits").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one bits panel" });
           break;
@@ -673,26 +723,152 @@ export const sceneSchema = z
           const ids = new Set(el.nodes.map((n) => n.id));
           const root = el.nodes[0];
           if (root.id !== 0 || root.parent !== null || ids.size !== el.nodes.length)
-            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "node 0 is the root (no parent), and ids don't repeat" });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "node 0 is the root (no parent), and ids don't repeat",
+            });
           if (el.nodes.some((n) => n.parent !== null && (!ids.has(n.parent) || n.letter.length !== 1)))
-            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "every other node has one letter and a parent in the trie" });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "every other node has one letter and a parent in the trie",
+            });
           const siblings = el.nodes.map((n) => `${n.parent}:${n.letter}`);
           if (new Set(siblings).size !== siblings.length)
-            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "two children of one node can't share a letter" });
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "two children of one node can't share a letter",
+            });
           const parentOf = new Map(el.nodes.map((n) => [n.id, n.parent]));
-          if (el.path[0] !== 0 || el.path.some((id, k) => !ids.has(id) || (k > 0 && parentOf.get(id) !== el.path[k - 1])))
-            ctx.addIssue({ code: "custom", path: [...path, "path"], message: "the path runs from the root, child by child" });
+          if (
+            el.path[0] !== 0 ||
+            el.path.some((id, k) => !ids.has(id) || (k > 0 && parentOf.get(id) !== el.path[k - 1]))
+          )
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "path"],
+              message: "the path runs from the root, child by child",
+            });
           for (const [field, list] of [
             ["created", el.created],
             ["branches", el.branches],
             ["hits", el.hits],
           ] as const)
             if ((list ?? []).some((id) => !ids.has(id)))
-              ctx.addIssue({ code: "custom", path: [...path, field], message: `${field} must be nodes in the trie` });
-          if (el.missing && (!ids.has(el.missing.parent) || siblings.includes(`${el.missing.parent}:${el.missing.letter}`)))
-            ctx.addIssue({ code: "custom", path: [...path, "missing"], message: "a missing child's parent is in the trie, and the child really isn't" });
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, field],
+                message: `${field} must be nodes in the trie`,
+              });
+          if (
+            el.missing &&
+            (!ids.has(el.missing.parent) || siblings.includes(`${el.missing.parent}:${el.missing.letter}`))
+          )
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "missing"],
+              message: "a missing child's parent is in the trie, and the child really isn't",
+            });
           if (scene.elements.filter((e) => e.type === "trie").length > 1)
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one trie" });
+          break;
+        }
+        case "digraph": {
+          const ids = new Set(el.nodes.map((n) => n.id));
+          if (ids.size !== el.nodes.length)
+            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "node ids don't repeat" });
+          const spots = el.nodes.map((n) => `${n.x},${n.y}`);
+          if (new Set(spots).size !== spots.length)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "nodes"],
+              message: "two nodes can't share a spot",
+            });
+          const pairs = el.edges.map((e) =>
+            el.directed ? `${e.from}>${e.to}` : [e.from, e.to].sort().join("-"),
+          );
+          if (el.edges.some((e) => !ids.has(e.from) || !ids.has(e.to) || e.from === e.to))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "edges"],
+              message: "every edge joins two different nodes in the graph",
+            });
+          if (new Set(pairs).size !== pairs.length)
+            ctx.addIssue({ code: "custom", path: [...path, "edges"], message: "an edge can't appear twice" });
+          if (scene.elements.filter((e) => e.type === "digraph").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one digraph" });
+          break;
+        }
+        case "union-find": {
+          const n = el.labels.length;
+          const inRange = (i: number) => i < n;
+          if (el.parents.length !== n || (el.sizes && el.sizes.length !== n) || !el.parents.every(inRange))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "parents"],
+              message: "one parent (and size) per element, each an element",
+            });
+          else {
+            // Before this scene's work: the union undone, then the compressed links pointed back.
+            const before = [...el.parents];
+            if (el.union) before[el.union.child] = el.union.child;
+            for (const c of [...(el.compressed ?? [])].reverse()) before[c.node] = c.from;
+            const isForest = (parents: number[]) =>
+              parents.every((_, i) => {
+                let x = i;
+                for (let k = 0; k <= n; k++) {
+                  if (parents[x] === x) return true;
+                  x = parents[x];
+                }
+                return false;
+              });
+            if (!isForest(el.parents) || !isForest(before))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "parents"],
+                message: "parent links can't loop: every chain ends at a root",
+              });
+            if (
+              el.union &&
+              (el.parents[el.union.child] !== el.union.parent ||
+                el.union.child === el.union.parent ||
+                el.parents[el.union.parent] !== el.union.parent)
+            )
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "union"],
+                message: "a union points one root at another root",
+              });
+            if ((el.compressed ?? []).some((c) => !inRange(c.node) || !inRange(c.from) || !inRange(c.to)))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "compressed"],
+                message: "compressed links join elements",
+              });
+            // Each find walks the links as the finds before it left them (their compression applied).
+            const walk = [...before];
+            const pending = [...(el.compressed ?? [])];
+            for (const [k, find] of (el.finds ?? []).entries()) {
+              if (
+                !find.path.every(inRange) ||
+                find.path.some((x, j) => j > 0 && walk[find.path[j - 1]] !== x) ||
+                walk[find.path.at(-1)!] !== find.path.at(-1)
+              )
+                ctx.addIssue({
+                  code: "custom",
+                  path: [...path, "finds", k, "path"],
+                  message: "a find follows parent links up to a root",
+                });
+              while (pending.length && find.path.includes(pending[0].node))
+                walk[pending[0].node] = pending.shift()!.to;
+            }
+            if (el.same !== undefined && (!inRange(el.same) || el.parents[el.same] !== el.same))
+              ctx.addIssue({ code: "custom", path: [...path, "same"], message: "the shared root is a root" });
+          }
+          if (scene.elements.filter((e) => e.type === "union-find").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one union-find" });
           break;
         }
         case "hash-map": {

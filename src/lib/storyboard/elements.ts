@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; tries add "trie"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; tries add "trie"; advanced graphs add "digraph" (apart from "graph") and "union-find"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -961,9 +961,15 @@ const prefixGridShape = {
   /** The prefix cell built or read last (ringed). */
   current: gridCellSchema.optional(),
   /** Matrix rectangles this scene adds (+) or subtracts (−), outlined with their sign. */
-  rects: z.array(rectSchema.extend({ sign: z.enum(["+", "−"]) })).max(4).default([]),
+  rects: z
+    .array(rectSchema.extend({ sign: z.enum(["+", "−"]) }))
+    .max(4)
+    .default([]),
   /** The prefix cells standing for those rectangles, with their sign. */
-  marks: z.array(z.object({ at: gridCellSchema, sign: z.enum(["+", "−"]) })).max(3).default([]),
+  marks: z
+    .array(z.object({ at: gridCellSchema, sign: z.enum(["+", "−"]) }))
+    .max(3)
+    .default([]),
   /** A rectangle that hit the target (double border, ✓). */
   found: rectSchema.optional(),
   matrixLabel: nonEmpty.max(12).default("matrix"),
@@ -1087,6 +1093,74 @@ export const trieSourceSchema = z.object({
   /** Omit everything to take the trie and the walk from the bound step (an unbound scene shows an empty trie). */
   nodes: trieShape.nodes.optional(),
   path: trieShape.path.optional(),
+});
+
+const networkNodeSchema = z.object({
+  id: index,
+  label: nonEmpty.max(3),
+  /** Column and row on the graph's own small grid (fractions allowed); the drawing scales it to fit. */
+  x: z.number().min(0).max(6),
+  y: z.number().min(0).max(4),
+  /** A short note on the node ("in 2"). */
+  badge: z.string().max(6).optional(),
+  /** ready: dashed ring (waiting in a queue or heap); current: thick accent ring; done: ✓; stuck: dashed ✕. */
+  state: z.enum(["idle", "ready", "current", "done", "stuck"]),
+});
+
+const networkEdgeSchema = z.object({
+  from: index,
+  to: index,
+  weight: z.number().int().min(0).max(99).optional(),
+  /** new: just found (accent); used: removed (faint, dashed); better: improved its target (accent, ✓); worse: didn't (dashed, ✕). */
+  state: z.enum(["idle", "new", "used", "better", "worse"]),
+});
+
+const digraphShape = {
+  ...baseElement,
+  type: z.literal("digraph"),
+  /** Arrows from → to; false draws plain lines. */
+  directed: z.boolean(),
+  nodes: z.array(networkNodeSchema).min(1).max(8),
+  edges: z.array(networkEdgeSchema).max(12),
+};
+export const digraphElementSchema = z.object(digraphShape);
+export const digraphSourceSchema = z.object({
+  ...digraphShape,
+  /** Omit these to take the graph from the bound step (an unbound scene shows the graph as given). */
+  directed: digraphShape.directed.optional(),
+  nodes: digraphShape.nodes.optional(),
+  edges: digraphShape.edges.optional(),
+});
+
+const unionFindShape = {
+  ...baseElement,
+  type: z.literal("union-find"),
+  /** Element i's name. */
+  labels: z.array(nonEmpty.max(3)).min(1).max(8),
+  /** Element i's parent (a root is its own parent): arrows from child to parent. */
+  parents: z.array(index).min(1).max(8),
+  /** Group sizes (read at roots), when the algorithm unions by size. */
+  sizes: z.array(z.number().int().positive()).optional(),
+  /** This scene's finds: each walks a parent chain from an element to its root (as it stood before compression). */
+  finds: z
+    .array(z.object({ path: z.array(index).min(1) }))
+    .max(2)
+    .optional(),
+  /** Parent links path halving rewired: `node` pointed at `from` and now points at `to`. */
+  compressed: z.array(z.object({ node: index, from: index, to: index })).optional(),
+  /** A root that now points at another root (two groups merged). */
+  union: z.object({ child: index, parent: index }).optional(),
+  /** The root two elements already share (nothing to join). */
+  same: index.optional(),
+  /** The story's word for a root ("chief", "hub"), shown beside roots on larger players. */
+  rootLabel: z.string().max(10).default("root"),
+};
+export const unionFindElementSchema = z.object(unionFindShape);
+export const unionFindSourceSchema = z.object({
+  ...unionFindShape,
+  /** Omit labels/parents and the step's work to take them from the bound step (unbound: every element alone). */
+  labels: unionFindShape.labels.optional(),
+  parents: unionFindShape.parents.optional(),
 });
 
 const freqEntrySchema = z.object({
@@ -1279,6 +1353,8 @@ export const elementSchemas = [
   timelineElementSchema,
   bitsElementSchema,
   trieElementSchema,
+  digraphElementSchema,
+  unionFindElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1326,6 +1402,8 @@ export const elementSourceSchemas = [
   timelineSourceSchema,
   bitsSourceSchema,
   trieSourceSchema,
+  digraphSourceSchema,
+  unionFindSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1390,6 +1468,10 @@ export type BitsElement = ElementOf<"bits">;
 export type BitRow = z.infer<typeof bitRowSchema>;
 export type TrieElement = ElementOf<"trie">;
 export type TrieNode = z.infer<typeof trieNodeSchema>;
+export type DigraphElement = ElementOf<"digraph">;
+export type NetworkNode = z.infer<typeof networkNodeSchema>;
+export type NetworkEdge = z.infer<typeof networkEdgeSchema>;
+export type UnionFindElement = ElementOf<"union-find">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

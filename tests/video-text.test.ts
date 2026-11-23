@@ -15,6 +15,7 @@ import { prefixProblems } from "./fixtures/prefix-fit";
 import { raceProblems } from "./fixtures/race-fit";
 import { timelineProblems } from "./fixtures/timeline-fit";
 import { trieProblems } from "./fixtures/trie-fit";
+import { forestProblems, networkProblems } from "./fixtures/graph-fit";
 import { backtrackProblems } from "./fixtures/backtrack-fit";
 import { stackProblems } from "./fixtures/stack-fit";
 import { heapProblems } from "./fixtures/heap-fit";
@@ -96,6 +97,8 @@ describe("video text at phone width", () => {
         "staircase",
         "timeline",
         "trie",
+        "digraph",
+        "union-find",
         "split-tree",
         "stack",
         "window",
@@ -160,6 +163,18 @@ describe("video text at phone width", () => {
     const problems = storyboards.flatMap((storyboard) =>
       storyboard.scenes.flatMap((scene) =>
         trieProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+      ),
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("digraphs and union-finds fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        [...networkProblems(scene.elements, full), ...forestProblems(scene.elements, full)].map(
+          (p) => `${storyboard.id} › ${scene.id}: ${p}`,
+        ),
       ),
     );
     expect(problems).toEqual([]);
@@ -453,6 +468,12 @@ describe("video text at phone width", () => {
             break;
           case "trie":
             for (const problem of trieProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "digraph":
+            for (const problem of networkProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "union-find":
+            for (const problem of forestProblems(scene.elements, phone)) fail(problem);
             break;
           case "bits":
             for (const problem of bitsProblems(scene.elements, phone)) fail(problem);

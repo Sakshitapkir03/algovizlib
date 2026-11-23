@@ -1,0 +1,320 @@
+{
+  "id": "advanced-graphs-find-if-path-exists-in-graph",
+  "title": "Find if Path Exists: Villages and Their Chiefs",
+  "concept": "Advanced Graphs",
+  "category": "dsa",
+  "summary": "Union-find gives each clan of connected villages one chief: two villages are connected exactly when their chiefs match.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Six villages, numbered 0 to 5, get roads one at a time. Each village follows a chief; when a road links two clans, the smaller clan's chief pledges to the larger clan's chief. Two villages are in one clan exactly when they answer to the same top chief.",
+    "mapping": [
+      {
+        "real": "A village",
+        "abstract": "A node"
+      },
+      {
+        "real": "A road",
+        "abstract": "An edge"
+      },
+      {
+        "real": "Following a chief",
+        "abstract": "An arrow to the parent"
+      },
+      {
+        "real": "The top chief",
+        "abstract": "The root (find)"
+      },
+      {
+        "real": "A clan",
+        "abstract": "A connected component"
+      }
+    ]
+  },
+  "tags": [
+    "graph",
+    "union-find"
+  ],
+  "takeaway": {
+    "pattern": "Union-find",
+    "summary": "Union each edge's endpoints; two nodes are connected exactly when find returns the same root. Union by size and path compression keep the trees nearly flat.",
+    "timeComplexity": "O(n + E · α(n))",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Edges arrive one at a time and you ask whether two nodes are connected",
+      "Counting or merging groups"
+    ]
+  },
+  "trace": {
+    "problem": "advanced-graphs/find-if-path-exists-in-graph",
+    "args": [
+      6,
+      [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          4,
+          2
+        ]
+      ],
+      4,
+      0
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v22",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T15:05:43.949Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Six villages get roads one at a time: 0 to 1, 1 to 2, 3 to 4, and 4 to 2. Can someone in village 4 travel to village 0?",
+      "caption": "Can village 4 reach village 0 by road?",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "road 1",
+            "road 2",
+            "road 3",
+            "road 4"
+          ]
+        },
+        {
+          "id": "clans",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "chief"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could search the whole map each time someone asks. Instead, give each clan of connected villages one chief, and ask whether two villages answer to the same chief.",
+      "caption": "Don't search the whole map for every question",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "road 1",
+            "road 2",
+            "road 3",
+            "road 4"
+          ]
+        },
+        {
+          "id": "clans",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "chief"
+        }
+      ]
+    },
+    {
+      "id": "road-1",
+      "narration": "Every village starts as its own chief. Road 0 to 1 joins two clans of one, so village 1 now follows chief 0.",
+      "caption": "Road 0–1: village 1 follows chief 0",
+      "durationInFrames": 312,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "road 1",
+            "road 2",
+            "road 3",
+            "road 4"
+          ]
+        },
+        {
+          "id": "road",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "clans",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "chief"
+        }
+      ]
+    },
+    {
+      "id": "road-2",
+      "narration": "For road 1 to 2, a find follows the arrows up: 1 leads to chief 0. Village 2 is alone, the smaller clan, so it follows 0.",
+      "caption": "Road 1–2: follow 1 up to chief 0; village 2 joins",
+      "durationInFrames": 360,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "road 1",
+            "road 2",
+            "road 3",
+            "road 4"
+          ]
+        },
+        {
+          "id": "road",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "clans",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "chief"
+        }
+      ]
+    },
+    {
+      "id": "road-3",
+      "narration": "Road 3 to 4 starts a second clan under chief 3.",
+      "caption": "Road 3–4: a second clan under chief 3",
+      "durationInFrames": 169,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "road 1",
+            "road 2",
+            "road 3",
+            "road 4"
+          ]
+        },
+        {
+          "id": "road",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "clans",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "chief"
+        }
+      ]
+    },
+    {
+      "id": "road-4",
+      "narration": "Road 4 to 2: village 4 leads to chief 3, with 2 villages, and village 2 to chief 0, with 3. The smaller clan's chief pledges to the larger, which keeps the trees short.",
+      "caption": "Road 4–2: the clan of 2 joins the clan of 3",
+      "durationInFrames": 444,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "road 1",
+            "road 2",
+            "road 3",
+            "road 4"
+          ]
+        },
+        {
+          "id": "road",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "clans",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "chief"
+        },
+        {
+          "id": "sizes",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "smaller joins larger"
+        }
+      ]
+    },
+    {
+      "id": "ask",
+      "narration": "Now the question. Village 4 climbs 4, 3, 0, and on the way points straight at 0, so the next climb is shorter. Village 0 is its own chief. Same chief, so there's a path.",
+      "caption": "Village 4 climbs to chief 0 and takes a shortcut",
+      "durationInFrames": 456,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "road 1",
+            "road 2",
+            "road 3",
+            "road 4"
+          ]
+        },
+        {
+          "id": "clans",
+          "enterAt": 0,
+          "type": "union-find",
+          "rootLabel": "chief"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Villages are nodes, roads are edges, and chiefs are union-find roots. Union by size and path compression keep each find nearly constant, so the whole run is about O(n + E).",
+      "caption": "Villages are nodes, roads are edges, chiefs are roots",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Path from 4 to 0?",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

@@ -11,6 +11,23 @@ export const courseSchedule = defineProblem({
 Return \`true\` if there is some order in which you can finish every course, and \`false\` if the requirements make that impossible.`,
   examples: [
     {
+      input: "numCourses = 5, prerequisites = [[1, 0], [2, 1], [3, 2], [1, 3], [4, 0]]",
+      output: "false",
+      explanation:
+        "Courses 0 and 4 can be taken, but 1 needs 3, 3 needs 2, and 2 needs 1: those three wait on each other forever.",
+      args: [
+        5,
+        [
+          [1, 0],
+          [2, 1],
+          [3, 2],
+          [1, 3],
+          [4, 0],
+        ],
+      ],
+      expected: false,
+    },
+    {
       input: "numCourses = 4, prerequisites = [[1, 0], [2, 1], [3, 1], [3, 2]]",
       output: "true",
       explanation: "Take them in the order 0, 1, 2, 3; each course comes after everything it needs.",

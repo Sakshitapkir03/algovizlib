@@ -1,0 +1,291 @@
+{
+  "id": "advanced-graphs-alien-dictionary",
+  "title": "Alien Dictionary: Letters From Word Order",
+  "concept": "Advanced Graphs",
+  "category": "dsa",
+  "summary": "Neighboring words each reveal one letter fact; topological sort, smallest letter first, turns the facts into the alphabet.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "graph",
+    "topological sort",
+    "string"
+  ],
+  "takeaway": {
+    "pattern": "Topological sort (Kahn's algorithm)",
+    "summary": "Turn each neighboring pair's first differing letters into an arrow, then repeatedly take the smallest letter with no incoming arrows. Leftover letters mean a cycle; a word before its own prefix means no order.",
+    "timeComplexity": "O(C + U log U)",
+    "spaceComplexity": "O(U²)",
+    "whenToUse": [
+      "An ordering hidden in pairwise comparisons",
+      "Dependencies where ties need a fixed rule"
+    ]
+  },
+  "trace": {
+    "problem": "advanced-graphs/alien-dictionary",
+    "args": [
+      [
+        "zx",
+        "zb",
+        "xa",
+        "bc"
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v22",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T15:05:43.938Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "An alien dictionary lists four words in its own alphabetical order: zx, zb, xa, bc. Which order of the letters makes that list sorted?",
+      "caption": "A dictionary sorted in an alien alphabet",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "word 1",
+            "word 2",
+            "word 3",
+            "word 4"
+          ]
+        },
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Trying all 120 orders of five letters is slow. Instead, each pair of neighboring words reveals one fact: their first different letters.",
+      "caption": "Don't try all 120 letter orders",
+      "durationInFrames": 300,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "word 1",
+            "word 2",
+            "word 3",
+            "word 4"
+          ]
+        },
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "x-b",
+      "narration": "zx comes before zb. They first differ at x and b, so x comes before b: an arrow from x to b.",
+      "caption": "zx before zb: x comes before b",
+      "durationInFrames": 300,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "word 1",
+            "word 2",
+            "word 3",
+            "word 4"
+          ]
+        },
+        {
+          "id": "pair",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "z-x",
+      "narration": "zb comes before xa, so z comes before x. The last pair, xa and bc, only repeats x before b.",
+      "caption": "zb before xa: z comes before x",
+      "durationInFrames": 276,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "word 1",
+            "word 2",
+            "word 3",
+            "word 4"
+          ]
+        },
+        {
+          "id": "pair",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "Now count the arrows into each letter. a, c, and z have none, so they're ready, kept in alphabetical order so the answer is unique.",
+      "caption": "Badges count arrows in: a, c, and z are ready",
+      "durationInFrames": 336,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "ready",
+          "levelLabel": "round"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "alphabet",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "take-z",
+      "narration": "Always take the smallest ready letter: a, then c, then z. Taking z uses up its arrow, so x has none left and becomes ready.",
+      "caption": "Take a, c, then z: x is freed",
+      "durationInFrames": 336,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "ready",
+          "levelLabel": "round"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "alphabet",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "take-x",
+      "narration": "Take x, and b loses its last incoming arrow.",
+      "caption": "Take x: b is freed",
+      "durationInFrames": 144,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "ready",
+          "levelLabel": "round"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "alphabet",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "take-b",
+      "narration": "Take b. Every letter is placed, so the alien alphabet is a, c, z, x, b.",
+      "caption": "Take b: every letter is placed",
+      "durationInFrames": 229,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "queue",
+          "enterAt": 0,
+          "type": "queue",
+          "label": "ready",
+          "levelLabel": "round"
+        },
+        {
+          "id": "order",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "alphabet",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "The words gave a graph of letter facts, and topological sort ordered it. Leftover letters would mean a cycle, and a word before its own prefix means no order works. It's linear in the letters, plus sorting ties.",
+      "caption": "Letter facts become a graph; topological sort orders it",
+      "durationInFrames": 492,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Alien alphabet",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

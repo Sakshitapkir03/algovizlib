@@ -1,0 +1,260 @@
+{
+  "id": "advanced-graphs-network-delay-time",
+  "title": "Network Delay Time: Settle the Earliest Arrival",
+  "concept": "Advanced Graphs",
+  "category": "dsa",
+  "summary": "Dijkstra settles servers in order of arrival time: a min-heap of candidates, a table of best times, and stale entries skipped.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "graph",
+    "shortest path",
+    "dijkstra",
+    "heap"
+  ],
+  "takeaway": {
+    "pattern": "Dijkstra's algorithm",
+    "summary": "Pop the closest unsettled node from a min-heap and settle it; relax its outgoing edges, pushing a neighbor only when the new distance is shorter. Skip popped entries for settled nodes.",
+    "timeComplexity": "O(E log E)",
+    "spaceComplexity": "O(n + E)",
+    "whenToUse": [
+      "Shortest paths or earliest arrival with non-negative edge weights",
+      "Weighted graphs where BFS's hop count isn't the cost"
+    ]
+  },
+  "trace": {
+    "problem": "advanced-graphs/network-delay-time",
+    "args": [
+      [
+        [
+          1,
+          2,
+          4
+        ],
+        [
+          1,
+          3,
+          1
+        ],
+        [
+          3,
+          2,
+          2
+        ],
+        [
+          2,
+          4,
+          2
+        ],
+        [
+          4,
+          3,
+          1
+        ],
+        [
+          4,
+          5,
+          1
+        ]
+      ],
+      5,
+      1
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v22",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T15:05:43.952Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "Five servers, joined by one-way links that each take a few milliseconds. Server 1 sends a message at time 0, and every server forwards it the moment it arrives. When does the last one hear it?",
+      "caption": "Server 1 broadcasts; each link takes its own time",
+      "durationInFrames": 468,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Listing every route to every server explodes, and plain BFS counts hops, not milliseconds. Dijkstra settles servers in order of arrival time instead.",
+      "caption": "Every route is too many; BFS counts hops, not time",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        }
+      ]
+    },
+    {
+      "id": "settle-1",
+      "narration": "A min-heap holds candidate times. Pop the earliest, server 1 at 0. Every link adds time, so no other route can reach it sooner: it's settled.",
+      "caption": "Pop server 1 at time 0: settled for good",
+      "durationInFrames": 348,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "best time"
+        }
+      ]
+    },
+    {
+      "id": "improve",
+      "narration": "Server 3 settles at 1. Its link to server 2 takes 2 more, so 3 milliseconds, sooner than the direct 4. The table updates and (3, 2) joins the heap.",
+      "caption": "Via server 3, server 2 hears it at 3, sooner than 4",
+      "durationInFrames": 396,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "best time"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "sooner"
+        }
+      ]
+    },
+    {
+      "id": "stale",
+      "narration": "Server 2 settles at 3. Later the old entry (4, 2) comes out, but server 2 is done, so this stale entry is skipped.",
+      "caption": "(4, 2) is stale: server 2 already settled at 3",
+      "durationInFrames": 324,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "best time"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "stale"
+        }
+      ]
+    },
+    {
+      "id": "no-better",
+      "narration": "Server 4 settles at 5. Going on to server 3 would take 6, not sooner than 1, so nothing changes.",
+      "caption": "From server 4, server 3 would take 6: it already has 1",
+      "durationInFrames": 276,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "best time"
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "not sooner"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "Server 5 settles at 6. The heap is empty and every server has the message; the latest arrival is 6.",
+      "caption": "Server 5 settles at 6, the last arrival",
+      "durationInFrames": 276,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "graph",
+          "enterAt": 0,
+          "type": "digraph"
+        },
+        {
+          "id": "heap",
+          "enterAt": 0,
+          "type": "heap"
+        },
+        {
+          "id": "best",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "best time"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's Dijkstra's algorithm: settle the closest unsettled node, relax its outgoing edges, and skip stale heap entries. With non-negative weights it runs in O(E log E) time.",
+      "caption": "Dijkstra: settle the closest, then relax its links",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Last server hears it at",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

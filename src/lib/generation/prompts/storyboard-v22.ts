@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v21";
+export const PROMPT_VERSION = "storyboard-v22";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -69,6 +69,8 @@ ${ELEMENT_GUIDE}
 - timeline (intervals): when steps list a timeline, make a timeline the first element of every scene (OMIT everything but \`laneLabels\`; give lane names in the story's words, e.g. "sorted", "merged", or none). There's no item-row: the bars are the intervals. A sort step slides the bars into sorted lanes; say what they're sorted by. The second scene contrasts the slow way (comparing every pair, O(n²)) with sorting and one pass. When steps list a choice (a greedy decision), add a choice (OMIT chosen/rejected) whose \`reason\` says in a few words why the choice is safe. With a heap (it sits right of the timeline), add a heap (OMIT heaps) and a partial (OMIT items; label the answers) in every bound scene. Keep the bottom stack to at most two of an equation, a choice, and a counter; in the answer scene, the result and at most one more. Skip callouts in timeline scenes.
 - bits (bit manipulation): when steps list bits, add a bits panel (OMIT width/rows; give \`rowLabels\`, one short name per row in the story's words, and for a mask \`bitLabels\`, what each bit means) in every bound scene; it needs a traceStep, so intro scenes show only the input. Keep the input row (if the trace has one) above it, marked with one pointer or an "active" highlight. The second scene contrasts the slow way (a hash map of counts, converting to strings, looping over every bit, or extra memory) with the bit trick. Where the trick isn't obvious, one scene's narration says in one short sentence why it works (x ^ x = 0 so pairs cancel; shifting right drops the last bit; AND marks the carries). Keep the bottom stack to the bits panel plus at most one equation or counter, and with an input row (or a table) above it, put the answer's result in the closing scene instead (without the bits), so the panel keeps its room on a phone. Skip callouts in bits scenes.
 - trie: when steps list a trie, add a trie (OMIT everything) to every scene that shows the data (an unbound scene shows the empty trie). With an input row (the words), keep it above the trie and mark the current word with an "active" highlight, not a pointer; with a board (a grid), the board sits left of the trie. The second scene contrasts the slow way (comparing against every word, or searching the board once per word) with sharing prefixes. Say when a node exists but isn't a word's end (only a prefix), and when a child is missing. Use a partial for answers or output being built (OMIT items; \`showFound: false\`). The trie needs the height: keep the bottom stack to at most the partial, and put the answer's result in the closing scene (without the trie). Skip callouts in trie scenes.
+- digraph (topological sort, Dijkstra): when steps list a network, make a digraph the first element of every scene that shows the graph (OMIT directed/nodes/edges; an unbound scene shows the graph as given). With an input row (Alien Dictionary's words), keep it above the graph and mark the pair being compared with an "active" highlight, no pointers. For topological sort, add a queue (OMIT items/dequeued/enqueued; levelLabel "round") and a partial for the order built so far (OMIT items; \`showFound: false\`) in every bound scene whose step lists them; say once what a badge means (how many arrows still point into the node) and, if nodes end up stuck, that they wait on each other in a cycle. For Dijkstra, add a heap (OMIT heaps; it sits right of the graph) and a hash-map of best-known distances (OMIT everything but \`label\`) in every bound scene, plus the step's equation when it has one; say why the popped node can be settled for good (every other route is already at least as long, since weights are never negative), and that a popped entry for a settled node is stale. The second scene contrasts the slow way (trying every order, or every route) with the algorithm's one pass. Keep the bottom stack to two panels plus at most one equation; put the answer's result in the closing scene (without the graph) when the bottom stack is full. Skip callouts in graph scenes.
+- union-find: when steps list a forest, add a union-find (OMIT labels/parents and the step's work; give \`rootLabel\`, the story's word for a root) to every scene that shows the groups (an unbound scene shows every element alone). Keep the edges as an item-row above it, marking the current edge with an "active" highlight (the redundant one "rejected"), no pointers. The second scene contrasts the slow way (a fresh search for every question) with keeping one root per group. Say what a find does (follow the arrows up to the root), that two elements are joined exactly when their roots match, and, when the trace compresses a path or unions by size, what that buys (short trees). Keep the bottom stack to at most one equation, and put the answer's result in the closing scene (without the trees). Skip callouts in union-find scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -234,6 +236,38 @@ function describeStep(step: TraceStep, index: number): string {
         tr.branches?.length ? `also trying ${tr.branches.map(word).join(", ")}` : "",
         tr.hits?.length ? `word ends at ${tr.hits.map(word).join(", ")}` : "",
         tr.pruned?.length ? `removed ${tr.pruned.length} node(s)` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  if (step.network) {
+    const g = step.network;
+    const name = (id: number) => g.nodes.find((n) => n.id === id)?.label ?? `#${id}`;
+    parts.push(
+      [
+        `graph: ${g.nodes.map((n) => `${n.label}${n.state !== "idle" ? ` ${n.state}` : ""}${n.badge ? ` (${n.badge})` : ""}`).join(", ")}`,
+        `edges ${
+          g.edges
+            .map(
+              (e) =>
+                `${name(e.from)}${g.directed ? "→" : "–"}${name(e.to)}${e.weight !== undefined ? ` w${e.weight}` : ""}${e.state !== "idle" ? ` ${e.state}` : ""}`,
+            )
+            .join(", ") || "none"
+        }`,
+      ].join("; "),
+    );
+  }
+  if (step.forest) {
+    const f = step.forest;
+    const name = (i: number) => f.labels[i];
+    parts.push(
+      [
+        `union-find parents: ${f.labels.map((l, i) => (f.parents[i] === i ? `${l} root${f.sizes ? ` (size ${f.sizes[i]})` : ""}` : `${l}→${name(f.parents[i])}`)).join(", ")}`,
+        ...(f.finds ?? []).map((x) => `find ${x.path.map(name).join("→")}`),
+        ...(f.compressed ?? []).map((c) => `compressed ${name(c.node)}: ${name(c.from)}→${name(c.to)}`),
+        f.union ? `union: root ${name(f.union.child)} now points at ${name(f.union.parent)}` : "",
+        f.same !== undefined ? `already joined under root ${name(f.same)}` : "",
       ]
         .filter(Boolean)
         .join("; "),
@@ -464,13 +498,15 @@ ${
                   `  #${n.id}: ${n.value} (left ${n.left === null ? "none" : `#${n.left}`}, right ${n.right === null ? "none" : `#${n.right}`})`,
               )
               .join("\n")}\nValues by id`
-          : trace.row.display === "stairs"
-            ? "Steps (use one staircase), step: number"
-            : trace.row.display === "houses"
-              ? "Houses (use one house-row), house: cash"
-              : trace.row.values.length === 0
-                ? `No row: don't add an item-row${trace.timeline ? `: intervals as given, ${trace.timeline.input.map((b) => `#${b.id} [${b.start}, ${b.end}]`).join(", ")}; axis ${trace.timeline.min}–${trace.timeline.max}` : ""}${trace.matrix ? `. Matrix (use a prefix-grid): ${trace.matrix.map((row) => `[${row.join(", ")}]`).join(" ")}` : trace.dp || trace.timeline ? "" : " (the input is a stream of operations)"}`
-                : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
+          : trace.row.display === "network"
+            ? `Graph (use one digraph), as given: ${(trace.network?.nodes ?? []).map((n) => n.label).join(", ")}; ${trace.network?.directed ? "arrows" : "edges"} ${(trace.network?.edges ?? []).map((e) => `${trace.network!.nodes[e.from].label}${trace.network!.directed ? "→" : "–"}${trace.network!.nodes[e.to].label}${e.weight !== undefined ? ` (${e.weight})` : ""}`).join(", ") || "none yet"}. No row: don't add an item-row`
+            : trace.row.display === "stairs"
+              ? "Steps (use one staircase), step: number"
+              : trace.row.display === "houses"
+                ? "Houses (use one house-row), house: cash"
+                : trace.row.values.length === 0
+                  ? `No row: don't add an item-row${trace.timeline ? `: intervals as given, ${trace.timeline.input.map((b) => `#${b.id} [${b.start}, ${b.end}]`).join(", ")}; axis ${trace.timeline.min}–${trace.timeline.max}` : ""}${trace.matrix ? `. Matrix (use a prefix-grid): ${trace.matrix.map((row) => `[${row.join(", ")}]`).join(" ")}` : trace.dp || trace.timeline ? "" : " (the input is a stream of operations)"}`
+                  : `Row (${trace.row.display === "bars" ? "use a bar-row" : "use an item-row"}), index: value`
 }
 ${trace.row.values.map((v, i) => `  ${i}: ${JSON.stringify(v)}`).join("\n")}${
     trace.secondRow
@@ -482,6 +518,10 @@ ${
     ? `Table (use one dp-table): ${trace.dp.rows} × ${trace.dp.cols}${trace.dp.rowHeaders ? `, row headers ${JSON.stringify(trace.dp.rowHeaders)}` : ""}${trace.dp.colHeaders ? `, column headers ${JSON.stringify(trace.dp.colHeaders)}` : ""}\n`
     : ""
 }${
+    trace.network && trace.row.display !== "network"
+      ? `Graph (use one digraph under the row): nodes ${trace.network.nodes.map((n) => n.label).join(", ")}; the steps add its edges\n`
+      : ""
+  }${
     trace.tree && trace.row.display !== "tree"
       ? `Recursion tree (for the scenes whose step lists a tree walk), id: call\n${trace.tree.nodes.map((n) => `  #${n.id}: call on ${n.value}`).join("\n")}\n`
       : ""
@@ -516,4 +556,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV21 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV22 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

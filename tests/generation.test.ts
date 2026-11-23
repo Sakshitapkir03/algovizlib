@@ -415,6 +415,11 @@ describe("selectTargets", () => {
       "trie/design-add-and-search-words",
       "trie/replace-words",
       "trie/word-search-ii",
+      "advanced-graphs/find-if-path-exists-in-graph",
+      "advanced-graphs/course-schedule",
+      "advanced-graphs/network-delay-time",
+      "advanced-graphs/redundant-connection",
+      "advanced-graphs/alien-dictionary",
       "backtracking/sum-of-all-subset-xor-totals",
       "backtracking/subsets",
       "backtracking/permutations",
@@ -619,7 +624,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v21");
+    expect(currentPrompts.version).toBe("storyboard-v22");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);
