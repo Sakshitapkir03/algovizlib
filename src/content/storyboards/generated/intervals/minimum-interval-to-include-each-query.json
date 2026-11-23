@@ -75,7 +75,7 @@
     "promptVersion": "storyboard-v19",
     "provider": "claude-code",
     "model": "claude-opus-5-5",
-    "generatedAt": "2026-11-22T23:15:08.975Z",
+    "generatedAt": "2026-11-22T23:57:25.228Z",
     "repairAttempts": 0
   },
   "scenes": [
@@ -141,7 +141,8 @@
           "enterAt": 0,
           "type": "partial",
           "label": "answers",
-          "foundLabel": "found"
+          "foundLabel": "found",
+          "showFound": false
         }
       ]
     },
@@ -171,7 +172,8 @@
           "enterAt": 0,
           "type": "partial",
           "label": "answers",
-          "foundLabel": "found"
+          "foundLabel": "found",
+          "showFound": false
         }
       ]
     },
@@ -201,7 +203,8 @@
           "enterAt": 0,
           "type": "partial",
           "label": "answers",
-          "foundLabel": "found"
+          "foundLabel": "found",
+          "showFound": false
         }
       ]
     },
@@ -231,7 +234,8 @@
           "enterAt": 0,
           "type": "partial",
           "label": "answers",
-          "foundLabel": "found"
+          "foundLabel": "found",
+          "showFound": false
         }
       ]
     },
@@ -261,7 +265,8 @@
           "enterAt": 0,
           "type": "partial",
           "label": "answers",
-          "foundLabel": "found"
+          "foundLabel": "found",
+          "showFound": false
         }
       ]
     },

@@ -391,7 +391,7 @@ function bottomHeight(el: Element, t: TextMetrics): number {
         : sizes.cell(t) + 4 + sizes.marker(t);
     case "partial":
       // On a phone-sized player it's one row: the chips and a count of the answers found.
-      return t.compact ? sizes.cell(t) : 2 * sizes.cell(t) + 8;
+      return t.compact || !el.showFound ? sizes.cell(t) : 2 * sizes.cell(t) + 8;
     case "choice":
       return layoutChoice(el, t).height;
     default:

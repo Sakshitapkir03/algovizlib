@@ -12,7 +12,7 @@ import { FONT_MONO, FONT_SANS } from "../theme";
  * The answer being built, as chips: the choice just added slides in from the right (accent border); one just taken
  * back slides out to the right, dashed and struck through. Under it, every answer found so far (✓), the newest last;
  * when they don't all fit, the earliest are summed up as "+N". On a phone-sized player it's one row: the chips and
- * "✓ N", the number found.
+ * "✓ N", the number found. With `showFound: false` the found answers (row and count) are hidden.
  */
 export function Partial({ element }: { element: PartialElement }) {
   const { palette, reducedMotion, text } = useScene();
@@ -115,14 +115,14 @@ export function Partial({ element }: { element: PartialElement }) {
               transform: `translateX(${motion(move * 30, reducedMotion)}px)`,
             })
           : null}
-        {text.compact
+        {text.compact && element.showFound
           ? chip("found", `✓ ${element.found.length}`, {
               background: `${palette.success}1f`,
               border: `2px solid ${palette.success}`,
             })
           : null}
       </div>
-      {text.compact ? null : (
+      {text.compact || !element.showFound ? null : (
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {heading(element.foundLabel)}
           {element.found.length === 0 ? (

@@ -793,6 +793,8 @@ const partialShape = {
   found: z.array(z.string().trim().min(1).max(18)).max(10),
   label: nonEmpty.max(14).default("building"),
   foundLabel: nonEmpty.max(14).default("found"),
+  /** false hides the answers found (the row, and its "✓ N" count on a phone) when "found" means nothing here. */
+  showFound: z.boolean().default(true),
 };
 export const partialElementSchema = z.object(partialShape);
 export const partialSourceSchema = z.object({

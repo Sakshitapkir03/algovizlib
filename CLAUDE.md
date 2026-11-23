@@ -714,7 +714,7 @@ the sweep label, the axis with tick labels that thin out until they fit, bars la
 (never onto another bar on the lane), every state carried by fill, border style, and glyph; on a phone-sized player
 bars are slim and unlabeled (the axis, the equation, and the caption carry the numbers). Meeting Rooms here is "can
 one person attend every meeting" (sort, then neighbors), so the only heap is Minimum Interval's min-heap of
-"size·right": it reuses `heap` and `partial` (the answers), and the heap takes the right of the stage beside the
+"size·right": it reuses `heap` and `partial` (the answers, with `showFound: false`: a partial option, default on, that hides the found row and its phone-width "✓ N" count, which mean nothing there; the Backtracking videos are pixel-identical before and after), and the heap takes the right of the stage beside the
 timeline (`layoutHeaps` got an optional region whose default is the full width; the Heap videos and heap sort are
 pixel-identical before and after). Meeting Rooms got a first example with both a gap and a clash. The validator checks
 the axis, lanes, every bar, the overlap, the growth, and the marker against the step (an unbound timeline shows the

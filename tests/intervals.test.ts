@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import { storyboards } from "@/content/storyboards";
 import { getProblem } from "@/lib/catalog/repository";
 import { assembleStoryboard, evaluateDraft, type GenerationContext } from "@/lib/generation/draft";
-import { resolveStoryboard, storyboardSourceSchema, validateStoryboard } from "@/lib/storyboard";
+import {
+  partialElementSchema,
+  resolveStoryboard,
+  storyboardSourceSchema,
+  validateStoryboard,
+  type Element,
+} from "@/lib/storyboard";
 import { getTraceDefinition } from "@/lib/traces";
 import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
@@ -113,6 +120,23 @@ function context(key: string): GenerationContext {
 }
 
 describe("interval storyboards", () => {
+  it("Minimum Interval's answers panel hides the found count; every other partial keeps it", () => {
+    const partials = storyboards.flatMap((sb) =>
+      sb.scenes.flatMap((scene) =>
+        scene.elements.filter((e) => e.type === "partial").map((e) => [sb.id, e] as const),
+      ),
+    );
+    for (const [id, el] of partials)
+      expect(el.type === "partial" && el.showFound, id).toBe(!id.includes("minimum-interval"));
+    // The default leaves existing panels as they were, and a hidden found row takes no room.
+    const base = { id: "p", type: "partial", items: ["a"], found: [] };
+    expect(partialElementSchema.parse(base).showFound).toBe(true);
+    const bottom = (showFound: boolean) =>
+      layoutScene([partialElementSchema.parse({ ...base, showFound }) as Element], textMetrics(1280))
+        .bottomTop;
+    expect(bottom(false)).toBeGreaterThanOrEqual(bottom(true));
+  });
+
   it.each(INTERVALS)("%s: a fixture draft passes and fits at phone and full size", (key) => {
     const result = evaluateDraft(buildDraft(key), context(key), META);
     expect(result.issues).toEqual([]);
