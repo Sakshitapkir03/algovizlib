@@ -1177,8 +1177,9 @@ Redundant Connection a crew wiring substations, each reporting to a hub, where t
 share one. Data Structure Design: LRU Cache, LFU Cache, and Time Based Key-Value Store are problem-native (the caches
 and the store, with their own calls; TimeMap's first example sets one key at times 1, 4, 7, 9 and gets at 6, 0, and 12,
 so a search is two or three probes deep); Min Stack is a stack of pancakes, each with a sticky note giving the smallest
-size at or below it, and Implement Queue using Stacks a diner's pancakes, stacked as they cook and flipped onto the serving
-plate when it runs empty, so the first made is on top.
+size at or below it, and Implement Queue using Stacks a deli's in and out ticket
+trays (new tickets go on the in tray; when the out tray is empty the in pile is flipped onto it, so the oldest ticket
+is on top).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

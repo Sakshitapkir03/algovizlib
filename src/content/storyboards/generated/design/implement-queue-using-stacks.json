@@ -1,28 +1,28 @@
 {
   "id": "design-implement-queue-using-stacks",
-  "title": "Queue from Two Stacks: Flip the Pancakes",
+  "title": "Implement Queue using Stacks: Two Ticket Trays",
   "concept": "Data Structure Design",
   "category": "dsa",
-  "summary": "Pushes go on one stack; when the other runs empty, pour everything across, which reverses it so the oldest is on top. Each value moves once: amortized O(1).",
+  "summary": "New tickets go on an in tray; the out tray is refilled by flipping the in pile only when it runs empty, so the oldest ticket is always on top. Each ticket moves once: amortized O(1).",
   "exampleSource": "analogy",
   "analogy": {
-    "scenario": "A diner cook stacks pancakes on a warming plate as they come off the griddle; the waiter serves from a serving plate. When the serving plate is empty, the cook flips the whole warming stack onto it, so the first pancake made ends up on top.",
+    "scenario": "A deli takes order tickets on an in tray and serves them from an out tray; you can only take a tray's top ticket. When the out tray is empty, the whole in pile is flipped onto it, so the oldest ticket ends up on top.",
     "mapping": [
       {
-        "real": "warming stack",
-        "abstract": "in stack (takes push)"
+        "real": "The in tray",
+        "abstract": "The in stack (takes push)"
       },
       {
-        "real": "serving plate",
-        "abstract": "out stack (serves pop and peek)"
+        "real": "The out tray",
+        "abstract": "The out stack (serves pop and peek)"
       },
       {
-        "real": "flipping the warming stack onto the plate",
-        "abstract": "pour: pop from in, push to out"
+        "real": "Flipping the in pile onto the out tray",
+        "abstract": "Pour: pop from in, push to out"
       },
       {
-        "real": "first pancake made, first served",
-        "abstract": "first in, first out"
+        "real": "Oldest ticket served first",
+        "abstract": "First in, first out"
       }
     ]
   },
@@ -80,15 +80,15 @@
     "promptVersion": "storyboard-v23",
     "provider": "claude-code",
     "model": "claude-opus-5-5",
-    "generatedAt": "2026-11-23T16:42:18.139Z",
+    "generatedAt": "2026-11-23T21:42:58.136Z",
     "repairAttempts": 0
   },
   "scenes": [
     {
       "id": "problem",
-      "narration": "A cook stacks pancakes as they come off the griddle, but diners should get them in the order they were made: first made, first served.",
-      "caption": "Serve pancakes in the order they were made, from stacks",
-      "durationInFrames": 336,
+      "narration": "A deli serves order tickets oldest first, but it has only two trays, and you can only take a tray's top ticket. Can two stacks act as one queue?",
+      "caption": "Serve order tickets oldest first, from two trays",
+      "durationInFrames": 384,
       "elements": [
         {
           "id": "log",
@@ -100,22 +100,22 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         }
       ]
     },
     {
       "id": "slow",
-      "narration": "With one stack, serving the oldest means lifting off every newer pancake and putting them back: O(n) per serve. With two, flipping the warming stack onto the plate reverses it once, so the oldest sits on top.",
-      "caption": "One stack: lift every newer pancake to reach the oldest",
-      "durationInFrames": 480,
+      "narration": "With one tray, serving the oldest ticket means lifting off every ticket above it: O(n) per order. Two trays fix that: flipping the in pile reverses it once, oldest on top.",
+      "caption": "One tray: dig out the oldest ticket every time",
+      "durationInFrames": 408,
       "elements": [
         {
           "id": "log",
@@ -127,21 +127,21 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         },
         {
           "id": "costs",
           "enterAt": 0,
           "type": "result",
-          "title": "one stack: O(n) per serve",
-          "value": "two stacks: O(1) amortized",
+          "title": "one tray: O(n) per order",
+          "value": "two trays: O(1) amortized",
           "showsAnswer": false,
           "tone": "info"
         }
@@ -149,9 +149,9 @@
     },
     {
       "id": "push",
-      "narration": "Each new pancake goes on top of the warming stack, one step: first 4, then 7.",
-      "caption": "Pancake 4 goes on the warming stack",
-      "durationInFrames": 229,
+      "narration": "New tickets always go on top of the in tray: 4 first, then 7 on top of it.",
+      "caption": "push(4): new tickets go on the in tray",
+      "durationInFrames": 252,
       "traceStep": 1,
       "elements": [
         {
@@ -164,22 +164,22 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         }
       ]
     },
     {
       "id": "flip",
-      "narration": "peek needs the oldest pancake and the plate is empty, so the cook flips the warming stack onto it. The order reverses: 4, made first, is now on top.",
-      "caption": "The plate is empty: flip the stack, and 4 lands on top",
-      "durationInFrames": 384,
+      "narration": "To serve, look at the out tray. It's empty, so the in pile flips across, reversed: the oldest ticket, 4, lands on top.",
+      "caption": "peek(): out is empty, so the in pile flips across",
+      "durationInFrames": 312,
       "traceStep": 3,
       "elements": [
         {
@@ -192,22 +192,22 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         }
       ]
     },
     {
       "id": "serve",
-      "narration": "pop serves 4 straight off the plate. Nothing moves, because the plate still holds pancakes in order.",
-      "caption": "pop(): serve 4 off the plate, no flipping",
-      "durationInFrames": 240,
+      "narration": "Now 4 comes straight off the out tray, with no flipping.",
+      "caption": "pop(): 4 comes straight off the out tray",
+      "durationInFrames": 169,
       "traceStep": 4,
       "elements": [
         {
@@ -220,22 +220,22 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         }
       ]
     },
     {
       "id": "wait",
-      "narration": "A new 9 goes on the warming stack. It isn't flipped yet: 7, on the plate, is older and goes first.",
-      "caption": "Pancake 9 waits on the warming stack behind 7",
-      "durationInFrames": 288,
+      "narration": "Ticket 9 goes on the in tray. The out tray still holds 7, which is older, so it's served first.",
+      "caption": "push(9) lands on in while 7 waits on out",
+      "durationInFrames": 276,
       "traceStep": 5,
       "elements": [
         {
@@ -248,22 +248,22 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         }
       ]
     },
     {
       "id": "flip-again",
-      "narration": "7 is served and the plate is empty again, so the next pop flips 9 across and serves it.",
-      "caption": "7 is served; the plate empties, so 9 is flipped over",
-      "durationInFrames": 264,
+      "narration": "After 7 is served, out is empty again, so the next pop flips 9 across and serves it. Each ticket crosses at most once.",
+      "caption": "7 is served; out is empty, so 9 flips across",
+      "durationInFrames": 324,
       "traceStep": 8,
       "elements": [
         {
@@ -276,22 +276,22 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         }
       ]
     },
     {
       "id": "last",
-      "narration": "Both stacks are empty now, so empty returns true.",
-      "caption": "empty(): both stacks are empty, so true",
-      "durationInFrames": 144,
+      "narration": "Both trays are empty, so the queue is empty: true.",
+      "caption": "empty(): both trays are empty, so true",
+      "durationInFrames": 156,
       "traceStep": 9,
       "elements": [
         {
@@ -304,22 +304,22 @@
           "id": "in",
           "enterAt": 0,
           "type": "stack",
-          "label": "warming (in)"
+          "label": "in tray"
         },
         {
           "id": "out",
           "enterAt": 0,
           "type": "stack",
-          "label": "plate (out)",
+          "label": "out tray",
           "traceStack": "second"
         }
       ]
     },
     {
       "id": "pattern",
-      "narration": "In code, the warming stack is in and the plate is out. Each value is pushed and popped at most twice, so every call is O(1) amortized.",
+      "narration": "The trays are two stacks: push onto in, pop from out, and pour across only when out is empty. Every ticket moves at most once, so each call is O(1) amortized.",
       "caption": "Push to in, pop from out, pour only when out is empty",
-      "durationInFrames": 360,
+      "durationInFrames": 408,
       "elements": [
         {
           "id": "log",
