@@ -43,6 +43,11 @@ import { countingBitsTrace } from "./bit-manipulation/counting-bits";
 import { singleNumberIITrace } from "./bit-manipulation/single-number-ii";
 import { sumOfTwoIntegersTrace } from "./bit-manipulation/sum-of-two-integers";
 import { shortestPathVisitingAllNodesTrace } from "./bit-manipulation/shortest-path-visiting-all-nodes";
+import { longestCommonPrefixTrace } from "./trie/longest-common-prefix";
+import { implementTrieTrace } from "./trie/implement-trie";
+import { designAddAndSearchWordsTrace } from "./trie/design-add-and-search-words";
+import { replaceWordsTrace } from "./trie/replace-words";
+import { wordSearchIITrace } from "./trie/word-search-ii";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -183,6 +188,11 @@ const definitions = [
   singleNumberIITrace,
   sumOfTwoIntegersTrace,
   shortestPathVisitingAllNodesTrace,
+  longestCommonPrefixTrace,
+  implementTrieTrace,
+  designAddAndSearchWordsTrace,
+  replaceWordsTrace,
+  wordSearchIITrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

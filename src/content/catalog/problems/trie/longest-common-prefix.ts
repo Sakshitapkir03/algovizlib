@@ -11,6 +11,14 @@ export const longestCommonPrefix = defineProblem({
 If the words share no common starting characters, return the empty string \`""\`.`,
   examples: [
     {
+      input: 'words = ["trap", "tram", "tree"]',
+      output: '"tr"',
+      explanation:
+        "All three start with t, then r. After that, trap and tram continue with a while tree continues with e.",
+      args: [["trap", "tram", "tree"]],
+      expected: "tr",
+    },
+    {
       input: 'words = ["interview", "internal", "interval"]',
       output: '"inter"',
       explanation: 'All three start with "inter"; the next letters (v, n, v) disagree.',

@@ -12,6 +12,7 @@ import type {
   TracePrefixRow,
   TraceTimelineStep,
   TraceBits,
+  TraceTrie,
   TracePrefixGrid,
   TraceBfs,
   TraceLinks,
@@ -277,6 +278,27 @@ function raceFields(r: Partial<TraceRace>): Record<string, string> {
     meet: JSON.stringify(r.meet ?? null),
     entry: JSON.stringify(r.entry ?? null),
     loop: JSON.stringify(r.loop ? { from: r.loop.from, to: r.loop.to } : null),
+  };
+}
+
+/** A trie field by field, in a canonical text form. */
+function trieFields(t: Partial<TraceTrie>): Record<string, string> {
+  const node = (n: { id: number; parent: number | null; letter: string; end: boolean; note?: string }) => [
+    n.id,
+    n.parent,
+    n.letter,
+    n.end,
+    n.note ?? null,
+  ];
+  const ids = (list?: readonly number[]) => [...(list ?? [])].sort((a, b) => a - b);
+  return {
+    nodes: JSON.stringify((t.nodes ?? []).map(node)),
+    path: JSON.stringify(t.path ?? []),
+    created: JSON.stringify(ids(t.created)),
+    missing: JSON.stringify(t.missing ? [t.missing.parent, t.missing.letter] : null),
+    branches: JSON.stringify(ids(t.branches)),
+    hits: JSON.stringify(ids(t.hits)),
+    pruned: JSON.stringify((t.pruned ?? []).map(node)),
   };
 }
 
@@ -643,6 +665,16 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             el.id,
             "frames",
           );
+        if (el.type === "trie") {
+          // Unbound: the empty trie (the root alone), or the trie as it ends, with no walk.
+          const last = trace.steps.at(-1)?.trie;
+          const drawn = trieFields(el);
+          const empty = trieFields({ nodes: [{ id: 0, parent: null, letter: "", end: false }], path: [0] });
+          const end = last && trieFields({ nodes: last.nodes, path: [0] });
+          const same = (f?: Record<string, string>) => f && Object.keys(drawn).every((k) => drawn[k] === f[k]);
+          if (!same(empty) && !same(end))
+            push("Without a traceStep, the trie is empty (or as it ends, with no walk); omit nodes and the walk", el.id, "nodes");
+        }
         if (el.type === "bits")
           push("A bits panel needs the scene to set traceStep (its rows come from the step)", el.id, "rows");
         if (el.type === "timeline") {
@@ -1338,6 +1370,21 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             if (drawn[field] !== expected[field])
               push(`The race's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "trie": {
+          if (!step.trie) {
+            push(`Trace step ${stepIndex} has no trie`, el.id, "nodes");
+            break;
+          }
+          const want = trieFields(step.trie);
+          const drawn = trieFields(el);
+          for (const field of Object.keys(want))
+            if (drawn[field] !== want[field])
+              push(`The trie's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
+                expected: want[field],
                 actual: drawn[field],
               });
           break;

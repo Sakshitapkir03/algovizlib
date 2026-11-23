@@ -44,6 +44,7 @@ import { SplitTree } from "./SplitTree";
 import { Stack } from "./Stack";
 import { Staircase } from "./Staircase";
 import { Timeline } from "./Timeline";
+import { Trie } from "./Trie";
 import { Window } from "./Window";
 
 export type PrimitiveDefinition<K extends ElementType> = {
@@ -99,6 +100,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   timeline: { component: Timeline, slot: "canvas", layer: 0 },
   // Bit manipulation: numbers as aligned rows of bits, in the bottom stack.
   bits: { component: Bits, slot: "bottom", layer: 0 },
+  // Tries: letter nodes by depth (right of a board when there is one).
+  trie: { component: Trie, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

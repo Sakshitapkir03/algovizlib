@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; tries add "trie"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -1052,6 +1052,43 @@ export const bitsSourceSchema = z.object({
   rows: bitsShape.rows.optional(),
 });
 
+const trieNodeSchema = z.object({
+  id: index,
+  parent: index.nullable(),
+  /** One letter ("" for the root). */
+  letter: z.string().max(1),
+  /** A word ends here: double ring and ✓. */
+  end: z.boolean(),
+  /** Data the node holds, shown beside it ("re", "cat"). */
+  note: z.string().max(8).optional(),
+});
+
+const trieShape = {
+  ...baseElement,
+  type: z.literal("trie"),
+  /** Every node, root (id 0) first, in creation order: siblings are drawn in that order. */
+  nodes: z.array(trieNodeSchema).min(1).max(12),
+  /** Root to the current node, in the accent. */
+  path: z.array(index).min(1),
+  /** Nodes created in this scene (they pop in). */
+  created: z.array(index).optional(),
+  /** A child looked for and not found: a dashed stub with its letter and ✕. */
+  missing: z.object({ parent: index, letter: z.string().length(1) }).optional(),
+  /** Other nodes a wildcard is trying at the same depth (ringed). */
+  branches: z.array(index).optional(),
+  /** Nodes that ended a word in this scene (✓ in green). */
+  hits: z.array(index).optional(),
+  /** Nodes removed in this scene, drawn fading out where they were. */
+  pruned: z.array(trieNodeSchema).optional(),
+};
+export const trieElementSchema = z.object(trieShape);
+export const trieSourceSchema = z.object({
+  ...trieShape,
+  /** Omit everything to take the trie and the walk from the bound step (an unbound scene shows an empty trie). */
+  nodes: trieShape.nodes.optional(),
+  path: trieShape.path.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -1241,6 +1278,7 @@ export const elementSchemas = [
   prefixGridElementSchema,
   timelineElementSchema,
   bitsElementSchema,
+  trieElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1287,6 +1325,7 @@ export const elementSourceSchemas = [
   prefixGridSourceSchema,
   timelineSourceSchema,
   bitsSourceSchema,
+  trieSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1349,6 +1388,8 @@ export type TimelineElement = ElementOf<"timeline">;
 export type TimelineBar = z.infer<typeof timelineBarSchema>;
 export type BitsElement = ElementOf<"bits">;
 export type BitRow = z.infer<typeof bitRowSchema>;
+export type TrieElement = ElementOf<"trie">;
+export type TrieNode = z.infer<typeof trieNodeSchema>;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

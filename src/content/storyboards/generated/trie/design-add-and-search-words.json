@@ -1,0 +1,259 @@
+{
+  "id": "trie-design-add-and-search-words",
+  "title": "Add and Search Words: A Crossword Helper's Blanks",
+  "concept": "Trie",
+  "category": "dsa",
+  "summary": "A trie of words where a blank square tries every child at once, abandoning branches as they run out.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A crossword helper stores words, then answers patterns with blank squares: a blank (.) can be any letter, every other square must match exactly.",
+    "mapping": [
+      {
+        "real": "A stored word",
+        "abstract": "addWord"
+      },
+      {
+        "real": "A blank square",
+        "abstract": "\".\" in the pattern"
+      },
+      {
+        "real": "Trying every letter for a blank",
+        "abstract": "Branching into every child"
+      }
+    ]
+  },
+  "tags": [
+    "design",
+    "trie",
+    "depth-first search",
+    "string"
+  ],
+  "takeaway": {
+    "pattern": "Trie + backtracking",
+    "summary": "addWord inserts into a trie. search walks the pattern; a \".\" tries every child, and the search succeeds when some branch ends exactly on a word's end.",
+    "timeComplexity": "O(L) per search without dots; more with dots",
+    "spaceComplexity": "O(total letters)",
+    "whenToUse": [
+      "Pattern search with wildcards over a word list",
+      "Any trie lookup with choices"
+    ]
+  },
+  "trace": {
+    "problem": "trie/design-add-and-search-words",
+    "args": [
+      [
+        "WordDictionary",
+        "addWord",
+        "addWord",
+        "search",
+        "search",
+        "search",
+        "search"
+      ],
+      [
+        [],
+        [
+          "bat"
+        ],
+        [
+          "ball"
+        ],
+        [
+          "b..l"
+        ],
+        [
+          "ba"
+        ],
+        [
+          ".at"
+        ],
+        [
+          "c.."
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v21",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T02:47:39.320Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "helper",
+      "narration": "A crossword helper stores words, then answers patterns with blank squares. A blank can be any letter; every other square must match exactly.",
+      "caption": "A crossword helper: words, then patterns with blanks",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "With a list, every pattern is checked against every word. In a trie, known letters follow one branch, and only a blank fans out.",
+      "caption": "Matching a pattern against every word checks them all",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "bat",
+      "narration": "Store bat: b, a, t, with t marked as a word's end.",
+      "caption": "addWord(\"bat\"): b, a, t",
+      "durationInFrames": 180,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "ball",
+      "narration": "Store ball: b and a are shared, then l and l are new.",
+      "caption": "addWord(\"ball\"): b and a are shared; l, l are new",
+      "durationInFrames": 192,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "bdotdotl",
+      "narration": "Pattern b, blank, blank, l. After b, the first blank can only be a. The second blank tries both children, t and l. Under t there's no l, a dead end, but under l there is, and it ends ball: true.",
+      "caption": "b..l: the blanks try t and l; only bal has an l next",
+      "durationInFrames": 528,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "ba",
+      "narration": "Pattern ba: the walk reaches a, but no word ends there. Ba is only a prefix: false.",
+      "caption": "ba: the walk ends on a, which isn't a word's end",
+      "durationInFrames": 240,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "dotat",
+      "narration": "Pattern blank, a, t: the blank tries every child of the root, here just b, then a and t, and t ends bat: true.",
+      "caption": ".at: the blank tries b, then a, t ends bat",
+      "durationInFrames": 324,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "narration": "Pattern c, blank, blank: the root has no c, so there's nothing to branch into: false.",
+      "caption": "c..: no c under the root, nothing to try",
+      "durationInFrames": 229,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Words go in a trie. A search follows known letters along one branch and tries every child at a blank, succeeding when any branch ends on a word.",
+      "caption": "Letters follow one branch; a blank tries every child",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Results",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

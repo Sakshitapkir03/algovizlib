@@ -16,6 +16,7 @@ import type {
   TreeLayout,
 } from "./layout";
 import type { TextMetrics } from "./text";
+import type { TrieShape } from "./trie-layout";
 import type { VideoPalette } from "./theme";
 
 export type SceneContextValue = {
@@ -41,6 +42,8 @@ export type SceneContextValue = {
   pile?: PileLayout;
   /** A search tree's node positions, when the scene has one. */
   search?: SearchLayout;
+  /** A trie's node positions, when the scene has one. */
+  trie?: TrieShape;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

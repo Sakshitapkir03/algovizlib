@@ -593,6 +593,22 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             bitLabels: el.bitLabels ?? step.bits.bitLabels,
           };
         }
+        case "trie": {
+          if (el.nodes && el.path) return { ...el, nodes: el.nodes, path: el.path };
+          if (step && !step.trie) return (noState(el, "nodes", "trie"), el);
+          const tr = step?.trie;
+          // An unbound scene (the intro) shows the empty trie: the root alone.
+          return {
+            ...el,
+            nodes: el.nodes ?? tr?.nodes ?? [{ id: 0, parent: null, letter: "", end: false }],
+            path: el.path ?? tr?.path ?? [0],
+            created: el.created ?? tr?.created,
+            missing: el.missing ?? tr?.missing,
+            branches: el.branches ?? tr?.branches,
+            hits: el.hits ?? tr?.hits,
+            pruned: el.pruned ?? tr?.pruned,
+          };
+        }
         case "hash-map": {
           if (el.entries && el.kind && el.display) return el;
           if (step && !step.map) return (noState(el, "entries", "map"), el);

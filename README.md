@@ -42,7 +42,9 @@ cut), and all five Prefix Sum problems (running totals sitting between the items
 difference of two cells, left and right product passes, and a 2D prefix grid built by inclusion-exclusion), and all five Intervals problems
 (bars on a timeline that sort into lanes, shade their overlaps, and grow as they merge, with a sweep line and a heap of
 shifts for the queries), and all five Bit Manipulation problems (numbers as aligned rows of bits, operations worked
-column by column with the flipped bits marked, shifts sliding, and a visited mask growing one bit per move). The first is
+column by column with the flipped bits marked, shifts sliding, and a visited mask growing one bit per move), and all five Trie problems (a prefix tree growing letter by letter, words
+ending on double rings, missing children marked, wildcards branching, and a word-search board walked together with
+the trie). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach

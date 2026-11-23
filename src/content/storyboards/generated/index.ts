@@ -84,6 +84,11 @@ import treesDfsCountGoodNodesInBinaryTree from "./trees-dfs/count-good-nodes-in-
 import treesDfsMaximumDepthOfBinaryTree from "./trees-dfs/maximum-depth-of-binary-tree.json";
 import treesDfsPathSum from "./trees-dfs/path-sum.json";
 import treesDfsValidateBinarySearchTree from "./trees-dfs/validate-binary-search-tree.json";
+import trieDesignAddAndSearchWords from "./trie/design-add-and-search-words.json";
+import trieImplementTrie from "./trie/implement-trie.json";
+import trieLongestCommonPrefix from "./trie/longest-common-prefix.json";
+import trieReplaceWords from "./trie/replace-words.json";
+import trieWordSearchIi from "./trie/word-search-ii.json";
 import twoPointersContainerWithMostWater from "./two-pointers/container-with-most-water.json";
 import twoPointersThreeSum from "./two-pointers/three-sum.json";
 import twoPointersTrappingRainWater from "./two-pointers/trapping-rain-water.json";
@@ -174,6 +179,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "trees-dfs/maximum-depth-of-binary-tree": loadStoryboard(treesDfsMaximumDepthOfBinaryTree),
   "trees-dfs/path-sum": loadStoryboard(treesDfsPathSum),
   "trees-dfs/validate-binary-search-tree": loadStoryboard(treesDfsValidateBinarySearchTree),
+  "trie/design-add-and-search-words": loadStoryboard(trieDesignAddAndSearchWords),
+  "trie/implement-trie": loadStoryboard(trieImplementTrie),
+  "trie/longest-common-prefix": loadStoryboard(trieLongestCommonPrefix),
+  "trie/replace-words": loadStoryboard(trieReplaceWords),
+  "trie/word-search-ii": loadStoryboard(trieWordSearchIi),
   "two-pointers/container-with-most-water": loadStoryboard(twoPointersContainerWithMostWater),
   "two-pointers/three-sum": loadStoryboard(twoPointersThreeSum),
   "two-pointers/trapping-rain-water": loadStoryboard(twoPointersTrappingRainWater),

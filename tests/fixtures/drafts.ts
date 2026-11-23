@@ -78,7 +78,8 @@ export function buildDraft(problemKey: string): Draft {
     return parent === null || parent === undefined ? 1 : 1 + depthOf(parent);
   };
   const deepTree = (trace.searchTree?.nodes ?? []).some((n) => depthOf(n.id) >= 5);
-  const wideTable = (trace.dp?.rows ?? 1) > 1 || deepTree;
+  // A trie (five levels on a phone) leaves no room for a card under it either.
+  const wideTable = (trace.dp?.rows ?? 1) > 1 || deepTree || trace.steps.some((st) => st.trie);
   const answerCard: ElementSource = {
     id: "result",
     type: "result",
@@ -93,7 +94,8 @@ export function buildDraft(problemKey: string): Draft {
     // Heap scenes mark the input with a highlight (no pointer), and the answer scene leaves the input out.
     const heapScene = step.heaps !== undefined;
     // Stack scenes mark the input with a highlight too: pointers would sit where the resolve arcs go.
-    const pileScene = step.pile !== undefined;
+    // Trie scenes too: a pointer under the input row costs the height a deep trie needs on a phone.
+    const pileScene = step.pile !== undefined || step.trie !== undefined;
     // Search scenes show the tree and the answer being built; only a board (a grid) stays beside the tree.
     const searchScene = step.explore !== undefined && rowType !== "grid";
     // A recursion-tree step (Climbing Stairs' plain recursion) shows only the tree.
@@ -169,6 +171,7 @@ export function buildDraft(problemKey: string): Draft {
         label: row.name,
         enterAt: 0,
       } as ElementSource);
+    if (step.trie) elements.push({ id: "trie", type: "trie", enterAt: 0 } as ElementSource);
     if (step.bits) elements.push({ id: "bits", type: "bits", enterAt: 0 } as ElementSource);
     if (step.timeline) elements.push({ id: "timeline", type: "timeline", enterAt: 0 } as ElementSource);
     if (step.prefixGrid) elements.push({ id: "grid", type: "prefix-grid", enterAt: 0 } as ElementSource);

@@ -669,6 +669,32 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one bits panel" });
           break;
         }
+        case "trie": {
+          const ids = new Set(el.nodes.map((n) => n.id));
+          const root = el.nodes[0];
+          if (root.id !== 0 || root.parent !== null || ids.size !== el.nodes.length)
+            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "node 0 is the root (no parent), and ids don't repeat" });
+          if (el.nodes.some((n) => n.parent !== null && (!ids.has(n.parent) || n.letter.length !== 1)))
+            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "every other node has one letter and a parent in the trie" });
+          const siblings = el.nodes.map((n) => `${n.parent}:${n.letter}`);
+          if (new Set(siblings).size !== siblings.length)
+            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "two children of one node can't share a letter" });
+          const parentOf = new Map(el.nodes.map((n) => [n.id, n.parent]));
+          if (el.path[0] !== 0 || el.path.some((id, k) => !ids.has(id) || (k > 0 && parentOf.get(id) !== el.path[k - 1])))
+            ctx.addIssue({ code: "custom", path: [...path, "path"], message: "the path runs from the root, child by child" });
+          for (const [field, list] of [
+            ["created", el.created],
+            ["branches", el.branches],
+            ["hits", el.hits],
+          ] as const)
+            if ((list ?? []).some((id) => !ids.has(id)))
+              ctx.addIssue({ code: "custom", path: [...path, field], message: `${field} must be nodes in the trie` });
+          if (el.missing && (!ids.has(el.missing.parent) || siblings.includes(`${el.missing.parent}:${el.missing.letter}`)))
+            ctx.addIssue({ code: "custom", path: [...path, "missing"], message: "a missing child's parent is in the trie, and the child really isn't" });
+          if (scene.elements.filter((e) => e.type === "trie").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one trie" });
+          break;
+        }
         case "hash-map": {
           const keys = el.entries.map((e) => e.key);
           if (new Set(keys).size !== keys.length)

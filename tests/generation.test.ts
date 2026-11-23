@@ -193,7 +193,7 @@ describe("runGeneration", () => {
 
   it("skips problems that have no trace", async () => {
     const t = deps(fakeModel([]));
-    const summary = await runGeneration([target("trie/implement-trie")], OPTIONS, t.deps);
+    const summary = await runGeneration([target("design/lfu-cache")], OPTIONS, t.deps);
     expect(summary.rows[0]).toMatchObject({ status: "skipped", requests: 0 });
     expect(summary.rows[0].detail).toMatch(/no trace/);
   });
@@ -410,6 +410,11 @@ describe("selectTargets", () => {
       "heap/top-k-frequent-elements",
       "heap/k-closest-points-to-origin",
       "heap/find-median-from-data-stream",
+      "trie/longest-common-prefix",
+      "trie/implement-trie",
+      "trie/design-add-and-search-words",
+      "trie/replace-words",
+      "trie/word-search-ii",
       "backtracking/sum-of-all-subset-xor-totals",
       "backtracking/subsets",
       "backtracking/permutations",
@@ -614,7 +619,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v20");
+    expect(currentPrompts.version).toBe("storyboard-v21");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

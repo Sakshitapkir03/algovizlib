@@ -120,14 +120,17 @@ function context(key: string): GenerationContext {
 }
 
 describe("interval storyboards", () => {
-  it("Minimum Interval's answers panel hides the found count; every other partial keeps it", () => {
+  it("Minimum Interval's and the trie videos' answer panels hide the found count; every other partial keeps it", () => {
     const partials = storyboards.flatMap((sb) =>
       sb.scenes.flatMap((scene) =>
         scene.elements.filter((e) => e.type === "partial").map((e) => [sb.id, e] as const),
       ),
     );
     for (const [id, el] of partials)
-      expect(el.type === "partial" && el.showFound, id).toBe(!id.includes("minimum-interval"));
+      // The answers being built are the whole answer here (Minimum Interval, the trie videos): no "found" row.
+      expect(el.type === "partial" && el.showFound, id).toBe(
+        !id.includes("minimum-interval") && !id.startsWith("trie-"),
+      );
     // The default leaves existing panels as they were, and a hidden found row takes no room.
     const base = { id: "p", type: "partial", items: ["a"], found: [] };
     expect(partialElementSchema.parse(base).showFound).toBe(true);

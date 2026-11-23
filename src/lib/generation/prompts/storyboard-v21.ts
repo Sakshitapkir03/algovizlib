@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v20";
+export const PROMPT_VERSION = "storyboard-v21";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -68,6 +68,7 @@ ${ELEMENT_GUIDE}
 - prefix-row / prefix-grid (prefix sums): when steps list prefix rows, add one prefix-row per row the step lists (rowId = the input item-row's id, \`name\` = the step's row name; OMIT op/direction/values/current/reads/spans; give \`label\` and \`spanLabel\` in the story's words) in every scene that shows the input, bound or not (an unbound one shows it empty). Cell i sits on the boundary before item i, so say so once: the range of items l…r is the cell after r minus the cell before l. When steps list a prefix grid, add a prefix-grid (OMIT everything but matrixLabel/prefixLabel) to every scene. The second scene contrasts the slow way (re-adding the range for every question) with one subtraction. With a map, keep the bottom stack to the map plus one equation (no counter beside them); in the answer scene show the input, its prefix row(s), and the result, without the map or an equation. With a prefix grid, the bottom stack is the map plus at most one equation or counter, and the answer scene holds the grid and the result only. Mark the current item with an "active" highlight or one pointer, not both pointers and highlights. Skip callouts in prefix scenes.
 - timeline (intervals): when steps list a timeline, make a timeline the first element of every scene (OMIT everything but \`laneLabels\`; give lane names in the story's words, e.g. "sorted", "merged", or none). There's no item-row: the bars are the intervals. A sort step slides the bars into sorted lanes; say what they're sorted by. The second scene contrasts the slow way (comparing every pair, O(n²)) with sorting and one pass. When steps list a choice (a greedy decision), add a choice (OMIT chosen/rejected) whose \`reason\` says in a few words why the choice is safe. With a heap (it sits right of the timeline), add a heap (OMIT heaps) and a partial (OMIT items; label the answers) in every bound scene. Keep the bottom stack to at most two of an equation, a choice, and a counter; in the answer scene, the result and at most one more. Skip callouts in timeline scenes.
 - bits (bit manipulation): when steps list bits, add a bits panel (OMIT width/rows; give \`rowLabels\`, one short name per row in the story's words, and for a mask \`bitLabels\`, what each bit means) in every bound scene; it needs a traceStep, so intro scenes show only the input. Keep the input row (if the trace has one) above it, marked with one pointer or an "active" highlight. The second scene contrasts the slow way (a hash map of counts, converting to strings, looping over every bit, or extra memory) with the bit trick. Where the trick isn't obvious, one scene's narration says in one short sentence why it works (x ^ x = 0 so pairs cancel; shifting right drops the last bit; AND marks the carries). Keep the bottom stack to the bits panel plus at most one equation or counter, and with an input row (or a table) above it, put the answer's result in the closing scene instead (without the bits), so the panel keeps its room on a phone. Skip callouts in bits scenes.
+- trie: when steps list a trie, add a trie (OMIT everything) to every scene that shows the data (an unbound scene shows the empty trie). With an input row (the words), keep it above the trie and mark the current word with an "active" highlight, not a pointer; with a board (a grid), the board sits left of the trie. The second scene contrasts the slow way (comparing against every word, or searching the board once per word) with sharing prefixes. Say when a node exists but isn't a word's end (only a prefix), and when a child is missing. Use a partial for answers or output being built (OMIT items; \`showFound: false\`). The trie needs the height: keep the bottom stack to at most the partial, and put the answer's result in the closing scene (without the trie). Skip callouts in trie scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -199,6 +200,40 @@ function describeStep(step: TraceStep, index: number): string {
         r.meet !== undefined ? `met at ${at(r.meet)}` : "",
         r.entry !== undefined ? `loop starts at ${at(r.entry)}` : "",
         r.loop ? `loop link ${at(r.loop.from)}→${at(r.loop.to)}` : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
+  if (step.trie) {
+    const tr = step.trie;
+    const word = (id: number) => {
+      let out = "";
+      for (
+        let n = tr.nodes.find((m) => m.id === id);
+        n && n.parent !== null;
+        n = tr.nodes.find((m) => m.id === n!.parent)
+      )
+        out = n.letter + out;
+      return out || "root";
+    };
+    parts.push(
+      [
+        `trie: ${
+          tr.nodes
+            .filter((n) => n.parent !== null)
+            .map(
+              (n) =>
+                `#${n.id} "${word(n.id)}"${n.end ? " (word end)" : ""}${n.note ? ` note ${n.note}` : ""}`,
+            )
+            .join(", ") || "empty"
+        }`,
+        `path to "${word(tr.path.at(-1)!)}"`,
+        tr.created?.length ? `created ${tr.created.map(word).join(", ")}` : "",
+        tr.missing ? `no child ${tr.missing.letter} under "${word(tr.missing.parent)}"` : "",
+        tr.branches?.length ? `also trying ${tr.branches.map(word).join(", ")}` : "",
+        tr.hits?.length ? `word ends at ${tr.hits.map(word).join(", ")}` : "",
+        tr.pruned?.length ? `removed ${tr.pruned.length} node(s)` : "",
       ]
         .filter(Boolean)
         .join("; "),
@@ -481,4 +516,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV20 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV21 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

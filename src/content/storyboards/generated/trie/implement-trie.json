@@ -1,0 +1,236 @@
+{
+  "id": "trie-implement-trie",
+  "title": "Implement Trie: A Wall of Mail Cubbies",
+  "concept": "Trie",
+  "category": "dsa",
+  "summary": "Each letter opens into a smaller cubby; a flag marks where a full name ends, so a prefix and a word are told apart.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A mailroom sorts by name, one letter per level of cubbies: each cubby opens into smaller cubbies for the next letter, and a flag marks a cubby where a full name ends.",
+    "mapping": [
+      {
+        "real": "A cubby",
+        "abstract": "A trie node"
+      },
+      {
+        "real": "The flag",
+        "abstract": "The end-of-word mark"
+      },
+      {
+        "real": "Looking up a name",
+        "abstract": "search"
+      },
+      {
+        "real": "Checking any name begins this way",
+        "abstract": "startsWith"
+      }
+    ]
+  },
+  "tags": [
+    "design",
+    "trie",
+    "string"
+  ],
+  "takeaway": {
+    "pattern": "Trie",
+    "summary": "Insert walks down creating missing children and marks the end. search walks the word and needs the end mark; startsWith only needs the walk to succeed.",
+    "timeComplexity": "O(word length) per operation",
+    "spaceComplexity": "O(total letters)",
+    "whenToUse": [
+      "Exact and prefix lookups over many words",
+      "Autocomplete, spell checkers"
+    ]
+  },
+  "trace": {
+    "problem": "trie/implement-trie",
+    "args": [
+      [
+        "Trie",
+        "insert",
+        "insert",
+        "search",
+        "search",
+        "startsWith"
+      ],
+      [
+        [],
+        [
+          "cart"
+        ],
+        [
+          "cab"
+        ],
+        [
+          "car"
+        ],
+        [
+          "cab"
+        ],
+        [
+          "cap"
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v21",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T02:47:39.327Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "room",
+      "narration": "A mailroom sorts names one letter per level: each cubby opens into smaller cubbies for the next letter, and a flag marks where a full name ends.",
+      "caption": "A mailroom sorting names one letter per level",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "With a plain list, every lookup compares against every stored name. In cubbies, a lookup only follows its own letters, however many names are stored.",
+      "caption": "Checking a name against every stored name is slow",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "cart",
+      "narration": "Insert cart: there are no cubbies yet, so c, a, r, and t are created, and the flag goes on t.",
+      "caption": "insert(\"cart\"): four new cubbies, flag on t",
+      "durationInFrames": 288,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "cab",
+      "narration": "Insert cab: c and a already exist, so only b is new, with its own flag.",
+      "caption": "insert(\"cab\"): c and a exist, only b is new",
+      "durationInFrames": 229,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "car",
+      "narration": "Search for car: c, a, and r are all there, but r has no flag. Car is only the start of cart, not a stored name: false.",
+      "caption": "search(\"car\"): the cubbies exist, but no flag: false",
+      "durationInFrames": 360,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "cab2",
+      "narration": "Search for cab: the walk ends on b, which has a flag: true.",
+      "caption": "search(\"cab\"): the walk ends on a flag: true",
+      "durationInFrames": 192,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "cap",
+      "narration": "Does any name start with cap? Under c a there's no p cubby, so the walk stops at once: false.",
+      "caption": "startsWith(\"cap\"): no p under \"ca\": false",
+      "durationInFrames": 276,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "answers",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Cubbies are trie nodes and flags are end marks. Insert creates missing children, search needs the flag, and startsWith only needs the walk. Each takes time proportional to the word, not the word list.",
+      "caption": "insert, search, startsWith: one walk each",
+      "durationInFrames": 444,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Results",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

@@ -141,4 +141,7 @@ export const TEXT = {
   bitValue: 32,
   bitHeader: 16,
   bitName: 21,
+  /** A trie node's letter, and the note beside a word's end ("re"). */
+  trieLetter: 30,
+  trieNote: 16,
 } as const;

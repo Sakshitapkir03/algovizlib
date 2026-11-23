@@ -14,6 +14,7 @@ import { greedyProblems } from "./fixtures/greedy-fit";
 import { prefixProblems } from "./fixtures/prefix-fit";
 import { raceProblems } from "./fixtures/race-fit";
 import { timelineProblems } from "./fixtures/timeline-fit";
+import { trieProblems } from "./fixtures/trie-fit";
 import { backtrackProblems } from "./fixtures/backtrack-fit";
 import { stackProblems } from "./fixtures/stack-fit";
 import { heapProblems } from "./fixtures/heap-fit";
@@ -94,6 +95,7 @@ describe("video text at phone width", () => {
         "sorted-region",
         "staircase",
         "timeline",
+        "trie",
         "split-tree",
         "stack",
         "window",
@@ -148,6 +150,16 @@ describe("video text at phone width", () => {
     const problems = storyboards.flatMap((storyboard) =>
       storyboard.scenes.flatMap((scene) =>
         bitsProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+      ),
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("tries fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        trieProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
       ),
     );
     expect(problems).toEqual([]);
@@ -438,6 +450,9 @@ describe("video text at phone width", () => {
           }
           case "race":
             for (const problem of raceProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "trie":
+            for (const problem of trieProblems(scene.elements, phone)) fail(problem);
             break;
           case "bits":
             for (const problem of bitsProblems(scene.elements, phone)) fail(problem);

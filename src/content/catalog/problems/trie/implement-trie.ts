@@ -16,6 +16,17 @@ Design a class \`Trie\`:
 - \`startsWith(prefix)\` returns \`true\` if at least one stored word begins with \`prefix\` (a stored word counts as a prefix of itself), and \`false\` otherwise.`,
   examples: [
     {
+      input: 'Trie, insert("cart"), insert("cab"), search("car"), search("cab"), startsWith("cap")',
+      output: "null, null, null, false, true, false",
+      explanation:
+        '"car" is a prefix of "cart" but was never inserted. "cab" was. No word continues "ca" with p.',
+      args: [
+        ["Trie", "insert", "insert", "search", "search", "startsWith"],
+        [[], ["cart"], ["cab"], ["car"], ["cab"], ["cap"]],
+      ],
+      expected: [null, null, null, false, true, false],
+    },
+    {
       input:
         'Trie, insert("cart"), search("car"), search("cart"), startsWith("car"), insert("car"), search("car")',
       output: "null, null, false, true, true, null, true",

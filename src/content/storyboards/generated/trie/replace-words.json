@@ -1,0 +1,253 @@
+{
+  "id": "trie-replace-words",
+  "title": "Replace Words: A Stenographer's Shorthand",
+  "concept": "Trie",
+  "category": "dsa",
+  "summary": "Each word walks a trie of stems and stops at the first stem that ends, which is the shortest one.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A stenographer writes each word as its shortest stem from a list (re, for, form, un) and words with no stem in full: \"they reran the format unchanged\".",
+    "mapping": [
+      {
+        "real": "A shorthand stem",
+        "abstract": "A root"
+      },
+      {
+        "real": "The stem list as branches",
+        "abstract": "A trie of roots"
+      },
+      {
+        "real": "The first stem reached",
+        "abstract": "The shortest root"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "trie",
+    "hash set"
+  ],
+  "takeaway": {
+    "pattern": "Trie",
+    "summary": "Put the roots in a trie. Each word walks it and stops at the first node that ends a root (the shortest root); a missing child means the word stays as it is.",
+    "timeComplexity": "O(total letters)",
+    "spaceComplexity": "O(total root letters)",
+    "whenToUse": [
+      "Shortest or longest matching prefix",
+      "Replacing words by dictionary stems"
+    ]
+  },
+  "trace": {
+    "problem": "trie/replace-words",
+    "args": [
+      [
+        "re",
+        "for",
+        "form",
+        "un"
+      ],
+      "they reran the format unchanged"
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v21",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T02:47:59.020Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "steno",
+      "narration": "A stenographer has the stems re, for, form, and un. Each word becomes its shortest stem, or stays whole if none fits: they reran the format unchanged.",
+      "caption": "Stems re, for, form, un: shorten \"they reran the format unchanged\"",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "sentence",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Sentence",
+          "value": "they reran the format unchanged",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Testing every stem against every word repeats the same letters over and over. A trie checks all stems at once, one letter at a time.",
+      "caption": "Checking every stem against every word repeats the work",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "sentence",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Sentence",
+          "value": "they reran the format unchanged",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "roots",
+      "narration": "Put the stems in a trie. For and form share f, o, r, and each stem's last letter is marked.",
+      "caption": "The stems in a trie: for and form share f, o, r",
+      "durationInFrames": 276,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "shorthand",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "they",
+      "narration": "They: the root has no t, so no stem fits and the word stays whole.",
+      "caption": "they: no t at the root, so it stays whole",
+      "durationInFrames": 216,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "shorthand",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "reran",
+      "narration": "Reran walks r, e, and e ends a stem: write re.",
+      "caption": "reran: r, e ends a stem: re",
+      "durationInFrames": 169,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "shorthand",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "the",
+      "narration": "The: again no t at the root, so it stays whole.",
+      "caption": "the: no t again, stays whole",
+      "durationInFrames": 169,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "shorthand",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "format",
+      "narration": "Format walks f, o, r, and r already ends a stem. The walk stops at the first stem it reaches, so the shortest one wins: for, not form.",
+      "caption": "format stops at for, the first stem it reaches",
+      "durationInFrames": 372,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "shorthand",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "unchanged",
+      "narration": "Unchanged walks u, n, which ends a stem: un.",
+      "caption": "unchanged: u, n ends a stem: un",
+      "durationInFrames": 144,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "shorthand",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Stems are roots in a trie. Each word walks it and stops at the first root's end, the shortest root, or stays whole when a letter is missing.",
+      "caption": "Walk each word; stop at the first root's end",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Shortened sentence",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

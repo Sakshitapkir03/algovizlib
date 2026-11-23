@@ -1,0 +1,302 @@
+{
+  "id": "trie-word-search-ii",
+  "title": "Word Search II: One Walk for Every Word",
+  "concept": "Trie",
+  "category": "dsa",
+  "summary": "Search the board once, following the board and a trie of all the words together, and prune what's been found.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "matrix",
+    "trie",
+    "backtracking",
+    "depth-first search"
+  ],
+  "takeaway": {
+    "pattern": "Trie + backtracking",
+    "summary": "Build one trie of all the words. From each cell, walk the board only along letters the current trie node has as children; collect words at their ends, and remove trie branches once they're empty.",
+    "timeComplexity": "O(cells × 4^L) at worst, far less with pruning",
+    "spaceComplexity": "O(total letters)",
+    "whenToUse": [
+      "Finding many words on one board",
+      "Searches that share prefixes"
+    ]
+  },
+  "trace": {
+    "problem": "trie/word-search-ii",
+    "args": [
+      [
+        [
+          "c",
+          "a",
+          "t"
+        ],
+        [
+          "o",
+          "r",
+          "e"
+        ]
+      ],
+      [
+        "cat",
+        "car",
+        "care",
+        "cot"
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v21",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T02:47:39.332Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "board",
+      "narration": "A 2 by 3 board reads c a t over o r e. Which of cat, car, care, and cot can be traced by stepping to neighboring cells?",
+      "caption": "Board c a t / o r e: find cat, car, care, cot",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Searching the board once per word walks the same c, a paths again and again. Instead, put every word in one trie and walk the board just once.",
+      "caption": "Searching the board once per word repeats the same paths",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "trie",
+      "narration": "All four words go into one trie: cat, car, and care share c a, and cot shares just the c.",
+      "caption": "One trie: cat, car, care share c, a; cot shares c",
+      "durationInFrames": 276,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "found",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "c",
+      "narration": "From the top-left c: c is a child of the root, so the walk steps onto it.",
+      "caption": "Start at c: it's a child of the root",
+      "durationInFrames": 240,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "found",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "co",
+      "narration": "Down to o: c o is in the trie, waiting for a t, but the only free neighbor is r, and c o has no r. Dead end after one letter, so turn back.",
+      "caption": "c, o: no t touches o, and r isn't a child of co",
+      "durationInFrames": 444,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "found",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "car",
+      "narration": "Back at c, step right to a, then down to r: c a r ends a word. Collect car, and clear its mark so it isn't found twice.",
+      "caption": "c, a, r ends car: collect it",
+      "durationInFrames": 372,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "found",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "care",
+      "narration": "From r, step right to e: care. Collect it too.",
+      "caption": "r, e ends care: collect it",
+      "durationInFrames": 156,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "found",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "cat",
+      "narration": "Walking back, the r and e branches are now empty, so they're removed from the trie. From a, step right to t: cat.",
+      "caption": "Back up, then a, t: cat. Emptied branches are removed",
+      "durationInFrames": 312,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "found",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "narration": "No other cell is a c, so no other walk starts. Only cot is left in the trie, and it has no path on the board.",
+      "caption": "No other cell starts a word: cot has no path",
+      "durationInFrames": 348,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "found",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Put every word in one trie and walk the board once, stepping only onto letters the trie allows. Found words are cleared and empty branches pruned.",
+      "caption": "One trie, one walk: the board and the trie move together",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "board",
+          "enterAt": 0,
+          "type": "grid"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Words found",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

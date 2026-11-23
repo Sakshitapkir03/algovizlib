@@ -164,6 +164,27 @@ export type TraceStep = {
   timeline?: TraceTimelineStep;
   /** Numbers as rows of bits with this step's operation. See `TraceBits`. */
   bits?: TraceBits;
+  /** A trie after this step, with the walk through it. See `TraceTrie`. */
+  trie?: TraceTrie;
+};
+
+/** A trie node: id 0 is the root (letter ""); `end` marks a word ending here; `note` is data it holds ("re", "cat"). */
+export type TraceTrieNode = { id: number; parent: number | null; letter: string; end: boolean; note?: string };
+
+/**
+ * A trie as it stands after a step (nodes in creation order; ids never change), and the walk: `path` from the root to
+ * the current node, nodes `created` this step, a child that was looked for and isn't there (`missing`), other nodes a
+ * wildcard is trying at the same depth (`branches`), nodes that ended a word this step (`hits`), and nodes removed this
+ * step (`pruned`, drawn fading out; no longer in `nodes`).
+ */
+export type TraceTrie = {
+  nodes: TraceTrieNode[];
+  path: number[];
+  created?: number[];
+  missing?: { parent: number; letter: string };
+  branches?: number[];
+  hits?: number[];
+  pruned?: TraceTrieNode[];
 };
 
 /**

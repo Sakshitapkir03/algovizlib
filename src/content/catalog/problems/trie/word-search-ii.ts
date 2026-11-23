@@ -11,6 +11,20 @@ export const wordSearchII = defineProblem({
 Return every word from \`words\` that can be traced on the board, in any order. Return an empty array if none can.`,
   examples: [
     {
+      input: 'board = [["c","a","t"],["o","r","e"]], words = ["cat", "car", "care", "cot"]',
+      output: '["car", "care", "cat"]',
+      explanation:
+        '"car" and "care" go c → a → r (→ e); "cat" goes c → a → t. "cot" reaches o, but no t touches it. The order is the order the search finds them.',
+      args: [
+        [
+          ["c", "a", "t"],
+          ["o", "r", "e"],
+        ],
+        ["cat", "car", "care", "cot"],
+      ],
+      expected: ["car", "care", "cat"],
+    },
+    {
       input:
         'board = [["c","a","t","s"],["o","r","e","a"],["d","e","n","p"]], words = ["cat", "care", "code", "rent", "sap", "dog"]',
       output: '["cat", "care", "code", "sap"]',

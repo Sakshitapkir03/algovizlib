@@ -1,0 +1,317 @@
+{
+  "id": "trie-longest-common-prefix",
+  "title": "Longest Common Prefix: Where the River First Splits",
+  "concept": "Trie",
+  "category": "dsa",
+  "summary": "Put every word in a trie; the common prefix is the stretch from the root before the first fork.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "Three boats named trap, tram, and tree sail down a river delta, one channel per letter. They travel together until the river first splits. How far do all three go together?",
+    "mapping": [
+      {
+        "real": "A channel",
+        "abstract": "A trie edge (one letter)"
+      },
+      {
+        "real": "Boats sharing a channel",
+        "abstract": "Words sharing a prefix"
+      },
+      {
+        "real": "The first fork",
+        "abstract": "A node with two children (or a word's end)"
+      }
+    ]
+  },
+  "tags": [
+    "string",
+    "trie"
+  ],
+  "takeaway": {
+    "pattern": "Trie",
+    "summary": "Insert every word; walk down from the root while the node has exactly one child and no word ends there. The letters walked are the longest common prefix.",
+    "timeComplexity": "O(total letters)",
+    "spaceComplexity": "O(total letters)",
+    "whenToUse": [
+      "Shared prefixes across many words",
+      "Prefix questions about a whole word list"
+    ]
+  },
+  "trace": {
+    "problem": "trie/longest-common-prefix",
+    "args": [
+      [
+        "trap",
+        "tram",
+        "tree"
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v21",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T02:47:39.329Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "delta",
+      "narration": "Three boats named trap, tram, and tree sail down a river delta, one channel per letter. How far do all three travel together before the river first splits?",
+      "caption": "Boats trap, tram, tree on one river: how far together?",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could line the words up and compare them column by column, rechecking every word at every letter. A trie keeps shared letters in one place: the common prefix is simply where it first branches.",
+      "caption": "Comparing every word letter by letter repeats the work",
+      "durationInFrames": 456,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "trap",
+      "narration": "The first boat, trap, carves a channel letter by letter: t, r, a, p. The last one is marked as a word's end.",
+      "caption": "trap carves the first channel: t, r, a, p",
+      "durationInFrames": 312,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "words",
+          "state": "active"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "tram",
+      "narration": "Tram follows the same channels for t, r, and a, so only the m is new.",
+      "caption": "tram shares t, r, a: only m is new",
+      "durationInFrames": 229,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "words",
+          "state": "active"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "tree",
+      "narration": "Tree shares t and r, then turns off into a new channel: e, then e.",
+      "caption": "tree shares t, r, then splits off with e, e",
+      "durationInFrames": 216,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "act",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "words",
+          "state": "active"
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        }
+      ]
+    },
+    {
+      "id": "t",
+      "narration": "Now sail from the source. There's only one channel, t, and no word ends here, so every word starts with t.",
+      "caption": "From the source, one channel: t. Every word starts with t",
+      "durationInFrames": 288,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "prefix",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "r",
+      "narration": "After t there's again only one channel, r. The prefix is t r.",
+      "caption": "After t, one channel again: r",
+      "durationInFrames": 192,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "prefix",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "fork",
+      "narration": "After r the river splits: a for trap and tram, e for tree. The words disagree on the next letter, so the shared stretch ends here: t r.",
+      "caption": "After r the river splits into a and e: stop at \"tr\"",
+      "durationInFrames": 372,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "words",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "boat 1",
+            "boat 2",
+            "boat 3"
+          ]
+        },
+        {
+          "id": "trie",
+          "enterAt": 0,
+          "type": "trie"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "partial",
+          "label": "prefix",
+          "foundLabel": "found",
+          "showFound": false
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Boats are words and channels are trie edges. Insert every word, then walk from the root while there's exactly one child and no word ends. The letters walked are the answer.",
+      "caption": "Walk the trie until it branches or a word ends",
+      "durationInFrames": 408,
+      "elements": [
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Common prefix",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

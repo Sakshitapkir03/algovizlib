@@ -14,6 +14,7 @@ import type {
   RaceElement,
   PointerElement,
   TimelineElement,
+  TrieElement,
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
@@ -21,6 +22,7 @@ import { layoutBits } from "./bits-layout";
 import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
 import { prefixBand } from "./prefix-layout";
 import { layoutTimeline, TIMELINE_SPLIT } from "./timeline-layout";
+import { layoutTrie, type TrieShape } from "./trie-layout";
 import { TEXT, textMetrics, type TextMetrics } from "./text";
 
 /**
@@ -241,6 +243,8 @@ export type SceneLayout = {
   dp?: DpLayout;
   pile?: PileLayout;
   search?: SearchLayout;
+  /** A trie's geometry, when the scene has one. */
+  trie?: TrieShape;
 };
 
 /** Heights the layout reserves, from the same font sizes the primitives use. */
@@ -1075,6 +1079,7 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     first.heapOverflow ?? 0,
     first.dpOverflow ?? 0,
     first.timelineOverflow ?? 0,
+    first.trieOverflow ?? 0,
   );
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
@@ -1091,6 +1096,7 @@ function layoutWith(
   heapOverflow?: number;
   dpOverflow?: number;
   timelineOverflow?: number;
+  trieOverflow?: number;
 } {
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
@@ -1133,12 +1139,14 @@ function layoutWith(
   const gridElement = elements.find((el): el is GridElement => el.type === "grid");
   const graphElement = elements.find((el): el is GraphElement => el.type === "graph");
   const searchElement = elements.find((el): el is SearchTreeElement => el.type === "search-tree");
+  const trieElement = elements.find((el): el is TrieElement => el.type === "trie");
   if (gridElement)
     ({ grid, overflow: searchOverflow } = layoutGrid(
       gridElement,
       t,
       bottomTop,
-      searchElement
+      // A board beside a search tree or a trie takes the left of the stage.
+      searchElement || trieElement
         ? { left: GRID.margin, right: GRID.margin + (VIDEO_WIDTH - 2 * GRID.margin) * boardShare(t) }
         : undefined,
     ));
@@ -1242,8 +1250,8 @@ function layoutWith(
       strip = above;
       top = captionBottom(t) + Math.max(sizes.tagRoom(t) + 4, above);
       cardHeight = Math.max(HEAP_ROW_CARD, Math.min(CARD_HEIGHT, lowest - top));
-    } else if (single && (heapElement || dpElement || searchTreeElement)) {
-      // With a heap, a table, or a search tree below, the input is a short strip of cards under the caption.
+    } else if (single && (heapElement || dpElement || searchTreeElement || trieElement)) {
+      // With a heap, a table, a search tree, or a trie below, the input is a short strip of cards under the caption.
       cardHeight = HEAP_ROW_CARD;
       top = captionBottom(t) + sizes.tagRoom(t) + 4;
     } else if (single) {
@@ -1319,6 +1327,23 @@ function layoutWith(
     const top = row ? row.pointerTop + pointerRoom(elements, row.rowId, t) + 6 : captionBottom(t) + 8;
     ({ dp, overflow: dpOverflow } = layoutDp(dpElement, elements, t, top, bottomTop));
   }
+  let trie: TrieShape | undefined;
+  let trieOverflow: number | undefined;
+  if (trieElement) {
+    // Under the input row (and its pointers) if there is one, else under the caption; right of a board.
+    const row = Object.values(layouts)[0];
+    const top = row ? row.pointerTop + pointerRoom(elements, row.rowId, t) + 6 : captionBottom(t) + 8;
+    const left = gridElement
+      ? GRID.margin + (VIDEO_WIDTH - 2 * GRID.margin) * boardShare(t) + SEARCH.gap
+      : GRID.margin;
+    trie = layoutTrie(trieElement, t, {
+      x: left,
+      y: top,
+      w: VIDEO_WIDTH - GRID.margin - left,
+      h: bottomTop - 12 - top,
+    });
+    trieOverflow = trie.overflow || undefined;
+  }
   let heapPanels: HeapPanel[] | undefined;
   let heapOverflow: number | undefined;
   // A timeline sits under the caption; a heap with it takes the right of the stage (only then: other heap scenes keep
@@ -1353,6 +1378,8 @@ function layoutWith(
     dp,
     dpOverflow,
     timelineOverflow: timeline?.overflow || undefined,
+    trie,
+    trieOverflow,
     pile,
     search,
     searchOverflow: Math.max(searchOverflow ?? 0, treeSearchOverflow ?? 0) || undefined,
