@@ -15,8 +15,9 @@ const eslintConfig = defineConfig([
   },
   {
     // Generation code (AI SDK, API keys, file writes) runs only in scripts/ and tests. Never in the app bundle.
+    // The tutor (src/lib/tutor, server-only) is the one runtime use of the AI SDK; it still can't import the generator.
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/lib/generation/**"],
+    ignores: ["src/lib/generation/**", "src/lib/tutor/**"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -31,6 +32,22 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    files: ["src/lib/tutor/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/lib/generation", "@/lib/generation/*", "**/lib/generation/*"],
+              message: "The tutor runs in the app: it can't use the offline storyboard generator.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // .claude/worktrees: Claude Code worktrees, each a full checkout of the repo.
   globalIgnores([
     ".next/**",
@@ -39,6 +56,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "src/generated/**",
     ".claude/worktrees/**",
+    // Gitignored scratch space (generation cache, drafts, local check scripts).
+    ".cache/**",
   ]),
 ]);
 

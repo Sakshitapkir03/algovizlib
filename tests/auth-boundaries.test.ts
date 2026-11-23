@@ -20,6 +20,10 @@ const SERVER_ONLY = [
   "@/lib/auth/tokens",
   "@/lib/progress/server",
   "@/lib/progress/api-deps",
+  "@/lib/tutor/model",
+  "@/lib/tutor/deps",
+  "@/lib/tutor/service",
+  "@/lib/tutor/usage",
 ];
 
 function sources(dir: string, out: string[] = []): string[] {
@@ -60,6 +64,8 @@ describe("server code stays on the server", () => {
       "lib/auth/deps.ts",
       "lib/auth/password.ts",
       "lib/progress/api-deps.ts",
+      "lib/tutor/model.ts",
+      "lib/tutor/deps.ts",
     ])
       expect(readFileSync(path.join(src, file), "utf8"), file).toMatch(/^import "server-only";/m);
   });

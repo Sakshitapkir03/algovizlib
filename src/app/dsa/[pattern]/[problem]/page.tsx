@@ -1,3 +1,4 @@
+import { readTutorConfig } from "@/lib/tutor/config";
 import { ArrowLeft, ArrowRight, ExternalLink, Film } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -143,6 +144,7 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
                       storyboard={storyboard}
                       showTakeaway={false}
                       problemKey={progressKey(problem)}
+                      askEnabled={readTutorConfig().enabled}
                     />
                     <p className="font-mono text-[11px] text-muted-foreground">
                       space play/pause · ←/→ seek 5s · shift+←/→ change scene · f fullscreen

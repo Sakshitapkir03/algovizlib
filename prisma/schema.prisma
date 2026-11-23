@@ -119,3 +119,13 @@ model Progress {
 
   @@id([userId, problemKey])
 }
+
+/// Answers to "Ask about this step"'s suggested questions, keyed by a hash of the prompt version, model, problem,
+/// scene, and question: the same suggested question on the same step is answered once. Typed questions aren't cached,
+/// and nothing here identifies a user.
+model AskCache {
+  key       String   @id
+  answer    String
+  createdAt DateTime @default(now())
+}
+

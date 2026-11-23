@@ -260,6 +260,8 @@ describe("generation code stays out of the app", () => {
       for (const name of readdirSync(dir)) {
         const file = path.join(dir, name);
         if (file.includes(`${path.sep}lib${path.sep}generation`)) continue;
+        // The tutor is the one runtime use of the AI SDK (server-only); it's checked separately below.
+        if (file.includes(`${path.sep}lib${path.sep}tutor`)) continue;
         if (statSync(file).isDirectory()) walk(file);
         else if (
           /\.(ts|tsx)$/.test(name) &&
@@ -270,6 +272,16 @@ describe("generation code stays out of the app", () => {
     };
     walk(path.join(process.cwd(), "src"));
     expect(offenders).toEqual([]);
+  });
+
+  it("the tutor uses the AI SDK only server-side, and never the generator", () => {
+    const dir = path.join(process.cwd(), "src", "lib", "tutor");
+    for (const name of readdirSync(dir)) {
+      const text = readFileSync(path.join(dir, name), "utf8");
+      expect(text, name).not.toMatch(/from ["']@\/lib\/generation/);
+      if (/from ["'](ai|@ai-sdk\/[^"']+)["']/.test(text))
+        expect(text, name).toMatch(/^import "server-only";/m);
+    }
   });
 });
 
@@ -289,6 +301,16 @@ describe("reference solutions stay test-only", () => {
     };
     walk(path.join(process.cwd(), "src"));
     expect(offenders).toEqual([]);
+  });
+
+  it("the tutor uses the AI SDK only server-side, and never the generator", () => {
+    const dir = path.join(process.cwd(), "src", "lib", "tutor");
+    for (const name of readdirSync(dir)) {
+      const text = readFileSync(path.join(dir, name), "utf8");
+      expect(text, name).not.toMatch(/from ["']@\/lib\/generation/);
+      if (/from ["'](ai|@ai-sdk\/[^"']+)["']/.test(text))
+        expect(text, name).toMatch(/^import "server-only";/m);
+    }
   });
 });
 

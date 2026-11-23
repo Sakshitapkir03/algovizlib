@@ -11,6 +11,7 @@ import { usePlayerStore } from "@/store/player-store";
 import type { StoryboardCompositionProps } from "@/video/StoryboardComposition";
 
 import { KeyTakeaway } from "./key-takeaway";
+import { AskAboutStep } from "./ask-panel";
 import { PlayerControls } from "./player-controls";
 import { SceneList } from "./scene-list";
 import { Transcript } from "./transcript";
@@ -42,16 +43,20 @@ function isInteractive(target: EventTarget | null): boolean {
 /**
  * `showTakeaway={false}` leaves out the takeaway card, for pages that hide the approach behind a spoiler toggle
  * and render `<KeyTakeaway>` there instead. `problemKey` ties the video to a problem's progress: playing it marks
- * the problem "Learning", its position is saved for "Resume", and finishing it asks "Mark as done?".
+ * the problem "Learning", its position is saved for "Resume", and finishing it asks "Mark as done?". `askEnabled`
+ * adds the tutor ("Ask about this step") under the controls.
  */
 export function LearnView({
   storyboard,
   showTakeaway = true,
   problemKey,
+  askEnabled = false,
 }: {
   storyboard: Storyboard;
   showTakeaway?: boolean;
   problemKey?: string;
+  /** Show "Ask about this step" under the player (the tutor; needs `problemKey`). */
+  askEnabled?: boolean;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
@@ -158,6 +163,9 @@ export function LearnView({
               hasTrack={storyboard.narrationTrack !== undefined}
               onToggleFullscreen={toggleFullscreen}
             />
+            {askEnabled && problemKey && !isFullscreen && (
+              <AskAboutStep problemKey={problemKey} sceneId={storyboard.scenes[currentIndex].id} />
+            )}
           </div>
         </Card>
         <p className="sr-only" aria-live="polite">

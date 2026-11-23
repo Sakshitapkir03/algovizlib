@@ -7,6 +7,7 @@ import { createDbRateLimiter } from "@/lib/auth/rate-limit";
 import { createPrismaAuthStore } from "@/lib/auth/store";
 import { hashToken } from "@/lib/auth/tokens";
 import { createPrismaProgressStore } from "@/lib/progress/server";
+import { createDbCache, createDbUsage, pacificDayEnd } from "@/lib/tutor/usage";
 
 /**
  * Against a real Postgres (`DATABASE_URL_TEST`, e.g. a local `algovizlib_test` database; never the dev or
@@ -29,7 +30,7 @@ describe.skipIf(!url)("database (Postgres)", () => {
 
   beforeEach(async () => {
     await prisma.$executeRawUnsafe(
-      'TRUNCATE "User", "Account", "Session", "AuthToken", "RateLimit", "Progress", "VerificationToken" CASCADE',
+      'TRUNCATE "User", "Account", "Session", "AuthToken", "RateLimit", "Progress", "VerificationToken", "AskCache" CASCADE',
     );
   });
 
@@ -86,6 +87,22 @@ describe.skipIf(!url)("database (Postgres)", () => {
     for (const limiter of [a, b, a, b]) results.push(await limiter.hit("login:ada", limit));
     expect(results).toEqual([true, true, true, false]);
     expect(await createDbRateLimiter(prisma, () => now() + 60_000).hit("login:ada", limit)).toBe(true);
+  });
+
+  it("tutor: daily counts are shared and atomic, and cached answers are kept by key", async () => {
+    const usage = createDbUsage(prisma);
+    const dayEnd = pacificDayEnd(Date.now());
+    expect(await usage.peek("askDay:u1", dayEnd)).toBe(0);
+    const counts = await Promise.all(Array.from({ length: 5 }, () => usage.add("askDay:u1", dayEnd)));
+    expect([...counts].sort()).toEqual([1, 2, 3, 4, 5]);
+    expect(await usage.peek("askDay:u1", dayEnd)).toBe(5);
+    // A new day starts from zero.
+    expect(await usage.peek("askDay:u1", dayEnd + 86_400_000)).toBe(0);
+    const cache = createDbCache(prisma);
+    expect(await cache.get("k")).toBeUndefined();
+    await cache.set("k", "An answer.");
+    await cache.set("k", "A newer answer.");
+    expect(await cache.get("k")).toBe("A newer answer.");
   });
 
   it("progress: each user only ever sees and changes their own", async () => {
