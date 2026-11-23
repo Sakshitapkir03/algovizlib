@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import type { ElementOf, ElementType } from "@/lib/storyboard";
 
 import { BarRow } from "./BarRow";
+import { Bits } from "./Bits";
 import { BinaryTree } from "./BinaryTree";
 import { Callout } from "./Callout";
 import { Choice } from "./Choice";
@@ -96,6 +97,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   "prefix-grid": { component: PrefixGrid, slot: "canvas", layer: 0 },
   // Intervals: bars on lanes over a number line (a heap, when there is one, sits under it).
   timeline: { component: Timeline, slot: "canvas", layer: 0 },
+  // Bit manipulation: numbers as aligned rows of bits, in the bottom stack.
+  bits: { component: Bits, slot: "bottom", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

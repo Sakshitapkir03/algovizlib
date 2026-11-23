@@ -646,6 +646,29 @@ export const sceneSchema = z
             ctx.addIssue({ code: "custom", path, message: "A scene can show only one timeline" });
           break;
         }
+        case "bits": {
+          const lo = -(2 ** (el.width - 1));
+          const hi = 2 ** el.width - 1;
+          el.rows.forEach((row, k) => {
+            for (const [field, v] of [
+              ["value", row.value],
+              ["from", row.from?.value],
+            ] as const)
+              if (v !== undefined && (v < lo || v > hi))
+                ctx.addIssue({
+                  code: "custom",
+                  path: [...path, "rows", k, field],
+                  message: `${v} doesn't fit ${el.width} bits (${lo} to ${hi})`,
+                });
+            if ((row.changed ?? []).some((b) => b >= el.width))
+              ctx.addIssue({ code: "custom", path: [...path, "rows", k, "changed"], message: `bit positions are 0–${el.width - 1}` });
+          });
+          if (el.bitLabels && el.bitLabels.length !== el.width)
+            ctx.addIssue({ code: "custom", path: [...path, "bitLabels"], message: `one label per bit: ${el.width}` });
+          if (scene.elements.filter((e) => e.type === "bits").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one bits panel" });
+          break;
+        }
         case "hash-map": {
           const keys = el.entries.map((e) => e.key);
           if (new Set(keys).size !== keys.length)

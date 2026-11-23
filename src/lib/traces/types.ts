@@ -162,7 +162,27 @@ export type TraceStep = {
   prefixGrid?: TracePrefixGrid;
   /** Intervals on a timeline after this step. See `TraceTimelineStep`. */
   timeline?: TraceTimelineStep;
+  /** Numbers as rows of bits with this step's operation. See `TraceBits`. */
+  bits?: TraceBits;
 };
+
+/**
+ * A row of bits: `name` ("acc", "x", "carry"), the number (`value`, shown in decimal and as its low `width` bits),
+ * the operation that produced it, written before it (`op`: "^", "& ~twos", ">> 1"), `rule` for a line above it (a
+ * result), the bit positions this step changed (`changed`, 0 = the lowest bit), and `from`: the value whose bits slide
+ * `shift` places into this one (+1 left, −1 right).
+ */
+export type TraceBitRow = {
+  name: string;
+  value: number;
+  op?: string;
+  rule?: boolean;
+  changed?: number[];
+  from?: { value: number; shift: number };
+};
+
+/** Numbers in binary at a fixed `width`, columns aligned; `bitLabels` (most significant first) name what each bit means. */
+export type TraceBits = { width: number; rows: TraceBitRow[]; bitLabels?: string[] };
 
 /**
  * How an interval reads at a step: `waiting` (not reached yet), `active` (in play: the previous meeting, the last kept

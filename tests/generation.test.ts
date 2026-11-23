@@ -352,6 +352,11 @@ describe("selectTargets", () => {
       "sorting/heap-sort",
       "sorting/counting-sort",
       "sorting/count-inversions",
+      "bit-manipulation/single-number",
+      "bit-manipulation/counting-bits",
+      "bit-manipulation/sum-of-two-integers",
+      "bit-manipulation/single-number-ii",
+      "bit-manipulation/shortest-path-visiting-all-nodes",
       "two-pointers/valid-palindrome",
       "two-pointers/container-with-most-water",
       "two-pointers/trapping-rain-water",
@@ -609,7 +614,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v19");
+    expect(currentPrompts.version).toBe("storyboard-v20");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

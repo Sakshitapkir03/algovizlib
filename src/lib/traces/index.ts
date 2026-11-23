@@ -38,6 +38,11 @@ import { mergeIntervalsTrace } from "./intervals/merge-intervals";
 import { insertIntervalTrace } from "./intervals/insert-interval";
 import { nonOverlappingIntervalsTrace } from "./intervals/non-overlapping-intervals";
 import { minimumIntervalToIncludeEachQueryTrace } from "./intervals/minimum-interval-to-include-each-query";
+import { singleNumberTrace } from "./bit-manipulation/single-number";
+import { countingBitsTrace } from "./bit-manipulation/counting-bits";
+import { singleNumberIITrace } from "./bit-manipulation/single-number-ii";
+import { sumOfTwoIntegersTrace } from "./bit-manipulation/sum-of-two-integers";
+import { shortestPathVisitingAllNodesTrace } from "./bit-manipulation/shortest-path-visiting-all-nodes";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -173,6 +178,11 @@ const definitions = [
   insertIntervalTrace,
   nonOverlappingIntervalsTrace,
   minimumIntervalToIncludeEachQueryTrace,
+  singleNumberTrace,
+  countingBitsTrace,
+  singleNumberIITrace,
+  sumOfTwoIntegersTrace,
+  shortestPathVisitingAllNodesTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

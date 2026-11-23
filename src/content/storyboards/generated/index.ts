@@ -16,6 +16,11 @@ import binarySearchMedianOfTwoSortedArrays from "./binary-search/median-of-two-s
 import binarySearchSearchInRotatedSortedArray from "./binary-search/search-in-rotated-sorted-array.json";
 import binarySearchSearchInsertPosition from "./binary-search/search-insert-position.json";
 import binarySearchSearchSortedArray from "./binary-search/search-sorted-array.json";
+import bitManipulationCountingBits from "./bit-manipulation/counting-bits.json";
+import bitManipulationShortestPathVisitingAllNodes from "./bit-manipulation/shortest-path-visiting-all-nodes.json";
+import bitManipulationSingleNumber from "./bit-manipulation/single-number.json";
+import bitManipulationSingleNumberIi from "./bit-manipulation/single-number-ii.json";
+import bitManipulationSumOfTwoIntegers from "./bit-manipulation/sum-of-two-integers.json";
 import dynamicProgrammingClimbingStairs from "./dynamic-programming/climbing-stairs.json";
 import dynamicProgrammingCoinChange from "./dynamic-programming/coin-change.json";
 import dynamicProgrammingEditDistance from "./dynamic-programming/edit-distance.json";
@@ -101,6 +106,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "binary-search/search-in-rotated-sorted-array": loadStoryboard(binarySearchSearchInRotatedSortedArray),
   "binary-search/search-insert-position": loadStoryboard(binarySearchSearchInsertPosition),
   "binary-search/search-sorted-array": loadStoryboard(binarySearchSearchSortedArray),
+  "bit-manipulation/counting-bits": loadStoryboard(bitManipulationCountingBits),
+  "bit-manipulation/shortest-path-visiting-all-nodes": loadStoryboard(bitManipulationShortestPathVisitingAllNodes),
+  "bit-manipulation/single-number": loadStoryboard(bitManipulationSingleNumber),
+  "bit-manipulation/single-number-ii": loadStoryboard(bitManipulationSingleNumberIi),
+  "bit-manipulation/sum-of-two-integers": loadStoryboard(bitManipulationSumOfTwoIntegers),
   "dynamic-programming/climbing-stairs": loadStoryboard(dynamicProgrammingClimbingStairs),
   "dynamic-programming/coin-change": loadStoryboard(dynamicProgrammingCoinChange),
   "dynamic-programming/edit-distance": loadStoryboard(dynamicProgrammingEditDistance),

@@ -1,0 +1,444 @@
+{
+  "id": "bit-manipulation-shortest-path-visiting-all-nodes",
+  "title": "Shortest Path Visiting All Nodes: A Guard's Checklist of Lamps",
+  "concept": "Bit Manipulation",
+  "category": "dsa",
+  "summary": "Search by moves over (room, rooms checked) pairs, with the checked rooms as a row of bits.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A night guard must check all five rooms of a gallery, starting in any room. Doors connect the rooms as each card lists. A panel lamp lights for each room checked. What is the fewest number of moves?",
+    "mapping": [
+      {
+        "real": "A room",
+        "abstract": "A node"
+      },
+      {
+        "real": "The lamps of rooms checked",
+        "abstract": "The visited mask"
+      },
+      {
+        "real": "A guard in a room with some lamps lit",
+        "abstract": "A BFS state (node, mask)"
+      },
+      {
+        "real": "Fewest moves",
+        "abstract": "The BFS level of the first full mask"
+      }
+    ]
+  },
+  "tags": [
+    "graph",
+    "bfs",
+    "bitmask",
+    "state space search"
+  ],
+  "takeaway": {
+    "pattern": "BFS over (node, bitmask)",
+    "summary": "Search states (node, visited mask) breadth-first from every node at once; a move to v sets bit v. The first state with every bit set is reached in the fewest moves.",
+    "timeComplexity": "O(2^n · n²)",
+    "spaceComplexity": "O(2^n · n)",
+    "whenToUse": [
+      "Visiting every node of a small graph",
+      "State = position + a set, kept as bits"
+    ]
+  },
+  "trace": {
+    "problem": "bit-manipulation/shortest-path-visiting-all-nodes",
+    "args": [
+      [
+        [
+          1,
+          2,
+          4
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1,
+          3
+        ],
+        [
+          2
+        ],
+        [
+          0
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v20",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T00:22:33.718Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "gallery",
+      "narration": "A night guard must check all five rooms of a gallery, starting in any room. Each card lists the rooms its doors lead to. What's the fewest number of moves?",
+      "caption": "Five rooms, doors as listed: fewest moves to check them all?",
+      "durationInFrames": 396,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "room 0",
+            "room 1",
+            "room 2",
+            "room 3",
+            "room 4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Trying every route grows factorially. A plain search over rooms doesn't work either, because the guard may need to pass through a room twice. So search over the room and the set of rooms checked, kept as lamps.",
+      "caption": "Trying every route grows factorially",
+      "durationInFrames": 492,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "room 0",
+            "room 1",
+            "room 2",
+            "room 3",
+            "room 4"
+          ]
+        },
+        {
+          "id": "note",
+          "enterAt": 0,
+          "type": "callout",
+          "text": "State = room + rooms checked"
+        }
+      ]
+    },
+    {
+      "id": "start",
+      "narration": "Every room is a start, five states at level 0. Follow the walk that wins: from room 3, only lamp 3 is lit.",
+      "caption": "Start in every room at once; follow the guard from room 3",
+      "durationInFrames": 312,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "room 0",
+            "room 1",
+            "room 2",
+            "room 3",
+            "room 4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "rooms",
+          "label": "guard",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "at"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "rooms",
+          "state": "found"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "bitLabels": [
+            "r4",
+            "r3",
+            "r2",
+            "r1",
+            "r0"
+          ],
+          "rowLabels": [
+            "checked",
+            "this room",
+            "checked"
+          ]
+        },
+        {
+          "id": "states",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "states"
+        }
+      ]
+    },
+    {
+      "id": "m1",
+      "narration": "Moving to room 2 lights its lamp: OR the checked lamps with one lamp for room 2. A guard in the same room with the same lamps lit is the same state, however they got there, so each is searched once.",
+      "caption": "Move to room 2: checked | (1 << 2) lights lamp 2",
+      "durationInFrames": 528,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "room 0",
+            "room 1",
+            "room 2",
+            "room 3",
+            "room 4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "rooms",
+          "label": "guard",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "at"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "rooms",
+          "state": "found"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "bitLabels": [
+            "r4",
+            "r3",
+            "r2",
+            "r1",
+            "r0"
+          ],
+          "rowLabels": [
+            "checked",
+            "this room",
+            "checked"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "narration": "Room 1 lights lamp 1. Level 2 holds 11 states in all.",
+      "caption": "Move to room 1: lamps 3, 2, 1 lit",
+      "durationInFrames": 180,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "room 0",
+            "room 1",
+            "room 2",
+            "room 3",
+            "room 4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "rooms",
+          "label": "guard",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "at"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "rooms",
+          "state": "found"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "bitLabels": [
+            "r4",
+            "r3",
+            "r2",
+            "r1",
+            "r0"
+          ],
+          "rowLabels": [
+            "checked",
+            "this room",
+            "checked"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "narration": "Room 0 lights lamp 0: four of five checked.",
+      "caption": "Move to room 0: four lamps lit",
+      "durationInFrames": 144,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "room 0",
+            "room 1",
+            "room 2",
+            "room 3",
+            "room 4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "rooms",
+          "label": "guard",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "at"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "rooms",
+          "state": "found"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "bitLabels": [
+            "r4",
+            "r3",
+            "r2",
+            "r1",
+            "r0"
+          ],
+          "rowLabels": [
+            "checked",
+            "this room",
+            "checked"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "narration": "Room 4 lights the last lamp. All five bits are set, at level 4, so 4 moves is the fewest.",
+      "caption": "Move to room 4: all five lamps lit in 4 moves",
+      "durationInFrames": 276,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "room 0",
+            "room 1",
+            "room 2",
+            "room 3",
+            "room 4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "rooms",
+          "label": "guard",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "at"
+        },
+        {
+          "id": "seen",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "rooms",
+          "state": "found"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "bitLabels": [
+            "r4",
+            "r3",
+            "r2",
+            "r1",
+            "r0"
+          ],
+          "rowLabels": [
+            "checked",
+            "this room",
+            "checked"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Rooms are nodes and lamps are a bitmask. Search (node, mask) states level by level from every node; the first full mask gives the answer.",
+      "caption": "BFS over (node, visited mask): a move sets that node's bit",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "rooms",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "node 0",
+            "node 1",
+            "node 2",
+            "node 3",
+            "node 4"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Fewest moves",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

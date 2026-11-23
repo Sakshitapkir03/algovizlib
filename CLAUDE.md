@@ -424,6 +424,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `prefix-row`    | running totals under an item-row, one cell per boundary (cell i between items i − 1 and i): unbuilt dashed, built ringed, spans as brackets whose edges drop to their two cells (+ / −) | canvas |
 | `prefix-grid`   | a small matrix beside its 2D prefix grid: rectangles added (+, solid accent) or subtracted (−, dashed) for inclusion-exclusion, signed prefix cells, a found rectangle ✓                | canvas |
 | `timeline`      | intervals as bars on lanes over a number line: waiting, active, current, done, absorbed (merged in), removed (✕), result (✓); sorts slide, merges grow, overlaps shaded, a sweep marker | canvas |
+| `bits`          | numbers as rows of bits in aligned columns (place values or bit meanings above), the operator before each result row, changed bits highlighted, shifts sliding, decimals beside         | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -721,6 +722,25 @@ the axis, lanes, every bar, the overlap, the growth, and the marker against the 
 intervals as given, or as they end). Tones: a merge's overlap is neutral, a meeting clash negative, a gap or
 back-to-back meeting positive; a removed workshop negative, a kept one positive.
 
+**Bit Manipulation** (the five home problems; Subsets and Sum of All Subset XOR Totals are cross-listed in with
+their videos; Counting Bits is also listed under Dynamic Programming, Shortest Path Visiting All Nodes under Graphs
+(BFS)) added step state `bits`: a fixed `width`, optional `bitLabels` (what each bit means, most significant first),
+and rows, each a `name`, a `value` (its low `width` bits are drawn, the decimal beside them), the `op` that made it
+("^", "^x &~twos", ">> 1"), `rule` for a result, the bit positions it `changed`, and `from` (the value whose bits slide
+`shift` places into it). The `bits` primitive is a bottom panel built apart from everything else
+(`video/bits-layout.ts`): a header of place values or bit labels, then rows of name, operator, bit cells in aligned
+columns, and "= decimal"; result rows appear a beat later under a rule; changed bits get a thick accent border; 1s
+are bold, 0s muted; shifted bits slide in from their old columns. `rowLabels` rename rows in the story's words (display
+only). Widths stay at 5 bits or fewer, so the panel reads on a phone; with an input row or a table above it, the
+answer's result goes in the closing scene, where the panel isn't. Reused: Counting Bits' answers are a one-row
+dp-table (its read arrow "i>>1"); Shortest Path draws its nodes as cards whose values are their neighbors ("1,2,4"), the
+walker as a pointer, and visited nodes as found (the graph primitive needs about 440 px for three nodes in a column on
+a phone), and follows the BFS's winning walk level by level with the mask's OR, plus a counter of states per level.
+Sum of Two Integers got a first example with three rounds of carries (5 + 7). Single Number II says what ones and twos
+are (each bit's count modulo three: seen once, seen twice) before why triples clear. The validator checks the width
+and every row (name, value, operator, rule, changed bits, slide); a bits panel needs a bound step. No comparisons, so
+no tones.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -751,7 +771,8 @@ Trace = {
            race?,                                                 // fast and slow pointers (see "Fast & Slow Pointers" above)
            choice?, reach?,                                       // greedy (see "Greedy" above)
            prefix?, prefixGrid?,                                  // prefix sums (see "Prefix Sum" above)
-           timeline? }[],                                         // intervals (see "Intervals" above)
+           timeline?,                                             // intervals (see "Intervals" above)
+           bits? }[],                                             // bit manipulation (see "Bit Manipulation" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -782,7 +803,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), prefix rows (op, direction, every value, the cell built, reads, spans and their values; one cell per boundary; an unbound row is empty or final) and prefix grids (the matrix, every prefix cell, the current cell, signed rectangles and cells, the found rectangle; unbound: unbuilt or complete), timelines (axis, lanes, every bar's range, lane, state, and slide, the overlap, a merge's growth, the sweep marker; unbound: as given or as they end), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), prefix rows (op, direction, every value, the cell built, reads, spans and their values; one cell per boundary; an unbound row is empty or final) and prefix grids (the matrix, every prefix cell, the current cell, signed rectangles and cells, the found rectangle; unbound: unbuilt or complete), timelines (axis, lanes, every bar's range, lane, state, and slide, the overlap, a merge's growth, the sweep marker; unbound: as given or as they end), bits panels (width, and every row's name, value, operator, rule, changed bits, and slide; a bits panel needs a bound step), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -1037,7 +1058,11 @@ profit ledger (Subarray Sum Equals K), outfits when one kind of clothing stays h
 blocks of orchard plots holding exactly 3 crates (Number of Submatrices That Sum to Target). Intervals: Meeting Rooms
 is problem-native (the calendar); Merge Intervals is crews booking a site's one crane, Insert Interval a new lane closure
 in a road crew's schedule, Non-overlapping Intervals cancelling the fewest workshops in one studio, and Minimum Interval
-to Include Each Query parcels going to the shortest driver shift that covers their hour.
+to Include Each Query parcels going to the shortest driver shift that covers their hour. Bit Manipulation: a panel of
+light switches each ticket flips (Single Number), a lamp scoreboard counting lit lamps (Counting Bits), a gym scanner
+where every member scans three times but one guest (Single Number II), a counting board with no "+" key (Sum of Two
+Integers), and a night guard checking every room of a gallery with a lamp per room checked (Shortest Path Visiting All
+Nodes).
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

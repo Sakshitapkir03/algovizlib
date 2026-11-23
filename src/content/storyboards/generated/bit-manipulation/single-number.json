@@ -1,0 +1,347 @@
+{
+  "id": "bit-manipulation-single-number",
+  "title": "Single Number: Switches Flipped Twice Go Back Off",
+  "concept": "Bit Manipulation",
+  "category": "dsa",
+  "summary": "Each ticket flips its switches; pairs undo themselves, so the lights left on spell the unpaired ticket.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A panel of four light switches starts all off. Each ticket's number says which switches to flip (its 1 bits). Every ticket number comes twice except one: 6, 3, 6, 9, 3.",
+    "mapping": [
+      {
+        "real": "A switch",
+        "abstract": "A bit position"
+      },
+      {
+        "real": "Flipping a ticket's switches",
+        "abstract": "acc ^= x"
+      },
+      {
+        "real": "The lights left on",
+        "abstract": "The single number"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "xor"
+  ],
+  "takeaway": {
+    "pattern": "XOR cancels pairs",
+    "summary": "XOR every number into one accumulator. x ^ x = 0, x ^ 0 = x, and order doesn't matter, so pairs cancel and the single number remains.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Every value appears twice except one",
+      "Finding what doesn't cancel out"
+    ]
+  },
+  "trace": {
+    "problem": "bit-manipulation/single-number",
+    "args": [
+      [
+        6,
+        3,
+        6,
+        9,
+        3
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v20",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T00:22:33.721Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "panel",
+      "narration": "A panel of four light switches starts all off. Tickets come in: 6, 3, 6, 9, 3. Every number appears twice except one. Which?",
+      "caption": "Tickets 6, 3, 6, 9, 3: every number twice but one",
+      "durationInFrames": 324,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could tally every ticket in a notebook and look for a count of one, but that needs room for every number. Instead, each ticket just flips the switches for its 1 bits.",
+      "caption": "A notebook tally needs extra memory",
+      "durationInFrames": 432,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "note",
+          "enterAt": 0,
+          "type": "callout",
+          "text": "A tally needs O(n) space"
+        }
+      ]
+    },
+    {
+      "id": "t6",
+      "narration": "Ticket 6 is 0 1 1 0 in binary, so it flips the 4 and 2 switches on. The panel reads 6.",
+      "caption": "Ticket 6 = 0110 flips two switches on",
+      "durationInFrames": 300,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "tickets",
+          "label": "flip",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "panel",
+            "ticket",
+            "panel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t3",
+      "narration": "Ticket 3 flips the 2 and the 1. The 2 was on, so it goes off; the 1 comes on. The panel reads 5.",
+      "caption": "Ticket 3 = 0011: the 2 switch goes back off, the 1 comes on",
+      "durationInFrames": 324,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "tickets",
+          "label": "flip",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "panel",
+            "ticket",
+            "panel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t6b",
+      "narration": "The second 6 flips the same two switches again, undoing the first 6. Flipping a switch twice puts it back, and order doesn't matter, so every pair undoes itself. The panel reads 3.",
+      "caption": "The second 6 flips the same switches back: its pair cancels",
+      "durationInFrames": 432,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "tickets",
+          "label": "flip",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "panel",
+            "ticket",
+            "panel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t9",
+      "narration": "Ticket 9 flips the 8 and the 1. The panel reads 10.",
+      "caption": "Ticket 9 = 1001 flips the 8 and the 1",
+      "durationInFrames": 180,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "tickets",
+          "label": "flip",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "panel",
+            "ticket",
+            "panel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "t3b",
+      "narration": "The second 3 undoes the first 3. What's left on is 1 0 0 1: ticket 9 is the one without a pair.",
+      "caption": "The second 3 cancels the first: 1001 is left, ticket 9",
+      "durationInFrames": 312,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "#0",
+            "#1",
+            "#2",
+            "#3",
+            "#4"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "tickets",
+          "label": "flip",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "panel",
+            "ticket",
+            "panel"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Switches are bits and flipping is XOR. XOR every number into one value; pairs cancel because x XOR x is 0. One pass, O(n) time, O(1) space.",
+      "caption": "XOR everything: pairs cancel, the single number remains",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "tickets",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]",
+            "nums[4]"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Unpaired ticket",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

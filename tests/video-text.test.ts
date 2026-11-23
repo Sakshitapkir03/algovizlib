@@ -8,6 +8,7 @@ import { primitiveRegistry } from "@/video/primitives/registry";
 import { PILL_PADDING, pointerLabel } from "@/video/labels";
 import { layoutScene, NUMBER_GAP, pointerRoom, sizes } from "@/video/layout";
 
+import { bitsProblems } from "./fixtures/bits-fit";
 import { dpProblems } from "./fixtures/dp-fit";
 import { greedyProblems } from "./fixtures/greedy-fit";
 import { prefixProblems } from "./fixtures/prefix-fit";
@@ -55,6 +56,7 @@ describe("video text at phone width", () => {
       [
         "bar-row",
         "binary-tree",
+        "bits",
         "call-stack",
         "callout",
         "choice",
@@ -136,6 +138,16 @@ describe("video text at phone width", () => {
     const problems = storyboards.flatMap((storyboard) =>
       storyboard.scenes.flatMap((scene) =>
         timelineProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
+      ),
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("bits panels fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        bitsProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
       ),
     );
     expect(problems).toEqual([]);
@@ -426,6 +438,9 @@ describe("video text at phone width", () => {
           }
           case "race":
             for (const problem of raceProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "bits":
+            for (const problem of bitsProblems(scene.elements, phone)) fail(problem);
             break;
           case "timeline":
             for (const problem of timelineProblems(scene.elements, phone)) fail(problem);

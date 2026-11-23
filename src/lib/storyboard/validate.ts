@@ -11,6 +11,7 @@ import type {
   TraceReach,
   TracePrefixRow,
   TraceTimelineStep,
+  TraceBits,
   TracePrefixGrid,
   TraceBfs,
   TraceLinks,
@@ -276,6 +277,23 @@ function raceFields(r: Partial<TraceRace>): Record<string, string> {
     meet: JSON.stringify(r.meet ?? null),
     entry: JSON.stringify(r.entry ?? null),
     loop: JSON.stringify(r.loop ? { from: r.loop.from, to: r.loop.to } : null),
+  };
+}
+
+/** A bits panel field by field, in a canonical text form (row names as the trace has them). */
+function bitsFields(b: Partial<TraceBits>): Record<string, string> {
+  return {
+    width: JSON.stringify(b.width ?? null),
+    rows: JSON.stringify(
+      (b.rows ?? []).map((r) => [
+        r.name,
+        r.value,
+        r.op ?? null,
+        r.rule ?? false,
+        [...(r.changed ?? [])].sort((x, y) => x - y),
+        r.from ? [r.from.value, r.from.shift] : null,
+      ]),
+    ),
   };
 }
 
@@ -625,6 +643,8 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             el.id,
             "frames",
           );
+        if (el.type === "bits")
+          push("A bits panel needs the scene to set traceStep (its rows come from the step)", el.id, "rows");
         if (el.type === "timeline") {
           const shape = trace.timeline;
           if (!shape) push("This trace has no timeline; remove it", el.id, "bars");
@@ -1318,6 +1338,21 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
             if (drawn[field] !== expected[field])
               push(`The race's ${field} doesn't match trace step ${stepIndex}`, el.id, field, {
                 expected: expected[field],
+                actual: drawn[field],
+              });
+          break;
+        }
+        case "bits": {
+          if (!step.bits) {
+            push(`Trace step ${stepIndex} has no bits`, el.id, "rows");
+            break;
+          }
+          const want = bitsFields(step.bits);
+          const drawn = bitsFields(el);
+          for (const field of Object.keys(want))
+            if (drawn[field] !== want[field])
+              push(`The bits' ${field} don't match trace step ${stepIndex}`, el.id, field, {
+                expected: want[field],
                 actual: drawn[field],
               });
           break;

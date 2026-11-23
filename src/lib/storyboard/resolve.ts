@@ -583,6 +583,16 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             sweep: el.sweep ?? tl?.sweep,
           };
         }
+        case "bits": {
+          if (el.width !== undefined && el.rows) return { ...el, width: el.width, rows: el.rows };
+          if (!step?.bits) return (noState(el, "rows", "bits"), el);
+          return {
+            ...el,
+            width: el.width ?? step.bits.width,
+            rows: el.rows ?? step.bits.rows,
+            bitLabels: el.bitLabels ?? step.bits.bitLabels,
+          };
+        }
         case "hash-map": {
           if (el.entries && el.kind && el.display) return el;
           if (step && !step.map) return (noState(el, "entries", "map"), el);

@@ -137,4 +137,8 @@ export const TEXT = {
   /** A timeline bar's "[4, 7]" and the axis's tick labels. */
   timelineLabel: 18,
   timelineTick: 14,
+  /** A bits panel's digits, its header (place values or bit labels), and row names, operators, decimals. */
+  bitValue: 32,
+  bitHeader: 16,
+  bitName: 21,
 } as const;

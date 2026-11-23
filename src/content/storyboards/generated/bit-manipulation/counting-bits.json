@@ -1,0 +1,270 @@
+{
+  "id": "bit-manipulation-counting-bits",
+  "title": "Counting Bits: Lamps Lit, One Shift at a Time",
+  "concept": "Bit Manipulation",
+  "category": "dsa",
+  "summary": "Each number's lit lamps are the count for half of it, plus its last lamp: one shift and one lookup.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A scoreboard shows numbers 0 to 6 with three lamps worth 4, 2, and 1. For each number, how many lamps are lit?",
+    "mapping": [
+      {
+        "real": "A lit lamp",
+        "abstract": "A 1 bit"
+      },
+      {
+        "real": "Lamps lit for number i",
+        "abstract": "ones[i]"
+      },
+      {
+        "real": "Sliding the lamps one place right",
+        "abstract": "i >> 1"
+      }
+    ]
+  },
+  "tags": [
+    "bit counting",
+    "dynamic programming"
+  ],
+  "takeaway": {
+    "pattern": "Bits + DP",
+    "summary": "ones[i] = ones[i >> 1] + (i & 1): shifting right drops the last bit, leaving a smaller number already counted.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(n) for the answer",
+    "whenToUse": [
+      "Counting bits for a whole range",
+      "Reusing answers for smaller numbers"
+    ]
+  },
+  "trace": {
+    "problem": "bit-manipulation/counting-bits",
+    "args": [
+      6
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v20",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T00:22:33.713Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "board",
+      "narration": "A scoreboard shows numbers 0 to 6 with three lamps worth 4, 2, and 1. For each number, how many lamps are lit?",
+      "caption": "Numbers 0–6 on three lamps (4, 2, 1): how many are lit?",
+      "durationInFrames": 312,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could check every lamp of every number, looping over all the bits each time. But each number's lamps are mostly a smaller number's lamps, already counted.",
+      "caption": "Checking every lamp of every number repeats the work",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        }
+      ]
+    },
+    {
+      "id": "zero",
+      "narration": "Zero lights no lamps: the count starts at 0.",
+      "caption": "0 lights no lamps",
+      "durationInFrames": 144,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "number",
+            "shifted",
+            "last lamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "one",
+      "narration": "For 1, slide the lamps one place right: that drops the last lamp and leaves 0, already counted as 0. The dropped lamp was lit, so add 1.",
+      "caption": "1: shift right gives 0, plus the last lamp: 1",
+      "durationInFrames": 372,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "number",
+            "shifted",
+            "last lamp"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "two",
+      "narration": "2 shifted right is 1, which lights one lamp. Its last lamp is off, so 2 lights one lamp too.",
+      "caption": "2 = 010: shifted it's 1 (one lamp), last lamp off: 1",
+      "durationInFrames": 276,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "number",
+            "shifted",
+            "last lamp"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "three",
+      "narration": "3 shifted right is also 1, with one lamp, and its last lamp is lit: 2.",
+      "caption": "3 = 011: shifted it's 1, plus a lit last lamp: 2",
+      "durationInFrames": 229,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "number",
+            "shifted",
+            "last lamp"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "five",
+      "narration": "Shifting right drops the last lamp and leaves half the number, always smaller, so its count is already in the table. 5 becomes 2, one lamp, plus the last lamp: 2.",
+      "caption": "5 = 101: shifted it's 2 (one lamp), plus 1: 2",
+      "durationInFrames": 408,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "number",
+            "shifted",
+            "last lamp"
+          ]
+        },
+        {
+          "id": "eq",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": ""
+        }
+      ]
+    },
+    {
+      "id": "six",
+      "narration": "6 shifted right is 3, with two lamps, and its last lamp is off: 2. The whole board is counted.",
+      "caption": "6 = 110: shifted it's 3 (two lamps), last off: 2",
+      "durationInFrames": 276,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "number",
+            "shifted",
+            "last lamp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Lamps are bits. Each count is the count for i shifted right, plus the last bit: one lookup per number, O(n) time.",
+      "caption": "ones[i] = ones[i >> 1] + (i & 1)",
+      "durationInFrames": 300,
+      "traceStep": 6,
+      "elements": [
+        {
+          "id": "lit",
+          "enterAt": 0,
+          "type": "dp-table"
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "Lamps lit",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

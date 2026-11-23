@@ -11,6 +11,14 @@ export const sumOfTwoIntegers = defineProblem({
 Treat the numbers as 32-bit two's-complement integers; with the constraints below the result always fits.`,
   examples: [
     {
+      input: "a = 5, b = 7",
+      output: "12",
+      explanation:
+        "0101 ^ 0111 = 0010 with carries 1010; 0010 ^ 1010 = 1000 with carries 0100; 1000 ^ 0100 = 1100 with no carries left: 12.",
+      args: [5, 7],
+      expected: 12,
+    },
+    {
       input: "a = 9, b = 6",
       output: "15",
       explanation:

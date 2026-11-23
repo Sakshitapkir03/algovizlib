@@ -17,6 +17,7 @@ import type {
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
+import { layoutBits } from "./bits-layout";
 import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
 import { prefixBand } from "./prefix-layout";
 import { layoutTimeline, TIMELINE_SPLIT } from "./timeline-layout";
@@ -394,6 +395,8 @@ function bottomHeight(el: Element, t: TextMetrics): number {
       return t.compact || !el.showFound ? sizes.cell(t) : 2 * sizes.cell(t) + 8;
     case "choice":
       return layoutChoice(el, t).height;
+    case "bits":
+      return layoutBits(el, t).height;
     default:
       return 0;
   }

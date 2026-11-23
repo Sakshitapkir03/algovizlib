@@ -1,0 +1,302 @@
+{
+  "id": "bit-manipulation-single-number-ii",
+  "title": "Single Number II: A Tally That Resets on the Third Scan",
+  "concept": "Bit Manipulation",
+  "category": "dsa",
+  "summary": "Track, for every bit, whether it's been seen once or twice; a third sighting clears it, leaving the single badge.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A gym's scanner reads 3-lamp badge codes: 5, 1, 5, 5. Every member scans three times, except one guest who scans once. Which code is the guest's?",
+    "mapping": [
+      {
+        "real": "A badge code",
+        "abstract": "nums[i]"
+      },
+      {
+        "real": "Lamps seen once so far",
+        "abstract": "ones"
+      },
+      {
+        "real": "Lamps seen twice so far",
+        "abstract": "twos"
+      },
+      {
+        "real": "The guest's code",
+        "abstract": "The single number"
+      }
+    ]
+  },
+  "tags": [
+    "array",
+    "bit counting",
+    "modular arithmetic"
+  ],
+  "takeaway": {
+    "pattern": "Bit counting mod 3",
+    "summary": "ones and twos count each bit modulo 3: ones = (ones ^ x) & ~twos, twos = (twos ^ x) & ~ones. Triples clear themselves, so ones ends as the single number.",
+    "timeComplexity": "O(n)",
+    "spaceComplexity": "O(1)",
+    "whenToUse": [
+      "Every value appears k times except one",
+      "Counting bits modulo k without a map"
+    ]
+  },
+  "trace": {
+    "problem": "bit-manipulation/single-number-ii",
+    "args": [
+      [
+        5,
+        1,
+        5,
+        5
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v20",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T00:22:33.720Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "gym",
+      "narration": "A gym's scanner reads badge codes: 5, 1, 5, 5. Every member scans three times, except one guest who scans once. Which code is the guest's?",
+      "caption": "Badge codes 5, 1, 5, 5: everyone scans three times but one",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "scans",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "scan 0",
+            "scan 1",
+            "scan 2",
+            "scan 3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "You could keep a tally of every code and look for a count of one, but that needs memory for each code. XOR alone fails too: three copies don't cancel. Instead, count each lamp modulo three.",
+      "caption": "A tally of every code needs extra memory",
+      "durationInFrames": 468,
+      "elements": [
+        {
+          "id": "scans",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "scan 0",
+            "scan 1",
+            "scan 2",
+            "scan 3"
+          ]
+        },
+        {
+          "id": "note",
+          "enterAt": 0,
+          "type": "callout",
+          "text": "Three copies don't cancel with XOR"
+        }
+      ]
+    },
+    {
+      "id": "s0",
+      "narration": "For each lamp, ones and twos record whether it's been seen once or twice so far, a count modulo three, so a third sighting resets it to zero. Code 5 lights lamps 4 and 1, so they're now seen once.",
+      "caption": "Code 5 = 101: lamps 4 and 1 are seen once",
+      "durationInFrames": 516,
+      "traceStep": 0,
+      "elements": [
+        {
+          "id": "scans",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "scan 0",
+            "scan 1",
+            "scan 2",
+            "scan 3"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "scans",
+          "label": "scan",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "badge",
+            "seen once",
+            "seen twice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s1",
+      "narration": "Code 1 lights lamp 1 again, so lamp 1 moves from seen once to seen twice. Lamp 4 stays seen once.",
+      "caption": "Code 1: lamp 1 moves to seen twice",
+      "durationInFrames": 288,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "scans",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "scan 0",
+            "scan 1",
+            "scan 2",
+            "scan 3"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "scans",
+          "label": "scan",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "badge",
+            "seen once",
+            "seen twice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "narration": "The second 5 moves lamp 4 to seen twice. Lamp 1 is seen a third time, so it resets to zero in both.",
+      "caption": "Code 5 again: lamp 4 to twice, lamp 1 a third time: cleared",
+      "durationInFrames": 312,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "scans",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "scan 0",
+            "scan 1",
+            "scan 2",
+            "scan 3"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "scans",
+          "label": "scan",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "badge",
+            "seen once",
+            "seen twice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "narration": "The third 5 clears lamp 4 and lights lamp 1 once more. Every member's lamps reset after three scans, so seen once now holds only the guest's code: 1.",
+      "caption": "The third 5 clears lamp 4: seen once holds 001, code 1",
+      "durationInFrames": 384,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "scans",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "scan 0",
+            "scan 1",
+            "scan 2",
+            "scan 3"
+          ]
+        },
+        {
+          "id": "p",
+          "enterAt": 0,
+          "type": "pointer",
+          "rowId": "scans",
+          "label": "scan",
+          "placement": "below",
+          "tone": "primary",
+          "binds": "i"
+        },
+        {
+          "id": "bits",
+          "enterAt": 0,
+          "type": "bits",
+          "rowLabels": [
+            "badge",
+            "seen once",
+            "seen twice"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "Badges are numbers and lamps are bits. Two masks count each bit modulo three, so triples clear themselves and ones is the answer. O(n) time, O(1) space.",
+      "caption": "ones and twos count every bit modulo 3",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "scans",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "nums[0]",
+            "nums[1]",
+            "nums[2]",
+            "nums[3]"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0.5,
+          "type": "result",
+          "title": "The guest's code",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

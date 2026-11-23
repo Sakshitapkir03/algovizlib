@@ -169,6 +169,7 @@ export function buildDraft(problemKey: string): Draft {
         label: row.name,
         enterAt: 0,
       } as ElementSource);
+    if (step.bits) elements.push({ id: "bits", type: "bits", enterAt: 0 } as ElementSource);
     if (step.timeline) elements.push({ id: "timeline", type: "timeline", enterAt: 0 } as ElementSource);
     if (step.prefixGrid) elements.push({ id: "grid", type: "prefix-grid", enterAt: 0 } as ElementSource);
     if (step.reach)

@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -1018,6 +1018,40 @@ export const timelineSourceSchema = z.object({
   bars: timelineShape.bars.optional(),
 });
 
+const bitRowSchema = z.object({
+  /** What the row is ("acc", "x ^ y", "carry"). */
+  name: z.string().trim().min(1).max(12),
+  /** The number: its low `width` bits are drawn (two's complement for negatives), the decimal beside them. */
+  value: z.number().int(),
+  /** The operation that produced it, written before the row ("^", "& ~twos", ">> 1"). */
+  op: z.string().max(10).optional(),
+  /** A line above the row: it's a result. */
+  rule: z.boolean().optional(),
+  /** Bit positions this scene changed (0 = the lowest bit), highlighted. */
+  changed: z.array(index).optional(),
+  /** The value whose bits slide `shift` places into this row (+1 left, −1 right): a shift. */
+  from: z.object({ value: z.number().int(), shift: z.number().int().min(-3).max(3) }).optional(),
+});
+
+const bitsShape = {
+  ...baseElement,
+  type: z.literal("bits"),
+  /** Bits per row (most significant on the left); columns line up across rows. */
+  width: z.number().int().min(1).max(8),
+  rows: z.array(bitRowSchema).min(1).max(5),
+  /** What each bit means, most significant first (a mask's nodes); otherwise the header shows place values. */
+  bitLabels: z.array(z.string().max(6)).optional(),
+  /** Row names in the story's words, in row order (display only; the trace's names are checked). */
+  rowLabels: z.array(z.string().max(12)).max(5).optional(),
+};
+export const bitsElementSchema = z.object(bitsShape);
+export const bitsSourceSchema = z.object({
+  ...bitsShape,
+  /** Omit width/rows/bitLabels to take them from the bound step. */
+  width: bitsShape.width.optional(),
+  rows: bitsShape.rows.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -1206,6 +1240,7 @@ export const elementSchemas = [
   prefixRowElementSchema,
   prefixGridElementSchema,
   timelineElementSchema,
+  bitsElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1251,6 +1286,7 @@ export const elementSourceSchemas = [
   prefixRowSourceSchema,
   prefixGridSourceSchema,
   timelineSourceSchema,
+  bitsSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1311,6 +1347,8 @@ export type PrefixGridElement = ElementOf<"prefix-grid">;
 export type Rect = z.infer<typeof rectSchema>;
 export type TimelineElement = ElementOf<"timeline">;
 export type TimelineBar = z.infer<typeof timelineBarSchema>;
+export type BitsElement = ElementOf<"bits">;
+export type BitRow = z.infer<typeof bitRowSchema>;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;
