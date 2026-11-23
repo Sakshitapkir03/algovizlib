@@ -404,7 +404,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `search-range`  | binary search over a row: bracket over the cards still in play (notch over `mid`), dropped cards dimmed, dashed, ✕; a rotated list's sorted half tinted, "✓ sorted"                     | canvas |
 | `number-line`   | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                                        | bottom |
 | `cut`           | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                                        | canvas |
-| `linked-list`   | node boxes in lanes with an arrow to each `next`, a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; pointers/highlights use node ids                     | canvas |
+| `linked-list`   | node boxes in lanes with an arrow to each `next` (and `prev`, doubly linked), a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; ids address nodes        | canvas |
 | `binary-tree`   | a tree by depth: running call ringed, open path in orange, finished ✓ with "↑ 3", null stubs, values travel up edges                                                                    | canvas |
 | `call-stack`    | recursion frames beside the tree, bottom to top: "depth(5) waiting for left", "returns 3"; pushed frames slide in                                                                       | canvas |
 | `grid`          | BFS grid: cell glyph + word (≈ water, ■ wall), current ringed, frontier dashed, levels in corners, check arrows (✕ + reason)                                                            | canvas |
@@ -414,7 +414,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `dp-table`      | DP table (row or grid, headers): unfilled cells dashed, current ringed, read arrows (winner solid), answer cell ✓                                                                       | canvas |
 | `staircase`     | Climbing Stairs: numbered steps over table cells, a climber, the +1 / +2 hops onto the step as arcs                                                                                     | canvas |
 | `house-row`     | House Robber: houses over table cells with their cash, neighbors linked (shared alarm), ✓ take / ✕ skip plan                                                                            | canvas |
-| `stack`         | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row                                              | canvas |
+| `stack`         | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row; two side by side (`traceStack`)             | canvas |
 | `search-tree`   | backtracking decision tree (any branching): path in orange, dead ends faded/folded, pruned stubs dashed + reason, solutions ✓                                                           | canvas |
 | `partial`       | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                                    | bottom |
 | `hash-map`      | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                                                 | bottom |
@@ -428,6 +428,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `trie`          | a prefix tree of letter nodes by depth: word ends double-ringed with ✓ (and a note), the root-to-current path in orange, new nodes pop in, a missing child as a dashed ✕ stub           | canvas |
 | `digraph`       | a directed graph at fixed spots: arrows with weights, in-degree badges ("in 2"), ready dashed, current ringed, done ✓, stuck ✕; edges new, used (faint), better ✓, worse ✕              | canvas |
 | `union-find`    | union-find as trees: arrows up to parents, roots with "chief · 3", find paths lit, compressed links ghosted and redrawn, unions sliding trees together, a shared root ✕                 | canvas |
+| `op-log`        | a design problem's calls in a column on the left ("put(1, 10)" and its output): finished solid, the running call ringed in the accent, later calls dashed; scrolls to keep it in view   | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -589,8 +590,8 @@ skip is neutral. The validator checks the table's shape and headers, every cell,
 option, and answer, and the climber/hops and the street's plan; an unbound table is empty or final, and no plan may
 take two neighbors (schema).
 
-**Stack** (the five home problems; Trapping Rain Water is cross-listed in with its video, Min Stack and Implement
-Queue using Stacks without) added step state `pile` (named so it doesn't clash with a recursion's `stack`): `items`
+**Stack** (the five home problems; Trapping Rain Water, Min Stack, and Implement Queue using Stacks are cross-listed
+in with their videos) added step state `pile` (named so it doesn't clash with a recursion's `stack`): `items`
 bottom to top (each `{ label, ref?, key? }`: `ref` the input position, `key` what a monotonic stack orders by),
 `order` ("increasing" | "decreasing"), `pushed` (how many at the top this step pushed), `popped` (in pop order),
 `links` (answers the pops resolved, `{ from, to, label }` on the input row), `answers` (every one resolved so far),
@@ -625,8 +626,8 @@ found); an unbound tree shows the root (or the final search) and an unbound answ
 too-big candidate is negative (the branch is cut).
 
 **Arrays & Hashing** (the five home problems; Longest Substring Without Repeating Characters and Top K Frequent
-are cross-listed in with their videos, LRU Cache, LFU Cache, Subarray Sum Equals K, and Number of Submatrices That
-Sum to Target without, and First Missing Positive is also listed under Sorting) added step state `map`: `kind` ("map" |
+are cross-listed in with their videos, as are LRU Cache, LFU Cache, Subarray Sum Equals K, and Number of Submatrices
+That Sum to Target, and First Missing Positive is also listed under Sorting) added step state `map`: `kind` ("map" |
 "set"), `display` ("rows": one "key → value" line per entry, a group's items in the value; "cells": compact chips),
 `entries` in insertion order, `lookup` (the key asked for and whether it was there), `inserted`, and `updated` (with
 its old value). Traces read and write a `RecordedMap` (`traces/arrays-hashing/shared.ts`) like the reference
@@ -801,6 +802,42 @@ badge, edge, and state, and every parent, size, find, compression, union, and sh
 the graph as given or as it ends; every element alone or the final forest). Tones: an improvement is positive (`<`), a
 loss or a stale pop neutral; a size comparison neutral; fewer courses taken than exist negative.
 
+**Data Structure Design** (the five home problems; Implement Trie, Design Add and Search Words, and Find Median from
+Data Stream are cross-listed in with their videos; Min Stack and Implement Queue using Stacks are also listed under
+Stack, LRU Cache and LFU Cache under Linked List and Arrays & Hashing, Time Based Key-Value Store under Binary Search)
+added `trace.ops` (every call in order as shown, `{ call, output }`: "put(1, 10)" → "—", "get(1)" → "10", strings
+quoted, `null` as "—") and step state `op` (`current`, the call this step belongs to, and `returned`, set on the step
+where its output is known; a call may take several steps, e.g. TimeMap's binary search) plus `secondPile` (a second
+stack beside `pile`: the queue's out stack). Traces replay `[operations, arguments]` exactly like the reference
+solutions through `Calls` and record the design's internals with the existing recorders (`Pile`, `RecordedMap`, which
+gained `delete` for evictions) and a new `DoublyList` (`traces/design/shared.ts`): real `prev`/`next` assignments per
+lane, no sentinels (a lane's head and tail stand in for them), node ids in creation order and never reused, so a cache
+that evicts a node leaves its id unused (the schema now asks for distinct ids, not 0…n-1, and every link must reach a
+real node; `layoutList` indexes positions by id, identical for contiguous ids). Each structure is drawn by an existing
+primitive: Min Stack's (value, min) pairs in a `stack`; the queue's in and out stacks as two `stack` elements (the
+second with `traceStack: "second"`); LRU's map (`hash-map` rows, key → value) and recency list (`linked-list`, front =
+most recent, nodes "key:value"); LFU's map (key → "70 ×1": value and uses), one lane per use count (an LFU bucket is a
+small LRU list, oldest first; a used key slides to the next lane), and a `counter` for the fewest uses; TimeMap's map
+(key → "2:red 5:blue") and the one set key's history as an item-row (timestamps as values, the stored values as
+labels) with a `search-range`. An eviction is its own step, the outgoing node marked `rejected`, before the insert.
+A linked list's nodes may carry `prev` (a doubly linked list): the list then draws each back link on the lower track
+and raises the forward arrows (`DOUBLY_NEXT`); lists without `prev` are drawn exactly as before. The `op-log`
+primitive is built apart from everything else (`video/oplog-layout.ts`): a column at the left, as wide as its widest
+call and output (all outputs count, so it never changes width), at most 42% of the stage, rows windowed to keep the
+running call and the next one in view ("calls 5–10 of 11" in the title, hidden on a phone); when the full form is too
+wide it drops spaces and quotes, and then a key every call shares and the outputs' quotes (`get(4)` beside a map that
+shows "color"). With an op log the rest of the scene moves right of it (rows, list lanes, and stacks start at
+`stageLeft`; each stack gets an equal share and keeps its title on a phone), and the bottom stack moves as far down as
+it can (two stacks get their own columns with or without an op log). These are gated on the op log or a second stack,
+so every earlier video is pixel-identical before and after: the 15 videos with a linked-list or a stack, every scene
+paused at its start, +5 s, and +10 s at 1280 and 375 px in dark mode (and two of them in light mode), matched up to
+antialiasing at shape edges, as much as recapturing the same commit varies. The validator checks the op log's
+calls and outputs against `trace.ops`, the running call, and how many outputs are shown (unbound: none or all), the
+second stack against `secondPile`, and each node's `prev`. The op log with every output filled in reveals the answer
+(the list of outputs is too long for a result card on a phone), so these videos close with an info card. Every
+video's second scene contrasts a simpler design with the combination; tones: Min Stack's new minimum is positive and
+keeping the old one neutral, TimeMap's entry at or before the query positive and a later one neutral.
+
 `bar-row` was added this way for Container With Most Water and Trapping Rain Water. Planned primitives (not built):
 `coin-set` (Coin Change uses an item-row), `box-arrow` (system design).
 
@@ -834,7 +871,8 @@ Trace = {
            timeline?,                                             // intervals (see "Intervals" above)
            bits?,                                                 // bit manipulation (see "Bit Manipulation" above)
            trie?,                                                 // tries (see "Trie" above)
-           network?, forest? }[],                                 // advanced graphs (see "Advanced Graphs" above)
+           network?, forest?,                                     // advanced graphs (see "Advanced Graphs" above)
+           op?, secondPile? }[],                                  // design (see "Data Structure Design" above)
            // range…counter: divide and conquer (see "Divide and conquer" above)
   //   equation = { terms, operator, result, comparison?: { op, target }, tone?: "positive" | "negative" | "neutral" }
   tree?: { nodes },    // a binary tree's shape (display "tree"); steps record the walk over it
@@ -844,6 +882,7 @@ Trace = {
   matrix?,                                                           // a prefix grid's matrix
   timeline?: { min, max, lanes, input },                             // an interval trace's axis and intervals
   network?,                                                          // a directed graph as given (unbound digraphs)
+  ops?: { call, output }[],                                          // a design problem's calls (what an op-log shows)
   answer,             // same shape as the reference solution's return value (tested)
   answerDisplay,      // what a `showsAnswer` result must show, e.g. "[2, 5]", "true", "11"
   answerIndices?,     // when the answer is a set of positions
@@ -866,7 +905,7 @@ fits in 10 scenes (≈ key steps + 3). The last step is always key.
   the previous bound step left them); pointers only bind names the step has; equations equal the step's equation (and its `tone`, if it sets one);
   highlights equal the step's active/rejected/found items; bar fills and water match; in a bound scene, rows hold the
   step's own array when it has one (`values`), and moves, empty slots, sorted regions, held values, tallies, groups,
-  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), prefix rows (op, direction, every value, the cell built, reads, spans and their values; one cell per boundary; an unbound row is empty or final) and prefix grids (the matrix, every prefix cell, the current cell, signed rectangles and cells, the found rectangle; unbound: unbuilt or complete), timelines (axis, lanes, every bar's range, lane, state, and slide, the overlap, a merge's growth, the sweep marker; unbound: as given or as they end), bits panels (width, and every row's name, value, operator, rule, changed bits, and slide; a bits panel needs a bound step), tries (every node, the path, created, missing, branch, hit, and pruned nodes; unbound: empty or final), digraphs (direction, every node's label, spot, badge, and state, every edge's weight and state; unbound: as given or as it ends) and union-finds (labels, parents, sizes, finds, compressed links, the union, the shared root; unbound: every element alone or the final forest), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
+  split trees, merge buffers, partitions, heaps (values, size, compared pair, moves), counters, windows, character counts, deques, search ranges, candidate answers, cuts, linked lists (every node's link, back link when it has one, lane, and slot; rewired links; where moved nodes slide from), heaps (kind, array, capacity, swaps, push, pop; every drawn heap keeps the heap property; an unbound one is the final heaps), DP tables (shape, headers, every cell, the cell being computed, its reads, the chosen option, the answer cell; an unbound one is empty or final) with their staircase (climber, hops) or street (taken and skipped houses), stacks (items bottom to top, push, pop, resolve links, answers, built text; one labeled increasing or decreasing must be; an unbound one is empty), hash maps (kind, display, entries in order, the lookup and its result, inserted and updated keys; an unbound one is empty), races (phase, every move's path and hops, a refused node, the meeting node, the loop's start, the loop link; every move follows the list's links; an unbound one shows no moves), greedy choices (the option taken and the one turned down; an unbound choice is free text) and reaches (range, value, jump, closed pieces; a reach needs a bound step), prefix rows (op, direction, every value, the cell built, reads, spans and their values; one cell per boundary; an unbound row is empty or final) and prefix grids (the matrix, every prefix cell, the current cell, signed rectangles and cells, the found rectangle; unbound: unbuilt or complete), timelines (axis, lanes, every bar's range, lane, state, and slide, the overlap, a merge's growth, the sweep marker; unbound: as given or as they end), bits panels (width, and every row's name, value, operator, rule, changed bits, and slide; a bits panel needs a bound step), tries (every node, the path, created, missing, branch, hit, and pruned nodes; unbound: empty or final), digraphs (direction, every node's label, spot, badge, and state, every edge's weight and state; unbound: as given or as it ends) and union-finds (labels, parents, sizes, finds, compressed links, the union, the shared root; unbound: every element alone or the final forest), op logs (every call and output, the running call, how many outputs are shown; unbound: none or all; all shown reveals the answer) and a second stack (`traceStack: "second"`, against the step's `secondPile`), search trees (shape, reached, path, current, dead ends, solutions, undo, folded subtrees) and the answer being built (items, the choice added or removed, answers found; unbound: the root and an empty answer, or the end), BFS grids and graphs (shape, legend, cell contents, and the search: current item, seen set, frontier, levels, neighbor checks; an unbound one shows no search or the final search), queues (items with their levels, so the level boundaries; what left the front and joined the back; a queue needs a bound step), trees (the shape, and every walk field: running call, null visit, open path, finished, skipped, returned value, results, badges), and call stacks (frames, and `kept` against the previous bound step) match the step (a `traceRow: "second"` row holds the second list; an unbound list must be the starting or final one; an unbound tree is bare or the final walk, and a call-stack needs a bound step); `result.indices` equal
   `answerIndices`, a `showsAnswer` result displays exactly `answerDisplay`, and the answer is revealed somewhere.
 
 The hand-written Two Pointers storyboard is bound to `two-pointers/pair-with-target-sum` and passes the same checks.
@@ -1131,7 +1170,10 @@ Search Words a crossword helper's blank squares, and Replace Words a stenographe
 Schedule, Network Delay Time, and Alien Dictionary are problem-native (the courses and prerequisites, the servers and
 links, the alien word list); Find if Path Exists is villages joining clans under chiefs as roads are built, and
 Redundant Connection a crew wiring substations, each reporting to a hub, where the spare cable joins two that already
-share one.
+share one. Data Structure Design: LRU Cache, LFU Cache, and Time Based Key-Value Store are problem-native (the caches
+and the store, with their own calls); Min Stack is a warehouse stack of crates whose tags record the lightest crate at
+or below them, and Implement Queue using Stacks a diner's pancakes, stacked as they cook and flipped onto the serving
+plate when it runs empty, so the first made is on top.
 
 The UI shows a badge: "Real-world problem" (problem-native) or "Explained with an analogy".
 

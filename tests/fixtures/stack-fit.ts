@@ -8,16 +8,40 @@ import { TEXT, type TextMetrics } from "@/video/text";
  * the column, and the answers, arcs, or text strip running into the bottom stack or off the stage.
  */
 export function stackProblems(elements: readonly Element[], t: TextMetrics): string[] {
-  const el = elements.find((e) => e.type === "stack");
-  if (el?.type !== "stack") return [];
-  const { pile, rows, bottomTop } = layoutScene(elements, t);
+  const stacks = elements.filter((e) => e.type === "stack");
+  if (stacks.length === 0) return [];
+  const { pile: first, piles, rows, bottomTop } = layoutScene(elements, t);
+  const problems: string[] = [];
+  // Two stacks (a queue made of two) each have their own column; they must not overlap.
+  if (stacks.length > 1) {
+    const columns = stacks.map((s) => piles?.[s.id]).filter((p) => p !== undefined);
+    if (columns.length !== stacks.length) problems.push("a second stack has no column of its own");
+    for (let k = 1; k < columns.length; k++)
+      if (columns[k - 1].left + columns[k - 1].width + 16 > columns[k].left)
+        problems.push("two stacks overlap");
+  }
+  for (const el of stacks) problems.push(...oneStack(el, piles?.[el.id] ?? first, rows, bottomTop, t));
+  return problems;
+}
+
+function oneStack(
+  el: Extract<Element, { type: "stack" }>,
+  pile: ReturnType<typeof layoutScene>["pile"],
+  rows: ReturnType<typeof layoutScene>["rows"],
+  bottomTop: number,
+  t: TextMetrics,
+): string[] {
   if (!pile) return ["stack has no layout"];
   const problems: string[] = [];
   const captionBottom = 70 + 2 * Math.ceil(t.size(TEXT.caption) * 1.25);
   for (const item of [...el.items, ...(el.popped ?? [])])
     if (!t.fits(item.label, t.size(TEXT.stackItem), pile.width - 16, "mono"))
       problems.push(`stack item ${item.label} is wider than the column`);
-  const used = (el.items.length + (el.popped?.length ?? 0)) * (pile.itemHeight + pile.gap) + 8;
+  // A titled column (beside an op log) keeps its title on a phone: it needs room above the items, and must fit.
+  const title = pile.titled ? t.size(TEXT.stackTitleSmall) + 26 : 0;
+  if (pile.titled && !t.fits(el.label, t.size(TEXT.stackTitleSmall), pile.width + 40))
+    problems.push(`the stack's title "${el.label}" is wider than its column`);
+  const used = (el.items.length + (el.popped?.length ?? 0)) * (pile.itemHeight + pile.gap) + 8 + title;
   if (pile.bottom - used < captionBottom)
     problems.push(`the stack (${el.items.length} + ${el.popped?.length ?? 0} out) runs under the caption`);
   if (pile.bottom > bottomTop) problems.push("the stack runs into the bottom stack");

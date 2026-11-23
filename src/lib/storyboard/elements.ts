@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; tries add "trie"; advanced graphs add "digraph" (apart from "graph") and "union-find"; priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; tries add "trie"; advanced graphs add "digraph" (apart from "graph") and "union-find"; data structure design adds "op-log" (plus linked-list `prev` links and stack `traceStack`); priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -385,6 +385,8 @@ export const listNodeSchema = z.object({
   slot: z.number().int().min(0).max(9),
   /** The dummy-node trick's placeholder, drawn dashed. */
   dummy: z.boolean().optional(),
+  /** A doubly linked list's back link (the node before, or null at the front); omit for a singly linked list. */
+  prev: index.nullable().optional(),
 });
 
 const listPlaceSchema = z.object({
@@ -733,6 +735,8 @@ const stackShape = {
   /** Text built so far, in a strip under the input ("building: xyzyz"). */
   text: z.object({ label: z.string().trim().min(1).max(10), value: z.string().max(20) }).optional(),
   label: nonEmpty.max(16).default("stack"),
+  /** Which of the step's stacks this is when it has two (a queue made of two stacks). Default: the first. */
+  traceStack: z.enum(["first", "second"]).optional(),
 };
 export const stackElementSchema = z.object(stackShape);
 export const stackSourceSchema = z.object({
@@ -1163,6 +1167,28 @@ export const unionFindSourceSchema = z.object({
   parents: unionFindShape.parents.optional(),
 });
 
+const opLogShape = {
+  ...baseElement,
+  type: z.literal("op-log"),
+  /** Every call in order, as shown ("put(1, 10)") with its output ("—" for none, "-1", '"red"'). */
+  calls: z
+    .array(z.object({ call: nonEmpty.max(26), output: z.string().max(8) }))
+    .min(1)
+    .max(12),
+  /** The call being run (ringed), if any. */
+  current: index.optional(),
+  /** How many outputs are filled in: calls 0…shown − 1 show theirs. */
+  shown: index,
+  label: nonEmpty.max(16).default("calls"),
+};
+export const opLogElementSchema = z.object(opLogShape);
+export const opLogSourceSchema = z.object({
+  ...opLogShape,
+  /** Omit calls/current/shown to take them from the trace and the bound step (unbound: no outputs yet). */
+  calls: opLogShape.calls.optional(),
+  shown: opLogShape.shown.optional(),
+});
+
 const freqEntrySchema = z.object({
   key: nonEmpty.max(3),
   count: z.number().int().nonnegative(),
@@ -1355,6 +1381,7 @@ export const elementSchemas = [
   trieElementSchema,
   digraphElementSchema,
   unionFindElementSchema,
+  opLogElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1404,6 +1431,7 @@ export const elementSourceSchemas = [
   trieSourceSchema,
   digraphSourceSchema,
   unionFindSourceSchema,
+  opLogSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1472,6 +1500,7 @@ export type DigraphElement = ElementOf<"digraph">;
 export type NetworkNode = z.infer<typeof networkNodeSchema>;
 export type NetworkEdge = z.infer<typeof networkEdgeSchema>;
 export type UnionFindElement = ElementOf<"union-find">;
+export type OpLogElement = ElementOf<"op-log">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

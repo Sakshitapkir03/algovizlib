@@ -8,7 +8,7 @@ import { describeIssues, MAX_SCENES, MIN_SCENES } from "../draft";
  * Prompt templates for storyboard generation. Bump the version on ANY wording change: it's recorded in each
  * generated storyboard and is part of the cache key, so changed prompts never reuse stale results.
  */
-export const PROMPT_VERSION = "storyboard-v22";
+export const PROMPT_VERSION = "storyboard-v23";
 
 export type StoryboardPromptInput = {
   problem: Problem;
@@ -71,6 +71,7 @@ ${ELEMENT_GUIDE}
 - trie: when steps list a trie, add a trie (OMIT everything) to every scene that shows the data (an unbound scene shows the empty trie). With an input row (the words), keep it above the trie and mark the current word with an "active" highlight, not a pointer; with a board (a grid), the board sits left of the trie. The second scene contrasts the slow way (comparing against every word, or searching the board once per word) with sharing prefixes. Say when a node exists but isn't a word's end (only a prefix), and when a child is missing. Use a partial for answers or output being built (OMIT items; \`showFound: false\`). The trie needs the height: keep the bottom stack to at most the partial, and put the answer's result in the closing scene (without the trie). Skip callouts in trie scenes.
 - digraph (topological sort, Dijkstra): when steps list a network, make a digraph the first element of every scene that shows the graph (OMIT directed/nodes/edges; an unbound scene shows the graph as given). With an input row (Alien Dictionary's words), keep it above the graph and mark the pair being compared with an "active" highlight, no pointers. For topological sort, add a queue (OMIT items/dequeued/enqueued; levelLabel "round") and a partial for the order built so far (OMIT items; \`showFound: false\`) in every bound scene whose step lists them; say once what a badge means (how many arrows still point into the node) and, if nodes end up stuck, that they wait on each other in a cycle. For Dijkstra, add a heap (OMIT heaps; it sits right of the graph) and a hash-map of best-known distances (OMIT everything but \`label\`) in every bound scene, plus the step's equation when it has one; say why the popped node can be settled for good (every other route is already at least as long, since weights are never negative), and that a popped entry for a settled node is stale. The second scene contrasts the slow way (trying every order, or every route) with the algorithm's one pass. Keep the bottom stack to two panels plus at most one equation; put the answer's result in the closing scene (without the graph) when the bottom stack is full. Skip callouts in graph scenes.
 - union-find: when steps list a forest, add a union-find (OMIT labels/parents and the step's work; give \`rootLabel\`, the story's word for a root) to every scene that shows the groups (an unbound scene shows every element alone). Keep the edges as an item-row above it, marking the current edge with an "active" highlight (the redundant one "rejected"), no pointers. The second scene contrasts the slow way (a fresh search for every question) with keeping one root per group. Say what a find does (follow the arrows up to the root), that two elements are joined exactly when their roots match, and, when the trace compresses a path or unions by size, what that buys (short trees). Keep the bottom stack to at most one equation, and put the answer's result in the closing scene (without the trees). Skip callouts in union-find scenes.
+- op-log (data structure design): when the trace lists calls, make an op-log (OMIT calls/current/shown) the first element of EVERY scene, bound or not (an unbound one shows the calls before any runs). There's no input row unless the trace has one. Put the design's internal structures beside it in every bound scene whose step lists them, each with everything OMITTED: a stack (OMIT items; \`label\` in the story's words) for a stack, and a second stack with \`traceStack: "second"\` when the step lists two (give each a label: "in", "out"); a linked-list (OMIT nodes; \`laneLabels\` in the story's words, e.g. ["recent → old"] or one per use count, ["×1", "×2", "×3"]) when the step lists lanes, with a highlight on it (rowId = the linked-list's id, OMIT indices) for each state the step lists (active: the node just used, rejected: the node being evicted, found); a hash-map (OMIT everything but label) when the step lists a map; a counter (OMIT value/delta; label in the story's words, e.g. "fewest uses") when the step lists a count; and with a row (a key's history), the item-row (labels: the value stored at each timestamp, in order) with a search-range (OMIT from/to/mid; label e.g. "answer") and an "active" highlight (and "found" when listed) in the scenes whose step lists a search; leave the row out of scenes before the history is complete. No pointers. The second scene contrasts a simpler design (one plain list where some call is O(n): a scan for the minimum, shifting every value, searching for the oldest key) with the combined structures that make every call fast; one sentence says why the combination works (e.g. "the hash map finds the node instantly, and the linked list moves it in constant time"). Say why each key step is fast (a get that moves a node to the front changes a few links, an eviction takes the back node, a min that stays right after a pop was stored with the pair underneath, a pour happens once per value). Keep the bottom stack to at most a hash-map and one counter or equation. The op-log with every output filled in IS the answer (the last call's scene, or an unbound closing scene with \`shown\` set to the number of calls), so don't add a showsAnswer result: the list of outputs is too long for a card on a phone; a short info result in the closing scene is fine. Skip callouts in design scenes.
 - The answer: a result element with showsAnswer: true and value omitted.
 - Never write a number that contradicts the trace. Narration may say numbers, but they must be the trace's numbers.
 - Element ids are unique within a scene. Captions are at most 80 characters. Narration is 2–4 plain sentences, no markdown.`;
@@ -163,7 +164,7 @@ function describeStep(step: TraceStep, index: number): string {
         .sort(([a], [b]) => a - b)
         .map(
           ([lane, nodes]) =>
-            `${lane}: ${nodes.map((n) => `#${n.id}(${n.value})→${n.next === null ? "null" : `#${n.next}`}`).join(" ")}`,
+            `${lane}: ${nodes.map((n) => `#${n.id}(${n.value})→${n.next === null ? "null" : `#${n.next}`}${n.prev !== undefined ? ` ←${n.prev === null ? "null" : `#${n.prev}`}` : ""}`).join(" ")}`,
         )
         .join(" ; ")}`,
     );
@@ -380,6 +381,13 @@ function describeStep(step: TraceStep, index: number): string {
       `building [${p.items.join(", ")}]${p.added ? ` (+${p.added})` : ""}${p.removed ? ` (took back ${p.removed})` : ""}; found ${p.found.length ? p.found.join(" ") : "none"}`,
     );
   }
+  if (step.op) parts.push(`call #${step.op.current}${step.op.returned ? " (returned)" : " (running)"}`);
+  if (step.secondPile) {
+    const p = step.secondPile;
+    parts.push(
+      `second stack (bottom→top): [${p.items.map((i) => i.label).join(", ")}]${p.popped?.length ? `; popped ${p.popped.map((i) => i.label).join(", ")}` : ""}${p.pushed ? `; pushed ${p.pushed}` : ""}`,
+    );
+  }
   if (step.pile) {
     const p = step.pile;
     parts.push(
@@ -529,6 +537,10 @@ ${
     trace.searchTree
       ? `Decision tree (use one search-tree), id: state (choice from parent)\n${trace.searchTree.nodes.map((n) => `  #${n.id}: ${n.pruned ? `pruned, ${n.pruned}` : n.label}${n.edge ? ` (${n.edge} from #${n.parent})` : ""}`).join("\n")}\n`
       : ""
+  }${
+    trace.ops
+      ? `Calls (use one op-log; # · call → output)\n${trace.ops.map((c, k) => `  #${k}: ${c.call} → ${c.output}`).join("\n")}\n`
+      : ""
   }Pointer names: ${trace.pointerNames.join(", ") || "none"}
 Answer: ${trace.answerDisplay}
 
@@ -556,4 +568,4 @@ ${describeIssues(issues)}
 Return the complete corrected storyboard JSON. Fix every issue above and keep everything that was already right.`;
 }
 
-export const storyboardPromptV22 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };
+export const storyboardPromptV23 = { version: PROMPT_VERSION, systemPrompt, generatePrompt, repairPrompt };

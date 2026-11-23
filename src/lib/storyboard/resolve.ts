@@ -691,8 +691,9 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
         }
         case "stack": {
           if (el.items) return el;
-          if (step && !step.pile) return (noState(el, "items", "stack"), el);
-          const pile = step?.pile;
+          const second = el.traceStack === "second";
+          const pile = second ? step?.secondPile : step?.pile;
+          if (step && !pile) return (noState(el, "items", second ? "second stack" : "stack"), el);
           // An unbound scene (the intro) shows the stack empty.
           if (!pile) return { ...el, items: [] };
           return {
@@ -704,6 +705,19 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             links: pile.links,
             answers: pile.answers,
             text: pile.text,
+          };
+        }
+        case "op-log": {
+          const calls = el.calls ?? trace?.ops;
+          if (!calls) return (missing(el, "calls"), el);
+          if (step && !step.op) return (noState(el, "current", "operation log"), el);
+          // An unbound scene shows the calls before any of them runs (or, if written, all their outputs).
+          const op = step?.op;
+          return {
+            ...el,
+            calls,
+            current: el.current ?? op?.current,
+            shown: el.shown ?? (op ? op.current + (op.returned ? 1 : 0) : 0),
           };
         }
         case "dp-table": {

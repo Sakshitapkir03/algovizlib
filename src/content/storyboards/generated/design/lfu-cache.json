@@ -1,0 +1,415 @@
+{
+  "id": "design-lfu-cache",
+  "title": "LFU Cache: Buckets of Use Counts",
+  "concept": "Data Structure Design",
+  "category": "dsa",
+  "summary": "A map holds each key's value and use count, a small recency list per count holds the keys, and the fewest-uses count says which list to evict from: every call is O(1).",
+  "exampleSource": "problem-native",
+  "tags": [
+    "design",
+    "hash map",
+    "linked list",
+    "cache"
+  ],
+  "takeaway": {
+    "pattern": "Data Structure Design",
+    "summary": "Map each key to (value, uses); keep one doubly linked list per use count, oldest first, and track the fewest uses. A use moves a key up one list; eviction takes the oldest key of the fewest-uses list.",
+    "timeComplexity": "O(1) per call",
+    "spaceComplexity": "O(capacity)",
+    "whenToUse": [
+      "A cache that evicts the least frequently used entry, oldest first on ties",
+      "Counts that only ever rise by one, so the minimum can be tracked directly"
+    ]
+  },
+  "trace": {
+    "problem": "design/lfu-cache",
+    "args": [
+      [
+        "LFUCache",
+        "put",
+        "put",
+        "get",
+        "put",
+        "get",
+        "get",
+        "get",
+        "put",
+        "get",
+        "get"
+      ],
+      [
+        [
+          2
+        ],
+        [
+          7,
+          70
+        ],
+        [
+          8,
+          80
+        ],
+        [
+          8
+        ],
+        [
+          9,
+          90
+        ],
+        [
+          7
+        ],
+        [
+          9
+        ],
+        [
+          8
+        ],
+        [
+          10,
+          100
+        ],
+        [
+          9
+        ],
+        [
+          10
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v23",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T16:38:17.787Z",
+    "repairAttempts": 1
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "This cache holds two keys and counts each key's uses. When full, it drops the key with the fewest uses, the oldest one on a tie.",
+      "caption": "A cache of 2 that drops the least used key",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Scanning every key for the fewest uses is O(n). Instead, keep a list of keys per use count, oldest first, and the fewest uses: the map finds a key instantly, and that list says who goes next.",
+      "caption": "Scanning for the fewest uses is O(n)",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "costs",
+          "enterAt": 0,
+          "type": "result",
+          "title": "scan every key: O(n)",
+          "value": "buckets + min: O(1)",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "use",
+      "narration": "Keys 7 and 8 start with one use. get(8) returns 80 and moves 8 to the back of the 2-use list.",
+      "caption": "get(8): key 8 moves up from the 1-use list to 2 uses",
+      "durationInFrames": 288,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "1 use",
+            "2 uses",
+            "3 uses"
+          ]
+        },
+        {
+          "id": "used",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → value ×use"
+        },
+        {
+          "id": "min",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fewest uses"
+        }
+      ]
+    },
+    {
+      "id": "evict",
+      "narration": "Key 9 is new and the cache is full. The fewest uses is 1, so that list's oldest key, 7, is evicted.",
+      "caption": "put(9) on a full cache: key 7 has the fewest uses",
+      "durationInFrames": 300,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "1 use",
+            "2 uses",
+            "3 uses"
+          ]
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → value ×use"
+        },
+        {
+          "id": "min",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fewest uses"
+        }
+      ]
+    },
+    {
+      "id": "insert",
+      "narration": "Key 9 goes in with one use, so the fewest uses resets to 1.",
+      "caption": "Key 9 joins the 1-use list; the fewest uses is 1",
+      "durationInFrames": 204,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "1 use",
+            "2 uses",
+            "3 uses"
+          ]
+        },
+        {
+          "id": "used",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → value ×use"
+        },
+        {
+          "id": "min",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fewest uses"
+        }
+      ]
+    },
+    {
+      "id": "min-up",
+      "narration": "get(9) moves 9 to two uses, emptying the 1-use list, so the fewest uses steps up to 2. Counts only rise by one, so there's nothing to search.",
+      "caption": "get(9) empties the 1-use list: the fewest uses becomes 2",
+      "durationInFrames": 372,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "1 use",
+            "2 uses",
+            "3 uses"
+          ]
+        },
+        {
+          "id": "used",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → value ×use"
+        },
+        {
+          "id": "min",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fewest uses"
+        }
+      ]
+    },
+    {
+      "id": "evict-2",
+      "narration": "get(8) lifts 8 to three uses. Then put(10) needs room: the fewest uses is 2, so key 9 goes.",
+      "caption": "put(10): the fewest uses is 2, so key 9 goes, not 8",
+      "durationInFrames": 264,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "1 use",
+            "2 uses",
+            "3 uses"
+          ]
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "rejected"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → value ×use"
+        },
+        {
+          "id": "min",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fewest uses"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "Key 10 starts with one use, and get(10) returns 100, moving it up to two.",
+      "caption": "Key 10 starts at 1 use; get(10) returns 100",
+      "durationInFrames": 216,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "list",
+          "enterAt": 0,
+          "type": "linked-list",
+          "laneLabels": [
+            "1 use",
+            "2 uses",
+            "3 uses"
+          ]
+        },
+        {
+          "id": "used",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "list",
+          "state": "active"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → value ×use"
+        },
+        {
+          "id": "min",
+          "enterAt": 0,
+          "type": "counter",
+          "label": "fewest uses"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's the LFU design: a map to each key's value and uses, a recency list per use count, and the fewest uses. Every call is O(1), in O(capacity) space.",
+      "caption": "Map + a recency list per count + the minimum: O(1)",
+      "durationInFrames": 384,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "shown": 11,
+          "label": "calls"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "result",
+          "title": "every call",
+          "value": "O(1) time",
+          "showsAnswer": false,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

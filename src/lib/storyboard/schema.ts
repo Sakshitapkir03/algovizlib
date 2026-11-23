@@ -82,17 +82,25 @@ export const sceneSchema = z
   .superRefine((scene, ctx) => {
     checkUniqueElementIds(scene, ctx);
     const rows = new Map<string, number>();
+    // A linked list's positions are its node ids (a cache's evicted nodes leave gaps).
+    const listIds = new Map<string, Set<number>>();
     for (const el of scene.elements) {
       if (el.type === "item-row") rows.set(el.id, el.items.length);
       if (el.type === "bar-row") rows.set(el.id, el.bars.length);
-      if (el.type === "linked-list") rows.set(el.id, el.nodes.length);
+      if (el.type === "linked-list") {
+        rows.set(el.id, el.nodes.length);
+        listIds.set(el.id, new Set(el.nodes.map((node) => node.id)));
+      }
       if (el.type === "binary-tree") rows.set(el.id, el.nodes.length);
     }
 
     const checkIndex = (rowId: string, idx: number, path: (string | number)[]) => {
       const len = rows.get(rowId);
+      const ids = listIds.get(rowId);
       if (len === undefined) {
         ctx.addIssue({ code: "custom", path, message: `Unknown row "${rowId}"` });
+      } else if (ids) {
+        if (!ids.has(idx)) ctx.addIssue({ code: "custom", path, message: `"${rowId}" has no node ${idx}` });
       } else if (idx >= len) {
         ctx.addIssue({
           code: "custom",
@@ -326,11 +334,13 @@ export const sceneSchema = z
         case "linked-list": {
           const n = el.nodes.length;
           const ids = el.nodes.map((node) => node.id);
-          if (new Set(ids).size !== n || ids.some((id) => id >= n))
+          // Ids are 0…n-1, except that a node removed for good (a cache's eviction) leaves its id unused.
+          const known = new Set(ids);
+          if (known.size !== n)
             ctx.addIssue({
               code: "custom",
               path: [...path, "nodes"],
-              message: `node ids must be 0–${n - 1}, each once`,
+              message: "node ids must each appear once",
             });
           const places = el.nodes.map((node) => `${node.lane}:${node.slot}`);
           if (new Set(places).size !== n)
@@ -340,15 +350,29 @@ export const sceneSchema = z
               message: "two nodes share a lane and slot",
             });
           el.nodes.forEach((node, k) => {
-            if (node.next !== null && node.next >= n)
+            if (node.next !== null && !known.has(node.next))
               ctx.addIssue({
                 code: "custom",
                 path: [...path, "nodes", k, "next"],
                 message: `node ${node.id} links to ${node.next}, which isn't a node`,
               });
+            // A doubly linked list's back link must point at the node whose next is this one.
+            if (node.prev !== undefined) {
+              const before = node.prev === null ? undefined : el.nodes.find((m) => m.id === node.prev);
+              const ok =
+                node.prev === null
+                  ? !el.nodes.some((m) => m.next === node.id && m.lane === node.lane)
+                  : before !== undefined && before.next === node.id;
+              if (!ok)
+                ctx.addIssue({
+                  code: "custom",
+                  path: [...path, "nodes", k, "prev"],
+                  message: `node ${node.id}'s prev (${node.prev}) isn't the node that links to it`,
+                });
+            }
           });
           el.rewired?.forEach((r, k) => {
-            if ([r.node, r.from, r.to].some((id) => id !== null && id >= n))
+            if ([r.node, r.from, r.to].some((id) => id !== null && !known.has(id)))
               ctx.addIssue({
                 code: "custom",
                 path: [...path, "rewired", k],
@@ -959,9 +983,45 @@ export const sceneSchema = z
               path: [...path, "pushed"],
               message: "pushed can't exceed the items",
             });
-          if (scene.elements.filter((e) => e.type === "stack").length > 1)
-            ctx.addIssue({ code: "custom", path, message: "A scene can show only one stack" });
+          // One stack, or two when one shows the step's second stack (a queue made of two stacks).
+          if (
+            scene.elements.filter(
+              (e) => e.type === "stack" && (e.traceStack ?? "first") === (el.traceStack ?? "first"),
+            ).length > 1
+          )
+            ctx.addIssue({
+              code: "custom",
+              path,
+              message: 'A scene can show only one stack (a second one needs traceStack: "second")',
+            });
           break;
+        case "op-log": {
+          const n = el.calls.length;
+          if (el.shown > n)
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "shown"],
+              message: `shown can't exceed the ${n} calls`,
+            });
+          if (el.current !== undefined) {
+            if (el.current >= n)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "current"],
+                message: `current is out of range (${n} calls)`,
+              });
+            // Every earlier call has its output; the current one has it once it returns.
+            else if (el.shown !== el.current && el.shown !== el.current + 1)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "shown"],
+                message: "shown must be the current call (before it returns) or the one after it",
+              });
+          }
+          if (scene.elements.filter((e) => e.type === "op-log").length > 1)
+            ctx.addIssue({ code: "custom", path, message: "A scene can show only one op-log" });
+          break;
+        }
         case "dp-table": {
           if (el.cells.length !== el.rows || el.cells.some((row) => row.length !== el.cols))
             ctx.addIssue({

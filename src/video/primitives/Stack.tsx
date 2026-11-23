@@ -18,9 +18,11 @@ import { arrowHead } from "./Grid";
  * so far shows in a strip under the row.
  */
 export function Stack({ element }: { element: StackElement }) {
-  const { pile, rows, palette, reducedMotion, text } = useScene();
+  const { pile: scenePile, piles, rows, palette, reducedMotion, text } = useScene();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  // Two stacks (or a stack beside an op log) each have their own column.
+  const pile = piles?.[element.id] ?? scenePile;
   if (!pile) return null;
   const p = enterProgress(frame, fps, reducedMotion);
   const leave = enterProgress(frame, fps, reducedMotion, 4);
@@ -36,14 +38,15 @@ export function Stack({ element }: { element: StackElement }) {
   const row = element.rowId ? rows[element.rowId] : undefined;
   const orderWord =
     element.order === "increasing" ? "increasing ↑" : element.order === "decreasing" ? "decreasing ↓" : "";
-  const title = text.compact
-    ? undefined
-    : firstFitting(
-        orderWord ? [`${element.label} · ${orderWord}`, orderWord, element.label] : [element.label],
-        titleSize,
-        w + 40,
-        text,
-      );
+  const title =
+    text.compact && !pile.titled
+      ? undefined
+      : firstFitting(
+          orderWord ? [`${element.label} · ${orderWord}`, orderWord, element.label] : [element.label],
+          titleSize,
+          w + 40,
+          text,
+        );
   const popped = element.popped ?? [];
   const topY = slotTop(Math.max(0, n - 1));
   // Popped items stack above where the top was, first popped lowest.

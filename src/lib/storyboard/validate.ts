@@ -32,6 +32,7 @@ import type {
   GraphElement,
   GridElement,
   LinkedListElement,
+  OpLogElement,
 } from "./elements";
 import type { ValidationIssue, ValidationResult } from "./issues";
 import { applyOperator, keptFrames } from "./resolve";
@@ -470,6 +471,8 @@ const canonicalNodes = (nodes: LinkedListElement["nodes"] | TraceLinks["nodes"])
       id: n.id,
       value: n.value,
       next: n.next,
+      // A doubly linked list's back links (absent on a singly linked one).
+      ...(n.prev !== undefined ? { prev: n.prev } : {}),
       lane: n.lane,
       slot: n.slot,
       dummy: n.dummy === true,
@@ -613,8 +616,33 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
         });
     };
 
+    // The op log's calls and outputs are the trace's, in order.
+    const checkCalls = (el: OpLogElement) => {
+      const expected = trace.ops;
+      if (!expected) {
+        push("This trace has no operation sequence; remove the op-log", el.id, "calls");
+        return;
+      }
+      const show = (calls: readonly { call: string; output: string }[]) =>
+        calls.map((c) => `${c.call} → ${c.output}`).join(" | ");
+      if (show(el.calls) !== show(expected))
+        push("The op log's calls and outputs don't match the trace; omit calls", el.id, "calls", {
+          expected: show(expected),
+          actual: show(el.calls),
+        });
+    };
+
     // Reveals and answer checks apply with or without a bound step.
     for (const el of scene.elements) {
+      // An op log with every output filled in is the answer (the outputs are what the calls return).
+      if (
+        el.type === "op-log" &&
+        trace.ops &&
+        el.shown === trace.ops.length &&
+        el.calls.length === trace.ops.length &&
+        el.calls.every((c, k) => c.call === trace.ops![k].call && c.output === trace.ops![k].output)
+      )
+        revealed = true;
       if (
         el.type === "highlight" &&
         el.state === "found" &&
@@ -884,6 +912,19 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               `Without a traceStep, the ${el.type} shows the start (or the end); omit its state to take it from the trace`,
               el.id,
               el.type === "search-tree" ? "reached" : "items",
+            );
+        }
+        // An unbound op log is the calls before any runs, or with every output (a recap).
+        if (el.type === "op-log") {
+          checkCalls(el);
+          if (el.current !== undefined)
+            push("Without a traceStep, no call is running; omit current", el.id, "current");
+          if (el.shown !== 0 && el.shown !== el.calls.length)
+            push(
+              "Without a traceStep, the op log shows no outputs or all of them; omit shown",
+              el.id,
+              "shown",
+              { expected: `0 or ${el.calls.length}`, actual: String(el.shown) },
             );
         }
         if (el.type === "stack") {
@@ -1644,12 +1685,17 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           break;
         }
         case "stack": {
-          if (!step.pile) {
-            push(`Trace step ${stepIndex} has no stack`, el.id, "items");
+          const pile = el.traceStack === "second" ? step.secondPile : step.pile;
+          if (!pile) {
+            push(
+              `Trace step ${stepIndex} has no ${el.traceStack === "second" ? "second stack" : "stack"}`,
+              el.id,
+              "items",
+            );
             break;
           }
           if (el.rowId) checkRow(el.rowId);
-          const expected = pileFields(step.pile);
+          const expected = pileFields(pile);
           const drawn = pileFields(el);
           for (const field of Object.keys(expected))
             if (drawn[field] !== expected[field])
@@ -1657,6 +1703,27 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
                 expected: expected[field],
                 actual: drawn[field],
               });
+          break;
+        }
+        case "op-log": {
+          checkCalls(el);
+          if (!step.op) {
+            push(`Trace step ${stepIndex} has no operation log`, el.id, "current");
+            break;
+          }
+          const shown = step.op.current + (step.op.returned ? 1 : 0);
+          if (el.current !== step.op.current)
+            push(`The running call doesn't match trace step ${stepIndex}`, el.id, "current", {
+              expected: String(step.op.current),
+              actual: String(el.current ?? "none"),
+            });
+          if (el.shown !== shown)
+            push(
+              `Trace step ${stepIndex} has ${shown} output${shown === 1 ? "" : "s"} known (calls 0–${shown - 1})`,
+              el.id,
+              "shown",
+              { expected: String(shown), actual: String(el.shown) },
+            );
           break;
         }
         case "dp-table": {

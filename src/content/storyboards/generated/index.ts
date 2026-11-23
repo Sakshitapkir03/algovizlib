@@ -26,6 +26,11 @@ import bitManipulationShortestPathVisitingAllNodes from "./bit-manipulation/shor
 import bitManipulationSingleNumber from "./bit-manipulation/single-number.json";
 import bitManipulationSingleNumberIi from "./bit-manipulation/single-number-ii.json";
 import bitManipulationSumOfTwoIntegers from "./bit-manipulation/sum-of-two-integers.json";
+import designImplementQueueUsingStacks from "./design/implement-queue-using-stacks.json";
+import designLfuCache from "./design/lfu-cache.json";
+import designLruCache from "./design/lru-cache.json";
+import designMinStack from "./design/min-stack.json";
+import designTimeBasedKeyValueStore from "./design/time-based-key-value-store.json";
 import dynamicProgrammingClimbingStairs from "./dynamic-programming/climbing-stairs.json";
 import dynamicProgrammingCoinChange from "./dynamic-programming/coin-change.json";
 import dynamicProgrammingEditDistance from "./dynamic-programming/edit-distance.json";
@@ -122,15 +127,24 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "binary-search/search-insert-position": loadStoryboard(binarySearchSearchInsertPosition),
   "binary-search/search-sorted-array": loadStoryboard(binarySearchSearchSortedArray),
   "bit-manipulation/counting-bits": loadStoryboard(bitManipulationCountingBits),
-  "bit-manipulation/shortest-path-visiting-all-nodes": loadStoryboard(bitManipulationShortestPathVisitingAllNodes),
+  "bit-manipulation/shortest-path-visiting-all-nodes": loadStoryboard(
+    bitManipulationShortestPathVisitingAllNodes,
+  ),
   "bit-manipulation/single-number": loadStoryboard(bitManipulationSingleNumber),
   "bit-manipulation/single-number-ii": loadStoryboard(bitManipulationSingleNumberIi),
   "bit-manipulation/sum-of-two-integers": loadStoryboard(bitManipulationSumOfTwoIntegers),
+  "design/implement-queue-using-stacks": loadStoryboard(designImplementQueueUsingStacks),
+  "design/lfu-cache": loadStoryboard(designLfuCache),
+  "design/lru-cache": loadStoryboard(designLruCache),
+  "design/min-stack": loadStoryboard(designMinStack),
+  "design/time-based-key-value-store": loadStoryboard(designTimeBasedKeyValueStore),
   "dynamic-programming/climbing-stairs": loadStoryboard(dynamicProgrammingClimbingStairs),
   "dynamic-programming/coin-change": loadStoryboard(dynamicProgrammingCoinChange),
   "dynamic-programming/edit-distance": loadStoryboard(dynamicProgrammingEditDistance),
   "dynamic-programming/house-robber": loadStoryboard(dynamicProgrammingHouseRobber),
-  "dynamic-programming/longest-common-subsequence": loadStoryboard(dynamicProgrammingLongestCommonSubsequence),
+  "dynamic-programming/longest-common-subsequence": loadStoryboard(
+    dynamicProgrammingLongestCommonSubsequence,
+  ),
   "fast-slow-pointers/circular-array-loop": loadStoryboard(fastSlowPointersCircularArrayLoop),
   "fast-slow-pointers/find-the-duplicate-number": loadStoryboard(fastSlowPointersFindTheDuplicateNumber),
   "fast-slow-pointers/linked-list-cycle": loadStoryboard(fastSlowPointersLinkedListCycle),
@@ -154,7 +168,9 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "intervals/insert-interval": loadStoryboard(intervalsInsertInterval),
   "intervals/meeting-rooms": loadStoryboard(intervalsMeetingRooms),
   "intervals/merge-intervals": loadStoryboard(intervalsMergeIntervals),
-  "intervals/minimum-interval-to-include-each-query": loadStoryboard(intervalsMinimumIntervalToIncludeEachQuery),
+  "intervals/minimum-interval-to-include-each-query": loadStoryboard(
+    intervalsMinimumIntervalToIncludeEachQuery,
+  ),
   "intervals/non-overlapping-intervals": loadStoryboard(intervalsNonOverlappingIntervals),
   "linked-list/merge-k-sorted-lists": loadStoryboard(linkedListMergeKSortedLists),
   "linked-list/merge-two-sorted-lists": loadStoryboard(linkedListMergeTwoSortedLists),
@@ -166,8 +182,12 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "prefix-sum/range-sum-queries": loadStoryboard(prefixSumRangeSumQueries),
   "prefix-sum/subarray-sum-equals-k": loadStoryboard(prefixSumSubarraySumEqualsK),
   "prefix-sum/submatrices-that-sum-to-target": loadStoryboard(prefixSumSubmatricesThatSumToTarget),
-  "sliding-window/longest-repeating-character-replacement": loadStoryboard(slidingWindowLongestRepeatingCharacterReplacement),
-  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(slidingWindowLongestSubstringWithoutRepeatingCharacters),
+  "sliding-window/longest-repeating-character-replacement": loadStoryboard(
+    slidingWindowLongestRepeatingCharacterReplacement,
+  ),
+  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(
+    slidingWindowLongestSubstringWithoutRepeatingCharacters,
+  ),
   "sliding-window/maximum-sum-subarray-of-size-k": loadStoryboard(slidingWindowMaximumSumSubarrayOfSizeK),
   "sliding-window/minimum-window-substring": loadStoryboard(slidingWindowMinimumWindowSubstring),
   "sliding-window/sliding-window-maximum": loadStoryboard(slidingWindowSlidingWindowMaximum),

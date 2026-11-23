@@ -46,7 +46,10 @@ column by column with the flipped bits marked, shifts sliding, and a visited mas
 ending on double rings, missing children marked, wildcards branching, and a word-search board walked together with
 the trie), and all five Advanced Graphs problems (a directed graph whose in-degree badges count down as Kahn's
 algorithm takes nodes and strands a cycle, Dijkstra settling servers from a min-heap with improving, losing, and stale
-relaxations, and union-find trees merging by size with their find paths compressed). The first is
+relaxations, and union-find trees merging by size with their find paths compressed), and all five Data Structure
+Design problems (each call in an operation log beside the structures it drives: a hash map and a doubly linked list
+moving nodes to the front and evicting the back, use-count buckets with the fewest uses, a stack of value-and-minimum
+pairs, two stacks poured into each other, and a sorted history binary-searched). The first is
 **Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
 
 Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach

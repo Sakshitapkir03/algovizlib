@@ -231,14 +231,19 @@ describe("linked list storyboards", () => {
     expect(listOf(storyboard!, "take-2").nodes).toEqual(listOf(sb, "take-2").nodes);
   });
 
-  it("schema: node ids 0…n-1, links to real nodes, one node per place, one list per scene", () => {
+  it("schema: distinct node ids, links to real nodes, one node per place, one list per scene", () => {
     const base = { id: "s", narration: "n", caption: "c", durationInFrames: 60 };
     const node = (id: number, next: number | null, slot: number) => ({ id, value: id, next, lane: 0, slot });
     const list = (nodes: unknown[]) => ({ id: "list", type: "linked-list", enterAt: 0, nodes });
     const issues = (elements: unknown[]) =>
       sceneSchema.safeParse({ ...base, elements }).error?.issues.map((i) => i.message) ?? [];
     expect(issues([list([node(0, 1, 0), node(1, null, 1)])])).toEqual([]);
-    expect(issues([list([node(0, 1, 0), node(5, null, 1)])])).toContain("node ids must be 0–1, each once");
+    expect(issues([list([node(0, 1, 0), node(0, null, 1)])])).toContain("node ids must each appear once");
+    // A node removed for good (a cache's eviction) leaves its id unused; links must still reach real nodes.
+    expect(issues([list([node(0, 5, 0), node(5, null, 1)])])).toEqual([]);
+    expect(issues([list([node(0, 1, 0), node(5, null, 1)])])).toContain(
+      "node 0 links to 1, which isn't a node",
+    );
     expect(issues([list([node(0, 7, 0)])])).toContain("node 0 links to 7, which isn't a node");
     expect(issues([list([node(0, null, 0), node(1, null, 0)])])).toContain("two nodes share a lane and slot");
     expect(issues([list([node(0, null, 0)]), { ...list([node(0, null, 0)]), id: "list2" }])).toContain(

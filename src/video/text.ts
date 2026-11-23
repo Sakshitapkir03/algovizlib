@@ -153,4 +153,7 @@ export const TEXT = {
   /** A union-find element's label, and the note over a root ("chief · 3"). */
   forestLabel: 28,
   forestNote: 16,
+  /** An op log's calls and outputs ("put(1, 10)", "-1"), and its title. */
+  opCall: 20,
+  opTitle: 15,
 } as const;

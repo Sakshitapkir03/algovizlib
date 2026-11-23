@@ -77,7 +77,11 @@ export function buildDraft(problemKey: string): Draft {
     ...(trace.network ? [{ id: "graph", type: "digraph", enterAt: 0 } as ElementSource] : []),
     ...(forestTrace ? [{ id: "forest", type: "union-find", enterAt: 0 } as ElementSource] : []),
   ];
+  // A design trace's op log leads every scene (unbound: the calls before any runs).
+  const log = (): ElementSource[] =>
+    trace.ops ? [{ id: "log", type: "op-log", enterAt: 0 } as ElementSource] : [];
   const rows = (): ElementSource[] => [
+    ...log(),
     ...(trace.row.values.length === 0 ? [] : [row()]),
     ...table(),
     ...graphs(),
@@ -122,6 +126,14 @@ export function buildDraft(problemKey: string): Draft {
       : (heapScene && (last || !step.active)) || searchScene
         ? []
         : [...rows(), ...second()];
+    // A design trace's linked list (a cache's recency list or buckets) isn't the row: highlights on it use its id.
+    const designList = step.links !== undefined && rowType !== "linked-list";
+    if (designList) {
+      elements.push({ id: "list", type: "linked-list", enterAt: 0 } as ElementSource);
+      for (const state of ["active", "rejected", "found"] as const)
+        if (step[state])
+          elements.push({ id: `list-${state}`, type: "highlight", rowId: "list", state, enterAt: 0 });
+    }
     for (const name of heapScene || pileScene ? [] : Object.keys(step.pointers)) {
       elements.push({
         id: `p-${name}`,
@@ -134,9 +146,9 @@ export function buildDraft(problemKey: string): Draft {
         tone: "primary",
       });
     }
-    if (step.active && !(heapScene && last) && rowType === "item-row")
+    if (step.active && !(heapScene && last) && rowType === "item-row" && !designList)
       elements.push({ id: "active", type: "highlight", rowId: "row", state: "active", enterAt: 0 });
-    if (step.found)
+    if (step.found && !designList)
       elements.push({ id: "found", type: "highlight", rowId: "row", state: "found", enterAt: 0 });
     if (step.sorted)
       elements.push({ id: "sorted", type: "sorted-region", rowId: "row", label: "sorted", enterAt: 0 });
@@ -228,6 +240,14 @@ export function buildDraft(problemKey: string): Draft {
         type: "stack",
         ...(trace.row.values.length ? { rowId: "row" } : {}),
         label: "stack",
+        enterAt: 0,
+      } as ElementSource);
+    if (step.secondPile)
+      elements.push({
+        id: "stack2",
+        type: "stack",
+        traceStack: "second",
+        label: "out",
         enterAt: 0,
       } as ElementSource);
     if (step.queue)

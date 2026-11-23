@@ -35,6 +35,11 @@ export class RecordedMap {
     this.entries.set(k, v);
   }
 
+  /** Remove an entry (a cache's eviction). */
+  delete(key: string | number) {
+    this.entries.delete(String(key));
+  }
+
   size(): number {
     return this.entries.size;
   }

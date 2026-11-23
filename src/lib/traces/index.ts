@@ -53,6 +53,11 @@ import { courseScheduleTrace } from "./advanced-graphs/course-schedule";
 import { networkDelayTimeTrace } from "./advanced-graphs/network-delay-time";
 import { redundantConnectionTrace } from "./advanced-graphs/redundant-connection";
 import { alienDictionaryTrace } from "./advanced-graphs/alien-dictionary";
+import { implementQueueUsingStacksTrace } from "./design/implement-queue-using-stacks";
+import { minStackTrace } from "./design/min-stack";
+import { lruCacheTrace } from "./design/lru-cache";
+import { timeBasedKeyValueStoreTrace } from "./design/time-based-key-value-store";
+import { lfuCacheTrace } from "./design/lfu-cache";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -203,6 +208,11 @@ const definitions = [
   networkDelayTimeTrace,
   redundantConnectionTrace,
   alienDictionaryTrace,
+  implementQueueUsingStacksTrace,
+  minStackTrace,
+  lruCacheTrace,
+  timeBasedKeyValueStoreTrace,
+  lfuCacheTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

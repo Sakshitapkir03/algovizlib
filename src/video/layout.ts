@@ -17,6 +17,7 @@ import type {
   TrieElement,
   DigraphElement,
   UnionFindElement,
+  OpLogElement,
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
@@ -27,6 +28,7 @@ import { layoutTimeline, TIMELINE_SPLIT } from "./timeline-layout";
 import { layoutTrie, type TrieShape } from "./trie-layout";
 import { layoutForest, type ForestShape } from "./forest-layout";
 import { layoutNetwork, type NetworkShape } from "./network-layout";
+import { layoutOpLog, type OpLogShape } from "./oplog-layout";
 import { TEXT, textMetrics, type TextMetrics } from "./text";
 
 /**
@@ -170,6 +172,8 @@ export type PileLayout = {
   arcsTop?: number;
   arcsBottom?: number;
   textTop?: number;
+  /** Beside an op log the title shows on a phone-sized player too (two stacks need their names: "in", "out"). */
+  titled?: boolean;
 };
 
 /** Where a search tree draws: each visible node's center (folded subtrees and unreached nodes aren't placed). */
@@ -253,6 +257,10 @@ export type SceneLayout = {
   network?: NetworkShape;
   /** A union-find's trees, when the scene has one. */
   forest?: ForestShape;
+  /** A stack element's column by id, when a scene has two stacks or an op log (`pile` is then the first). */
+  piles?: Record<string, PileLayout>;
+  /** A design problem's op log column on the left, when the scene has one. */
+  opLog?: OpLogShape;
 };
 
 /** Beside a heap, a digraph takes the stage left of this x and the heap the right. */
@@ -443,6 +451,8 @@ function layoutList(
   t: TextMetrics,
   bottomTop: number,
   hasHeap: boolean,
+  // Right of an op log, the lanes start here instead of the stage's margin.
+  stageLeft: number = SIDE_MARGIN,
 ): { list: ListLayout; row: RowLayout; heap?: Region; overflow: number } {
   const places = [...list.nodes, ...(list.fromPlaces ?? [])];
   const lanes = Math.max(...places.map((p) => p.lane)) + 1;
@@ -513,7 +523,7 @@ function layoutList(
   const labels = t.compact ? [] : (list.laneLabels ?? []);
   const labelWidth =
     labels.length > 0 ? Math.max(...labels.map((l) => t.width(l, labelSize, "mono"))) + 16 : 0;
-  const left = SIDE_MARGIN + labelWidth;
+  const left = stageLeft + labelWidth;
   const fullRight = VIDEO_WIDTH - SIDE_MARGIN;
   // Slots per lane: every node's slot (and where moved nodes came from), plus one for a "null" end.
   const slotsIn = (from: number, to: number) =>
@@ -533,9 +543,13 @@ function layoutList(
   const slotLeft = (lane: number, slot: number) =>
     left + offset + (slot + (leftNull ? 1 : 0)) * pitchOf(lane);
 
-  const sorted = [...list.nodes].sort((a, b) => a.id - b.id);
-  const lefts = sorted.map((n) => slotLeft(n.lane, n.slot));
-  const tops = sorted.map((n) => laneTops[n.lane]);
+  // By node id (pointers and highlights index nodes by id; a cache's evicted nodes leave their ids unused).
+  const lefts: number[] = [];
+  const tops: number[] = [];
+  for (const n of list.nodes) {
+    lefts[n.id] = slotLeft(n.lane, n.slot);
+    tops[n.id] = laneTops[n.lane];
+  }
   const row: RowLayout = {
     rowId: list.id,
     top: Math.min(...laneTops),
@@ -564,7 +578,7 @@ function layoutList(
       nodeHeight,
       laneTops,
       slotLeft,
-      labelLeft: SIDE_MARGIN + offset,
+      labelLeft: stageLeft + offset,
       labelWidth,
       dip: LIST.dip,
       nullSide,
@@ -1102,6 +1116,7 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     first.trieOverflow ?? 0,
     first.networkOverflow ?? 0,
     first.forestOverflow ?? 0,
+    first.opLogOverflow ?? 0,
   );
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
@@ -1121,7 +1136,12 @@ function layoutWith(
   trieOverflow?: number;
   networkOverflow?: number;
   forestOverflow?: number;
+  opLogOverflow?: number;
 } {
+  // A design problem's op log takes a column on the left; everything else in the scene moves right of it.
+  const opLogElement = elements.find((el): el is OpLogElement => el.type === "op-log");
+  const opLog = opLogElement ? layoutOpLog(opLogElement, t, captionBottom(t) + 8, bottomTop) : undefined;
+  const stageLeft = opLog?.stageLeft;
   let heapRegion: Region = { ...HEAP_TREE, bottom: bottomTop + 5 };
   const listElement = elements.find((el): el is LinkedListElement => el.type === "linked-list");
   let list: ListLayout | undefined;
@@ -1134,6 +1154,7 @@ function layoutWith(
       t,
       bottomTop,
       elements.some((el) => el.type === "heap-tree"),
+      stageLeft,
     );
     list = laid.list;
     listRows[listElement.id] = laid.row;
@@ -1221,8 +1242,8 @@ function layoutWith(
     const [regionLeft, regionRight] = heap
       ? [HEAP_BARS.left, HEAP_BARS.right]
       : pileElement
-        ? [SIDE_MARGIN, pileLeft - PILE.gap]
-        : [SIDE_MARGIN, VIDEO_WIDTH - SIDE_MARGIN];
+        ? [stageLeft ?? SIDE_MARGIN, pileLeft - PILE.gap]
+        : [stageLeft ?? SIDE_MARGIN, VIDEO_WIDTH - SIDE_MARGIN];
     const cardWidth = Math.min(maxWidth, (regionRight - regionLeft - GAP * (n - 1) - extra) / n);
     const total = n * cardWidth + GAP * (n - 1) + extra;
     const lefts: number[] = [];
@@ -1273,8 +1294,9 @@ function layoutWith(
     } else if (single && mapElement) {
       // Above a hash map: under the caption, full-height cards (their labels are positions the map refers to) when
       // there's room, shorter when the map and the bottom stack need it.
-      strip = above;
-      top = captionBottom(t) + Math.max(sizes.tagRoom(t) + 4, above);
+      // Beside an op log, a search range's bracket and label need their strip above the cards too.
+      strip = opLog && windowRows.has(row.id) ? Math.max(above, sizes.window(t)) : above;
+      top = captionBottom(t) + Math.max(sizes.tagRoom(t) + 4, strip);
       cardHeight = Math.max(HEAP_ROW_CARD, Math.min(CARD_HEIGHT, lowest - top));
     } else if (
       single &&
@@ -1330,7 +1352,32 @@ function layoutWith(
       gridElement !== undefined,
     ));
   let pile: PileLayout | undefined;
-  if (pileElement) {
+  let piles: Record<string, PileLayout> | undefined;
+  const pileElements = elements.filter((el): el is StackElement => el.type === "stack");
+  if ((opLog && pileElements.length > 0) || pileElements.length > 1) {
+    // Right of an op log (or across the stage), each stack gets an equal share, centered in it, and keeps its title
+    // on a phone (the names tell two stacks apart).
+    const from = stageLeft ?? SIDE_MARGIN;
+    const share = (VIDEO_WIDTH - SIDE_MARGIN - from) / pileElements.length;
+    piles = Object.fromEntries(
+      pileElements.map((el, k) => {
+        // Wide enough for its title too, which stays on a phone here (the title may overhang the column by 20 px).
+        const title = t.width(el.label, t.size(TEXT.stackTitleSmall)) - 40;
+        const width = Math.min(Math.max(stackColumnWidth(el, t), title), share - PILE.gap / 2);
+        const layout: PileLayout = {
+          left: from + k * share + (share - width) / 2,
+          width,
+          top: captionBottom(t) + 8,
+          bottom: bottomTop - 16,
+          itemHeight: sizes.pileItem(t),
+          gap: 6,
+          titled: true,
+        };
+        return [el.id, layout];
+      }),
+    );
+    pile = piles[pileElements[0].id];
+  } else if (pileElement) {
     const row = Object.values(layouts).find((r) =>
       elements.some((e) => e.id === r.rowId && e.type === "item-row"),
     );
@@ -1443,6 +1490,11 @@ function layoutWith(
     forest,
     forestOverflow: forest?.overflow || undefined,
     pile,
+    piles,
+    opLog,
+    // With an op log, the bottom stack moves as far down as it can: the column and the structures beside it need
+    // the height (a long sequence shows more calls).
+    opLogOverflow: opLog ? VIDEO_HEIGHT : undefined,
     search,
     searchOverflow: Math.max(searchOverflow ?? 0, treeSearchOverflow ?? 0) || undefined,
   };

@@ -47,6 +47,7 @@ import { Timeline } from "./Timeline";
 import { Trie } from "./Trie";
 import { Digraph } from "./Digraph";
 import { UnionFind } from "./UnionFind";
+import { OpLog } from "./OpLog";
 import { Window } from "./Window";
 
 export type PrimitiveDefinition<K extends ElementType> = {
@@ -107,6 +108,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   // Advanced graphs: a directed, weighted graph (left of a heap when there is one), and union-find's trees.
   digraph: { component: Digraph, slot: "canvas", layer: 0 },
   "union-find": { component: UnionFind, slot: "canvas", layer: 0 },
+  // Data structure design: the calls and their outputs, a column left of the structures.
+  "op-log": { component: OpLog, slot: "canvas", layer: 0 },
   // Drawn behind the bars it marks.
   "sorted-region": { component: SortedRegion, slot: "canvas", layer: -1 },
   "count-array": { component: CountArray, slot: "canvas", layer: 0 },

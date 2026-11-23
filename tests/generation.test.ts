@@ -193,7 +193,9 @@ describe("runGeneration", () => {
 
   it("skips problems that have no trace", async () => {
     const t = deps(fakeModel([]));
-    const summary = await runGeneration([target("design/lfu-cache")], OPTIONS, t.deps);
+    // Every catalog problem has a trace now; a key without one stands in for a new problem.
+    const untraced = { ...target(PALINDROME), key: "two-pointers/not-traced-yet" };
+    const summary = await runGeneration([untraced], OPTIONS, t.deps);
     expect(summary.rows[0]).toMatchObject({ status: "skipped", requests: 0 });
     expect(summary.rows[0].detail).toMatch(/no trace/);
   });
@@ -430,6 +432,11 @@ describe("selectTargets", () => {
       "dynamic-programming/coin-change",
       "dynamic-programming/longest-common-subsequence",
       "dynamic-programming/edit-distance",
+      "design/implement-queue-using-stacks",
+      "design/min-stack",
+      "design/lru-cache",
+      "design/time-based-key-value-store",
+      "design/lfu-cache",
     ]);
   });
 
@@ -624,7 +631,7 @@ describe("prompt", () => {
       trace,
       exampleIndex: 0,
     });
-    expect(currentPrompts.version).toBe("storyboard-v22");
+    expect(currentPrompts.version).toBe("storyboard-v23");
     expect(prompt).toMatch(/equation: 5 × 2 = 10 > 0 \(tone: positive\)/);
     expect(prompt).toMatch(/= 9 < 20 \(tone: neutral\)/);
     expect(currentPrompts.systemPrompt()).toMatch(/OMIT verdictTone/);

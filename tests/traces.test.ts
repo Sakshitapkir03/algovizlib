@@ -45,8 +45,13 @@ describe.each(Object.values(traceRegistry))("trace $problem", (def) => {
         expect(index).toBeGreaterThanOrEqual(0);
         expect(index).toBeLessThan(n);
       }
+      // On a linked list, highlights name node ids (a cache's ids aren't reused after an eviction).
+      const ids = step.links ? new Set(step.links.nodes.map((node) => node.id)) : undefined;
       for (const list of [step.active, step.rejected, step.found]) {
-        for (const index of list ?? []) expect(index).toBeLessThan(n);
+        for (const index of list ?? []) {
+          if (ids) expect(ids.has(index)).toBe(true);
+          else expect(index).toBeLessThan(n);
+        }
       }
     }
     // Small enough to tell in one short video.

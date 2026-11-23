@@ -170,7 +170,19 @@ export type TraceStep = {
   network?: TraceNetwork;
   /** Union-find after this step: every element's parent, this step's finds, compression, and union. See `TraceForest`. */
   forest?: TraceForest;
+  /** A design problem's operation log: the call this step runs and whether its output is out. See `TraceOp`. */
+  op?: TraceOp;
+  /** A second stack beside `pile` (a queue built from two stacks: `pile` takes pushes, this one serves pops). */
+  secondPile?: TracePile;
 };
+/**
+ * Where a design problem's operation sequence is (the calls themselves are `trace.ops`): `current` is the call this
+ * step belongs to (a call can take several steps, e.g. a binary search), and `returned` is set on the step where its
+ * output is known. Outputs of earlier calls are always shown.
+ */
+export type TraceOp = { current: number; returned: boolean };
+/** One call of a design problem's sequence, as shown: `put(1, 10)` and its output (`—` for none, `"red"`, `-1`). */
+export type TraceCall = { call: string; output: string };
 
 /**
  * How a graph node reads at a step: `idle`, `ready` (waiting in the queue or heap), `current` (being processed),
@@ -577,6 +589,8 @@ export type TraceListNode = {
   slot: number;
   /** A placeholder node in front of the real list (the dummy-node trick). */
   dummy?: boolean;
+  /** A doubly linked list's back link: the node before this one, or null (the front). Omitted for singly linked. */
+  prev?: number | null;
 };
 
 export type TraceLinks = {
@@ -610,6 +624,8 @@ export type Trace = {
   network?: TraceNetwork;
   /** A matrix (rows of numbers) that a prefix grid is built over (Number of Submatrices That Sum to Target). */
   matrix?: number[][];
+  /** A design problem's calls in order with their outputs (what an op-log shows); steps say which call is running. */
+  ops?: TraceCall[];
   /** A second list shown under the first (an item-row with `traceRow: "second"`), e.g. Median's `nums2`. */
   secondRow?: { values: TraceValue[] };
   pointerNames: string[];

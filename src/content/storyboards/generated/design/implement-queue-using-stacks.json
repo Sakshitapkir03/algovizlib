@@ -1,0 +1,343 @@
+{
+  "id": "design-implement-queue-using-stacks",
+  "title": "Queue from Two Stacks: Flip the Pancakes",
+  "concept": "Data Structure Design",
+  "category": "dsa",
+  "summary": "Pushes go on one stack; when the other runs empty, pour everything across, which reverses it so the oldest is on top. Each value moves once: amortized O(1).",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A diner cook stacks pancakes on a warming plate as they come off the griddle; the waiter serves from a serving plate. When the serving plate is empty, the cook flips the whole warming stack onto it, so the first pancake made ends up on top.",
+    "mapping": [
+      {
+        "real": "warming stack",
+        "abstract": "in stack (takes push)"
+      },
+      {
+        "real": "serving plate",
+        "abstract": "out stack (serves pop and peek)"
+      },
+      {
+        "real": "flipping the warming stack onto the plate",
+        "abstract": "pour: pop from in, push to out"
+      },
+      {
+        "real": "first pancake made, first served",
+        "abstract": "first in, first out"
+      }
+    ]
+  },
+  "tags": [
+    "design",
+    "stack",
+    "queue"
+  ],
+  "takeaway": {
+    "pattern": "Data Structure Design",
+    "summary": "push onto in; pop and peek from out, pouring all of in into out only when out is empty. Pouring reverses the order, and each value is poured at most once.",
+    "timeComplexity": "O(1) amortized per call",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "A queue when only stacks are available",
+      "Reversing a batch once so later reads are cheap (amortized cost)"
+    ]
+  },
+  "trace": {
+    "problem": "design/implement-queue-using-stacks",
+    "args": [
+      [
+        "MyQueue",
+        "push",
+        "push",
+        "peek",
+        "pop",
+        "push",
+        "pop",
+        "empty",
+        "pop",
+        "empty"
+      ],
+      [
+        [],
+        [
+          4
+        ],
+        [
+          7
+        ],
+        [],
+        [],
+        [
+          9
+        ],
+        [],
+        [],
+        [],
+        []
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v23",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T16:42:18.139Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A cook stacks pancakes as they come off the griddle, but diners should get them in the order they were made: first made, first served.",
+      "caption": "Serve pancakes in the order they were made, from stacks",
+      "durationInFrames": 336,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "With one stack, serving the oldest means lifting off every newer pancake and putting them back: O(n) per serve. With two, flipping the warming stack onto the plate reverses it once, so the oldest sits on top.",
+      "caption": "One stack: lift every newer pancake to reach the oldest",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        },
+        {
+          "id": "costs",
+          "enterAt": 0,
+          "type": "result",
+          "title": "one stack: O(n) per serve",
+          "value": "two stacks: O(1) amortized",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "push",
+      "narration": "Each new pancake goes on top of the warming stack, one step: first 4, then 7.",
+      "caption": "Pancake 4 goes on the warming stack",
+      "durationInFrames": 229,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        }
+      ]
+    },
+    {
+      "id": "flip",
+      "narration": "peek needs the oldest pancake and the plate is empty, so the cook flips the warming stack onto it. The order reverses: 4, made first, is now on top.",
+      "caption": "The plate is empty: flip the stack, and 4 lands on top",
+      "durationInFrames": 384,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        }
+      ]
+    },
+    {
+      "id": "serve",
+      "narration": "pop serves 4 straight off the plate. Nothing moves, because the plate still holds pancakes in order.",
+      "caption": "pop(): serve 4 off the plate, no flipping",
+      "durationInFrames": 240,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        }
+      ]
+    },
+    {
+      "id": "wait",
+      "narration": "A new 9 goes on the warming stack. It isn't flipped yet: 7, on the plate, is older and goes first.",
+      "caption": "Pancake 9 waits on the warming stack behind 7",
+      "durationInFrames": 288,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        }
+      ]
+    },
+    {
+      "id": "flip-again",
+      "narration": "7 is served and the plate is empty again, so the next pop flips 9 across and serves it.",
+      "caption": "7 is served; the plate empties, so 9 is flipped over",
+      "durationInFrames": 264,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "Both stacks are empty now, so empty returns true.",
+      "caption": "empty(): both stacks are empty, so true",
+      "durationInFrames": 144,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "in",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "warming (in)"
+        },
+        {
+          "id": "out",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "plate (out)",
+          "traceStack": "second"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "In code, the warming stack is in and the plate is out. Each value is pushed and popped at most twice, so every call is O(1) amortized.",
+      "caption": "Push to in, pop from out, pour only when out is empty",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "shown": 10,
+          "label": "calls"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "result",
+          "title": "each call",
+          "value": "O(1) amortized",
+          "showsAnswer": false,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

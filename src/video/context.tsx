@@ -19,6 +19,7 @@ import type { TextMetrics } from "./text";
 import type { TrieShape } from "./trie-layout";
 import type { ForestShape } from "./forest-layout";
 import type { NetworkShape } from "./network-layout";
+import type { OpLogShape } from "./oplog-layout";
 import type { VideoPalette } from "./theme";
 
 export type SceneContextValue = {
@@ -42,6 +43,10 @@ export type SceneContextValue = {
   dp?: DpLayout;
   /** A stack's column (and the room under its input row), when the scene has one. */
   pile?: PileLayout;
+  /** Per stack element, when a scene has two stacks or an op log (`pile` is then the first). */
+  piles?: Record<string, PileLayout>;
+  /** A design problem's op log column, when the scene has one. */
+  opLog?: OpLogShape;
   /** A search tree's node positions, when the scene has one. */
   search?: SearchLayout;
   /** A trie's node positions, when the scene has one. */

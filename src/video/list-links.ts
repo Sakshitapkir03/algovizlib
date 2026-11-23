@@ -4,16 +4,20 @@ export type Box = { x: number; y: number; w: number; h: number };
 type Place = { lane: number; slot: number };
 
 const HEAD = 11;
+/** A doubly linked list's forward arrows, as a fraction of the node's height (back arrows keep the lower track). */
+export const DOUBLY_NEXT = 0.32;
 
 /**
  * The path of a link from box `a` to box `b`, and where its head points (`[x, y, angle]`). Neighbors in a lane get
  * straight arrows (back to the left neighbor on a lower track); links that skip nodes or point back curve `dip` under
- * the lane; links to another lane are S-curves.
+ * the lane; links to another lane are S-curves. In a doubly linked list (`doubly`) the forward arrow between
+ * neighbors rides higher, so each `prev` arrow (back to the left neighbor) gets its own track under it.
  */
-export function listLinkPath(a: Box, aNode: Place, b: Box, bNode: Place, dip: number) {
+export function listLinkPath(a: Box, aNode: Place, b: Box, bNode: Place, dip: number, doubly = false) {
   const sameLane = aNode.lane === bNode.lane;
   if (sameLane && bNode.slot === aNode.slot + 1) {
-    const y = a.y + a.h / 2;
+    // In a doubly linked list the forward arrow rides higher, so the back arrow under it has room.
+    const y = a.y + a.h * (doubly ? DOUBLY_NEXT : 0.5);
     return { d: `M ${a.x + a.w} ${y} L ${b.x - 2} ${y}`, end: [b.x - 2, y, 0] as const };
   }
   if (sameLane && bNode.slot === aNode.slot - 1) {

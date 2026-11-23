@@ -1,0 +1,298 @@
+{
+  "id": "design-min-stack",
+  "title": "Min Stack: Every Crate Knows the Lightest Below",
+  "concept": "Data Structure Design",
+  "category": "dsa",
+  "summary": "Store each value with the minimum at or below it, so the minimum is always on top and a pop restores the old one for free.",
+  "exampleSource": "analogy",
+  "analogy": {
+    "scenario": "A warehouse stacks crates; a forklift reaches only the top one. Each crate's tag records its weight and the lightest crate at or below it, so the foreman reads the lightest crate in the stack off the top tag.",
+    "mapping": [
+      {
+        "real": "crate on the stack",
+        "abstract": "pushed value"
+      },
+      {
+        "real": "tag: (weight, lightest so far)",
+        "abstract": "pair (value, current min)"
+      },
+      {
+        "real": "taking the top crate off",
+        "abstract": "pop()"
+      },
+      {
+        "real": "reading the top tag",
+        "abstract": "getMin() / top()"
+      }
+    ]
+  },
+  "tags": [
+    "design",
+    "stack"
+  ],
+  "takeaway": {
+    "pattern": "Data Structure Design",
+    "summary": "Push (value, min(value, the minimum under it)). The top pair always holds the current minimum, and popping a pair restores the previous one.",
+    "timeComplexity": "O(1) per call",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "A stack that must also report its minimum (or maximum) in O(1)",
+      "State that depends only on what's below each element"
+    ]
+  },
+  "trace": {
+    "problem": "design/min-stack",
+    "args": [
+      [
+        "MinStack",
+        "push",
+        "push",
+        "push",
+        "getMin",
+        "pop",
+        "top",
+        "pop",
+        "getMin"
+      ],
+      [
+        [],
+        [
+          6
+        ],
+        [
+          2
+        ],
+        [
+          8
+        ],
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v23",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T16:40:43.905Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "A forklift stacks crates and can only reach the top one. The foreman keeps asking for the lightest crate in the stack, and every answer must be instant.",
+      "caption": "Stacked crates: which is the lightest, without unstacking?",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Checking every crate is O(n), and one note saying the lightest goes stale when that crate is taken off. Instead, each tag records the lightest crate at or below it: the stack stays a stack, and the top tag answers in O(1).",
+      "caption": "Scanning is O(n); one note breaks when that crate leaves",
+      "durationInFrames": 540,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        },
+        {
+          "id": "costs",
+          "enterAt": 0,
+          "type": "result",
+          "title": "scan the stack: O(n)",
+          "value": "tag every crate: O(1)",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "first",
+      "narration": "The first crate weighs 6, so its tag reads 6 and 6.",
+      "caption": "The first crate, 6 kg, is the lightest so far: (6, 6)",
+      "durationInFrames": 180,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        }
+      ]
+    },
+    {
+      "id": "lighter",
+      "narration": "Next comes 2, lighter than the 6 recorded below it, so this tag records a new lightest: 2.",
+      "caption": "A 2 kg crate is lighter than 6: its tag says 2",
+      "durationInFrames": 252,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "new lightest"
+        }
+      ]
+    },
+    {
+      "id": "heavier",
+      "narration": "Then 8, heavier than 2, so its tag copies the lightest from below: 8 and 2.",
+      "caption": "An 8 kg crate isn't lighter: its tag keeps 2",
+      "durationInFrames": 229,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "keeps 2"
+        }
+      ]
+    },
+    {
+      "id": "min",
+      "narration": "Asking for the lightest just reads the top tag: 2, in constant time.",
+      "caption": "getMin(): read the top tag, 2, with no search",
+      "durationInFrames": 192,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        }
+      ]
+    },
+    {
+      "id": "pop-min",
+      "narration": "The 8 comes off, then the 2 itself. Nothing is recomputed: the tag underneath was written before 2 arrived, and it says 6.",
+      "caption": "The 2 kg crate leaves; the tag below already says 6",
+      "durationInFrames": 312,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "So the last getMin reads 6 straight off the top.",
+      "caption": "getMin(): the top tag now says 6",
+      "durationInFrames": 156,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "stack",
+          "enterAt": 0,
+          "type": "stack",
+          "label": "(kg, lightest)"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "In code, each crate is a pair of value and minimum so far. push, pop, top, and getMin are all O(1), using O(n) space for the pairs.",
+      "caption": "Each pair is (value, min so far): every call is O(1)",
+      "durationInFrames": 360,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "shown": 9,
+          "label": "calls"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "result",
+          "title": "push · pop · top · getMin",
+          "value": "O(1) each",
+          "showsAnswer": false,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

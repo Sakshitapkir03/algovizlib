@@ -1,0 +1,392 @@
+{
+  "id": "design-time-based-key-value-store",
+  "title": "Time-Based Store: Sorted History per Key",
+  "concept": "Data Structure Design",
+  "category": "dsa",
+  "summary": "A hash map finds a key's history; set timestamps only grow, so the history is sorted, set appends in O(1), and get binary-searches it in O(log n).",
+  "exampleSource": "problem-native",
+  "tags": [
+    "design",
+    "hash map",
+    "binary search"
+  ],
+  "takeaway": {
+    "pattern": "Data Structure Design",
+    "summary": "Map each key to a list of (timestamp, value). Appending keeps it sorted because set timestamps increase, so get binary-searches for the last timestamp at or before the query.",
+    "timeComplexity": "O(1) set, O(log n) get",
+    "spaceComplexity": "O(n)",
+    "whenToUse": [
+      "Values that change over time, asked about at a past moment",
+      "Data that arrives already sorted, so appending keeps it searchable"
+    ]
+  },
+  "trace": {
+    "problem": "design/time-based-key-value-store",
+    "args": [
+      [
+        "TimeMap",
+        "set",
+        "set",
+        "get",
+        "get",
+        "get",
+        "get"
+      ],
+      [
+        [],
+        [
+          "color",
+          "red",
+          2
+        ],
+        [
+          "color",
+          "blue",
+          5
+        ],
+        [
+          "color",
+          1
+        ],
+        [
+          "color",
+          2
+        ],
+        [
+          "color",
+          4
+        ],
+        [
+          "color",
+          9
+        ]
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "storyboard-v23",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-23T16:43:48.896Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "problem",
+      "narration": "This store keeps every value a key has had, stamped with the time it was set. Then it answers what the color was at any moment.",
+      "caption": "What was the color at time 1, 2, 4, and 9?",
+      "durationInFrames": 348,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        }
+      ]
+    },
+    {
+      "id": "slow",
+      "narration": "Rescanning a key's whole history on every get is O(n). But set times only grow, so the history is already sorted: the hash map finds the key's list, and binary search finds the moment in O(log n).",
+      "caption": "Rescanning the history is O(n); it's already sorted",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "costs",
+          "enterAt": 0,
+          "type": "result",
+          "title": "rescan history: O(n)",
+          "value": "map + binary search",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "append",
+      "narration": "Red was set at 2, then blue at 5. Each set just appends to color's list, and because times only grow, it stays in order.",
+      "caption": "set(blue at 5) appends: the history stays sorted",
+      "durationInFrames": 336,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "red",
+            "blue"
+          ]
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → history"
+        }
+      ]
+    },
+    {
+      "id": "too-late",
+      "narration": "For time 1, binary search checks the middle entry. It was set at 2, after 1, so it and everything to its right are too late.",
+      "caption": "get at 1: the middle entry, set at 2, is too late",
+      "durationInFrames": 348,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "red",
+            "blue"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": "in play"
+        },
+        {
+          "id": "mid",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "active"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → history"
+        },
+        {
+          "id": "cmp",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "too late"
+        }
+      ]
+    },
+    {
+      "id": "none",
+      "narration": "Nothing is left, so no value existed yet at time 1: the answer is an empty string.",
+      "caption": "Nothing was set by time 1, so get returns \"\"",
+      "durationInFrames": 240,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "red",
+            "blue"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": "nothing yet"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → history"
+        }
+      ]
+    },
+    {
+      "id": "exact",
+      "narration": "At time 2, the entry set at 2 counts, and blue at 5 is too late, so the answer is red.",
+      "caption": "get at 2: red was set at exactly 2",
+      "durationInFrames": 288,
+      "traceStep": 7,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "red",
+            "blue"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": "answer"
+        },
+        {
+          "id": "hit",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → history"
+        }
+      ]
+    },
+    {
+      "id": "between",
+      "narration": "At time 4, blue isn't set yet, so the last value at or before 4 is still red.",
+      "caption": "get at 4: the last set at or before 4 is red at 2",
+      "durationInFrames": 252,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "red",
+            "blue"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": "answer"
+        },
+        {
+          "id": "hit",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → history"
+        }
+      ]
+    },
+    {
+      "id": "last",
+      "narration": "At time 9, both entries are early enough, and the search keeps going right to the latest: blue.",
+      "caption": "get at 9: both entries count, so the latest, blue",
+      "durationInFrames": 252,
+      "traceStep": 13,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "label": "calls"
+        },
+        {
+          "id": "row",
+          "enterAt": 0,
+          "type": "item-row",
+          "unit": "",
+          "labels": [
+            "red",
+            "blue"
+          ]
+        },
+        {
+          "id": "range",
+          "enterAt": 0,
+          "type": "search-range",
+          "rowId": "row",
+          "label": "answer"
+        },
+        {
+          "id": "hit",
+          "enterAt": 0,
+          "type": "highlight",
+          "rowId": "row",
+          "state": "found"
+        },
+        {
+          "id": "map",
+          "enterAt": 0,
+          "type": "hash-map",
+          "label": "key → history"
+        }
+      ]
+    },
+    {
+      "id": "pattern",
+      "narration": "That's the design: a hash map from key to its sorted history. set is O(1), get is a binary search, O(log n), and the store uses O(n) space.",
+      "caption": "Hash map + sorted history: O(1) set, O(log n) get",
+      "durationInFrames": 372,
+      "elements": [
+        {
+          "id": "log",
+          "enterAt": 0,
+          "type": "op-log",
+          "shown": 7,
+          "label": "calls"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "result",
+          "title": "set · get",
+          "value": "O(1) · O(log n)",
+          "showsAnswer": false,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

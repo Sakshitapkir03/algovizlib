@@ -5,7 +5,7 @@ import type { LinkedListElement, ListNode } from "@/lib/storyboard";
 import { enterProgress } from "../animation";
 import { useScene } from "../context";
 import { firstFitting } from "../labels";
-import { arrowHeadPoints, type Box, listLinkPath } from "../list-links";
+import { arrowHeadPoints, type Box, DOUBLY_NEXT, listLinkPath } from "../list-links";
 import { CANVAS } from "../layout";
 import { TEXT } from "../text";
 import { FONT_MONO } from "../theme";
@@ -63,8 +63,10 @@ export function LinkedList({ element }: { element: LinkedListElement }) {
         extrapolateRight: "clamp",
       });
 
+  // A doubly linked list (its nodes carry back links) also draws an arrow from each node to its `prev`.
+  const doubly = element.nodes.some((node) => node.prev !== undefined);
   const linkPath = (a: Box, aNode: ListNode, b: Box, bNode: ListNode) =>
-    listLinkPath(a, aNode, b, bNode, list.dip);
+    listLinkPath(a, aNode, b, bNode, list.dip, doubly);
   const head = (tip: readonly [number, number, number], color: string, opacity = 1) => (
     <polygon points={arrowHeadPoints(tip)} fill={color} opacity={opacity} />
   );
@@ -73,6 +75,16 @@ export function LinkedList({ element }: { element: LinkedListElement }) {
   const nulls: React.ReactNode[] = [];
   for (const node of element.nodes) {
     const a = boxes.get(node.id)!;
+    const before = node.prev === null || node.prev === undefined ? undefined : byId.get(node.prev);
+    if (before) {
+      const path = linkPath(a, node, boxes.get(before.id)!, before);
+      links.push(
+        <g key={`prev-${node.id}`}>
+          <path d={path.d} fill="none" stroke={palette.textMuted} strokeWidth={2.5} />
+          {head(path.end, palette.textMuted)}
+        </g>,
+      );
+    }
     const change = rewired.get(node.id);
     // The old link, ghosted while the new one draws in.
     if (change && change.from !== null && ghost > 0) {
@@ -95,7 +107,7 @@ export function LinkedList({ element }: { element: LinkedListElement }) {
       const gap = list.slotLeft(node.lane, 1) - list.slotLeft(node.lane, 0) - a.w;
       const boxWidth = Math.min(w, Math.max(nullSize * 2.8, w * 0.62));
       const right = list.nullSide(node) === "right";
-      const y = right ? a.y + a.h / 2 : a.y + a.h * 0.7;
+      const y = right ? a.y + a.h * (doubly ? DOUBLY_NEXT : 0.5) : a.y + a.h * 0.7;
       const [x0, x1] = right ? [a.x + a.w, a.x + a.w + gap - 2] : [a.x, a.x - gap + 2];
       const bx = right ? a.x + a.w + gap : a.x - gap - boxWidth;
       nulls.push(

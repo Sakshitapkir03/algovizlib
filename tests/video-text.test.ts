@@ -18,6 +18,7 @@ import { trieProblems } from "./fixtures/trie-fit";
 import { forestProblems, networkProblems } from "./fixtures/graph-fit";
 import { backtrackProblems } from "./fixtures/backtrack-fit";
 import { stackProblems } from "./fixtures/stack-fit";
+import { opLogProblems } from "./fixtures/oplog-fit";
 import { heapProblems } from "./fixtures/heap-fit";
 import { searchProblems } from "./fixtures/search-fit";
 import { treeProblems } from "./fixtures/tree-fit";
@@ -99,6 +100,7 @@ describe("video text at phone width", () => {
         "trie",
         "digraph",
         "union-find",
+        "op-log",
         "split-tree",
         "stack",
         "window",
@@ -175,6 +177,16 @@ describe("video text at phone width", () => {
         [...networkProblems(scene.elements, full), ...forestProblems(scene.elements, full)].map(
           (p) => `${storyboard.id} › ${scene.id}: ${p}`,
         ),
+      ),
+    );
+    expect(problems).toEqual([]);
+  });
+
+  it("op logs fit at full size too", () => {
+    const full = textMetrics(1280);
+    const problems = storyboards.flatMap((storyboard) =>
+      storyboard.scenes.flatMap((scene) =>
+        opLogProblems(scene.elements, full).map((p) => `${storyboard.id} › ${scene.id}: ${p}`),
       ),
     );
     expect(problems).toEqual([]);
@@ -441,7 +453,12 @@ describe("video text at phone width", () => {
             for (const problem of dpProblems(scene.elements, phone)) fail(problem);
             break;
           case "stack":
-            for (const problem of stackProblems(scene.elements, phone)) fail(problem);
+            // Two stacks are checked together, once.
+            if (scene.elements.find((e) => e.type === "stack") === el)
+              for (const problem of stackProblems(scene.elements, phone)) fail(problem);
+            break;
+          case "op-log":
+            for (const problem of opLogProblems(scene.elements, phone)) fail(problem);
             break;
           case "hash-map": {
             const t = phone;
