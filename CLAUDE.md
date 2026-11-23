@@ -790,7 +790,8 @@ scene; find paths are lit from the start, a rewired link ghosts out dashed as it
 trees use the stage down to its bottom margin. Reused: queue (Kahn's ready list, `levelLabel` "round": a node's round
 is how many takes deep it was freed), partial (the order, `showFound: false`), heap (Dijkstra's (time, server)
 candidates, on the right of the stage beside a graph, `NETWORK_SPLIT`, narrow enough that a popped root stays on the
-stage; other heap videos keep their layout), hash-map cells (best times: an improvement shows the old time struck),
+stage; the five Heap videos, heap sort, and Minimum Interval are pixel-identical before and after: every paused frame
+at 1280 and 375 px matched up to the capture's own antialiasing noise), hash-map cells (best times: an improvement shows the old time struck),
 equation, item-row (the words, or the edges as cards). Course Schedule and Network Delay Time got first examples that
 show a cycle (two courses taken, three stuck) and a relaxation that improves, one that doesn't, and a stale entry;
 Find if Path Exists got one where union by size matters and the query compresses a path. The schema checks a digraph's
