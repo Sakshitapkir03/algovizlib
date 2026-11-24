@@ -14,6 +14,7 @@ import {
   tutorMessages,
   tutorSystemPrompt,
 } from "./prompt";
+import { plainText, plainTextStream } from "./plain-text";
 import { suggestedQuestions } from "./suggestions";
 import { answerKey, pacificDayEnd, type AnswerCache, type UsageCounter } from "./usage";
 
@@ -33,7 +34,23 @@ export type TutorDeps = {
   cache: AnswerCache;
   model: () => TutorModel;
   now: () => number;
+  /** Where operational problems go (the server log). Never given the question or anything about the user. */
+  log?: (message: string) => void;
 };
+
+/** Postgres's "undefined_table": the migration that creates it hasn't run on this database. */
+const missingTable = (error: unknown) =>
+  /42P01|does not exist/i.test(
+    `${(error as { code?: string })?.code ?? ""} ${(error as Error)?.message ?? ""}`,
+  );
+
+/** A cache failure is logged and skipped: the question is answered through the model, like any other. */
+function cacheTrouble(deps: TutorDeps, action: "read" | "write", error: unknown) {
+  const why = missingTable(error)
+    ? 'the AskCache table is missing: run "pnpm db:deploy" against this database'
+    : ((error as Error)?.name ?? "error");
+  (deps.log ?? console.warn)(`[tutor] answer cache ${action} failed (${why}); answering without the cache.`);
+}
 
 export const askSchema = z.object({
   problemKey: z.string().max(120),
@@ -158,9 +175,18 @@ export async function ask(deps: TutorDeps, body: unknown): Promise<TutorAnswer |
         question,
       })
     : undefined;
+  let cacheKey = key;
   if (key) {
-    const hit = await deps.cache.get(key);
-    if (hit !== undefined) return { kind: "text", text: hit, cached: true, remaining: await remainingNow() };
+    let hit: string | undefined;
+    try {
+      hit = await deps.cache.get(key);
+    } catch (error) {
+      cacheTrouble(deps, "read", error);
+      // Without a working cache, the answer isn't stored either.
+      cacheKey = undefined;
+    }
+    if (hit !== undefined)
+      return { kind: "text", text: plainText(hit), cached: true, remaining: await remainingNow() };
   }
 
   const used = await deps.usage.add(userKey, resetsAt);
@@ -180,7 +206,7 @@ export async function ask(deps: TutorDeps, body: unknown): Promise<TutorAnswer |
       resetsAt,
     };
 
-  return startStream(deps, ctx, history, question, key, Math.max(0, deps.config.userDaily - used));
+  return startStream(deps, ctx, history, question, cacheKey, Math.max(0, deps.config.userDaily - used));
 }
 
 /**
@@ -198,10 +224,10 @@ async function startStream(
   let iterator: AsyncIterator<string>;
   let first: IteratorResult<string>;
   try {
-    iterator = deps
-      .model()
-      .stream({ system: tutorSystemPrompt(ctx), messages: tutorMessages(history, question) })
-      [Symbol.asyncIterator]();
+    // Answers are plain text: LaTeX and Markdown that slip through are cleaned as the answer streams.
+    iterator = plainTextStream(
+      deps.model().stream({ system: tutorSystemPrompt(ctx), messages: tutorMessages(history, question) }),
+    )[Symbol.asyncIterator]();
     first = await iterator.next();
   } catch (error) {
     const e = classifyTutorError(error);
@@ -224,7 +250,13 @@ async function startStream(
         yield next.value;
       }
     }
-    if (cacheKey && text.trim()) await deps.cache.set(cacheKey, text.trim());
+    if (cacheKey && text.trim()) {
+      try {
+        await deps.cache.set(cacheKey, plainText(text).trim());
+      } catch (error) {
+        cacheTrouble(deps, "write", error);
+      }
+    }
   }
   return { kind: "stream", chunks: chunks(), remaining };
 }

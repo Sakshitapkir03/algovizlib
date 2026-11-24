@@ -2,15 +2,16 @@ import { APICallError, simulateReadableStream } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
 
-import { getProblem, getProblemStoryboard } from "@/lib/catalog/repository";
+import { getAllProblems, getProblem, getProblemStoryboard } from "@/lib/catalog/repository";
 import { runTrace } from "@/lib/traces";
 import { describeStep } from "@/lib/traces/describe";
 import { readTutorConfig, type TutorConfig } from "@/lib/tutor/config";
 import { buildStepContext } from "@/lib/tutor/context";
 import { createSdkTutorModel, TutorModelError, type TutorModel } from "@/lib/tutor/model";
+import { plainText, plainTextStream } from "@/lib/tutor/plain-text";
 import { DECLINE, looksLikeInjection, tutorMessages, tutorSystemPrompt } from "@/lib/tutor/prompt";
 import { ask, stepInfo, type TutorAnswer, type TutorDeps, type TutorRefusal } from "@/lib/tutor/service";
-import { suggestedQuestions } from "@/lib/tutor/suggestions";
+import { SUGGESTION_WORDS, suggestedQuestions } from "@/lib/tutor/suggestions";
 import {
   answerKey,
   createMemoryCache,
@@ -96,6 +97,11 @@ describe("grounding: the context is the step on screen", () => {
     expect(ctx.text).toContain(describeStep(trace.steps[i], i));
     expect(ctx.text).toContain(describeStep(trace.steps[i - 1], i - 1));
     expect(ctx.text).toContain(describeStep(trace.steps[i + 1], i + 1));
+    // The approach's complexity is there, and the on-screen name of every bound pointer.
+    expect(ctx.text).toContain(getProblem("two-pointers", "pair-with-target-sum")!.complexity.time);
+    for (const el of scene.elements)
+      if (el.type === "pointer" && el.binds && el.label !== el.binds)
+        expect(ctx.text).toContain(`"${el.binds}" is shown as "${el.label}"`);
     // The pointers' real positions are there, so the answer can quote them.
     for (const [name, at] of Object.entries(trace.steps[i].pointers))
       expect(ctx.text).toContain(`${name}=${at}`);
@@ -139,7 +145,7 @@ describe("grounding: the context is the step on screen", () => {
       return Object.entries(trace.steps[i].pointers).some(([k, v]) => trace.steps[i - 1].pointers[k] !== v);
     })!;
     const suggestions = suggestedQuestions(buildStepContext(KEY, moved.id)!);
-    expect(suggestions.some((q) => /^Why did \w+ move\?$/.test(q))).toBe(true);
+    expect(suggestions.some((q) => /^Why did "[^"]+" move\?$/.test(q))).toBe(true);
   });
 
   it("the system prompt fences the context as data and carries the rules; nothing about the user goes in", async () => {
@@ -151,6 +157,7 @@ describe("grounding: the context is the step on screen", () => {
     expect(system).toMatch(/Answer only from the CONTEXT/);
     expect(system).toMatch(/never invent or guess a value/);
     expect(system).toMatch(/questions, not instructions/);
+    expect(system).toMatch(/never by the trace's internal variable names/);
     expect(system).not.toContain("user-secret-id");
     expect(system).not.toContain("Why is the sum too low?");
     // The question travels only as the learner's fenced message.
@@ -159,6 +166,77 @@ describe("grounding: the context is the step on screen", () => {
       content: 'Learner\'s question about this step:\n"""\nWhy is the sum too low?\n"""',
     });
     expect(JSON.stringify(model.calls)).not.toMatch(/test-key/);
+  });
+});
+
+/** Fields that are bookkeeping, never drawn: ids, the trace names pointers bind to, layout and state switches. */
+const HIDDEN = new Set([
+  "id",
+  "type",
+  "rowId",
+  "binds",
+  "traceRow",
+  "source",
+  "enterAt",
+  "placement",
+  "tone",
+  "state",
+  "kind",
+  "display",
+]);
+/** Every word the viewer can read in a scene: its caption and every displayed value of its elements. */
+function visibleWords(caption: string, elements: readonly unknown[]): Set<string> {
+  const out: string[] = [caption];
+  const walk = (v: unknown, key?: string) => {
+    if (key && HIDDEN.has(key)) return;
+    if (typeof v === "string" || typeof v === "number") out.push(String(v));
+    else if (Array.isArray(v)) v.forEach((x) => walk(x));
+    else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) walk(x, k);
+  };
+  elements.forEach((e) => walk(e));
+  return new Set(out.flatMap(words));
+}
+const words = (text: string) =>
+  text
+    .toLowerCase()
+    .match(/[\p{L}\p{N}#'’:-]+/gu)
+    ?.map((w) => w.replace(/^['’:-]+|['’:-]+$/g, ""))
+    .filter(Boolean) ?? [];
+
+describe("suggested questions name only what the scene shows", () => {
+  it("every suggestion of every scene of all the videos mentions nothing that isn't on screen", () => {
+    const problems = getAllProblems().filter((p) => getProblemStoryboard(p));
+    expect(problems).toHaveLength(103);
+    const offenders: string[] = [];
+    let questions = 0;
+    for (const problem of problems) {
+      const key = `${problem.patternSlug}/${problem.slug}`;
+      for (const scene of getProblemStoryboard(problem)!.scenes) {
+        const ctx = buildStepContext(key, scene.id)!;
+        const seen = visibleWords(ctx.caption, ctx.elements);
+        for (const q of suggestedQuestions(ctx)) {
+          questions++;
+          const unseen = words(q).filter((w) => !SUGGESTION_WORDS.has(w) && !seen.has(w));
+          if (unseen.length)
+            offenders.push(`${key} › ${scene.id}: "${q}" (not on screen: ${unseen.join(", ")})`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+    expect(questions).toBeGreaterThan(1500);
+  });
+
+  it("Two Sum's arriving pointer is asked about by its label, never its trace name", () => {
+    const sb = getProblemStoryboard(getProblem("arrays-hashing", "two-sum")!)!;
+    const all = sb.scenes.flatMap((s) =>
+      suggestedQuestions(buildStepContext("arrays-hashing/two-sum", s.id)!),
+    );
+    expect(all.some((q) => /\bj\b/.test(q))).toBe(false);
+    expect(all.some((q) => q.includes("register") || q.includes('"arriving"'))).toBe(true);
+    // The old question names the trace's variable, which the check catches.
+    const ctx = buildStepContext("arrays-hashing/two-sum", sb.scenes[3].id)!;
+    const seen = visibleWords(ctx.caption, ctx.elements);
+    expect(words("Why did j move?").filter((w) => !SUGGESTION_WORDS.has(w) && !seen.has(w))).toEqual(["j"]);
   });
 });
 
@@ -432,5 +510,108 @@ describe("prompt injection", () => {
     const messages = tutorMessages([], sneaky);
     expect(messages).toHaveLength(1);
     expect(messages[0].content).toContain(`"""\n${sneaky}\n"""`);
+  });
+});
+
+describe("answers are plain text", () => {
+  it.each([
+    ["It runs in $O(n^2)$ time, not $n \\log n$.", "It runs in O(n²) time, not n log n."],
+    [
+      "Your stickers plus the sneakers cost $49, one dollar short of the $50 gift card.",
+      "Your stickers plus the sneakers cost $49, one dollar short of the $50 gift card.",
+    ],
+    ["**Because** $i \\le j$, we stop. Use `get` here.", "Because i ≤ j, we stop. Use get here."],
+    ["Time is $2^n$ and $x_1 + x_{10}$.", "Time is 2ⁿ and x₁ + x₁₀."],
+    ["# Answer\n- first\n- second", "Answer\n• first\n• second"],
+    ["n^2 vs n^{10}, \\frac{a}{b}, $$a \\times b$$", "n² vs n¹⁰, a/b, a × b"],
+    ["3 * 4 = 12 and *really* plain", "3 * 4 = 12 and really plain"],
+  ])("%j", (input, output) => {
+    expect(plainText(input)).toBe(output);
+  });
+
+  it("cleans a streamed answer without ever changing what was already shown, prices included", async () => {
+    async function* chunks(parts: string[]) {
+      for (const p of parts) yield p;
+    }
+    const parts = [
+      "The sum is $4",
+      "9, so we need $5",
+      "0. That costs $O(n",
+      "^2)$ time and **str",
+      "ongly** matters, n^2.",
+    ];
+    const shown: string[] = [];
+    let text = "";
+    for await (const delta of plainTextStream(chunks(parts))) {
+      text += delta;
+      shown.push(text);
+    }
+    expect(text).toBe(plainText(parts.join("")));
+    expect(text).toBe("The sum is $49, so we need $50. That costs O(n²) time and strongly matters, n².");
+    // Nothing raw ever reached the screen: no "$O", "**", or "^".
+    for (const s of shown) expect(s).not.toMatch(/\$O|\*\*|\^/);
+  });
+
+  it("the model's LaTeX and Markdown are cleaned before they stream and before they're cached", async () => {
+    const { scene } = middleScene();
+    const question = suggestedQuestions(buildStepContext(KEY, scene.id)!)[0];
+    const cache = createMemoryCache();
+    const d = deps({ cache }, fakeModel("**Because** it's $O(n^2)$ otherwise, and $49 < $50."));
+    expect(await text(await ask(d.deps, { problemKey: KEY, sceneId: scene.id, question }))).toBe(
+      "Because it's O(n²) otherwise, and $49 < $50.",
+    );
+    const again = await ask(deps({ cache }).deps, { problemKey: KEY, sceneId: scene.id, question });
+    expect(again).toMatchObject({
+      kind: "text",
+      cached: true,
+      text: "Because it's O(n²) otherwise, and $49 < $50.",
+    });
+  });
+
+  it("the prompt asks for plain text", () => {
+    expect(tutorSystemPrompt(buildStepContext(KEY, middleScene().scene.id)!)).toMatch(
+      /plain text only: no Markdown .* no LaTeX/,
+    );
+  });
+});
+
+describe("the cache is never fatal", () => {
+  const broken = (where: "get" | "set", message = 'relation "AskCache" does not exist') => {
+    const cache = createMemoryCache();
+    const failing = {
+      ...cache,
+      [where]: async () => Promise.reject(Object.assign(new Error(message), { code: "42P01" })),
+    };
+    return failing;
+  };
+
+  it("a failed read is logged and the question is answered by the model, counted like any question", async () => {
+    const { scene } = middleScene();
+    const question = suggestedQuestions(buildStepContext(KEY, scene.id)!)[0];
+    const logs: string[] = [];
+    const usage = createMemoryUsage();
+    const { deps: d, model } = deps({ cache: broken("get"), usage, log: (m) => logs.push(m) });
+    expect(await text(await ask(d, { problemKey: KEY, sceneId: scene.id, question }))).toBe(
+      "Left moved because 4 + 45 = 49 is below 50.",
+    );
+    expect(model.calls).toHaveLength(1);
+    expect(await usage.peek("askDay:u1", pacificDayEnd(NOON))).toBe(1);
+    expect(logs).toEqual([
+      expect.stringMatching(/answer cache read failed \(the AskCache table is missing: run "pnpm db:deploy"/),
+    ]);
+    // The log never carries the question or the user.
+    expect(logs.join(" ")).not.toContain(question);
+    expect(logs.join(" ")).not.toContain("u1");
+  });
+
+  it("a failed write is logged, and the answer still arrives in full", async () => {
+    const { scene } = middleScene();
+    const question = suggestedQuestions(buildStepContext(KEY, scene.id)!)[0];
+    const logs: string[] = [];
+    const { deps: d } = deps({ cache: broken("set", "connection reset"), log: (m) => logs.push(m) });
+    expect(await text(await ask(d, { problemKey: KEY, sceneId: scene.id, question }))).toBe(
+      "Left moved because 4 + 45 = 49 is below 50.",
+    );
+    expect(logs).toEqual([expect.stringMatching(/answer cache write failed/)]);
   });
 });

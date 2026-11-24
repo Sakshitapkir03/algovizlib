@@ -7,6 +7,7 @@ import { createDbRateLimiter } from "@/lib/auth/rate-limit";
 import { createPrismaAuthStore } from "@/lib/auth/store";
 import { hashToken } from "@/lib/auth/tokens";
 import { createPrismaProgressStore } from "@/lib/progress/server";
+import { checkHealth } from "@/lib/health";
 import { createDbCache, createDbUsage, pacificDayEnd } from "@/lib/tutor/usage";
 
 /**
@@ -103,6 +104,16 @@ describe.skipIf(!url)("database (Postgres)", () => {
     await cache.set("k", "An answer.");
     await cache.set("k", "A newer answer.");
     expect(await cache.get("k")).toBe("A newer answer.");
+  });
+
+  it("health: ok with every migration applied, and names a missing table", async () => {
+    expect(await checkHealth(prisma)).toMatchObject({ ok: true, missingTables: [], pendingMigrations: [] });
+    await prisma.$executeRawUnsafe('ALTER TABLE "AskCache" RENAME TO "AskCache_hidden"');
+    try {
+      expect(await checkHealth(prisma)).toMatchObject({ ok: false, missingTables: ["AskCache"] });
+    } finally {
+      await prisma.$executeRawUnsafe('ALTER TABLE "AskCache_hidden" RENAME TO "AskCache"');
+    }
   });
 
   it("progress: each user only ever sees and changes their own", async () => {

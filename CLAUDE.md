@@ -1139,8 +1139,17 @@ the problem page) and at run time by the route.
   Obvious attempts to change the instructions ("ignore previous instructions", "system prompt", "you are now…",
   "developer mode") are declined before any model call (`looksLikeInjection`) and cost no question; anything subtler
   is the model's to decline under the rules.
-- **Suggestions** (`lib/tutor/suggestions.ts`, no model call): why a pointer moved, what the step's comparison tells
-  us, why the step happens, what comes next (problem-level questions for intro scenes); 2–3 per step.
+- **Suggestions** (`lib/tutor/suggestions.ts`, no model call), 2–3 per step, built only from what the scene draws: why
+  a pointer moved, by its on-screen label ("arriving", "You"; never the trace variable it binds, like `j`); what the
+  equation's own numbers tell us; why the map looked up or added a key, by the map's label; then why the step happens
+  and what comes next (problem-level questions for intro scenes). A test runs every suggestion of every scene of all
+  103 videos and fails if a word in it, beyond the questions' fixed wording (`SUGGESTION_WORDS`), isn't in the scene's
+  visible text (its caption and every displayed field: not ids, `binds`, row ids, or state switches).
+- **Plain text** (`lib/tutor/plain-text.ts`): the prompt asks for no Markdown and no LaTeX, and whatever slips through
+  is cleaned, as the answer streams and before it's cached: math delimiters dropped (but never prices: "$49 … $50"
+  stays), `\le` → ≤, `\frac{a}{b}` → a/b, `n^2` → n², `x_1` → x₁, bold, italics, headings, and backticks removed,
+  bullets as "•". The stream holds back an unclosed `$…`, `**`, or backtick until it closes, so shown text never
+  changes.
 - **Model:** `TUTOR_PROVIDER` (default google) and `TUTOR_MODEL` (default `gemini-3.5-flash-lite`), separate from the
   generator's `AI_PROVIDER` / `AI_MODEL`, with the provider's usual key variable. `streamText`, one attempt
   (`maxRetries: 0`), 320 output tokens, 30 s timeout. The route waits for the first chunk, so a busy provider (429, 5xx,
@@ -1155,7 +1164,14 @@ the problem page) and at run time by the route.
   cuts a day short (`lib/tutor/usage.ts`). A cap's message says how long until it resets.
 - **Cache:** a suggested question asked first on its step (no history) is answered once and kept in `AskCache`
   (entries older than 30 days are swept); later askers get it with no model call and no question used. Typed questions
-  and follow-ups aren't cached.
+  and follow-ups aren't cached. The cache is never fatal: a failed read or write is logged (`[tutor] answer cache read
+failed …`; a missing table says to run `pnpm db:deploy`; never the question or the user) and the question is answered
+  through the model like a typed one.
+- **Health check** (`GET /api/health`, `lib/health.ts`): the database is reachable, every table in `REQUIRED_TABLES`
+  exists, and every migration in `EXPECTED_MIGRATIONS` has run; 200 when so, 503 naming the missing tables and pending
+  migrations (names only, never error text). A test keeps both lists in sync with `schema.prisma` and
+  `prisma/migrations`, so a new migration must be listed. Check it after every deploy that changes the schema: a
+  skipped `pnpm db:deploy` (as happened with `AskCache` on 2026-11-23) shows up there first.
 - **UI** (`components/learn/ask-panel.tsx`, under the player controls, hidden in fullscreen): "Ask about this step"
   pauses the video and opens a panel with the step's label ("Step 4 of 8: $49 is too low — You move right"), the
   suggestions, and a 300-character box (Enter sends, Shift+Enter breaks a line); answers stream in, with `backticks` as
@@ -1169,8 +1185,8 @@ the problem page) and at run time by the route.
 Tests: `tests/tutor.test.ts` (grounding: the right step and its neighbors, exact values; suggestions; the flag and
 config; access and input limits; per-user, global, and per-minute caps and the Pacific day; caching; busy and failing
 providers, and the SDK adapter with `MockLanguageModelV4`; injection attempts declined with no model call, and the
-question only ever fenced in user messages) and `tests/db.integration.test.ts` (daily counts and the cache in
-Postgres). No test calls a real model.
+question only ever fenced in user messages) and `tests/db.integration.test.ts` (daily counts, the cache, and the health check in
+Postgres), and `tests/health.test.ts`. No test calls a real model.
 
 ## Choosing the example
 

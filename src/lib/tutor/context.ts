@@ -1,4 +1,5 @@
 import { getProblem, getProblemStoryboard } from "@/lib/catalog/repository";
+import type { Element } from "@/lib/storyboard";
 import { runTrace, type Trace, type TraceStep } from "@/lib/traces";
 import { describeStep } from "@/lib/traces/describe";
 
@@ -21,6 +22,9 @@ export type StepContext = {
   stepIndex?: number;
   sceneIndex: number;
   sceneCount: number;
+  /** The scene's caption and its resolved elements: what the viewer actually sees (suggestions use only these). */
+  caption: string;
+  elements: readonly Element[];
   text: string;
 };
 
@@ -53,6 +57,14 @@ export function buildStepContext(problemKey: string, sceneId: string): StepConte
     ) ?? problem.examples[0];
 
   const label = `Step ${sceneIndex + 1} of ${storyboard.scenes.length}: ${scene.caption}`;
+  // What the viewer sees things called: the trace's variable names (j, lo) are internal.
+  const names = scene.elements.flatMap((el) => {
+    if (el.type === "pointer" && el.binds && el.label !== el.binds)
+      return [`the pointer the trace calls "${el.binds}" is shown as "${el.label}"`];
+    if ("label" in el && typeof el.label === "string" && el.label && el.type !== "pointer")
+      return [`a ${el.type.replace("-", " ")} labeled "${el.label}"`];
+    return [];
+  });
   const lines = [
     `Problem: ${problem.title} (${problem.difficulty})`,
     problem.statement,
@@ -60,8 +72,11 @@ export function buildStepContext(problemKey: string, sceneId: string): StepConte
     `Example the video animates: ${example.input} → ${example.output}`,
     ...(storyboard.analogy ? [`The video tells it as: ${storyboard.analogy.scenario}`] : []),
     "",
+    `The approach takes ${problem.complexity.time} time and ${problem.complexity.space} space.`,
+    "",
     `Current moment: scene ${sceneIndex + 1} of ${storyboard.scenes.length}, "${scene.caption}"`,
     `Narration: ${scene.narration}`,
+    ...(names.length ? [`On screen: ${names.join("; ")}.`] : []),
   ];
   if (step && index !== undefined) {
     lines.push(
@@ -88,6 +103,8 @@ export function buildStepContext(problemKey: string, sceneId: string): StepConte
     stepIndex: index,
     sceneIndex,
     sceneCount: storyboard.scenes.length,
+    caption: scene.caption,
+    elements: scene.elements,
     text: lines.join("\n"),
   };
 }
