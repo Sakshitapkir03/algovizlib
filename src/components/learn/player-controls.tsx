@@ -52,6 +52,7 @@ export function PlayerControls({
   currentIndex,
   hasTrack,
   onToggleFullscreen,
+  quickChecksAvailable = false,
 }: {
   durationInFrames: number;
   timings: readonly SceneTiming[];
@@ -59,7 +60,11 @@ export function PlayerControls({
   /** The video has a stitched ElevenLabs narration track. */
   hasTrack: boolean;
   onToggleFullscreen: () => void;
+  /** The video has quick checks: show their on/off setting. */
+  quickChecksAvailable?: boolean;
 }) {
+  const quickChecks = usePlayerStore((s) => s.quickChecks);
+  const setQuickChecks = usePlayerStore((s) => s.setQuickChecks);
   const frame = usePlayerStore((s) => s.frame);
   // Waiting for the browser voice to finish a scene still counts as playing.
   const isPlaying = usePlayerStore((s) => s.isPlaying || s.holding);
@@ -158,25 +163,37 @@ export function PlayerControls({
           </IconButton>
         </div>
       </div>
-      <p className="font-mono text-[11px] text-muted-foreground" data-voice={voice}>
-        {voice === "elevenlabs" ? (
-          <>
-            Narrated by{" "}
-            <a
-              href="https://elevenlabs.io"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-2"
-            >
-              ElevenLabs
-            </a>
-          </>
-        ) : voice === "browser" ? (
-          "Browser voice"
-        ) : (
-          "No voice available: follow the captions and transcript"
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="font-mono text-[11px] text-muted-foreground" data-voice={voice}>
+          {voice === "elevenlabs" ? (
+            <>
+              Narrated by{" "}
+              <a
+                href="https://elevenlabs.io"
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                ElevenLabs
+              </a>
+            </>
+          ) : voice === "browser" ? (
+            "Browser voice"
+          ) : (
+            "No voice available: follow the captions and transcript"
+          )}
+        </p>
+        {quickChecksAvailable && (
+          <button
+            type="button"
+            aria-pressed={quickChecks}
+            onClick={() => setQuickChecks(!quickChecks)}
+            className="rounded-sm font-mono text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            Quick checks: {quickChecks ? "on" : "off"}
+          </button>
         )}
-      </p>
+      </div>
     </div>
   );
 }

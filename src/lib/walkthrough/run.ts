@@ -7,6 +7,7 @@ import {
   type Storyboard,
 } from "@/lib/storyboard";
 import { getTraceDefinition, runTrace } from "@/lib/traces";
+import { buildQuickChecks, type QuickCheck, validateQuickChecks } from "@/lib/quickcheck";
 import { sceneFitProblems } from "@/video/fit/scene";
 
 import { buildWalkthrough, type WalkthroughProblem } from "./build";
@@ -26,7 +27,8 @@ import { type InputSpec, inputSpecs } from "./specs";
 export type InputError = { field?: number; message: string };
 export type Parsed = { ok: true; args: unknown[] } | { ok: false; errors: InputError[] };
 export type WalkthroughResult =
-  { ok: true; storyboard: Storyboard; args: unknown[] } | { ok: false; errors: InputError[] };
+  | { ok: true; storyboard: Storyboard; args: unknown[]; checks: QuickCheck[] }
+  | { ok: false; errors: InputError[] };
 
 const specs = new Map(inputSpecs.map((s) => [s.problem, s]));
 
@@ -132,7 +134,12 @@ export function buildWalkthroughFor(
     } catch (error) {
       return fail(BROKEN, error);
     }
-    if (outcome.storyboard) return { ok: true, storyboard: outcome.storyboard, args };
+    if (outcome.storyboard) {
+      // Quick checks come from the same builder as the videos'; one that doesn't validate is left out.
+      const checks = buildQuickChecks(outcome.storyboard, trace);
+      const valid = validateQuickChecks(outcome.storyboard, trace, checks).length === 0;
+      return { ok: true, storyboard: outcome.storyboard, args, checks: valid ? checks : [] };
+    }
     last = outcome.problems;
     const scenes = new Set(
       outcome.problems.map((p) => p.scene).filter((id): id is string => id !== undefined),

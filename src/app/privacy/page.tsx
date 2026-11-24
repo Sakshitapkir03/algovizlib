@@ -12,7 +12,7 @@ export const metadata: Metadata = {
  * Keep this accurate to what the code does. If sign-in, storage, providers, or narration change (for example,
  * turning on email + password), update this page and its effective date in the same change.
  */
-const EFFECTIVE = "2026-11-23";
+const EFFECTIVE = "2026-11-24";
 
 export default function PrivacyPage() {
   return (
@@ -30,9 +30,11 @@ export default function PrivacyPage() {
     >
       <LegalSection title="Without an account">
         <p>
-          Your progress (each problem&apos;s status), where you stopped in each video, your theme, your sound
-          settings, and whether you&apos;ve dismissed a tip are saved in your browser&apos;s local storage.
-          They never leave your device. Clearing this site&apos;s data in your browser removes them.
+          Your progress (each problem&apos;s status), where you stopped in each video, your answers to the
+          videos&apos; quick check questions (which question, right or not, and when; for a walkthrough of
+          your own input, that input too), your theme, your sound and quick check settings, and whether
+          you&apos;ve dismissed a tip are saved in your browser&apos;s local storage. They never leave your
+          device. Clearing this site&apos;s data in your browser removes them.
         </p>
       </LegalSection>
 
@@ -49,8 +51,8 @@ export default function PrivacyPage() {
           tokens. We don&apos;t read or post anything else in those accounts.
         </p>
         <p>
-          If you were using the site without an account, the progress in your browser is moved into your
-          account when you sign in, then removed from the browser.
+          If you were using the site without an account, the progress and quick check answers in your browser
+          are moved into your account when you sign in, then removed from the browser.
         </p>
       </LegalSection>
 
@@ -65,6 +67,11 @@ export default function PrivacyPage() {
             whether you set it yourself, and when it changed.
           </li>
           <li>Video positions: the scene and second where you stopped each video, until you finish it.</li>
+          <li>
+            Quick check answers: for each question you answer, the problem, which question, whether you were
+            right, and when; for a walkthrough of your own input, the input. Skipped questions aren&apos;t
+            recorded, and answers never change your progress.
+          </li>
           <li>
             If you use &ldquo;Ask about this step&rdquo;: how many questions you asked today (to enforce the
             daily limit), deleted about a day after the limit resets. Your questions and their answers
@@ -133,10 +140,10 @@ export default function PrivacyPage() {
 
       <LegalSection title="Keeping and deleting your data">
         <p>
-          Your account and progress are kept until you ask us to delete them. To delete your account, email{" "}
-          <Mail /> from the address on your account. We&apos;ll delete your account, your progress, and your
-          video positions, and confirm within 30 days. Copies may remain in the database provider&apos;s
-          short-term backups for a limited time before they expire.
+          Your account, progress, and quick check answers are kept until you ask us to delete them. To delete
+          your account, email <Mail /> from the address on your account. We&apos;ll delete your account, your
+          progress, your video positions, and your quick check answers, and confirm within 30 days. Copies may
+          remain in the database provider&apos;s short-term backups for a limited time before they expire.
         </p>
         <p>
           You can also remove algovizlib&apos;s access in your GitHub or Google account settings at any time.

@@ -3,11 +3,12 @@ import { execFileSync } from "node:child_process";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { PrismaClient } from "@/generated/prisma/client";
-import { createDbRateLimiter } from "@/lib/auth/rate-limit";
+import { createDbRateLimiter, createMemoryRateLimiter } from "@/lib/auth/rate-limit";
 import { createPrismaAuthStore } from "@/lib/auth/store";
 import { hashToken } from "@/lib/auth/tokens";
 import { createPrismaProgressStore } from "@/lib/progress/server";
 import { checkHealth } from "@/lib/health";
+import { createPrismaCheckResultStore, postChecks } from "@/lib/quickcheck/server";
 import { createDbCache, createDbUsage, pacificDayEnd } from "@/lib/tutor/usage";
 
 /**
@@ -31,7 +32,7 @@ describe.skipIf(!url)("database (Postgres)", () => {
 
   beforeEach(async () => {
     await prisma.$executeRawUnsafe(
-      'TRUNCATE "User", "Account", "Session", "AuthToken", "RateLimit", "Progress", "VerificationToken", "AskCache" CASCADE',
+      'TRUNCATE "User", "Account", "Session", "AuthToken", "RateLimit", "Progress", "VerificationToken", "AskCache", "CheckResult" CASCADE',
     );
   });
 
@@ -160,6 +161,67 @@ describe.skipIf(!url)("database (Postgres)", () => {
       position: { sceneId: "b", seconds: 40, updatedAt: 9000 },
     });
     expect(await store.load(id)).toEqual(merged);
+  });
+
+  it("quick checks: answers are stored once each, per user, newest first, and go with the user", async () => {
+    const store = createPrismaCheckResultStore(prisma);
+    const [ada, bob] = [await user("ada@example.com"), await user("bob@example.com")];
+    const answer = (id: string, at: number, correct = true) => ({
+      id,
+      problemKey: K,
+      questionId: "check-found",
+      sceneId: "found",
+      step: 3,
+      correct,
+      source: "video" as const,
+      answeredAt: at,
+    });
+    expect(await store.save(ada, [answer("aaaaaaaa1", 1000), answer("aaaaaaaa2", 2000, false)])).toBe(2);
+    // A retry or a merge sends some again: stored once.
+    expect(await store.save(ada, [answer("aaaaaaaa2", 2000, false), answer("aaaaaaaa3", 3000)])).toBe(1);
+    // Another user may use the same id: answers are keyed per user.
+    expect(await store.save(bob, [answer("aaaaaaaa1", 500)])).toBe(1);
+    const mine = await store.load(ada, 10);
+    expect(mine.map((r) => r.id)).toEqual(["aaaaaaaa3", "aaaaaaaa2", "aaaaaaaa1"]);
+    expect(mine[1]).toMatchObject({ correct: false, source: "video", answeredAt: 2000 });
+    await prisma.user.delete({ where: { id: ada } });
+    expect(await prisma.checkResult.count({ where: { userId: ada } })).toBe(0);
+    expect(await store.load(bob, 10)).toHaveLength(1);
+  });
+
+  it("quick checks: with the table missing (migration not run), saving answers is a 503, not a crash", async () => {
+    const id = await user("ada@example.com");
+    const logs: string[] = [];
+    await prisma.$executeRawUnsafe('ALTER TABLE "CheckResult" RENAME TO "CheckResult_hidden"');
+    try {
+      const result = await postChecks(
+        {
+          user: { id, canSync: true },
+          store: createPrismaCheckResultStore(prisma),
+          limiter: createMemoryRateLimiter(),
+          isProblem: () => true,
+          log: (m) => logs.push(m),
+        },
+        {
+          results: [
+            {
+              id: "aaaaaaaa1",
+              problemKey: K,
+              questionId: "q",
+              sceneId: "s",
+              step: 1,
+              correct: true,
+              source: "video",
+              answeredAt: 1,
+            },
+          ],
+        },
+      );
+      expect(result.status).toBe(503);
+      expect(logs.join()).toMatch(/CheckResult table is missing: run `pnpm db:deploy`/);
+    } finally {
+      await prisma.$executeRawUnsafe('ALTER TABLE "CheckResult_hidden" RENAME TO "CheckResult"');
+    }
   });
 
   it("deleting a user deletes their progress and tokens", async () => {

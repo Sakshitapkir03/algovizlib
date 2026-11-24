@@ -14,10 +14,15 @@ export const REQUIRED_TABLES = [
   "RateLimit",
   "Progress",
   "AskCache",
+  "CheckResult",
 ] as const;
 
 /** Every folder in prisma/migrations (a test keeps this in sync). */
-export const EXPECTED_MIGRATIONS = ["20261120213857_accounts", "20261123223629_ask_cache"] as const;
+export const EXPECTED_MIGRATIONS = [
+  "20261120213857_accounts",
+  "20261123223629_ask_cache",
+  "20261124153611_check_results",
+] as const;
 
 export type Health = {
   ok: boolean;

@@ -2,9 +2,10 @@
 
 import { FlaskConical, Film } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
+import type { QuickCheck } from "@/lib/quickcheck/schema";
 import type { Storyboard } from "@/lib/storyboard";
 import type { WalkthroughProblem } from "@/lib/walkthrough/build";
 import { INPUT_PARAM } from "@/lib/walkthrough/link";
@@ -33,11 +34,14 @@ export function VideoSection({
   storyboard,
   problemKey,
   askEnabled,
+  quickChecks,
   tryInput,
 }: {
   storyboard: Storyboard;
   problemKey: string;
   askEnabled: boolean;
+  /** The original video's quick checks. */
+  quickChecks: QuickCheck[];
   tryInput?: { problem: WalkthroughProblem; patternName: string };
 }) {
   // A shared link opens "Your input" (read in the browser: the page is static, so the server sees no query).
@@ -45,6 +49,10 @@ export function VideoSection({
     noSubscribe,
     () => new URLSearchParams(window.location.search).get(INPUT_PARAM),
     () => null,
+  );
+  const videoChecks = useMemo(
+    () => ({ checks: quickChecks, problemKey, source: "video" as const }),
+    [quickChecks, problemKey],
   );
   const [choice, setChoice] = useState<"original" | "custom" | null>(null);
   const mode = choice ?? (tryInput && shared !== null ? "custom" : "original");
@@ -94,6 +102,7 @@ export function VideoSection({
           showTakeaway={false}
           problemKey={problemKey}
           askEnabled={askEnabled}
+          quickChecks={videoChecks}
         />
       ) : (
         <TryInputPanel

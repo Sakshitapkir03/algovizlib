@@ -22,13 +22,14 @@ import {
 } from "@/lib/walkthrough/run";
 
 import { LearnView } from "./learn-view";
+import type { QuickCheckSet } from "./use-quick-checks";
 
 /**
  * A walkthrough's player: no `problemKey` (so no progress, saved position, resume, or "Mark as done?") and no tutor
  * (it only knows the committed videos). Kept as one function so a test can pin it.
  */
-export function walkthroughViewProps(storyboard: Storyboard) {
-  return { storyboard, showTakeaway: false, askEnabled: false } as const;
+export function walkthroughViewProps(storyboard: Storyboard, quickChecks?: QuickCheckSet) {
+  return { storyboard, showTakeaway: false, askEnabled: false, quickChecks } as const;
 }
 
 /**
@@ -54,7 +55,13 @@ export default function TryInputPanel({
 }) {
   const spec = getInputSpec(problemKey)!;
   const example = useMemo(() => template.trace?.args ?? [], [template]);
-  type Built = { storyboard: Storyboard; args: unknown[]; summary: string; run: number };
+  type Built = {
+    storyboard: Storyboard;
+    args: unknown[];
+    summary: string;
+    checks: QuickCheckSet;
+    run: number;
+  };
   /** Parse, build, and check (pure: no state is touched). */
   const attempt = (list: readonly string[]): { errors: InputError[]; built?: Omit<Built, "run"> } => {
     const parsed = parseInput(spec, list);
@@ -64,7 +71,18 @@ export default function TryInputPanel({
     if (!result.ok) return { errors: result.errors };
     return {
       errors: [],
-      built: { storyboard: result.storyboard, args: result.args, summary: describeInput(spec, result.args) },
+      built: {
+        storyboard: result.storyboard,
+        args: result.args,
+        summary: describeInput(spec, result.args),
+        // Answers are recorded as a walkthrough of this input, never as the problem's video.
+        checks: {
+          checks: result.checks,
+          problemKey,
+          source: "walkthrough" as const,
+          input: encodeInput(result.args),
+        },
+      },
     };
   };
 
@@ -245,7 +263,10 @@ export default function TryInputPanel({
             </Button>
           </div>
           {/* A new run is a new player (fresh clock and narration). */}
-          <LearnView key={walkthrough.run} {...walkthroughViewProps(walkthrough.storyboard)} />
+          <LearnView
+            key={walkthrough.run}
+            {...walkthroughViewProps(walkthrough.storyboard, walkthrough.checks)}
+          />
           <p className="text-xs text-muted-foreground">
             Built in your browser from the same algorithm as the video, with plain captions from each step.
             Browser voice only. Your input doesn&apos;t change your progress.

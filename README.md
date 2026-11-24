@@ -63,6 +63,13 @@ Videos are **trace-bound storyboards**: deterministic code runs each algorithm o
 decision, and a storyboard's pointers, equations, and highlights come from (and are checked against) that trace.
 Storyboards can be generated offline by a model: the model writes the story, the validator guarantees the moves.
 
+**Quick checks.** Most videos pause before up to three key moments and ask a short multiple-choice question about
+what happens next ("4 + 45 vs 50: too low, exact, or too high?", "Which value leaves the heap next?"), built from the
+algorithm's own trace and checked by a validator, so the right answer is always right. Answer with the number keys,
+skip with S, then read the step's explanation and continue; the end of the video shows "2 of 3 correct". Answers are
+kept in your browser, or in your account when you're signed in; they never change a problem's status. Turn them off
+under the player ("Quick checks: on").
+
 **Try your own input.** On 70 problems (every one whose input is numbers, strings, or lists of them) a switch above the
 video opens a step-by-step walkthrough of your own input: type it (prefilled with the video's example), or press
 Random, and the browser runs the same trace, builds the scenes, and checks them with the same validator and phone-width

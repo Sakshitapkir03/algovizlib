@@ -29,6 +29,7 @@ model User {
   sessions   Session[]
   authTokens AuthToken[]
   progress   Progress[]
+  checks     CheckResult[]
 }
 
 model Account {
@@ -129,3 +130,25 @@ model AskCache {
   createdAt DateTime @default(now())
 }
 
+/// One answered quick check (a short question the video asks before a key step). Kept for a future review queue;
+/// never changes progress. `id` is made in the browser, so a retried or merged answer is stored once. A walkthrough of
+/// the learner's own input has source "walkthrough" and its input, so it never counts as the problem's video.
+model CheckResult {
+  userId     String
+  id         String
+  problemKey String
+  questionId String
+  sceneId    String
+  step       Int
+  correct    Boolean
+  /// "video" or "walkthrough"
+  source     String
+  input      String?
+  answeredAt DateTime
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, id])
+  @@index([userId, answeredAt])
+}

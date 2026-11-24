@@ -11,6 +11,8 @@ import { usePlayerStore } from "@/store/player-store";
 import type { StoryboardCompositionProps } from "@/video/StoryboardComposition";
 
 import { KeyTakeaway } from "./key-takeaway";
+import { QuickCheckCard, QuickCheckSummary } from "./quick-check";
+import { type QuickCheckSet, useQuickChecks } from "./use-quick-checks";
 import { AskAboutStep } from "./ask-panel";
 import { PlayerControls } from "./player-controls";
 import { SceneList } from "./scene-list";
@@ -51,12 +53,15 @@ export function LearnView({
   showTakeaway = true,
   problemKey,
   askEnabled = false,
+  quickChecks,
 }: {
   storyboard: Storyboard;
   showTakeaway?: boolean;
   problemKey?: string;
   /** Show "Ask about this step" under the player (the tutor; needs `problemKey`). */
   askEnabled?: boolean;
+  /** Questions that pause the video before key steps, and where their answers go. */
+  quickChecks?: QuickCheckSet;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
@@ -68,6 +73,8 @@ export function LearnView({
   const { timings, durationInFrames } = useMemo(() => getSceneTimeline(storyboard.scenes), [storyboard]);
   const currentIndex = sceneIndexAtFrame(timings, frame);
   const progress = useVideoProgress(problemKey, timings, durationInFrames);
+  const checks = useQuickChecks(quickChecks, timings);
+  const ended = usePlayerStore((s) => s.ended);
 
   const inputProps = useMemo<StoryboardCompositionProps>(
     () => ({ storyboard, theme: resolvedTheme === "light" ? "light" : "dark", reducedMotion }),
@@ -91,7 +98,9 @@ export function LearnView({
   // Keyboard: Space play/pause, ←/→ seek 5s, Shift+←/→ previous/next scene, F fullscreen, M mute.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || isInteractive(e.target)) return;
+      // An open quick check has its own keys (and holds the video).
+      if (e.metaKey || e.ctrlKey || e.altKey || isInteractive(e.target) || usePlayerStore.getState().checking)
+        return;
       const { frame: f, seekTo, toggle, toggleMute } = usePlayerStore.getState();
       const idx = sceneIndexAtFrame(timings, f);
       switch (e.key) {
@@ -155,6 +164,10 @@ export function LearnView({
                 />
               )}
               {progress.askDone && <DonePrompt onDone={progress.markDone} onDismiss={progress.dismissDone} />}
+              {checks.active && (
+                // The stage dims while a question waits under it.
+                <div aria-hidden className="pointer-events-none absolute inset-0 bg-background/55" />
+              )}
             </div>
             <PlayerControls
               durationInFrames={durationInFrames}
@@ -162,7 +175,19 @@ export function LearnView({
               currentIndex={currentIndex}
               hasTrack={storyboard.narrationTrack !== undefined}
               onToggleFullscreen={toggleFullscreen}
+              quickChecksAvailable={checks.available}
             />
+            {checks.active && (
+              <QuickCheckCard
+                active={checks.active}
+                onAnswer={checks.answer}
+                onSkip={checks.skip}
+                onContinue={checks.resume}
+              />
+            )}
+            {ended && !checks.active && checks.summary.answered > 0 && (
+              <QuickCheckSummary {...checks.summary} />
+            )}
             {askEnabled && problemKey && !isFullscreen && (
               <AskAboutStep problemKey={problemKey} sceneId={storyboard.scenes[currentIndex].id} />
             )}

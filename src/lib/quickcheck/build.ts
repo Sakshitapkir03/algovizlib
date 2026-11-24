@@ -1,0 +1,439 @@
+import type { Element, Scene, Storyboard } from "@/lib/storyboard";
+import type { Trace, TraceStep } from "@/lib/traces/types";
+
+import { pointerSubject } from "@/lib/tutor/suggestions";
+
+import { MAX_CHECKS, type QuickCheck, type QuickCheckClaim } from "./schema";
+
+/**
+ * Quick checks for a video, from its trace (no model): at most three, each asked just before a key step's scene, about
+ * what that step is about to do. Every option is a name or value the viewer can see (pointer labels as drawn, card
+ * values, the equation's numbers, heap and queue labels), and every wrong option comes from the same step (the other
+ * pointer, the other comparison results, the other items in the heap). A scene gets one question, from the first of
+ * the kinds below that applies; a video with no step any kind fits gets none.
+ *
+ * The scene before the question must exist (it's what's on screen while the question is asked), so the first scene
+ * never gets one. Questions are spread evenly over the scenes that have one.
+ */
+export function buildQuickChecks(storyboard: Pick<Storyboard, "scenes">, trace: Trace): QuickCheck[] {
+  const candidates: QuickCheck[] = [];
+  storyboard.scenes.forEach((scene, i) => {
+    if (i === 0 || scene.traceStep === undefined) return;
+    const step = trace.steps[scene.traceStep];
+    if (!step?.key) return;
+    const before = storyboard.scenes[i - 1];
+    const ctx: Ctx = {
+      trace,
+      scene,
+      index: scene.traceStep,
+      step,
+      prior: scene.traceStep > 0 ? trace.steps[scene.traceStep - 1] : undefined,
+      shownStep: before.traceStep,
+      elements: scene.elements,
+      scenes: storyboard.scenes,
+    };
+    for (const kind of KINDS) {
+      const made = kind(ctx);
+      if (made) {
+        candidates.push({
+          id: `check-${scene.id}`,
+          sceneId: scene.id,
+          step: scene.traceStep,
+          explanation: step.note,
+          ...made,
+        });
+        break;
+      }
+    }
+  });
+  return spread(candidates, MAX_CHECKS);
+}
+
+type Ctx = {
+  trace: Trace;
+  scene: Scene;
+  /** The bound step's index. */
+  index: number;
+  step: TraceStep;
+  /** The step just before it in the trace (the state the step starts from). */
+  prior?: TraceStep;
+  /** The step the previous scene shows, if it's bound. */
+  shownStep?: number;
+  /** The question's scene's elements (its labels are the ones the viewer knows). */
+  elements: readonly Element[];
+  /** Every scene of the video (for the verdict words it uses). */
+  scenes: readonly Scene[];
+};
+type Made = Pick<QuickCheck, "prompt" | "options" | "answer" | "claim">;
+
+/** `count` items spread evenly over `list`, keeping order (all of them when there are few). */
+function spread<T>(list: readonly T[], count: number): T[] {
+  if (list.length <= count) return [...list];
+  return Array.from({ length: count }, (_, k) => list[Math.round(((k + 0.5) * list.length) / count - 0.5)]);
+}
+
+/** A stable order for options that have no natural one, so the answer isn't always first. */
+function arrange(options: string[], correct: string, seed: string): Made["options"] {
+  let h = 0;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const rest = options.filter((o) => o !== correct);
+  const at = h % (rest.length + 1);
+  return [...rest.slice(0, at), correct, ...rest.slice(at)];
+}
+
+const made = (
+  prompt: string,
+  options: string[],
+  correct: string,
+  claim: QuickCheckClaim,
+): Made | undefined => {
+  const unique = [...new Set(options)];
+  const answer = unique.indexOf(correct);
+  if (answer === -1 || unique.length < 2 || unique.some((o) => o.length > 40) || prompt.length > 140)
+    return undefined;
+  return { prompt, options: unique, answer, claim };
+};
+
+const YES_NO = ["Yes", "No"];
+const OP: Record<"+" | "-" | "×", string> = { "+": "+", "-": "−", "×": "×" };
+export const EXPLORE_OPTIONS = ["Go deeper", "Record an answer", "Cut the branch"] as const;
+
+export const COMPARE_OPTIONS = (target: number) => [
+  `Less than ${target}`,
+  `Equal to ${target}`,
+  `Greater than ${target}`,
+];
+
+/** Integer-looking strings: options for "what value" questions are numbers near the answer. */
+const isInt = (s: string) => /^-?\d+$/.test(s);
+const near = (value: number, others: readonly number[], count: number): number[] => {
+  const picks = [...new Set(others.filter((v) => v !== value))];
+  for (const d of [1, -1, 2, -2, 3]) if (picks.length < count) picks.push(value + d);
+  return [...new Set(picks.filter((v) => v !== value))].slice(0, count);
+};
+const numeric = (values: number[]) => [...values].sort((a, b) => a - b).map(String);
+
+/** Every verdict word the video's equations use, with the comparison results it's used for. */
+function verdictWords(scenes: readonly Scene[], trace: Trace): Map<string, Set<string>> {
+  const words = new Map<string, Set<string>>();
+  for (const scene of scenes) {
+    const eq = scene.elements.find((e) => e.type === "equation");
+    const op =
+      scene.traceStep === undefined ? undefined : trace.steps[scene.traceStep]?.equation?.comparison?.op;
+    if (eq?.type !== "equation" || !eq.verdict || !op) continue;
+    words.set(eq.verdict, (words.get(eq.verdict) ?? new Set()).add(op));
+  }
+  return words;
+}
+
+const pointersIn = (elements: readonly Element[]) =>
+  elements.flatMap((e) => (e.type === "pointer" && e.binds ? [{ label: e.label, binds: e.binds }] : []));
+
+const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // A design call's output: "What does get(1) return?"
+  ({ trace, step, scene }) => {
+    if (!step.op?.returned || !trace.ops) return undefined;
+    const { call, output } = trace.ops[step.op.current];
+    if (output === "—" || !scene.elements.some((e) => e.type === "op-log")) return undefined;
+    const others = [...new Set(trace.ops.map((o) => o.output).filter((o) => o !== "—" && o !== output))];
+    const pool = isInt(output) && !others.includes("-1") ? [...others, "-1"] : others;
+    return made(
+      `What does ${call} return?`,
+      arrange([output, ...pool.slice(0, 2)], output, scene.id),
+      output,
+      {
+        kind: "output",
+        call: step.op.current,
+      },
+    );
+  },
+  // A greedy decision: "Which does it choose?"
+  ({ step, scene }) => {
+    if (!step.choice?.rejected || !scene.elements.some((e) => e.type === "choice")) return undefined;
+    const { chosen, rejected } = step.choice;
+    return made("Which does it choose?", arrange([chosen, rejected], chosen, scene.id), chosen, {
+      kind: "choice",
+    });
+  },
+  // A comparison in the video's own words: "4 + 45 vs 50: what happens next?" (too low / found / too high).
+  ({ step, scene, scenes, trace }) => {
+    const eq = step.equation;
+    const shown = scene.elements.find((e) => e.type === "equation");
+    if (!eq?.comparison || shown?.type !== "equation" || !shown.verdict) return undefined;
+    const words = verdictWords(scenes, trace);
+    const mine = words.get(shown.verdict);
+    if (mine?.size !== 1 || !mine.has(eq.comparison.op) || /\d/.test(shown.verdict)) return undefined;
+    // One verdict per comparison result, in < = > order, each used for only that result in the video.
+    const options = (["<", "=", ">"] as const).flatMap((op) => {
+      // A verdict with a number in it ("2 boards") belongs to one step, not to a kind of result.
+      const word = [...words].find(([w, ops]) => ops.size === 1 && ops.has(op) && !/\d/.test(w))?.[0];
+      return op === eq.comparison!.op ? [shown.verdict!] : word ? [word] : [];
+    });
+    const expr = eq.terms.map((t) => (t < 0 ? `(${t})` : String(t))).join(` ${OP[eq.operator]} `);
+    return made(`${expr} vs ${eq.comparison.target}: what happens next?`, options, shown.verdict, {
+      kind: "verdict",
+      terms: eq.terms,
+      operator: eq.operator,
+      target: eq.comparison.target,
+    });
+  },
+  // A comparison: "Is 4 + 45 less than, equal to, or greater than 50?"
+  ({ step, scene }) => {
+    const eq = step.equation;
+    if (!eq?.comparison || eq.terms.length < 2 || !scene.elements.some((e) => e.type === "equation"))
+      return undefined;
+    const expr = eq.terms.map((t) => (t < 0 ? `(${t})` : String(t))).join(` ${OP[eq.operator]} `);
+    const options = COMPARE_OPTIONS(eq.comparison.target);
+    const correct = options[["<", "=", ">"].indexOf(eq.comparison.op)];
+    return made(
+      `Is ${expr} less than, equal to, or greater than ${eq.comparison.target}?`,
+      options,
+      correct,
+      {
+        kind: "compare",
+        terms: eq.terms,
+        operator: eq.operator,
+        target: eq.comparison.target,
+      },
+    );
+  },
+  // A hash map lookup: "Is 6 already in the register?"
+  ({ step, prior, elements }) => {
+    const lookup = step.map?.lookup;
+    const map = elements.find((e) => e.type === "hash-map");
+    if (!lookup || map?.type !== "hash-map") return undefined;
+    // Only a plain lookup: "found" means the key was stored before this step (a count map may say otherwise).
+    const stored = (prior?.map?.entries ?? []).some((e) => e.key === lookup.key);
+    if (stored !== lookup.found) return undefined;
+    return made(`Is ${lookup.key} already in the ${map.kind}?`, YES_NO, lookup.found ? "Yes" : "No", {
+      kind: "lookup",
+      key: lookup.key,
+    });
+  },
+  // A heap pop: "Which value leaves the heap next?"
+  ({ step, scene }) => {
+    const h = step.heaps?.findIndex((x) => x.popped) ?? -1;
+    if (h === -1 || !scene.elements.some((e) => e.type === "heap")) return undefined;
+    const heap = step.heaps![h];
+    const correct = heap.popped!.label;
+    // The nearest keys still in the heap: the plausible wrong answers.
+    const others = [...heap.items]
+      .filter((x) => x.label !== correct)
+      .sort((a, b) => Math.abs(a.key - heap.popped!.key) - Math.abs(b.key - heap.popped!.key))
+      .slice(0, 2)
+      .map((x) => x.label);
+    const prompt =
+      step.heaps!.length > 1
+        ? `Which value leaves the ${heap.kind}-heap next?`
+        : "Which value leaves the heap next?";
+    return made(prompt, arrange([correct, ...others], correct, scene.id), correct, {
+      kind: "heap-pop",
+      heap: h,
+    });
+  },
+  // A DP cell: "What value goes in the next cell?"
+  ({ step, scene, trace }) => {
+    const table = step.table;
+    if (!table?.current || !scene.elements.some((e) => e.type === "dp-table")) return undefined;
+    const [r, c] = table.current;
+    const value = table.cells[r][c];
+    if (typeof value !== "number") return undefined;
+    const reads = (table.reads ?? [])
+      .map(({ at }) => table.cells[at[0]][at[1]])
+      .filter((v): v is number => typeof v === "number");
+    const headers = (trace.dp?.rows ?? 1) > 1 ? [trace.dp?.rowHeaders?.[r], trace.dp?.colHeaders?.[c]] : [];
+    const where =
+      headers.length === 2 && headers.every((h) => h && h.trim() !== "")
+        ? ` (row ${headers[0]}, column ${headers[1]})`
+        : "";
+    return made(
+      `What value goes in the next cell${where}?`,
+      numeric([value, ...near(value, reads, 2)]),
+      String(value),
+      {
+        kind: "cell",
+        cell: [r, c],
+      },
+    );
+  },
+  // A call returning: "What does the call on 9 return?"
+  ({ step, trace, scene }) => {
+    const ret = step.tree?.returned;
+    const nodes = trace.tree?.nodes;
+    if (!ret || !nodes || !scene.elements.some((e) => e.type === "binary-tree")) return undefined;
+    const child = nodes[ret.to]?.[ret.side];
+    if (child === null || child === undefined) return undefined;
+    const value = ret.value;
+    let options: string[];
+    if (value === "true" || value === "false") options = ["true", "false"];
+    else if (isInt(value)) options = numeric([Number(value), ...near(Number(value), [], 2)]);
+    else return undefined;
+    return made(`What does the call on ${trace.row.values[child]} return?`, options, value, {
+      kind: "returns",
+      node: child,
+    });
+  },
+  // Union-find: "Are b and d already in the same group?"
+  ({ step, scene }) => {
+    const forest = step.forest;
+    if (!forest || (forest.same === undefined && !forest.union) || (forest.finds?.length ?? 0) < 2)
+      return undefined;
+    if (!scene.elements.some((e) => e.type === "union-find")) return undefined;
+    const [a, b] = [forest.finds![0].path[0], forest.finds![1].path[0]];
+    if (a === b) return undefined;
+    return made(
+      `Are ${forest.labels[a]} and ${forest.labels[b]} already in the same group?`,
+      YES_NO,
+      forest.same !== undefined ? "Yes" : "No",
+      { kind: "same-group", a, b },
+    );
+  },
+  // A trie insert: "How many new nodes does stem add?"
+  ({ step, prior, trace, scene }) => {
+    const trie = step.trie;
+    if (!trie || !scene.elements.some((e) => e.type === "trie") || !step.active || step.active.length !== 1)
+      return undefined;
+    const word = String(trace.row.values[step.active[0]] ?? "");
+    const before = prior?.trie?.nodes.length ?? 1;
+    const added = trie.nodes.length - before;
+    if (!/^[a-z]+$/.test(word) || added < 0 || added > word.length || (trie.created?.length ?? 0) !== added)
+      return undefined;
+    // Only an insert step: every new node is on this word's path.
+    if (added === 0 && !step.kind.includes("insert")) return undefined;
+    const counts = [
+      ...new Set([added, ...near(added, [0, word.length], 2)].filter((n) => n >= 0 && n <= word.length)),
+    ];
+    return made(`How many new nodes does ${word} add?`, numeric(counts), String(added), { kind: "trie-new" });
+  },
+  // A stack pop: "How many items come off the stack?"
+  ({ step, prior, scene }) => {
+    const pile = step.pile;
+    if (!pile?.popped?.length || !scene.elements.some((e) => e.type === "stack")) return undefined;
+    const n = pile.popped.length;
+    if ((prior?.pile?.items.length ?? 0) < n) return undefined;
+    const counts = [...new Set([n, ...near(n, [0], 2)].filter((k) => k >= 0))];
+    return made("How many items come off the stack?", numeric(counts), String(n), { kind: "stack-pop" });
+  },
+  // A queue: "Which leaves the queue next?"
+  ({ step, prior, scene }) => {
+    const out = step.queue?.dequeued;
+    const queued = prior?.queue?.items ?? [];
+    if (!out || queued.length < 2 || !scene.elements.some((e) => e.type === "queue")) return undefined;
+    const others = [queued.at(-1)!, queued[1]].map((x) => x.label).filter((l) => l !== out.label);
+    return made(
+      "Which leaves the queue next?",
+      arrange([out.label, ...others], out.label, step.note),
+      out.label,
+      {
+        kind: "queue",
+      },
+    );
+  },
+  // Fast and slow pointers: "Do the jogger and the sprinter meet this round?"
+  ({ step, elements }) => {
+    const race = step.race;
+    // Only a full round: both pointers make every hop (a refused or off-the-end move isn't a race round).
+    if (!race || race.phase !== 1 || race.moves.length !== 2) return undefined;
+    if (race.moves.some((m) => m.blocked !== undefined || m.to === null || m.hops === 0)) return undefined;
+    const labels = Object.fromEntries(pointersIn(elements).map((p) => [p.binds, p.label]));
+    const [slow, fast] = race.moves.map((m) => m.pointer);
+    if (!labels[slow] || !labels[fast] || slow === fast) return undefined;
+    const [a, b] = [pointerSubject(labels[slow]), pointerSubject(labels[fast])];
+    if (!a || !b || a === "you" || b === "you") return undefined;
+    return made(
+      `Do ${a} and ${b} land together this round?`,
+      YES_NO,
+      race.meet !== undefined ? "Yes" : "No",
+      {
+        kind: "meet",
+        slow,
+        fast,
+      },
+    );
+  },
+  // A linked list's link: "Where does 7 point next?"
+  ({ step, prior, scene }) => {
+    const rewired = step.links?.rewired;
+    const nodes = prior?.links?.nodes;
+    if (rewired?.length !== 1 || !nodes || !scene.elements.some((e) => e.type === "linked-list"))
+      return undefined;
+    const { node, from, to } = rewired[0];
+    const label = (id: number | null) =>
+      id === null ? "null" : String(nodes.find((n) => n.id === id)?.value ?? "");
+    const real = nodes.filter((n) => !n.dummy);
+    // Values must name nodes unambiguously.
+    if (new Set(real.map((n) => String(n.value))).size !== real.length) return undefined;
+    const me = nodes.find((n) => n.id === node);
+    if (!me || me.dummy) return undefined;
+    const other = real.find((n) => n.id !== node && n.id !== from && n.id !== to && n.lane === me.lane);
+    const options = [label(to), label(from), ...(other ? [label(other.id)] : [])].filter((o) => o !== "");
+    return made(`Where does ${me.value} point next?`, arrange(options, label(to), scene.id), label(to), {
+      kind: "rewire",
+      node,
+    });
+  },
+  // A backtracking step: "Next choice: +4. What happens?"
+  ({ step, prior, trace, scene }) => {
+    const nodes = trace.searchTree?.nodes;
+    if (!step.explore || !nodes || !scene.elements.some((e) => e.type === "search-tree")) return undefined;
+    const fresh = step.explore.reached.filter((id) => !(prior?.explore?.reached ?? []).includes(id));
+    if (fresh.length !== 1) return undefined;
+    const node = nodes[fresh[0]];
+    if (!node?.edge) return undefined;
+    const correct = node.pruned
+      ? EXPLORE_OPTIONS[2]
+      : step.explore.solutions.includes(node.id)
+        ? EXPLORE_OPTIONS[1]
+        : EXPLORE_OPTIONS[0];
+    return made(`Next choice: ${node.edge}. What happens?`, [...EXPLORE_OPTIONS], correct, {
+      kind: "explore",
+      node: node.id,
+    });
+  },
+  // A trie walk: "Is there already a node for r under a?"
+  ({ step, prior, scene }) => {
+    const trie = step.trie;
+    const earlier = prior?.trie?.nodes ?? [{ id: 0, parent: null, letter: "", end: false }];
+    if (!trie || !scene.elements.some((e) => e.type === "trie")) return undefined;
+    const pick = trie.missing
+      ? { parent: trie.missing.parent, letter: trie.missing.letter }
+      : trie.created?.length
+        ? trie.nodes.find((n) => n.id === trie.created![0])
+        : trie.path.length > 1
+          ? trie.nodes.find((n) => n.id === trie.path.at(-1))
+          : undefined;
+    if (!pick || pick.parent === null || pick.parent === undefined || pick.letter.length !== 1)
+      return undefined;
+    const parent = earlier.find((n) => n.id === pick.parent);
+    if (!parent) return undefined;
+    const under = parent.id === 0 ? "the root" : parent.letter;
+    const exists = earlier.some((n) => n.parent === pick.parent && n.letter === pick.letter);
+    return made(`Is there already a node for ${pick.letter} under ${under}?`, YES_NO, exists ? "Yes" : "No", {
+      kind: "trie-child",
+      parent: pick.parent,
+      letter: pick.letter,
+    });
+  },
+  // Pointers: "Which one moves next?"
+  ({ step, trace, shownStep, elements, scene }) => {
+    if (shownStep === undefined) return undefined;
+    const shown = trace.steps[shownStep].pointers;
+    const pointers = pointersIn(elements).filter(
+      (p) => shown[p.binds] !== undefined && step.pointers[p.binds] !== undefined,
+    );
+    if (pointers.length < 2 || new Set(pointers.map((p) => p.label)).size !== pointers.length)
+      return undefined;
+    const moved = pointers.filter((p) => shown[p.binds] !== step.pointers[p.binds]);
+    if (moved.length !== 1) return undefined;
+    const ordered = arrange(
+      pointers.map((p) => p.label),
+      moved[0].label,
+      scene.id,
+    );
+    return made("Which one moves next?", ordered, moved[0].label, {
+      kind: "pointer",
+      binds: ordered.map((label) => pointers.find((p) => p.label === label)!.binds),
+      fromStep: shownStep,
+    });
+  },
+];

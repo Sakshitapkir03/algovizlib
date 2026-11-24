@@ -68,7 +68,7 @@ export function suggestedQuestions(ctx: StepContext): string[] {
  * of plain words as "the … pointer" ("the arriving pointer", "the left pointer"). Labels with symbols or digits ("#3",
  * "i+1") aren't asked about.
  */
-function pointerSubject(label: string): string | undefined {
+export function pointerSubject(label: string): string | undefined {
   if (!/^[A-Za-z]+( [A-Za-z]+)?$/.test(label)) return undefined;
   if (label.toLowerCase() === "you") return "you";
   if (/^[A-Z][a-z]+$/.test(label)) return label;

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 /** Update with any change below, in the same commit. */
-const EFFECTIVE = "2026-11-23";
+const EFFECTIVE = "2026-11-24";
 
 export default function TermsPage() {
   return (
@@ -27,8 +27,8 @@ export default function TermsPage() {
       <LegalSection title="Using the site">
         <p>
           You can use everything without an account. Signing in (with GitHub or Google) only saves your
-          progress across devices. Keep your GitHub or Google account secure: whoever can sign in to it can
-          see your progress here.
+          progress and quick check answers across devices. Keep your GitHub or Google account secure: whoever
+          can sign in to it can see your progress here.
         </p>
       </LegalSection>
 

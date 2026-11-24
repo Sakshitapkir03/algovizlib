@@ -46,12 +46,14 @@ src/
     account/, me/            account settings; My progress (both read the session/progress in the browser)
     api/auth/[...nextauth]/  Auth.js;  api/progress (GET, POST one change, sendBeacon) + api/progress/merge
     api/ask/                 the tutor: GET a step's label + suggestions, POST a question (streamed answer)
+    api/checks/              quick check answers: GET the latest, POST a batch (see "Quick checks")
   components/
     ui/                      shadcn/ui (radix-nova). Slider has thumbLabel/thumbValueText for a11y
     catalog/                 difficulty badge, path breadcrumb, problem table, hints, approach toggle, progress UI
     learn/                   LearnView, VideoStage (client-only Player), controls, scene list, transcript, takeaway,
                              ask-panel ("Ask about this step"), video-section (original video / "Your input" switch),
-                             try-input-panel (the editor and walkthrough player; lazy)
+                             try-input-panel (the editor and walkthrough player; lazy), quick-check card +
+                             use-quick-checks (pause, answer, record)
     site/                    header, Cmd/Ctrl+K command palette, theme toggle/provider
     account/                 AccountProvider (session + progress sync), user menu, verify banner, auth forms, /me
   content/
@@ -74,6 +76,8 @@ src/
                              browser speech/audio adapters
     walkthrough/             "Try your own input": field types, per-problem specs, the supported list, the shared
                              trace → scenes builder (also the test fixture's), build, the browser runner + share links
+    quickcheck/              quick checks: schema, builder, validator, schedule (pause frames, keys), results
+                             (browser recorder), server (API logic, Prisma store), for-problem (page, server-only)
     tutor/                   "Ask about this step": config + flag, step context, suggestions, prompt, usage counts +
                              answer cache, model (the app's one AI SDK use, server-only), service, deps
     generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
@@ -296,7 +300,8 @@ Signing in is optional; guests can use everything. Auth.js v5 (**pinned to `5.0.
   `/privacy` and `/terms`.
 - **Rate limits** (`lib/auth/rate-limit.ts`, fixed windows in the `RateLimit` table, shared by every instance): login
   30/15 min per IP and 10/15 min per email; register 5/h per IP and 3/h per email; forgot 10/15 min per IP and 3/h
-  per email; reset and verify per IP; resend and change-password per user; progress writes 300/min per user.
+  per email; reset and verify per IP; resend and change-password per user; progress writes 300/min per user; quick
+  check answers 120 requests/min per user.
   Locally every request has the IP "local", so repeated test sign-ins can hit the IP limit: `DELETE FROM "RateLimit"`.
 - **CSRF:** Auth.js protects its routes; server actions get Next's Origin check; `/api/progress` POSTs require a
   same-origin `Origin` header (`sameOrigin`), on top of SameSite cookies.
@@ -311,7 +316,9 @@ Signing in is optional; guests can use everything. Auth.js v5 (**pinned to `5.0.
 **Data model** (`prisma/schema.prisma`): `User` (+ `passwordHash`, `sessionVersion`), `Account`, `Session` and
 `VerificationToken` (the adapter's shape; unused with JWT sessions and no magic links), `AuthToken` (purpose,
 `tokenHash`, `expiresAt`), `RateLimit` (`key`, `windowStart`, `count`), `Progress` (`userId` + `problemKey`, `status`,
-`statusManual`, `statusUpdatedAt`, `sceneId`, `positionSeconds`, `positionUpdatedAt`), `AskCache` (`key`, a hash of
+`statusManual`, `statusUpdatedAt`, `sceneId`, `positionSeconds`, `positionUpdatedAt`), `CheckResult` (`userId` + an `id`
+made in the browser, `problemKey`, `questionId`, `sceneId`, `step`, `correct`, `source` video | walkthrough, `input`,
+`answeredAt`), `AskCache` (`key`, a hash of
 the tutor's prompt version, model, problem, scene, and suggested question; `answer`; `createdAt`: no user). Deleting a
 user cascades.
 
@@ -1255,6 +1262,60 @@ interval lists, matrices, and operation sequences (the other 33 traced problems)
   hops) failed the schema (now allowed, drawn as just the ✕); Combination Sum with no answer had an empty answer
   ("none" now); Permutations said "1 orderings"; the bits panel's digits had no React keys.
 
+## Quick checks
+
+Before some key steps the video pauses and asks a short multiple-choice question about what the step is about to do.
+No model: questions come from the trace, so the right answer is the algorithm's own.
+
+- **Building** (`lib/quickcheck/build.ts`, `buildQuickChecks(storyboard, trace)`): a scene bound to a key step, after
+  another scene, gets one question from the first kind that fits: a design call's output ("What does get(1)
+  return?"), a greedy choice ("Which does it choose?" between the step's chosen and rejected options), a comparison in
+  the video's own verdict words ("4 + 45 vs 50: what happens next?" too low / exact! / too high; only verdicts used for
+  one comparison result across the video, none with a number in it), a plain comparison (less than / equal to /
+  greater than), a map lookup ("Is 6 already in the map?", only when the trace's `found` means "stored before"), a heap
+  pop (the nearest keys still in the heap as wrong options), a DP cell (the cells it reads and ±1), a call's return
+  value, a union-find "same group?", a trie insert's new nodes, a stack pop count, the queue's next, a race round
+  ("Do the jogger and the sprinter land together this round?", full rounds only), a link rewire ("Where does 7 point
+  next?"), a backtracking step ("Next choice: +4. What happens?" go deeper / record an answer / cut the branch), a trie
+  child ("Is there already a node for r under a?"), and last which pointer moves. At most three per video, spread
+  evenly. Names are the ones drawn (pointer labels through the tutor's `pointerSubject`), values are on screen; a
+  test checks every word against the two scenes' visible text plus the questions' fixed wording (numeric options and
+  verdict words, shown elsewhere in the video, aside). 89 of the 103 videos get questions (220 in all); the other 14
+  (bit panels, BFS grids, Kahn's graphs, N-Queens, sorts whose comparisons all go one way…) get none rather than a
+  forced one, and a test pins the list.
+- **Validating** (`validate.ts`, `validateQuickChecks`): `claim` holds what each kind needs, and the validator works
+  out from the trace alone whether each option is true (the arithmetic and its sign, the pointer index that changed,
+  the key in the previous step's map, the cell's value, the heap's extreme over what it held, the stack's sizes, the
+  queue's front, roots before the union…), requiring the marked answer to be the only true option. It also checks the
+  scene, step, explanation (the step's note), and at most three per video. Committed videos are built on the server
+  (`for-problem.ts`, server-only, so no trace code ships) and passed to the page; walkthroughs build theirs in the lazy
+  chunk. A question that doesn't validate is never shown.
+- **Playing** (`use-quick-checks.ts`, `schedule.ts`): a check pauses on the last frame before its scene's cross-fade
+  (`sequenceStart − 1`: the scene before is fully drawn and nothing of the answer is), only when playback reaches it
+  on its own (`dueCheck`: playing, forward, at most `MAX_PLAY_STEP` frames since the last update; a seek, scene jump,
+  or resume past it never asks), once per viewing, and only with "Quick checks: on" (the setting under the controls,
+  on by default, `algovizlib:quick-checks`). The player store's `checking` holds the player's shortcuts. The card
+  (`quick-check.tsx`) sits under the controls inside the player card (so it's there in fullscreen), the stage dims,
+  it scrolls into view on a phone, and focus moves to the first option: 1–n answer, arrows move, Enter answers the
+  focused option, S or Esc skips. The answer shows ✓ / ✕, the right option, and the step's note, then Continue
+  (focused; Enter) plays on. Pressing play while it's open skips it. Narration uses the player's own pause and play.
+  At the end, "quick checks 2 of 3 correct" (this viewing's answers; skips don't count).
+- **Results** (`results.ts`, `server.ts`, `/api/checks`): an answer is `{ id, problemKey, questionId, sceneId, step,
+correct, source, input?, answeredAt }` (`source: "walkthrough"` with the input as in the share link, so it never
+  counts as the problem's video). Guests and unverified accounts keep them in `algovizlib:checks:v1` (at most 2,000).
+  A verified account's answers are kept as pending, POSTed in batches of up to 100, and dropped from the browser once
+  saved; signing in as a verified user sends everything the browser kept (`checkRecorder.setAccount`, from
+  `AccountProvider`). The server keys rows by user and id with `skipDuplicates`, so retries and merges keep every
+  answer once; unknown problems are dropped and future times clamped. A missing table (P2021: the migration hasn't
+  run) or any database error is a 503 and a log line ("the CheckResult table is missing: run `pnpm db:deploy`"); the
+  browser keeps the answers pending and sends them later. Answers never change Learning or Done.
+- Tests: `tests/quickcheck.test.ts` (every video's questions validate, the 14 without are pinned, every word is on
+  screen, mutated questions fail, and 4 random inputs for each of the 70 walkthrough problems), `tests/quickcheck-play.test.ts`
+  (pause frames and natural crossing, keys, the summary, the setting, the recorder (guest, merge on
+  sign-in, pending through a failure, broken storage), no progress imports, and the API's access, validation,
+  clamping, rate limit, and 503s), `tests/db.integration.test.ts` (stored once per user, newest first, cascade; a
+  missing table is a 503), and `tests/health.test.ts`.
+
 ## Choosing the example
 
 `exampleSource` decides where the real-world example comes from. The schema enforces it.
@@ -1385,7 +1446,9 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for
    generation and narration endpoints (both cost money), plus caching identical requests.
 7. Planned DSA primitives: `coin-set` (Coin Change uses an item-row today), with its trace.
-8. **Try your own input**, next: the tutor for walkthroughs (its context would be the learner's input and the
+8. **Quick checks**, next: a review queue from the stored answers (`GET /api/checks`), and questions for the 14
+   videos without (bit panels, grids, graphs).
+9. **Try your own input**, next: the tutor for walkthroughs (its context would be the learner's input and the
    rerun trace, not a committed video's scene), and inputs for trees, grids, graphs, and intervals (each needs an
    editor that isn't a text box).
 

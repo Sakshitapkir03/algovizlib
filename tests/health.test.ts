@@ -31,18 +31,18 @@ describe("health check", () => {
     });
   });
 
-  it("names a missing AskCache table and the migration that creates it (a skipped db:deploy)", async () => {
+  it("names a missing CheckResult table and the migration that creates it (a skipped db:deploy)", async () => {
     const health = await checkHealth(
       fakeDb({
-        tables: REQUIRED_TABLES.filter((t) => t !== "AskCache"),
-        migrations: ["20261120213857_accounts"],
+        tables: REQUIRED_TABLES.filter((t) => t !== "CheckResult"),
+        migrations: ["20261120213857_accounts", "20261123223629_ask_cache"],
       }),
     );
     expect(health).toEqual({
       ok: false,
       database: "ok",
-      missingTables: ["AskCache"],
-      pendingMigrations: ["20261123223629_ask_cache"],
+      missingTables: ["CheckResult"],
+      pendingMigrations: ["20261124153611_check_results"],
     });
   });
 

@@ -1,3 +1,4 @@
+import { getQuickChecks } from "@/lib/quickcheck/for-problem";
 import { readTutorConfig } from "@/lib/tutor/config";
 import { ArrowLeft, ArrowRight, ExternalLink, Film } from "lucide-react";
 import type { Metadata } from "next";
@@ -143,6 +144,7 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
                       storyboard={storyboard}
                       problemKey={progressKey(problem)}
                       askEnabled={readTutorConfig().enabled}
+                      quickChecks={getQuickChecks(problem)}
                       tryInput={
                         hasTryInput(problem)
                           ? {
