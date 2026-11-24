@@ -30,6 +30,7 @@ export function pageMetadata({
   absoluteTitle?: boolean;
 }): Metadata {
   const social = absoluteTitle ? title : `${title} · ${SITE_NAME}`;
+  const short = socialDescription(description);
   return {
     title: absoluteTitle ? { absolute: title } : title,
     description,
@@ -40,8 +41,17 @@ export function pageMetadata({
       locale: "en_US",
       url: path,
       title: social,
-      description,
+      description: short,
     },
-    twitter: { card: "summary_large_image", title: social, description },
+    twitter: { card: "summary_large_image", title: social, description: short },
   };
+}
+
+/** Link previews show about 125 characters (less on phones); search results keep the full description. */
+export const SOCIAL_DESCRIPTION_MAX = 125;
+
+export function socialDescription(text: string): string {
+  if (text.length <= SOCIAL_DESCRIPTION_MAX) return text;
+  const cut = text.slice(0, SOCIAL_DESCRIPTION_MAX - 1);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,;:.—-]+$/, "")}…`;
 }

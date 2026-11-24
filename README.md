@@ -60,7 +60,7 @@ ElevenLabs and ffmpeg (offline narration) · Vercel AI SDK (offline generation, 
 
 ## Testing
 
-`pnpm test` runs **2,421 tests in 43 files** in about 15 seconds, with no network access. Among them:
+`pnpm test` runs **2,422 tests in 43 files** in about 15 seconds, with no network access. Among them:
 
 - **321 catalog examples** are checked against 103 independent reference solutions (test-only code), using each
   problem's judge.

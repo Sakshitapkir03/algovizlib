@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { pageMetadata } from "@/lib/seo";
+import { pageMetadata, SOCIAL_DESCRIPTION_MAX, socialDescription } from "@/lib/seo";
 
 describe("link previews", () => {
   it("a page's metadata carries its title, description, canonical URL, Open Graph, and a large Twitter card", () => {
@@ -36,5 +36,20 @@ describe("link previews", () => {
       "assets/fonts/OFL.txt",
     ])
       expect(existsSync(file), file).toBe(true);
+  });
+
+  it("previews get a description short enough not to be cut off; search keeps the whole one", () => {
+    const long =
+      "Walk two indexes through a sequence, usually from both ends toward the middle, so each comparison rules out a whole group of candidates instead of one.";
+    const short = socialDescription(long);
+    expect(short.length).toBeLessThanOrEqual(SOCIAL_DESCRIPTION_MAX);
+    expect(short).toBe(
+      "Walk two indexes through a sequence, usually from both ends toward the middle, so each comparison rules out a whole group…",
+    );
+    const m = pageMetadata({ title: "Two Pointers", description: long, path: "/dsa/two-pointers" });
+    expect(m.description).toBe(long);
+    expect(m.openGraph?.description).toBe(short);
+    expect(m.twitter?.description).toBe(short);
+    expect(socialDescription("Short.")).toBe("Short.");
   });
 });
