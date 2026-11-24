@@ -124,6 +124,11 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* The status picker's one-time note, once dismissed (set before first paint: components/catalog/status-note.tsx). */
+[data-status-note-seen] .status-note {
+  display: none;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

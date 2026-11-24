@@ -23,12 +23,16 @@ import {
   getAdjacentProblems,
   getRelatedPatterns,
   getAllProblems,
+  getPattern,
   getProblem,
   getProblemStoryboard,
   hasTryInput,
+  hasVideo,
   patternHref,
   problemHref,
 } from "@/lib/catalog/repository";
+
+import { pageMetadata } from "@/lib/seo";
 
 import { loadProblem } from "../../load";
 
@@ -42,8 +46,16 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/dsa/[pattern]/[problem]">): Promise<Metadata> {
   const { pattern, problem: slug } = await params;
   const problem = getProblem(pattern, slug);
-  if (!problem) return {};
-  return { title: problem.title, description: `${problem.title}: ${problem.difficulty} ${pattern} problem.` };
+  const home = getPattern(pattern);
+  if (!problem || !home) return {};
+  const what = hasVideo(problem)
+    ? "An animated walkthrough of the approach, with hints"
+    : "The approach, with hints";
+  return pageMetadata({
+    title: problem.title,
+    description: `${problem.title} (${problem.difficulty}, ${home.name}). ${what} and worked examples.`,
+    path: problemHref(problem),
+  });
 }
 
 export default function ProblemPage({ params }: PageProps<"/dsa/[pattern]/[problem]">) {

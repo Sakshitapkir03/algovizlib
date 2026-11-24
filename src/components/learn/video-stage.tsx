@@ -3,7 +3,7 @@
 import { Player, type PlayerRef } from "@remotion/player";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import { FPS, VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
+import { FPS, VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard/timing";
 import { usePlayerStore } from "@/store/player-store";
 import { StoryboardComposition, type StoryboardCompositionProps } from "@/video/StoryboardComposition";
 

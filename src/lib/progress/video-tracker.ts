@@ -1,4 +1,4 @@
-import { sceneIndexAtFrame, type SceneTiming } from "@/lib/storyboard";
+import { sceneIndexAtFrame, type SceneTiming } from "@/lib/storyboard/timing";
 
 import type { ProgressChange } from "./records";
 import { isResumable, positionAt, SAVE_INTERVAL_MS } from "./resume";

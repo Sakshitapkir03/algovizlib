@@ -1,7 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { formatTime, type Scene, type SceneTiming } from "@/lib/storyboard";
+import type { Scene } from "@/lib/storyboard/schema";
+import { formatTime, type SceneTiming } from "@/lib/storyboard/timing";
 import { usePlayerStore } from "@/store/player-store";
 
 export function SceneList({

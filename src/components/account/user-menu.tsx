@@ -26,7 +26,17 @@ function initials(name: string | null | undefined, email: string | null | undefi
 export function UserMenu() {
   const { data, status } = useSession();
   const pathname = usePathname();
-  if (status === "loading") return <span aria-hidden className="size-8" />;
+  // While the session loads, hold the space of "Sign in" (what most visitors get), so the header doesn't shift.
+  if (status === "loading")
+    return (
+      <span
+        aria-hidden
+        className="invisible inline-flex h-7 items-center border border-transparent px-2.5 text-[0.8rem]"
+      >
+        <LogIn className="size-3.5 min-[360px]:hidden" />
+        <span className="max-[359px]:hidden">Sign in</span>
+      </span>
+    );
   if (!data?.user) {
     const callback =
       pathname && !pathname.startsWith("/login") ? `?callbackUrl=${encodeURIComponent(pathname)}` : "";

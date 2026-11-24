@@ -15,6 +15,8 @@ import {
   patternHref,
 } from "@/lib/catalog/repository";
 
+import { pageMetadata } from "@/lib/seo";
+
 import { loadPattern } from "../load";
 
 // Catalog pages are fully static. Unknown slugs must 404 rather than stream a fallback shell with a 200, so the whole
@@ -28,7 +30,11 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/dsa/[pattern]">): Promise<Metadata> {
   const pattern = getPattern((await params).pattern);
   if (!pattern) return {};
-  return { title: pattern.name, description: pattern.summary.replaceAll("`", "") };
+  return pageMetadata({
+    title: pattern.name,
+    description: pattern.summary.replaceAll("`", ""),
+    path: patternHref(pattern),
+  });
 }
 
 // The App Shell is shared by every /dsa/<pattern> link and can't depend on params, so everything that reads them

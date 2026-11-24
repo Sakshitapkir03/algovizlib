@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,15 @@ import {
   getProgressIndex,
   hasVideo,
 } from "@/lib/catalog/repository";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "algovizlib: CS concepts as short videos",
+  description:
+    "Short animated videos that explain the approach behind algorithm problems through real-world examples: 20 patterns, 103 problems, hints, and quick checks.",
+  path: "/",
+  absoluteTitle: true,
+});
 
 const PRINCIPLES = [
   {

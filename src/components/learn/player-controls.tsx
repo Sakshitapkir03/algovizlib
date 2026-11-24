@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { chooseVoice } from "@/lib/narration/engine";
-import { formatTime, type SceneTiming } from "@/lib/storyboard";
+import { formatTime, type SceneTiming } from "@/lib/storyboard/timing";
 import { PLAYBACK_RATES, usePlayerStore, type PlaybackRate } from "@/store/player-store";
 
 function IconButton({

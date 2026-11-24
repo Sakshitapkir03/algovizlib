@@ -1535,6 +1535,18 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
   `maxRetries: 0` so our own backoff (logged, budgeted) is the only retry layer.
 - After deleting a route, `pnpm typecheck` can fail on stale `.next/dev/types`. Stop `pnpm dev` and remove
   `.next/dev`.
+- **Client code imports storyboard helpers from `@/lib/storyboard/timing`** (and types with `import type`), never
+  values from the `@/lib/storyboard` barrel: the barrel pulls every element schema, the resolver, and the validator
+  into the problem page's first load (318 KB of JS and ~0.8 s of main-thread time on a throttled phone).
+- **Link previews** (`src/lib/seo.ts`, `src/lib/og/card.tsx`): `pageMetadata()` sets a page's title, description,
+  canonical URL, Open Graph, and Twitter card; `opengraph-image.tsx` in `app/`, `dsa/[pattern]/`, and
+  `dsa/[pattern]/[problem]/` draws the 1200×630 card (Geist from `assets/fonts`, OFL). Image routes are dynamic under
+  Cache Components unless the PNG is rendered in a `"use cache"` function, which is how all 124 cards prerender.
+  Absolute URLs come from `SITE_URL` at build time (`APP_URL`, else Vercel's production domain); `.env.local`'s
+  `APP_URL` makes local builds point at localhost, which is expected.
+- **Nothing may appear after hydration above content** (it shifts the page): the status picker's one-time note is in
+  the server HTML and hidden before first paint by an inline `<head>` script when dismissed
+  (`STATUS_NOTE_SCRIPT`), and the header's account slot holds the width of "Sign in" while the session loads.
 - **Keep the repo out of iCloud-synced folders** (Desktop/Documents). macOS can evict `node_modules` files, and
   every tool hangs.
 - Remotion requires a company license for teams of 4+ people. See https://remotion.dev/license.

@@ -4,7 +4,7 @@ import { Check, RotateCcw, Play } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { formatSeconds } from "@/lib/progress";
-import { FPS } from "@/lib/storyboard";
+import { FPS } from "@/lib/storyboard/timing";
 
 /** Small, non-blocking prompts over the bottom of the video: "Resume from 0:42" and "Mark as done?". */
 export function ResumePrompt({

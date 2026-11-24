@@ -6,7 +6,7 @@ import { applyProgress, useProgress, useProgressRecords } from "@/lib/progress/u
 import { resumeFrame } from "@/lib/progress/resume";
 import { RESUME_HASH } from "@/lib/progress/summary";
 import { trackVideoProgress } from "@/lib/progress/video-tracker";
-import { FPS, type SceneTiming } from "@/lib/storyboard";
+import { FPS, type SceneTiming } from "@/lib/storyboard/timing";
 import { usePlayerStore } from "@/store/player-store";
 
 /**

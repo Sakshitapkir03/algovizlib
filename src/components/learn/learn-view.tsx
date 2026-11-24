@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { Card } from "@/components/ui/card";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import { FPS, getSceneTimeline, sceneIndexAtFrame, type Storyboard } from "@/lib/storyboard";
+import type { Storyboard } from "@/lib/storyboard/schema";
+import { FPS, getSceneTimeline, sceneIndexAtFrame } from "@/lib/storyboard/timing";
 import { usePlayerStore } from "@/store/player-store";
 import type { StoryboardCompositionProps } from "@/video/StoryboardComposition";
 

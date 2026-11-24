@@ -4,9 +4,11 @@ import Link from "next/link";
 
 import { AccountProvider } from "@/components/account/account-provider";
 import { VerifyBanner } from "@/components/account/verify-banner";
+import { STATUS_NOTE_SCRIPT } from "@/components/catalog/status-note";
 import { SiteHeader } from "@/components/site/site-header";
 import { ThemeProvider } from "@/components/site/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 import "./globals.css";
 
@@ -21,6 +23,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  openGraph: { type: "website", siteName: SITE_NAME, locale: "en_US" },
+  twitter: { card: "summary_large_image" },
   title: {
     default: "algovizlib: CS concepts as short videos",
     template: "%s · algovizlib",
@@ -36,6 +41,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: STATUS_NOTE_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <ThemeProvider>
           <AccountProvider>

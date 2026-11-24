@@ -5,7 +5,8 @@ import { useEffect, type RefObject } from "react";
 
 import { createAudioElement, createBrowserSpeech } from "@/lib/narration/browser";
 import { NarrationEngine, type PlaybackState } from "@/lib/narration/engine";
-import { FPS, getSceneTimeline, type Storyboard } from "@/lib/storyboard";
+import type { Storyboard } from "@/lib/storyboard/schema";
+import { FPS, getSceneTimeline } from "@/lib/storyboard/timing";
 import { usePlayerStore } from "@/store/player-store";
 
 /**

@@ -1,225 +1,119 @@
 # algovizlib
 
-Short animated videos that explain computer science concepts (starting with data structures, algorithms, and
-system design) through real-world examples. Each video focuses on the **approach**, not a line-by-line code
-walkthrough.
+algovizlib teaches algorithm patterns with short animated videos. It covers 103 problems in 20 patterns (two pointers,
+sliding window, dynamic programming, graphs, and the rest), and every problem has a video that explains the approach
+through a concrete example, not line by line through code. Each video is generated from the algorithm's own trace, so
+every pointer, comparison, and table cell on screen is what the real algorithm does on that input, checked by a
+validator before it ships. Learners can pause on quick checks, step through their own input, track progress, and get a
+review queue of what to revisit.
 
-The library is organized by **category → pattern → problem**. Data Structures & Algorithms has 20 patterns in four
-groups, with 103 problems across easy, medium, and hard:
+**Live: [algovizlib.vercel.app](https://algovizlib.vercel.app)**
 
-| Group          | Patterns                                                                                                 |
-| -------------- | -------------------------------------------------------------------------------------------------------- |
-| Foundations    | Arrays & Hashing, Prefix Sum, Sorting Algorithms, Bit Manipulation                                       |
-| Core patterns  | Two Pointers, Fast & Slow Pointers, Sliding Window, Binary Search, Stack, Linked List, Intervals, Greedy |
-| Trees & Graphs | Trees (DFS), Graphs (BFS), Heap / Priority Queue, Trie, Advanced Graphs                                  |
-| Advanced       | Backtracking, Dynamic Programming, Data Structure Design                                                 |
+![Pair with Target Sum: two pointers close in on a price-sorted shelf, with the sum checked at each step](docs/images/demo.gif)
 
-Most patterns have 5 problems; Sorting Algorithms has one per algorithm (bubble, selection, insertion, merge, quick,
-heap, counting) plus Count Inversions. Problems that teach more than one pattern are cross-listed with an "also in"
-label. Every problem has an original statement, examples (design problems show an operation → output table),
-progressive hints, and the approach behind a spoiler toggle, and every example is checked against a reference
-solution. Problems with a video play it inline: five Two Pointers problems, all eight Sorting problems (merge,
-quick, and heap sort get split, partition, and heap-tree views; Count Inversions gets a running counter), and all five
-Sliding Window problems (a window bracket that grows and shrinks, character counts, and a monotonic deque), and all five
-Binary Search problems (a shrinking search range with the dropped half dimmed, a number line of candidate answers, and
-partition cuts across two lists), and all five Linked List problems (nodes and arrows that visibly rewire one link at a
-time, a dummy node, several lists merging into one, and Merge K's min-heap of heads), and all five Trees (DFS)
-problems (the tree with the running call, the open path from the root, finished calls and what they returned, values
-traveling up the edges, and the call stack beside it), and all five Graphs (BFS) problems (a grid or graph with the
-frontier spreading one level at a time, neighbor checks with the reason each is skipped, and a queue that marks where
-each level begins), and all five Heap / Priority Queue problems (a tree and its backing array moving together as
-items sift up and down, size-k heaps, and two heaps keeping a running median), and all five Dynamic Programming problems (a table filling cell by cell
-with arrows from the cells it reads, a staircase and a street lined up with their tables, and the recursion tree a
-table replaces), and all five Stack problems (a stack column beside the input, monotonic stacks whose pops link each
-item to its answer, and the rectangle each popped bar resolves), and all five Backtracking problems (a decision tree
-that grows choice by choice, with dead ends folded away, pruned branches and their reasons, and the answer being built
-and undone; N-Queens on its board), and all five Arrays & Hashing problems (a hash map answering each lookup in one
-step, grouped buckets, a set of runs, and a cyclic sort), and all five Fast & Slow Pointers problems (hop arcs for a
-slow and a fast pointer on a list or an array read as one, the loop and the node where they meet, and the second
-phase that walks to the loop's start), and all five Greedy problems (each decision as the option taken beside the
-one turned down, with why it's safe, plus a reach band for how far the scan has committed and the pieces it has
-cut), and all five Prefix Sum problems (running totals sitting between the items, so every range is visibly the
-difference of two cells, left and right product passes, and a 2D prefix grid built by inclusion-exclusion), and all five Intervals problems
-(bars on a timeline that sort into lanes, shade their overlaps, and grow as they merge, with a sweep line and a heap of
-shifts for the queries), and all five Bit Manipulation problems (numbers as aligned rows of bits, operations worked
-column by column with the flipped bits marked, shifts sliding, and a visited mask growing one bit per move), and all five Trie problems (a prefix tree growing letter by letter, words
-ending on double rings, missing children marked, wildcards branching, and a word-search board walked together with
-the trie), and all five Advanced Graphs problems (a directed graph whose in-degree badges count down as Kahn's
-algorithm takes nodes and strands a cycle, Dijkstra settling servers from a min-heap with improving, losing, and stale
-relaxations, and union-find trees merging by size with their find paths compressed), and all five Data Structure
-Design problems (each call in an operation log beside the structures it drives: a hash map and a doubly linked list
-moving nodes to the front and evicting the back, use-count buckets with the fewest uses, a stack of value-and-minimum
-pairs, two stacks poured into each other, and a sorted history binary-searched). The first is
-**Pair with Target Sum**, told as a price-sorted shelf where you and a friend spend a $50 gift card exactly. System Design is coming soon.
+| Patterns                                              | A problem's video                                            |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
+| ![The pattern grid on /dsa](docs/images/patterns.png) | ![Reverse a Linked List, mid-video](docs/images/problem.png) |
 
-Each problem has a status: Not started / Learning / Done. Playing its video, opening a hint, or showing the approach
-marks it Learning; finishing the video asks "Mark as done?" (Done is never set for you, and your own choice always
-wins). Videos remember where you stopped and offer "Resume from 0:42". Without an account all of this is saved in
-your browser. **Signing in is optional** (GitHub or Google; email + password behind a flag, see Accounts): then
-progress and video positions sync across devices, and `/me` shows progress by group and pattern, what to continue,
-and what you finished recently.
+## Features
 
-Videos are **trace-bound storyboards**: deterministic code runs each algorithm on one example and records every
-decision, and a storyboard's pointers, equations, and highlights come from (and are checked against) that trace.
-Storyboards can be generated offline by a model: the model writes the story, the validator guarantees the moves.
+- **103 animated explanations.** Each is 6–10 scenes, told either through the problem's own story (a staircase, a
+  street of houses) or through one analogy for abstract problems (a price-sorted shelf for two pointers). There are 47
+  visual primitives, including bars, linked lists, trees, grids, heaps, DP tables, tries, union-find forests, and
+  timelines.
+- **A curated catalog.** 20 patterns in four groups, 4–8 problems each with easy, medium, and hard. Statements are
+  original, examples are machine-checked, hints are progressive, and the approach stays hidden behind a toggle.
+- **Quick checks.** 89 of the videos pause before a few key steps and ask what happens next (220 questions). Questions
+  come from the trace, so the right answer is always the algorithm's own.
+- **Try your own input.** On 70 problems the learner can type an input (or press Random), and the browser runs the same
+  trace, builds and validates a walkthrough, and plays it. No server is involved.
+- **Progress and a review queue.** Each problem has a status (Not started, Learning, or Done) and videos resume where
+  they stopped. `/review` lists what to revisit: missed quick checks, Done problems on spaced intervals (3, 7, 21, 60
+  days), unfinished videos, and stale Learning problems.
+- **Optional accounts.** Everything works for guests in the browser. Signing in with GitHub or Google syncs progress,
+  answers, and the review schedule, and merges the guest data on first sign-in.
+- **Narration.** 18 videos have a recorded ElevenLabs voice-over stitched into one track, and the rest use the
+  browser's speech synthesis. Captions and a transcript are always available.
+- **Accessible and responsive.** Keyboard shortcuts, reduced motion, light and dark themes, text that stays readable
+  in the player at phone width, and no axe violations on the main pages.
 
-**Quick checks.** Most videos pause before up to three key moments and ask a short multiple-choice question about
-what happens next ("4 + 45 vs 50: too low, exact, or too high?", "Which value leaves the heap next?"), built from the
-algorithm's own trace and checked by a validator, so the right answer is always right. Answer with the number keys,
-skip with S, then read the step's explanation and continue; the end of the video shows "2 of 3 correct". Answers are
-kept in your browser, or in your account when you're signed in; they never change a problem's status. Turn them off
-under the player ("Quick checks: on").
+## Architecture at a glance
 
-**Try your own input.** On 70 problems (every one whose input is numbers, strings, or lists of them) a switch above the
-video opens a step-by-step walkthrough of your own input: type it (prefilled with the video's example), or press
-Random, and the browser runs the same trace, builds the scenes, and checks them with the same validator and phone-width
-fit checks as every video before playing them, with plain captions from each step and the browser's voice. Inputs
-that break the problem's rules (an unsorted list for a two-pointer search, two pairs for Two Sum) or wouldn't fit on a
-phone are refused with the reason. The address bar holds the input, so the page's link shares it. Walkthroughs never
-change your progress.
+```
+catalog problem ──► trace ──► storyboard ──► validator ──► Remotion player (in the browser)
+```
 
-## Stack
+A trace is a deterministic, instrumented solution that records every decision. A storyboard is typed data: scenes
+with narration and visual elements, which bind to trace steps and take their values from them. The validator checks
+the arithmetic, every pointer, and every structure against the trace. Storyboards were written by hand or generated
+offline by a model; either way the same checks decide what ships. Catalog pages are statically prerendered, and
+session, progress, and the review queue load in the browser.
 
-Next.js (App Router, `src/`) · TypeScript (strict) · Tailwind CSS v4 · shadcn/ui · Remotion (`@remotion/player`) ·
-Zustand · Zod · Auth.js v5 · Prisma + Postgres (Neon) · Argon2id · Resend · Vitest · ESLint + Prettier · pnpm
+Details, decisions, and the data model are in [docs/DESIGN.md](docs/DESIGN.md). The full working reference is
+[CLAUDE.md](CLAUDE.md), covering conventions, how to add a pattern, problem, primitive, or video, and the roadmap.
 
-## Getting started
+## Tech stack
 
-Requirements: Node.js 20+, pnpm (`corepack enable pnpm`), and Postgres for accounts (locally:
-`brew install postgresql@16 && brew services start postgresql@16`).
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript (strict) · Tailwind CSS v4 · shadcn/ui · Remotion
+Player · Zustand · Zod · Auth.js v5 · Prisma 7 + Postgres (Neon) · Vitest · Playwright + axe (browser checks) ·
+ElevenLabs and ffmpeg (offline narration) · Vercel AI SDK (offline generation, and the optional tutor) · Vercel
+
+## Testing
+
+`pnpm test` runs **2,421 tests in 43 files** in about 15 seconds, with no network access. Among them:
+
+- **321 catalog examples** are checked against 103 independent reference solutions (test-only code), using each
+  problem's judge.
+- **103 traces** are checked against the reference answers on every example that fits on screen.
+- **103 storyboards** pass the schema and the trace validator, and mutated copies must fail.
+- **852 scenes** are laid out at phone width. Values must fit their cards, pointers must not overlap, and nothing may
+  run into the bottom panel. Literal font sizes are forbidden in the video code.
+- **220 quick-check questions** are validated against their traces, and every word must be on screen.
+- **70 "Try your own input" specs** run on seeded random inputs. Each must match the reference answer and build a
+  walkthrough that validates and fits.
+- Auth, rate limits, account linking, progress merging, the review queue, the tutor's grounding and limits, and the
+  narration pipeline. Postgres integration tests run against a local database.
+
+Browser checks drive the built app at 375 px and 1280 px in both themes with axe. They run Chrome muted with a silent
+speech fake, so nothing plays aloud. Lighthouse on the home, pattern, and problem pages scores 100 for accessibility,
+best practices, and SEO on mobile and desktop.
+
+## Running it locally
+
+Requirements: Node.js 20+ and pnpm (`corepack enable pnpm`). Postgres is only needed for accounts.
 
 ```bash
-pnpm install                       # also generates the Prisma client
-cp .env.example .env.local         # then fill in DATABASE_URL and AUTH_SECRET (below)
+pnpm install
+pnpm dev            # http://localhost:3000
+```
+
+Guests never touch the database, so this is enough to browse every page and play every video. To try accounts:
+
+```bash
+brew install postgresql@16 && brew services start postgresql@16
 createdb algovizlib_dev && createdb algovizlib_test
-pnpm db:migrate                    # apply the migrations to DATABASE_URL
-pnpm dev
+cp .env.example .env.local    # set DATABASE_URL, DATABASE_URL_TEST, and AUTH_SECRET (npx auth secret)
+pnpm db:migrate
 ```
 
-Minimal `.env.local` for accounts (never commit it): `DATABASE_URL=postgresql://<you>@localhost:5432/algovizlib_dev`,
-`DATABASE_URL_TEST=postgresql://<you>@localhost:5432/algovizlib_test`, and `AUTH_SECRET` from `npx auth secret`.
-Email + password sign-in is on locally, and verification and reset links are printed to the dev server's console
-(no email service needed). GitHub and Google buttons appear once their `AUTH_*_ID`/`_SECRET` are set. Everything
-else works without any of this: guests never touch the database.
+Locally, email and password sign-in is on, and verification links are printed to the server console. GitHub and
+Google buttons appear once their `AUTH_*_ID` and `_SECRET` are set.
 
-Open http://localhost:3000. Routes:
+| Command                         | What it does                                                |
+| ------------------------------- | ----------------------------------------------------------- |
+| `pnpm dev` / `build` / `start`  | Develop, build (static prerender), serve the build          |
+| `pnpm lint` / `typecheck`       | ESLint; route types + `tsc`                                 |
+| `pnpm test`                     | The Vitest suite                                            |
+| `pnpm db:migrate` / `db:deploy` | Create and apply migrations (dev) / apply them (production) |
+| `pnpm generate:storyboards`     | Offline: generate and validate storyboards with a model     |
+| `pnpm generate:narration`       | Offline: voice scenes with ElevenLabs and stitch tracks     |
 
-| Route                                                               | Page                                                 |
-| ------------------------------------------------------------------- | ---------------------------------------------------- |
-| `/`                                                                 | Landing                                              |
-| `/dsa`                                                              | Patterns grouped in four sections, with progress     |
-| `/dsa/<pattern>`                                                    | Pattern intro and a filterable problem table         |
-| `/dsa/<pattern>/<slug>`                                             | Problem: statement, examples, video, hints, approach |
-| `/system-design`                                                    | Coming soon, with planned topics                     |
-| `/me`                                                               | My progress: by group and pattern, continue, done    |
-| `/login`, `/account`                                                | Sign in (optional); linked providers, password       |
-| `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Email + password (when enabled)                      |
+The offline tools need their own keys in `.env.local` (see `.env.example`), and the app never calls them.
 
-Press **Cmd/Ctrl + K** anywhere to jump to a pattern group, pattern, or problem. Old `/learn/two-pointers` links redirect permanently
-to `/dsa/two-pointers/pair-with-target-sum`.
+## Notes
 
-## Scripts
-
-| Command           | What it does                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------------ |
-| `pnpm dev`        | Start the dev server                                                                             |
-| `pnpm build`      | Production build                                                                                 |
-| `pnpm start`      | Serve the production build                                                                       |
-| `pnpm lint`       | ESLint                                                                                           |
-| `pnpm typecheck`  | Generate route types and run `tsc`                                                               |
-| `pnpm test`       | Run the Vitest suite once (includes checking every problem example against a reference solution) |
-| `pnpm test:watch` | Vitest in watch mode                                                                             |
-| `pnpm format`     | Format with Prettier                                                                             |
-| `pnpm db:migrate` | Create/apply Prisma migrations on `DATABASE_URL` (development)                                   |
-| `pnpm db:deploy`  | Apply committed migrations (production: run against Neon's direct URL)                           |
-| `pnpm db:studio`  | Browse the database                                                                              |
-
-Offline tooling: `pnpm generate:storyboards` (below) and `pnpm generate:narration` (voice-over, below).
-
-## Generating storyboards
-
-Requires a model key in `.env.local` (copy `.env.example`). The default provider is Google Gemini
-(`gemini-3.8-flash`, available on the free tier); set `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY` to use Claude.
-
-```bash
-pnpm generate:storyboards --pattern two-pointers --dry-run   # validate and print; nothing written
-pnpm generate:storyboards --pattern two-pointers             # write src/content/storyboards/generated/…
-pnpm generate:storyboards --missing                          # everything generatable that has no video yet
-```
-
-No model available? Claude Code (or you) can write the draft by hand against the same prompt and checks:
-`pnpm storyboards:prompt <pattern>/<slug>` prints the instructions, and `pnpm storyboards:validate-draft <path...>`
-validates (`--dry-run`) and saves it like a generated storyboard.
-
-Flags: `--problem <pattern>/<slug>`, `--force`, `--max-requests <n>` (default 15). Valid results are cached in
-`.cache/generation`, so a real run after a dry run makes no new requests. On the free tier's daily limit the run stops
-cleanly and tells you to rerun with `--missing` the next day. Details: [CLAUDE.md](./CLAUDE.md).
-
-## Narration
-
-Videos are narrated. Videos voiced with [ElevenLabs](https://elevenlabs.io) play one continuous recorded track and
-take their scene timing from it; the rest are read by the browser's built-in voice (Web Speech API), which never cuts
-a sentence at a scene change: the video waits for it instead. Without either, the video plays silently with captions and the transcript. A label under the player says
-which voice is active ("Narrated by ElevenLabs" / "Browser voice"), and the footer credits ElevenLabs, as its free
-plan requires.
-
-Narration is made offline. Each scene is voiced once with ElevenLabs (clips kept under `narration/clips/`, not
-served), then each video's clips are stitched into **one continuous track** (`public/audio/<video>/narration-*.mp3`)
-with even pauses between scenes. The player plays that single track, so scene changes never interrupt the voice, and
-scene timing comes from where each scene's speech starts in it. Everything is listed in
-`src/content/narration/manifest.json`. Set `ELEVENLABS_API_KEY` in `.env.local` (see `.env.example`) and install
-ffmpeg (`brew install ffmpeg`, used only for stitching), then:
-
-```bash
-pnpm generate:narration --storyboard sorting/merge-sort --storyboard sorting/heap-sort --dry-run   # characters, no calls
-pnpm generate:narration --storyboard sorting/merge-sort --storyboard sorting/heap-sort             # voice + stitch
-pnpm generate:narration --missing                                                                  # everything not voiced yet
-pnpm generate:narration --stitch-only                                                              # restitch, no requests
-```
-
-The free plan covers about 20,000 characters a month on the Flash model; a video's narration is ~900–1,950. Each run
-stops before a video that would pass `--max-chars` (default 9,000), never re-pays for unchanged narration (clips are
-named by a hash of the text, voice, and model), and stops cleanly, keeping what's saved, when the monthly quota runs
-out. Details: [CLAUDE.md](./CLAUDE.md).
-
-## Player controls
-
-Play/pause, scrubber, speed (0.5x–2x, narration keeps its pitch), narration mute and volume (remembered), and
-fullscreen. Keyboard: **Space** play/pause, **←/→** seek 5 seconds, **Shift + ←/→** previous/next scene, **M** mute,
-**F** fullscreen. Click a scene in the list (or in the transcript) to jump to it. Sound starts only when you press
-play.
-
-## Accounts
-
-Auth.js v5 (pinned to `5.0.0-beta.32`) with GitHub, Google, and email + password; sessions are httpOnly JWT cookies,
-and changing or resetting a password signs out every other session. Data lives in Postgres through Prisma
-(`prisma/schema.prisma`, migrations committed): Auth.js's tables, `AuthToken` (hashed single-use verification and
-reset tokens), `RateLimit` (shared counters for login, register, and reset limits), and `Progress` (per user and
-problem: status, whether you set it yourself, and the last video position). Passwords are hashed with Argon2id.
-
-Email + password is behind `AUTH_EMAIL_PASSWORD_ENABLED` (on locally, off in production): it needs a sending domain
-verified with Resend, because Resend's free plan without one only delivers to your own address. To turn it on in
-production: verify a domain in Resend, set `RESEND_API_KEY`, `EMAIL_FROM` (an address on that domain), and
-`AUTH_EMAIL_PASSWORD_ENABLED=true` in Vercel, and redeploy. Full setup, data model, and rules: [CLAUDE.md](./CLAUDE.md).
-
-## Deploying
-
-Import the repo into Vercel: the framework, pnpm, and the build command are detected automatically, and every page
-is statically prerendered (session and progress load in the browser). Accounts need these environment variables in
-Vercel (Production): `DATABASE_URL` (Neon, pooled), `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`,
-`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, plus `DATABASE_URL_UNPOOLED` for running `pnpm db:deploy` (migrations are
-never run by the build). See `.env.example`.
-
-## Contributing
-
-See [CLAUDE.md](./CLAUDE.md) for the architecture, the content model, how to add a pattern or a problem, how to
-attach a video, the storyboard and primitive system, the rules for choosing an example, the practice-mode plan, and
-the roadmap.
-
-## License notes
-
-Remotion is free for individuals and small teams. Companies of 4+ people need a
-[Remotion company license](https://remotion.dev/license).
-
-Narration clips come from the ElevenLabs free plan, which requires crediting ElevenLabs (the footer and player do)
-and doesn't include a commercial license. Fine for a portfolio; a commercial site needs a paid plan.
+- Problem statements, examples, and hints are original. Well-known titles link to their originals.
+- Remotion is free for individuals and small teams; companies of 4+ people need a
+  [company license](https://remotion.dev/license).
+- Narration comes from the ElevenLabs free plan, which requires attribution (the footer credits it) and doesn't include
+  a commercial license.
