@@ -19,6 +19,7 @@ export const LIMITS = {
   changePasswordUser: { max: 5, windowMs: 15 * MINUTE },
   progressUser: { max: 300, windowMs: MINUTE },
   checksUser: { max: 120, windowMs: MINUTE },
+  reviewUser: { max: 60, windowMs: MINUTE },
 } as const satisfies Record<string, Limit>;
 
 export type LimitName = keyof typeof LIMITS;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 
 import { PatternProgress, StatusLabel } from "@/components/catalog/progress-status";
+import { ReviewTodayCard } from "@/components/review/review-today-card";
 import type { ProgressIndex } from "@/lib/catalog/repository";
 import { formatSeconds, progressKey, statusOf } from "@/lib/progress";
 import { continueList, recentlyDone, RESUME_HASH } from "@/lib/progress/summary";
@@ -17,7 +18,7 @@ const WHERE = {
   account: "Synced to your account.",
 } as const;
 
-/** /me: progress by group and pattern, what to continue (straight to the saved video point), recently done. */
+/** /me: what's due for review, progress by group and pattern, what to continue (straight to the saved video point), recently done. */
 export function MyProgress({ index }: { index: ProgressIndex }) {
   const records = useProgressRecords();
   const { snapshot, sync } = useProgress();
@@ -42,6 +43,14 @@ export function MyProgress({ index }: { index: ProgressIndex }) {
           </Link>
         )}
       </p>
+      <Link
+        href="/review"
+        className="mt-3 inline-block font-mono text-xs text-primary underline-offset-4 hover:underline"
+      >
+        review queue →
+      </Link>
+
+      <ReviewTodayCard problems={index.problems} className="mt-8 max-w-2xl" />
 
       <div className="mt-10 grid gap-10 lg:grid-cols-2">
         <section aria-labelledby="continue-heading">

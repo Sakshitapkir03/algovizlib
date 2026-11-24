@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { QuickCheck } from "@/lib/quickcheck/schema";
 import { newResultId, checkRecorder } from "@/lib/quickcheck/results";
 import { dueCheck, pauseFrames, summarize } from "@/lib/quickcheck/schedule";
+import { noteVideoViewing } from "@/lib/review/use-review";
 import type { SceneTiming } from "@/lib/storyboard";
 import { usePlayerStore } from "@/store/player-store";
 
@@ -80,7 +81,8 @@ export function useQuickChecks(set: QuickCheckSet | undefined, timings: readonly
       const { check } = active;
       const correct = choice === check.answer;
       setActive({ check, chosen: choice });
-      setAnswers((list) => [...list, { id: check.id, correct }]);
+      const viewing = [...answers, { id: check.id, correct }];
+      setAnswers(viewing);
       void checkRecorder.record({
         id: newResultId(),
         problemKey: set.problemKey,
@@ -92,8 +94,11 @@ export function useQuickChecks(set: QuickCheckSet | undefined, timings: readonly
         ...(set.input ? { input: set.input } : {}),
         answeredAt: Date.now(),
       });
+      // Every question of a Done problem's video answered right in one viewing counts as its spaced review.
+      if (set.source === "video" && viewing.length === set.checks.length)
+        noteVideoViewing(set.problemKey, viewing);
     },
-    [active, set],
+    [active, set, answers],
   );
 
   return {

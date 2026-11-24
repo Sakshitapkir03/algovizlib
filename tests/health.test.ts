@@ -31,18 +31,18 @@ describe("health check", () => {
     });
   });
 
-  it("names a missing CheckResult table and the migration that creates it (a skipped db:deploy)", async () => {
+  it("names a missing ReviewState table and the migration that creates it (a skipped db:deploy)", async () => {
     const health = await checkHealth(
       fakeDb({
-        tables: REQUIRED_TABLES.filter((t) => t !== "CheckResult"),
-        migrations: ["20261120213857_accounts", "20261123223629_ask_cache"],
+        tables: REQUIRED_TABLES.filter((t) => t !== "ReviewState"),
+        migrations: EXPECTED_MIGRATIONS.filter((m) => m !== "20261124205333_review_state"),
       }),
     );
     expect(health).toEqual({
       ok: false,
       database: "ok",
-      missingTables: ["CheckResult"],
-      pendingMigrations: ["20261124153611_check_results"],
+      missingTables: ["ReviewState"],
+      pendingMigrations: ["20261124205333_review_state"],
     });
   });
 

@@ -32,7 +32,8 @@ export default function PrivacyPage() {
         <p>
           Your progress (each problem&apos;s status), where you stopped in each video, your answers to the
           videos&apos; quick check questions (which question, right or not, and when; for a walkthrough of
-          your own input, that input too), your theme, your sound and quick check settings, and whether
+          your own input, that input too), your review schedule (when you last marked each problem reviewed,
+          its review interval, and any snooze), your theme, your sound and quick check settings, and whether
           you&apos;ve dismissed a tip are saved in your browser&apos;s local storage. They never leave your
           device. Clearing this site&apos;s data in your browser removes them.
         </p>
@@ -51,8 +52,9 @@ export default function PrivacyPage() {
           tokens. We don&apos;t read or post anything else in those accounts.
         </p>
         <p>
-          If you were using the site without an account, the progress and quick check answers in your browser
-          are moved into your account when you sign in, then removed from the browser.
+          If you were using the site without an account, the progress, quick check answers, and review
+          schedule in your browser are moved into your account when you sign in, then removed from the
+          browser.
         </p>
       </LegalSection>
 
@@ -71,6 +73,11 @@ export default function PrivacyPage() {
             Quick check answers: for each question you answer, the problem, which question, whether you were
             right, and when; for a walkthrough of your own input, the input. Skipped questions aren&apos;t
             recorded, and answers never change your progress.
+          </li>
+          <li>
+            Your review schedule: for each problem you&apos;ve marked reviewed or snoozed, when you last
+            reviewed it, its review interval, and until when it&apos;s snoozed. The review queue itself is
+            worked out from your progress and quick check answers each time you open it.
           </li>
           <li>
             If you use &ldquo;Ask about this step&rdquo;: how many questions you asked today (to enforce the
@@ -140,10 +147,11 @@ export default function PrivacyPage() {
 
       <LegalSection title="Keeping and deleting your data">
         <p>
-          Your account, progress, and quick check answers are kept until you ask us to delete them. To delete
-          your account, email <Mail /> from the address on your account. We&apos;ll delete your account, your
-          progress, your video positions, and your quick check answers, and confirm within 30 days. Copies may
-          remain in the database provider&apos;s short-term backups for a limited time before they expire.
+          Your account, progress, quick check answers, and review schedule are kept until you ask us to delete
+          them. To delete your account, email <Mail /> from the address on your account. We&apos;ll delete
+          your account, your progress, your video positions, your quick check answers, and your review
+          schedule, and confirm within 30 days. Copies may remain in the database provider&apos;s short-term
+          backups for a limited time before they expire.
         </p>
         <p>
           You can also remove algovizlib&apos;s access in your GitHub or Google account settings at any time.

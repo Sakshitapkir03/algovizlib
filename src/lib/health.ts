@@ -15,6 +15,7 @@ export const REQUIRED_TABLES = [
   "Progress",
   "AskCache",
   "CheckResult",
+  "ReviewState",
 ] as const;
 
 /** Every folder in prisma/migrations (a test keeps this in sync). */
@@ -22,6 +23,7 @@ export const EXPECTED_MIGRATIONS = [
   "20261120213857_accounts",
   "20261123223629_ask_cache",
   "20261124153611_check_results",
+  "20261124205333_review_state",
 ] as const;
 
 export type Health = {

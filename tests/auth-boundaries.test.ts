@@ -27,6 +27,8 @@ const SERVER_ONLY = [
   "@/lib/quickcheck/server",
   "@/lib/quickcheck/api-deps",
   "@/lib/quickcheck/for-problem",
+  "@/lib/review/server",
+  "@/lib/review/api-deps",
 ];
 
 function sources(dir: string, out: string[] = []): string[] {
@@ -71,6 +73,7 @@ describe("server code stays on the server", () => {
       "lib/tutor/deps.ts",
       "lib/quickcheck/api-deps.ts",
       "lib/quickcheck/for-problem.ts",
+      "lib/review/api-deps.ts",
     ])
       expect(readFileSync(path.join(src, file), "utf8"), file).toMatch(/^import "server-only";/m);
   });

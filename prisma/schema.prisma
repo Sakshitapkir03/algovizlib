@@ -30,6 +30,7 @@ model User {
   authTokens AuthToken[]
   progress   Progress[]
   checks     CheckResult[]
+  reviews    ReviewState[]
 }
 
 model Account {
@@ -151,4 +152,19 @@ model CheckResult {
 
   @@id([userId, id])
   @@index([userId, answeredAt])
+}
+
+/// The review queue's per-problem schedule: the spaced-review interval (an index into 3, 7, 21, 60 days), the last
+/// review, and a snooze. Everything else the queue shows is computed from Progress and CheckResult.
+model ReviewState {
+  userId       String
+  problemKey   String
+  stage        Int       @default(0)
+  reviewedAt   DateTime?
+  snoozedUntil DateTime?
+  updatedAt    DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, problemKey])
 }

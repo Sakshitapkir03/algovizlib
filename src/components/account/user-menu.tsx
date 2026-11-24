@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartNoAxesColumn, LogIn, LogOut, UserRound } from "lucide-react";
+import { ChartNoAxesColumn, LogIn, LogOut, RotateCcw, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -22,7 +22,7 @@ function initials(name: string | null | undefined, email: string | null | undefi
   return (parts.length > 1 ? parts[0][0] + parts[1][0] : source.slice(0, 2)).toUpperCase();
 }
 
-/** Guests: "Sign in". Signed in: an avatar menu with My progress, Account, and Sign out. */
+/** Guests: "Sign in". Signed in: an avatar menu with My progress, Review, Account, and Sign out. */
 export function UserMenu() {
   const { data, status } = useSession();
   const pathname = usePathname();
@@ -65,6 +65,11 @@ export function UserMenu() {
         <DropdownMenuItem asChild>
           <Link href="/me">
             <ChartNoAxesColumn aria-hidden /> My progress
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/review">
+            <RotateCcw aria-hidden /> Review
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

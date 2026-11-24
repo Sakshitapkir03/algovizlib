@@ -9,6 +9,7 @@ import { hashToken } from "@/lib/auth/tokens";
 import { createPrismaProgressStore } from "@/lib/progress/server";
 import { checkHealth } from "@/lib/health";
 import { createPrismaCheckResultStore, postChecks } from "@/lib/quickcheck/server";
+import { createPrismaReviewStore, postReview } from "@/lib/review/server";
 import { createDbCache, createDbUsage, pacificDayEnd } from "@/lib/tutor/usage";
 
 /**
@@ -32,7 +33,7 @@ describe.skipIf(!url)("database (Postgres)", () => {
 
   beforeEach(async () => {
     await prisma.$executeRawUnsafe(
-      'TRUNCATE "User", "Account", "Session", "AuthToken", "RateLimit", "Progress", "VerificationToken", "AskCache", "CheckResult" CASCADE',
+      'TRUNCATE "User", "Account", "Session", "AuthToken", "RateLimit", "Progress", "VerificationToken", "AskCache", "CheckResult", "ReviewState" CASCADE',
     );
   });
 
@@ -221,6 +222,58 @@ describe.skipIf(!url)("database (Postgres)", () => {
       expect(logs.join()).toMatch(/CheckResult table is missing: run `pnpm db:deploy`/);
     } finally {
       await prisma.$executeRawUnsafe('ALTER TABLE "CheckResult_hidden" RENAME TO "CheckResult"');
+    }
+  });
+
+  it("review schedule: changes apply per user, a guest's schedule merges, and it goes with the user", async () => {
+    const store = createPrismaReviewStore(prisma);
+    const [ada, bob] = [await user("ada@example.com"), await user("bob@example.com")];
+    await store.apply(ada, { op: "reviewed", key: K, grade: "pass" }, 1000);
+    await store.apply(ada, { op: "reviewed", key: K, grade: "pass" }, 2000);
+    await store.apply(ada, { op: "snooze", key: "sorting/merge-sort" }, 3000);
+    await store.apply(bob, { op: "reviewed", key: K, grade: "miss" }, 1500);
+    expect(await store.load(ada)).toEqual({
+      [K]: { stage: 2, reviewedAt: 2000, updatedAt: 2000 },
+      "sorting/merge-sort": { stage: 0, snoozedUntil: 3000 + 3 * 86_400_000, updatedAt: 3000 },
+    });
+    expect(await store.load(bob)).toEqual({ [K]: { stage: 0, reviewedAt: 1500, updatedAt: 1500 } });
+    // A guest who reviewed it more recently wins the interval; the account's snooze stays.
+    const merged = await store.merge(ada, {
+      [K]: { stage: 0, reviewedAt: 5000, updatedAt: 5000 },
+      "sorting/merge-sort": { stage: 1, reviewedAt: 100, updatedAt: 100 },
+    });
+    expect(merged[K]).toEqual({ stage: 0, reviewedAt: 5000, updatedAt: 5000 });
+    expect(merged["sorting/merge-sort"]).toEqual({
+      stage: 1,
+      reviewedAt: 100,
+      snoozedUntil: 3000 + 3 * 86_400_000,
+      updatedAt: 3000,
+    });
+    expect(await store.load(ada)).toEqual(merged);
+    await prisma.user.delete({ where: { id: ada } });
+    expect(await prisma.reviewState.count({ where: { userId: ada } })).toBe(0);
+    expect(await prisma.reviewState.count({ where: { userId: bob } })).toBe(1);
+  });
+
+  it("review schedule: with the table missing (migration not run), a change is a 503, not a crash", async () => {
+    const id = await user("ada@example.com");
+    const logs: string[] = [];
+    await prisma.$executeRawUnsafe('ALTER TABLE "ReviewState" RENAME TO "ReviewState_hidden"');
+    try {
+      const result = await postReview(
+        {
+          user: { id, canSync: true },
+          store: createPrismaReviewStore(prisma),
+          limiter: createMemoryRateLimiter(),
+          isProblem: () => true,
+          log: (m) => logs.push(m),
+        },
+        { op: "snooze", key: K },
+      );
+      expect(result.status).toBe(503);
+      expect(logs.join()).toMatch(/ReviewState table is missing: run `pnpm db:deploy`/);
+    } finally {
+      await prisma.$executeRawUnsafe('ALTER TABLE "ReviewState_hidden" RENAME TO "ReviewState"');
     }
   });
 

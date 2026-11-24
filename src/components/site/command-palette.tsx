@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCode2, FolderTree, Layers, Search, SunMoon } from "lucide-react";
+import { FileCode2, FolderTree, Layers, RotateCcw, Search, SunMoon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -130,6 +130,15 @@ export function CommandPalette({ index }: { index: SearchIndex }) {
               ))}
             </CommandGroup>
             <CommandGroup heading="Actions">
+              <CommandItem
+                value="Review queue"
+                keywords={["review", "revisit", "due", "spaced", "repetition"]}
+                onSelect={() => go("/review")}
+              >
+                <RotateCcw aria-hidden className="text-muted-foreground" />
+                Review queue
+                <CommandShortcut className="shrink-0 font-mono whitespace-nowrap">/review</CommandShortcut>
+              </CommandItem>
               <CommandItem
                 value="Toggle theme"
                 keywords={["dark", "light", "mode", "theme", theme.label]}

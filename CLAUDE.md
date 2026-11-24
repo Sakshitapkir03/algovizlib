@@ -47,6 +47,8 @@ src/
     api/auth/[...nextauth]/  Auth.js;  api/progress (GET, POST one change, sendBeacon) + api/progress/merge
     api/ask/                 the tutor: GET a step's label + suggestions, POST a question (streamed answer)
     api/checks/              quick check answers: GET the latest, POST a batch (see "Quick checks")
+    api/review/              review schedule: GET, POST one change; api/review/merge (see "Review queue")
+    review/                  the review queue (static shell, client island)
   components/
     ui/                      shadcn/ui (radix-nova). Slider has thumbLabel/thumbValueText for a11y
     catalog/                 difficulty badge, path breadcrumb, problem table, hints, approach toggle, progress UI
@@ -56,6 +58,7 @@ src/
                              use-quick-checks (pause, answer, record)
     site/                    header, Cmd/Ctrl+K command palette, theme toggle/provider
     account/                 AccountProvider (session + progress sync), user menu, verify banner, auth forms, /me
+    review/                  review list (reason, Reviewed / Snooze), "Review today" card, the /review queue
   content/
     catalog/                 categories, patterns/<slug>.ts, problems/<pattern>/<slug>.ts, index.ts
     storyboards/             hand-written storyboards + registry (index.ts)
@@ -78,6 +81,8 @@ src/
                              trace → scenes builder (also the test fixture's), build, the browser runner + share links
     quickcheck/              quick checks: schema, builder, validator, schedule (pause frames, keys), results
                              (browser recorder), server (API logic, Prisma store), for-problem (page, server-only)
+    review/                  the review queue: rules (queue, intervals, merge; pure), server (API logic, Prisma
+                             store), the tab's hub (browser / account copy, `useReviewQueue`)
     tutor/                   "Ask about this step": config + flag, step context, suggestions, prompt, usage counts +
                              answer cache, model (the app's one AI SDK use, server-only), service, deps
     generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
@@ -301,7 +306,7 @@ Signing in is optional; guests can use everything. Auth.js v5 (**pinned to `5.0.
 - **Rate limits** (`lib/auth/rate-limit.ts`, fixed windows in the `RateLimit` table, shared by every instance): login
   30/15 min per IP and 10/15 min per email; register 5/h per IP and 3/h per email; forgot 10/15 min per IP and 3/h
   per email; reset and verify per IP; resend and change-password per user; progress writes 300/min per user; quick
-  check answers 120 requests/min per user.
+  check answers 120 requests/min per user; review changes 60/min per user.
   Locally every request has the IP "local", so repeated test sign-ins can hit the IP limit: `DELETE FROM "RateLimit"`.
 - **CSRF:** Auth.js protects its routes; server actions get Next's Origin check; `/api/progress` POSTs require a
   same-origin `Origin` header (`sameOrigin`), on top of SameSite cookies.
@@ -318,7 +323,7 @@ Signing in is optional; guests can use everything. Auth.js v5 (**pinned to `5.0.
 `tokenHash`, `expiresAt`), `RateLimit` (`key`, `windowStart`, `count`), `Progress` (`userId` + `problemKey`, `status`,
 `statusManual`, `statusUpdatedAt`, `sceneId`, `positionSeconds`, `positionUpdatedAt`), `CheckResult` (`userId` + an `id`
 made in the browser, `problemKey`, `questionId`, `sceneId`, `step`, `correct`, `source` video | walkthrough, `input`,
-`answeredAt`), `AskCache` (`key`, a hash of
+`answeredAt`), `ReviewState` (`userId` + `problemKey`, `stage`, `reviewedAt`, `snoozedUntil`, `updatedAt`), `AskCache` (`key`, a hash of
 the tutor's prompt version, model, problem, scene, and suggested question; `answer`; `createdAt`: no user). Deleting a
 user cascades.
 
@@ -1316,6 +1321,45 @@ correct, source, input?, answeredAt }` (`source: "walkthrough"` with the input a
   clamping, rate limit, and 503s), `tests/db.integration.test.ts` (stored once per user, newest first, cascade; a
   missing table is a 503), and `tests/health.test.ts`.
 
+## Review queue
+
+`/review` (linked from the account menu, `/me`, and the palette) and a "Review today" card (landing page and `/me`,
+only when something is due, top 3) list problems to revisit, each with a short reason, a link (a stopped video's goes
+to `#resume`), and "Reviewed" / "Snooze 3 days". Everything is computed from progress and quick check answers except
+one small record per problem the learner reviewed or snoozed.
+
+- **Rules** (`lib/review/rules.ts`, pure; `buildReviewQueue`): a problem appears once, under the first that applies:
+  1. **missed-checks**: of the quick checks answered on its video since the last review, the latest answer to some
+     question is wrong ("Missed 2 of 3 quick checks").
+  2. **review-due**: Done, and its interval (`REVIEW_INTERVAL_DAYS` 3, 7, 21, 60; `stage` indexes it) has passed
+     since it was marked Done or last reviewed, whichever is later ("Done · 7-day review due").
+  3. **stopped-video**: a saved position at least a day old (newer ones are the Continue card's), saved after the last
+     review ("Stopped at 0:42").
+  4. **stale-learning**: Learning with no activity (status change, position, quick check answer, review) for 3 days
+     ("Learning · last active 6 days ago"; "last active", since opening a page records nothing).
+- **Ranking.** By rule (in that order), then the one that has waited longest first (oldest wrong answer, longest
+  overdue, oldest position, longest inactive); ties by key. Snoozed problems are left out; the queue keeps the top 7
+  (`QUEUE_LIMIT`). Only `source: "video"` answers count: walkthroughs never do.
+- **Intervals.** "Reviewed" records a grade: Done with a miss since the last review → `miss` (back to 3 days),
+  Done otherwise → `pass` (next interval, capped at 60), not Done → `none` (interval unchanged). It sets
+  `reviewedAt` and clears a snooze, which takes the problem off every rule until something new happens. A viewing of
+  a due Done video that answers every quick check right counts as a passing review (`noteVideoViewing`, from
+  `use-quick-checks`); a viewing with a miss writes nothing (the problem shows "Missed…", and Reviewed resets it).
+- **Where it lives** (`lib/review/use-review.ts`, wired in `AccountProvider` next to progress): guests and
+  unverified accounts keep `algovizlib:review:v1` in localStorage and read the browser's answers; a verified user's
+  browser copy is POSTed to `/api/review/merge` (the more recent review keeps its interval, the later snooze wins;
+  future times clamped, unknown problems dropped), cleared, and changes go to `/api/review`; the queue reads the
+  account's answers (`GET /api/checks`) plus any still pending here. A failed write is undone and the list says
+  "Couldn't save that right now".
+- **Fails safe.** A missing `ReviewState` table (P2021) or any database error is a 503 with a log line ("the ReviewState
+  table is missing: run `pnpm db:deploy`"). The hub's mode is then "unavailable": the queue still shows from progress
+  and answers (first interval), the browser copy is kept for the next page load, and Reviewed / Snooze report they
+  couldn't be saved.
+- Tests: `tests/review.test.ts` (each rule, ranking and the limit, intervals growing and resetting, Reviewed and
+  Snooze, merging, walkthroughs excluded, guest vs. account vs. unavailable hub, the viewing review, the API's access,
+  validation, rate limit, clamping, and 503s), `tests/db.integration.test.ts` (per user, merge, cascade, missing table),
+  `tests/health.test.ts`.
+
 ## Choosing the example
 
 `exampleSource` decides where the real-world example comes from. The schema enforces it.
@@ -1446,8 +1490,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for
    generation and narration endpoints (both cost money), plus caching identical requests.
 7. Planned DSA primitives: `coin-set` (Coin Change uses an item-row today), with its trace.
-8. **Quick checks**, next: a review queue from the stored answers (`GET /api/checks`), and questions for the 14
-   videos without (bit panels, grids, graphs).
+8. **Quick checks**, next: questions for the 14 videos without (bit panels, grids, graphs).
 9. **Try your own input**, next: the tutor for walkthroughs (its context would be the learner's input and the
    rerun trace, not a committed video's scene), and inputs for trees, grids, graphs, and intervals (each needs an
    editor that isn't a text box).

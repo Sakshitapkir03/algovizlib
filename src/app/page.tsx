@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { ContinueCard } from "@/components/account/continue-card";
+import { ReviewTodayCard } from "@/components/review/review-today-card";
 import {
   getAllProblems,
   getCategories,
@@ -64,6 +65,7 @@ export default function Home() {
           {videos === 1 ? "video" : "videos"}
         </p>
         <ContinueCard problems={getProgressIndex().problems} />
+        <ReviewTodayCard problems={getProgressIndex().problems} className="mt-8 max-w-xl" />
       </section>
 
       <section className="pb-16" aria-labelledby="categories-heading">
