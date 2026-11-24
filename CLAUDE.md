@@ -1139,12 +1139,16 @@ the problem page) and at run time by the route.
   Obvious attempts to change the instructions ("ignore previous instructions", "system prompt", "you are now…",
   "developer mode") are declined before any model call (`looksLikeInjection`) and cost no question; anything subtler
   is the model's to decline under the rules.
-- **Suggestions** (`lib/tutor/suggestions.ts`, no model call), 2–3 per step, built only from what the scene draws: why
-  a pointer moved, by its on-screen label ("arriving", "You"; never the trace variable it binds, like `j`); what the
-  equation's own numbers tell us; why the map looked up or added a key, by the map's label; then why the step happens
-  and what comes next (problem-level questions for intro scenes). A test runs every suggestion of every scene of all
-  103 videos and fails if a word in it, beyond the questions' fixed wording (`SUGGESTION_WORDS`), isn't in the scene's
-  visible text (its caption and every displayed field: not ids, `binds`, row ids, or state switches).
+- **Suggestions** (`lib/tutor/suggestions.ts`, no model call), 2–3 per step, phrased as plain questions (no quoted
+  labels) and built only from what the scene draws: a pointer that moved, by its on-screen label and direction ("Why
+  does the arriving pointer move right?", "Why do you move right?", "Why does Friend move left?", "Why does the jogger
+  move right?"; never the trace variable it binds, like `j`); the equation's own numbers ("Where does the 6 come
+  from?", "Why compare 49 with 50?"); the map's lookup or new entry ("Why look for 1 in the register?"); otherwise a
+  question about the structure drawn (`STRUCTURE_QUESTIONS`: "What does this call return, and why?", "Why does the
+  heap reorder like this?"); then what comes next (problem-level questions for intro scenes). A test runs every
+  suggestion of every scene of all 103 videos and fails on a quoted label, or on a word that's neither the questions'
+  fixed wording (`SUGGESTION_WORDS`) nor in the scene's visible text (its caption and every displayed field: not ids,
+  `binds`, row ids, or state switches).
 - **Plain text** (`lib/tutor/plain-text.ts`): the prompt asks for no Markdown and no LaTeX, and whatever slips through
   is cleaned, as the answer streams and before it's cached: math delimiters dropped (but never prices: "$49 … $50"
   stays), `\le` → ≤, `\frac{a}{b}` → a/b, `n^2` → n², `x_1` → x₁, bold, italics, headings, and backticks removed,

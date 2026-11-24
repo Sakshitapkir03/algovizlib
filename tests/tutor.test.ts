@@ -145,7 +145,7 @@ describe("grounding: the context is the step on screen", () => {
       return Object.entries(trace.steps[i].pointers).some(([k, v]) => trace.steps[i - 1].pointers[k] !== v);
     })!;
     const suggestions = suggestedQuestions(buildStepContext(KEY, moved.id)!);
-    expect(suggestions.some((q) => /^Why did "[^"]+" move\?$/.test(q))).toBe(true);
+    expect(suggestions.some((q) => /^Why (do you|does .+) move (right|left)\?$/.test(q))).toBe(true);
   });
 
   it("the system prompt fences the context as data and carries the rules; nothing about the user goes in", async () => {
@@ -208,6 +208,7 @@ describe("suggested questions name only what the scene shows", () => {
     const problems = getAllProblems().filter((p) => getProblemStoryboard(p));
     expect(problems).toHaveLength(103);
     const offenders: string[] = [];
+    const quoted: string[] = [];
     let questions = 0;
     for (const problem of problems) {
       const key = `${problem.patternSlug}/${problem.slug}`;
@@ -216,6 +217,7 @@ describe("suggested questions name only what the scene shows", () => {
         const seen = visibleWords(ctx.caption, ctx.elements);
         for (const q of suggestedQuestions(ctx)) {
           questions++;
+          if (/["“”]/.test(q)) quoted.push(`${key} › ${scene.id}: ${q}`);
           const unseen = words(q).filter((w) => !SUGGESTION_WORDS.has(w) && !seen.has(w));
           if (unseen.length)
             offenders.push(`${key} › ${scene.id}: "${q}" (not on screen: ${unseen.join(", ")})`);
@@ -224,6 +226,8 @@ describe("suggested questions name only what the scene shows", () => {
     }
     expect(offenders).toEqual([]);
     expect(questions).toBeGreaterThan(1500);
+    // They read as questions, not templates: no quoted labels.
+    expect(quoted).toEqual([]);
   });
 
   it("Two Sum's arriving pointer is asked about by its label, never its trace name", () => {
@@ -232,11 +236,14 @@ describe("suggested questions name only what the scene shows", () => {
       suggestedQuestions(buildStepContext("arrays-hashing/two-sum", s.id)!),
     );
     expect(all.some((q) => /\bj\b/.test(q))).toBe(false);
-    expect(all.some((q) => q.includes("register") || q.includes('"arriving"'))).toBe(true);
+    expect(all).toContain("Why does the arriving pointer move right?");
+    expect(all.some((q) => q.includes("the register"))).toBe(true);
     // The old question names the trace's variable, which the check catches.
     const ctx = buildStepContext("arrays-hashing/two-sum", sb.scenes[3].id)!;
     const seen = visibleWords(ctx.caption, ctx.elements);
-    expect(words("Why did j move?").filter((w) => !SUGGESTION_WORDS.has(w) && !seen.has(w))).toEqual(["j"]);
+    expect(words("Why does j move right?").filter((w) => !SUGGESTION_WORDS.has(w) && !seen.has(w))).toEqual([
+      "j",
+    ]);
   });
 });
 
