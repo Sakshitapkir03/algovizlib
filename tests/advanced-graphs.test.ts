@@ -8,7 +8,7 @@ import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { forestProblems, networkProblems } from "./fixtures/graph-fit";
+import { forestProblems, networkProblems } from "@/video/fit/graph";
 
 const GRAPHS = [
   "advanced-graphs/find-if-path-exists-in-graph",

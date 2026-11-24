@@ -95,3 +95,31 @@ export function gapEquation(before: number, after: number): TraceEquation {
     tone: after === 0 ? "positive" : "neutral",
   };
 }
+
+/**
+ * Phase 2's restart: the head is `toEntry` steps from the loop's start, the meeting point `fromMeet`. They're equal
+ * when fast lapped slow once; otherwise the head is farther by whole laps of the loop, which the meeting side walks
+ * too. Either way one step each brings both to the start together. The equation shows exactly that, and `laps`
+ * says how many extra laps (0 when equal).
+ */
+export function restartEquation(
+  toEntry: number,
+  fromMeet: number,
+  loopLength: number,
+): { equation: TraceEquation; laps: number } {
+  if (toEntry === fromMeet)
+    return {
+      equation: {
+        terms: [toEntry],
+        operator: "+",
+        result: toEntry,
+        comparison: { op: "=", target: fromMeet },
+        tone: "positive",
+      },
+      laps: 0,
+    };
+  return {
+    equation: { terms: [fromMeet, toEntry - fromMeet], operator: "+", result: toEntry, tone: "positive" },
+    laps: (toEntry - fromMeet) / loopLength,
+  };
+}

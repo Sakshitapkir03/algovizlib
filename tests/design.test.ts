@@ -11,8 +11,8 @@ import { compactCall, opLogForms } from "@/video/oplog-layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { opLogProblems } from "./fixtures/oplog-fit";
-import { stackProblems } from "./fixtures/stack-fit";
+import { opLogProblems } from "@/video/fit/oplog";
+import { stackProblems } from "@/video/fit/stack";
 
 const DESIGN = [
   "design/implement-queue-using-stacks",

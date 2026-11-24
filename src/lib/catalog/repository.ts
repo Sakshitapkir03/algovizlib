@@ -1,5 +1,6 @@
 import { categories, patternGroups, patterns, problems } from "@/content/catalog";
 import { getGeneratedStoryboard, getStoryboard } from "@/content/storyboards";
+import { TRY_INPUT_PROBLEMS } from "@/lib/walkthrough/supported";
 
 import {
   DIFFICULTIES,
@@ -103,6 +104,11 @@ export function getProblemStoryboard(problem: Problem) {
 
 export function hasVideo(problem: Problem): boolean {
   return getProblemStoryboard(problem) !== undefined;
+}
+
+/** Whether a problem has "Try your own input" (a walkthrough of the learner's own input, built in the browser). */
+export function hasTryInput(problem: Pick<Problem, "patternSlug" | "slug">): boolean {
+  return TRY_INPUT_PROBLEMS.has(`${problem.patternSlug}/${problem.slug}`);
 }
 
 export function problemHref(problem: Pick<Problem, "patternSlug" | "slug">): string {

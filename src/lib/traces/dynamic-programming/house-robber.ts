@@ -26,7 +26,7 @@ export function houseRobber(money: number[]): Trace {
     const take = before + money[i];
     const takes = take > skip;
     table.set(0, i, Math.max(take, skip));
-    plans[i] = takes ? [...(i >= 2 ? plans[i - 2] : []), i] : [...plans[i - 1]];
+    plans[i] = takes ? [...(i >= 2 ? plans[i - 2] : []), i] : [...(i >= 1 ? plans[i - 1] : [])];
     const reads = [
       ...(i >= 1 ? [{ at: cell(0, i - 1), label: "skip" }] : []),
       ...(i >= 2 ? [{ at: cell(0, i - 2), label: "take" }] : []),

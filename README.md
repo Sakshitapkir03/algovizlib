@@ -63,6 +63,14 @@ Videos are **trace-bound storyboards**: deterministic code runs each algorithm o
 decision, and a storyboard's pointers, equations, and highlights come from (and are checked against) that trace.
 Storyboards can be generated offline by a model: the model writes the story, the validator guarantees the moves.
 
+**Try your own input.** On 70 problems (every one whose input is numbers, strings, or lists of them) a switch above the
+video opens a step-by-step walkthrough of your own input: type it (prefilled with the video's example), or press
+Random, and the browser runs the same trace, builds the scenes, and checks them with the same validator and phone-width
+fit checks as every video before playing them, with plain captions from each step and the browser's voice. Inputs
+that break the problem's rules (an unsorted list for a two-pointer search, two pairs for Two Sum) or wouldn't fit on a
+phone are refused with the reason. The address bar holds the input, so the page's link shares it. Walkthroughs never
+change your progress.
+
 ## Stack
 
 Next.js (App Router, `src/`) · TypeScript (strict) · Tailwind CSS v4 · shadcn/ui · Remotion (`@remotion/player`) ·

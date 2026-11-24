@@ -74,7 +74,7 @@ export function combinationSum(candidates: number[], target: number): Trace {
     pointerNames: [],
     steps: search.steps,
     answer: search.found.map((f) => f.slice(1, -1).split(", ").map(Number)),
-    answerDisplay: search.found.join(" "),
+    answerDisplay: search.found.length ? search.found.join(" ") : "none",
   };
 }
 

@@ -8,7 +8,7 @@ import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { searchProblems } from "./fixtures/search-fit";
+import { searchProblems } from "@/video/fit/search";
 
 const SEARCHES = [
   "graphs-bfs/flood-fill",

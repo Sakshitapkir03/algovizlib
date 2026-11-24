@@ -63,7 +63,7 @@ export function permutations(nums: number[]): Trace {
     pointerNames: [],
     steps: search.steps,
     answer: search.found.map((f) => f.slice(1, -1).split(", ").map(Number)),
-    answerDisplay: `${search.found.length} orderings`,
+    answerDisplay: `${search.found.length} ${search.found.length === 1 ? "ordering" : "orderings"}`,
   };
 }
 

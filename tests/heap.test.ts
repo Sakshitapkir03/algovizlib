@@ -7,7 +7,7 @@ import { getTraceDefinition, isHeap } from "@/lib/traces";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { heapProblems } from "./fixtures/heap-fit";
+import { heapProblems } from "@/video/fit/heap";
 
 const HEAPS = [
   "heap/last-stone-weight",

@@ -7,9 +7,9 @@ import { getTraceDefinition } from "@/lib/traces";
 import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
-import { bitsProblems } from "./fixtures/bits-fit";
+import { bitsProblems } from "@/video/fit/bits";
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { searchProblems } from "./fixtures/search-fit";
+import { searchProblems } from "@/video/fit/search";
 
 const BITS = [
   "bit-manipulation/single-number",

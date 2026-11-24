@@ -7,7 +7,7 @@ import { getTraceDefinition } from "@/lib/traces";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { raceProblems } from "./fixtures/race-fit";
+import { raceProblems } from "@/video/fit/race";
 
 const RACES = [
   "fast-slow-pointers/linked-list-cycle",

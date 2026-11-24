@@ -6,9 +6,9 @@ import { resolveStoryboard, storyboardSourceSchema, validateStoryboard } from "@
 import { getTraceDefinition } from "@/lib/traces";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
-import { dpProblems } from "./fixtures/dp-fit";
+import { dpProblems } from "@/video/fit/dp";
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { treeProblems } from "./fixtures/tree-fit";
+import { treeProblems } from "@/video/fit/tree";
 
 const DPS = [
   "dynamic-programming/climbing-stairs",

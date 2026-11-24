@@ -121,7 +121,8 @@ export function layoutRace(
       pointer: move.pointer,
       order,
       arcs,
-      label: t.compact ? undefined : label(`+${move.hops}`, lastX, apex, hopSize),
+      // A move refused at once (0 hops) has only its ✕.
+      label: t.compact || move.hops === 0 ? undefined : label(`+${move.hops}`, lastX, apex, hopSize),
       refused,
       hopXs: xs,
     };

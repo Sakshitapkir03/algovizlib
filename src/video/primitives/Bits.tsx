@@ -29,8 +29,9 @@ export function Bits({ element }: { element: BitsElement }) {
   const pitch = shape.cellWidth + 4;
   const firstResult = element.rows.findIndex((r) => r.rule);
 
-  const digit = (value: 0 | 1, left: number, extra: React.CSSProperties = {}) => (
+  const digit = (key: string, value: 0 | 1, left: number, extra: React.CSSProperties = {}) => (
     <div
+      key={key}
       style={{
         position: "absolute",
         left,
@@ -169,6 +170,7 @@ export function Bits({ element }: { element: BitsElement }) {
             {row.from
               ? Array.from({ length: element.width }, (_, k) =>
                   digit(
+                    `from-${k}`,
                     bitAt(row.from!.value, element.width, k) as 0 | 1,
                     shape.cellLeft(k) - row.from!.shift * pitch * slide,
                     {
@@ -178,7 +180,7 @@ export function Bits({ element }: { element: BitsElement }) {
                 )
               : null}
             {Array.from({ length: element.width }, (_, k) =>
-              digit(bitAt(row.value, element.width, k) as 0 | 1, shape.cellLeft(k), {
+              digit(`bit-${k}`, bitAt(row.value, element.width, k) as 0 | 1, shape.cellLeft(k), {
                 opacity: row.from ? interpolate(slide, [0.8, 1], [0, 1], { extrapolateLeft: "clamp" }) : 1,
               }),
             )}

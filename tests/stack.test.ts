@@ -7,7 +7,7 @@ import { getTraceDefinition, keepsOrder } from "@/lib/traces";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { stackProblems } from "./fixtures/stack-fit";
+import { stackProblems } from "@/video/fit/stack";
 
 const STACKS = [
   "stack/valid-parentheses",

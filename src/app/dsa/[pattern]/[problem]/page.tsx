@@ -14,9 +14,8 @@ import { PathBreadcrumb } from "@/components/catalog/path-breadcrumb";
 import { ProblemTabs } from "@/components/catalog/problem-tabs";
 import { StatusPicker } from "@/components/catalog/progress-status";
 import { InlineText, RichText } from "@/components/catalog/rich-text";
-import { ExampleSourceBadge } from "@/components/learn/example-source-badge";
 import { KeyTakeaway } from "@/components/learn/key-takeaway";
-import { LearnView } from "@/components/learn/learn-view";
+import { VideoSection } from "@/components/learn/video-section";
 import type { Problem } from "@/lib/catalog";
 import { progressKey } from "@/lib/progress";
 import {
@@ -25,6 +24,7 @@ import {
   getAllProblems,
   getProblem,
   getProblemStoryboard,
+  hasTryInput,
   patternHref,
   problemHref,
 } from "@/lib/catalog/repository";
@@ -139,12 +139,25 @@ async function ProblemContent({ params }: { params: PageProps<"/dsa/[pattern]/[p
               <Section title="Video">
                 {storyboard ? (
                   <div className="space-y-3">
-                    <ExampleSourceBadge source={storyboard.exampleSource} />
-                    <LearnView
+                    <VideoSection
                       storyboard={storyboard}
-                      showTakeaway={false}
                       problemKey={progressKey(problem)}
                       askEnabled={readTutorConfig().enabled}
+                      tryInput={
+                        hasTryInput(problem)
+                          ? {
+                              problem: {
+                                patternSlug: problem.patternSlug,
+                                slug: problem.slug,
+                                title: problem.title,
+                                tags: problem.tags,
+                                keyIdea: problem.keyIdea,
+                                complexity: problem.complexity,
+                              },
+                              patternName: pattern.name,
+                            }
+                          : undefined
+                      }
                     />
                     <p className="font-mono text-[11px] text-muted-foreground">
                       space play/pause · ←/→ seek 5s · shift+←/→ change scene · f fullscreen

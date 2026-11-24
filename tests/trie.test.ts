@@ -8,8 +8,8 @@ import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { searchProblems } from "./fixtures/search-fit";
-import { trieProblems } from "./fixtures/trie-fit";
+import { searchProblems } from "@/video/fit/search";
+import { trieProblems } from "@/video/fit/trie";
 
 const TRIES = [
   "trie/longest-common-prefix",

@@ -16,8 +16,8 @@ import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 import { layoutTimeline } from "@/video/timeline-layout";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { heapProblems } from "./fixtures/heap-fit";
-import { timelineProblems } from "./fixtures/timeline-fit";
+import { heapProblems } from "@/video/fit/heap";
+import { timelineProblems } from "@/video/fit/timeline";
 
 const INTERVALS = [
   "intervals/meeting-rooms",

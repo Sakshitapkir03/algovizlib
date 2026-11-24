@@ -9,7 +9,7 @@ import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { treeProblems } from "./fixtures/tree-fit";
+import { treeProblems } from "@/video/fit/tree";
 
 const TREES = [
   "trees-dfs/maximum-depth-of-binary-tree",

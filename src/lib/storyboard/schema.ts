@@ -494,8 +494,9 @@ export const sceneSchema = z
           const next = new Map(list.nodes.map((node) => [node.id, node.next]));
           const has = (id: number) => next.has(id);
           el.moves.forEach((move, k) => {
-            // Every hop must follow a real link: from → path… → to.
-            const stops = [move.from, ...move.path, move.to];
+            // Every hop must follow a real link: from → path… → to. A move refused at once stays put (0 hops).
+            const stays = move.hops === 0 && move.path.length === 0 && move.to === move.from;
+            const stops = stays ? [move.from] : [move.from, ...move.path, move.to];
             const follows = stops.every((id, j) => j === 0 || next.get(stops[j - 1] as number) === id);
             if (
               !has(move.from) ||

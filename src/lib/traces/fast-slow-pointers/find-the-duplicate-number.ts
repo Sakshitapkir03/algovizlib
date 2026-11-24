@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { Trace, TraceDefinition } from "../types";
-import { gapEquation, Race } from "./shared";
+import { gapEquation, Race, restartEquation } from "./shared";
 
 /**
  * Read the array as a linked list: index `i` points to index `nums[i]`. Index 0 is never pointed to (values start at
@@ -59,19 +59,18 @@ export function findTheDuplicateNumber(nums: number[]): Trace {
   race.phase = 2;
   race.pointers.slow = idOf(0);
   const toEntry = race.distance(idOf(0), loop.to)!;
+  const fromMeet = race.distance(meet, loop.to)!;
+  const { equation, laps } = restartEquation(toEntry, fromMeet, race.distance(loop.to, loop.from)! + 1);
   race.record({
     kind: "restart",
     key: true,
     meet,
     loop,
-    equation: {
-      terms: [toEntry],
-      operator: "+",
-      result: toEntry,
-      comparison: { op: "=", target: race.distance(meet, loop.to)! },
-      tone: "positive",
-    },
-    note: `slow goes back to index 0; fast stays at index ${order[meet]}. Both are ${toEntry} ${toEntry === 1 ? "jump" : "jumps"} from the loop's start, so one jump each brings them there together.`,
+    equation,
+    note:
+      laps === 0
+        ? `slow goes back to index 0; fast stays at index ${order[meet]}. Both are ${toEntry} ${toEntry === 1 ? "jump" : "jumps"} from the loop's start, so one jump each brings them there together.`
+        : `slow goes back to index 0, ${toEntry} ${toEntry === 1 ? "jump" : "jumps"} from the loop's start; fast at index ${order[meet]} is ${fromMeet} from it plus ${laps} ${laps === 1 ? "lap" : "laps"} of the loop, also ${toEntry}. So one jump each brings them there together.`,
   });
   while (race.pointers.slow !== race.pointers.fast) {
     const moves = [race.move("slow", 1), race.move("fast", 1)];

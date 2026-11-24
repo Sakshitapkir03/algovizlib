@@ -8,7 +8,7 @@ import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { greedyProblems } from "./fixtures/greedy-fit";
+import { greedyProblems } from "@/video/fit/greedy";
 
 const GREEDY = [
   "greedy/lemonade-change",

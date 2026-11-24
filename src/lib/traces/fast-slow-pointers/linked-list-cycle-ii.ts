@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { nodeValues } from "../linked-list/shared";
 import type { Trace, TraceDefinition } from "../types";
-import { gapEquation, Race } from "./shared";
+import { gapEquation, Race, restartEquation } from "./shared";
 
 /**
  * Two phases. Phase 1 is the cycle check: slow 1 node, fast 2 per round, until they meet (or fast runs off the end:
@@ -73,20 +73,19 @@ export function linkedListCycleIi(values: number[], pos: number): Trace {
     race.phase = 2;
     race.pointers.slow = head;
     const toEntry = race.distance(head, loop!.to)!;
+    const fromMeet = race.distance(meet, loop!.to)!;
+    const { equation, laps } = restartEquation(toEntry, fromMeet, race.distance(loop!.to, loop!.from)! + 1);
     race.record({
       kind: "restart",
       key: true,
       meet,
       loop,
-      // head → entry = meeting node → entry (forward, past whole laps).
-      equation: {
-        terms: [toEntry],
-        operator: "+",
-        result: toEntry,
-        comparison: { op: "=", target: race.distance(meet, loop!.to)! },
-        tone: "positive",
-      },
-      note: `slow goes back to the head; fast stays at ${values[meet]}. Both are ${toEntry} ${toEntry === 1 ? "node" : "nodes"} from the loop's start, so 1 step each brings them there together.`,
+      // head → entry = meeting node → entry, plus whole laps of the loop when fast lapped slow more than once.
+      equation,
+      note:
+        laps === 0
+          ? `slow goes back to the head; fast stays at ${values[meet]}. Both are ${toEntry} ${toEntry === 1 ? "node" : "nodes"} from the loop's start, so 1 step each brings them there together.`
+          : `slow goes back to the head, ${toEntry} ${toEntry === 1 ? "step" : "steps"} from the loop's start; fast at ${values[meet]} is ${fromMeet} from it plus ${laps} ${laps === 1 ? "lap" : "laps"} of the loop, also ${toEntry}. So 1 step each brings them there together.`,
     });
     while (race.pointers.slow !== race.pointers.fast) {
       const moves = [race.move("slow", 1), race.move("fast", 1)];

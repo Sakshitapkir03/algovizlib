@@ -50,7 +50,8 @@ src/
     ui/                      shadcn/ui (radix-nova). Slider has thumbLabel/thumbValueText for a11y
     catalog/                 difficulty badge, path breadcrumb, problem table, hints, approach toggle, progress UI
     learn/                   LearnView, VideoStage (client-only Player), controls, scene list, transcript, takeaway,
-                             ask-panel ("Ask about this step")
+                             ask-panel ("Ask about this step"), video-section (original video / "Your input" switch),
+                             try-input-panel (the editor and walkthrough player; lazy)
     site/                    header, Cmd/Ctrl+K command palette, theme toggle/provider
     account/                 AccountProvider (session + progress sync), user menu, verify banner, auth forms, /me
   content/
@@ -71,11 +72,14 @@ src/
     traces/                  deterministic instrumented solutions: <pattern>/<slug>.ts + registry (app code)
     narration/               app side of narration: hash, manifest + withNarration(), NarrationEngine (sync),
                              browser speech/audio adapters
+    walkthrough/             "Try your own input": field types, per-problem specs, the supported list, the shared
+                             trace → scenes builder (also the test fixture's), build, the browser runner + share links
     tutor/                   "Ask about this step": config + flag, step context, suggestions, prompt, usage counts +
                              answer cache, model (the app's one AI SDK use, server-only), service, deps
     generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
       narration/             OFFLINE ONLY: ElevenLabs client, stitching (+ ffmpeg), MP3 duration, pipeline, CLI, store
   video/                     Remotion composition, scene renderer, primitives + registry, theme
+    fit/                     the phone-width fit checks (scene.ts: `sceneFitProblems`), shared by tests and the browser
   auth.ts                    Auth.js config (providers, JWT callbacks, linking check)
   generated/prisma/          Prisma client (generated on install; gitignored)
   store/player-store.ts      Zustand: mirrors PlayerRef events, exposes toggle/seekTo, volume/mute (remembered), hold
@@ -85,7 +89,8 @@ scripts/generate-narration.ts     the narration CLI (tsx)
 prisma/schema.prisma, prisma/migrations/   the data model and committed migrations (prisma.config.ts reads .env.local)
 public/audio/<storyboard>/        the stitched narration track, narration-<hash>.mp3 (served)
 narration/clips/<storyboard>/      per-scene ElevenLabs clips, <scene>-<hash>.mp3 (stitching source, not served)
-tests/                       Vitest specs (fixtures/drafts.ts builds a correct draft from any trace)
+tests/                       Vitest specs (fixtures/drafts.ts builds a correct draft from any trace, through
+                             `traceScenes()` in lib/walkthrough/scenes.ts)
   reference-solutions/       test-only solve() per problem; never imported by src/ (a test enforces it)
 ```
 
@@ -118,7 +123,9 @@ Key rules:
   dropped (`video/labels.ts`: pointer labels fall back to the bound trace name, then a letter; "✓ sorted" to "✓";
   "◆ pivot" to "◆"). On a phone-sized player (`text.compact`) secondary text is hidden: callouts, highlight tag words
   (border style carries the state: solid active, dashed rejected, double found), position/role labels in the heap
-  tree, "▲" markers, the chrome's title. `tests/video-text.test.ts` forbids literal `fontSize` values in `src/video`
+  tree, "▲" markers, the chrome's title. The fit checks are app code, `sceneFitProblems()` in `src/video/fit/scene.ts`
+  (with one module per primitive family beside it), so "Try your own input" refuses a walkthrough the same way.
+  `tests/video-text.test.ts` forbids literal `fontSize` values in `src/video`
   and checks every scene of every video at phone width (values fit their bars, cells, and nodes; pointers don't
   overlap; nothing runs into the bottom stack).
 
@@ -457,7 +464,8 @@ duration}>`).
 5. **Resolve + validate**: if it carries algorithm state, fill it from the step in `resolve.ts` and check it in
    `validate.ts` (and add the state to `TraceStep` if it's new).
 6. **Test**: add a schema test and, if validated, a "wrong storyboard fails" test. Add the type to the primitive list
-   in `tests/video-text.test.ts` and a phone-width fit check for its text.
+   in `tests/video-text.test.ts` and a phone-width fit check for its text (in `src/video/fit/`, called from
+   `sceneFitProblems`).
 
 Existing primitives and storyboards never change when one is added.
 
@@ -664,10 +672,12 @@ dashed sky with "◎ meet", the loop's start ringed solid green with "✓ loop s
 `entryLabel`), and the loop link traced in the accent with "↺ loop". The layout (`layoutList`, only with a race)
 reserves the hop strip, two pointer levels, and a marker row under the loop arrow in every scene, so the lane never
 jumps; on a phone-sized player the labels and the marker row are dropped (humps show the hops; a dashed ring is the
-meeting, a solid one the loop's start). The schema checks every move follows the scene's links and the loop is a real
-link; the validator checks phase, moves, meet, entry, and loop against the step (an unbound race shows no moves).
+meeting, a solid one the loop's start). The schema checks every move follows the scene's links (a move refused at
+once stays put with 0 hops, drawn as just its ✕) and the loop is a real link; the validator checks phase, moves,
+meet, entry, and loop against the step (an unbound race shows no moves).
 Cycle II and Find the Duplicate meet away from the loop's start (tested), and their restart scene explains why phase
-2 works with an equation of the two distances (head → start = meet → start). Tones: the gap closing to 0 is positive,
+2 works with an equation of the two distances (head → start = meet → start; when fast lapped slow more than once,
+`restartEquation()` shows meet → start plus the whole laps instead). Tones: the gap closing to 0 is positive,
 other rounds neutral.
 
 **Greedy** (the five home problems; Non-overlapping Intervals is cross-listed in without a video; Jump Game is also listed under Dynamic Programming, Partition Labels under Intervals) added step
@@ -1192,6 +1202,59 @@ providers, and the SDK adapter with `MockLanguageModelV4`; injection attempts de
 question only ever fenced in user messages) and `tests/db.integration.test.ts` (daily counts, the cache, and the health check in
 Postgres), and `tests/health.test.ts`. No test calls a real model.
 
+## Try your own input
+
+On 70 problem pages a switch above the video ("Original video" / "Your input") opens a walkthrough of the learner's
+own input, built in the browser from the problem's trace: no server, no model. A problem is supported when every
+argument is a number, a string, or a list of them (`lib/walkthrough/specs.ts`; the page asks `hasTryInput()` in the
+repository, which reads the tiny `supported.ts` list, kept equal to the specs by a test). Trees, grids, graphs,
+interval lists, matrices, and operation sequences (the other 33 traced problems) aren't supported yet.
+
+- **Specs** (`specs.ts`, field types in `fields.ts`): each field is `numbers`, `number`, `text`, `words`, or `tokens`
+  with limits at or under the trace's own `args` caps, chosen so walkthroughs fit on a phone. Parsing is forgiving
+  (brackets, commas or spaces, quotes, "−") and every message ends with what the field expects ("Use 2–8 whole numbers
+  between −99 and 99, separated by commas."). `rules` hold the problem's constraints with the reason ("nums must be
+  sorted from smallest to largest: the approach relies on it.", "Exactly one pair…", Find the Duplicate's 1…n, a
+  well-formed Decode String) and the drawing's limits in the problem's words (at most 4 brackets open at once, 3
+  numbers waiting in RPN, 11 trie letter nodes, combination sum's target at most 4× the smallest candidate);
+  `requirements` list them under the boxes. After the rules the trace's own `args` schema runs too. Each spec can
+  draw random valid input (`random`, or each field at random until the rules hold): the "Random" button and the tests.
+- **Building** (`build.ts`, `scenes.ts`): `traceScenes(trace, look)` is the test fixture's draft builder moved into
+  app code (the fixture now calls it, byte-identical): one scene per key step, elements from the step's fields,
+  binding values omitted so they come from the trace. The walkthrough is a "Your input" scene (the input row, or a
+  card stating the input when there's no row or it won't fit), the key steps (narration = the step's note, caption =
+  the note cut to 80 characters at a word), and the answer: on the last step's scene, or in a closing scene when the
+  stage is full. Panel words ("in window", "till") come from the problem's original video, else plain ones
+  (`PLAIN_WORDS`); item labels are positions; pointers use the trace's names, as the notes do. No analogy: the
+  notes are abstract.
+- **Checking** (`run.ts`, loaded with every trace and the fit checks only when "Your input" opens: `next/dynamic` in
+  `video-section.tsx`): parse → rules → trace `args` → run → build → `storyboardSourceSchema` → `resolveStoryboard` →
+  `validateStoryboard` → `sceneFitProblems` on every scene. A scene that fails is simplified a level at a time
+  (`SceneLook.level`: 1 drops the equation and answer card, 2 pointers and callouts, 3 side panels, 4 the input row;
+  never emptied) and the whole pipeline reruns. Anything still failing is refused with "This input makes a
+  walkthrough too big to show clearly on a small screen…" (details go to `console.warn`). Nothing unchecked reaches
+  the player.
+- **UI** (`try-input-panel.tsx`): boxes prefilled with the video's example, hints under each, the requirements,
+  "Show walkthrough", "Reset to example", "Random", "Back to the video", and over the player "Your input" with the
+  input and "Copy link". The shown input lives in the address bar (`?input=`, base64url JSON, `encodeInput`), so the
+  page's URL is the share link; a link is decoded (shape only: `decodeInput`), put in the boxes, and checked like typed
+  input; a bad one falls back to the example with a note. Going back to the original video drops `?input=`. Only one
+  player is mounted at a time (they share the player store).
+- **No progress, no tutor.** The walkthrough's `LearnView` gets `walkthroughViewProps()`: no `problemKey` (so no
+  "Learning", saved position, resume, or "Mark as done?") and no tutor (it only knows committed videos; a follow-up).
+  Browser voice only (no stitched track). Nothing is stored or sent anywhere.
+- **Tests** (`tests/walkthrough.test.ts`): the 70 specs and the supported list; per problem, the video's example
+  round-trips through the boxes and builds, and 8 seeded random inputs (`WALKTHROUGH_RANDOM=150` for a stress run)
+  parse back to themselves, give the reference solution's answer (by the problem's judge), and build a walkthrough
+  that validates, fits at phone width, has short captions, no track, and no empty scene; share links round-trip and
+  tampered ones are refused; refusal messages for each kind of field and rule; a too-big input is refused with the
+  plain message; the walkthrough player has no problem key or tutor.
+- Running every trace on arbitrary input found and fixed: House Robber crashed when the first house held $0; Cycle II
+  and Find the Duplicate's restart equation claimed head → start = meet → start, which holds only when fast lapped
+  slow once (it's now `meet + laps × loop = head` when they differ); Circular Array Loop's moves refused at once (0
+  hops) failed the schema (now allowed, drawn as just the ✕); Combination Sum with no answer had an empty answer
+  ("none" now); Permutations said "1 orderings"; the bits panel's digits had no React keys.
+
 ## Choosing the example
 
 `exampleSource` decides where the real-world example comes from. The schema enforces it.
@@ -1322,6 +1385,9 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for
    generation and narration endpoints (both cost money), plus caching identical requests.
 7. Planned DSA primitives: `coin-set` (Coin Change uses an item-row today), with its trace.
+8. **Try your own input**, next: the tutor for walkthroughs (its context would be the learner's input and the
+   rerun trace, not a committed video's scene), and inputs for trees, grids, graphs, and intervals (each needs an
+   editor that isn't a text box).
 
 ## Gotchas
 

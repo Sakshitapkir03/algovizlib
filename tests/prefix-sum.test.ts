@@ -8,7 +8,7 @@ import { layoutScene } from "@/video/layout";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { prefixProblems } from "./fixtures/prefix-fit";
+import { prefixProblems } from "@/video/fit/prefix";
 
 const PREFIX = [
   "prefix-sum/find-pivot-index",

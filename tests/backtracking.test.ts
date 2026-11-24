@@ -6,9 +6,9 @@ import { resolveStoryboard, storyboardSourceSchema, validateStoryboard } from "@
 import { getTraceDefinition } from "@/lib/traces";
 import { PHONE_PLAYER_WIDTH, textMetrics } from "@/video/text";
 
-import { backtrackProblems } from "./fixtures/backtrack-fit";
+import { backtrackProblems } from "@/video/fit/backtrack";
 import { buildDraft, traceFor } from "./fixtures/drafts";
-import { searchProblems } from "./fixtures/search-fit";
+import { searchProblems } from "@/video/fit/search";
 
 const SEARCHES = [
   "backtracking/sum-of-all-subset-xor-totals",
