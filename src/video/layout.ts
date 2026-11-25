@@ -18,6 +18,7 @@ import type {
   DigraphElement,
   UnionFindElement,
   OpLogElement,
+  LoadChartElement,
   SequenceElement,
   SystemDiagramElement,
 } from "@/lib/storyboard";
@@ -28,9 +29,11 @@ import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
 import { prefixBand } from "./prefix-layout";
 import {
   layoutDataTable,
+  layoutLoadChart,
   layoutMetrics,
   layoutSequence,
   layoutSystem,
+  type LoadChartShape,
   type SequenceShape,
   type SystemShape,
 } from "./system-layout";
@@ -274,6 +277,8 @@ export type SceneLayout = {
   /** A system design scene's diagram or sequence view, when it has one. */
   system?: SystemShape;
   sequence?: SequenceShape;
+  /** A growth story's load chart, when the scene has one. */
+  load?: LoadChartShape;
 };
 
 /** Beside a heap, a digraph takes the stage left of this x and the heap the right. */
@@ -1492,6 +1497,7 @@ function layoutWith(
   // System design: a diagram or a sequence view takes the stage between the caption and the bottom stack.
   let system: SystemShape | undefined;
   let sequence: SequenceShape | undefined;
+  let load: LoadChartShape | undefined;
   {
     const top = captionBottom(t) + 8;
     const region = { x: GRID.margin, y: top, w: VIDEO_WIDTH - 2 * GRID.margin, h: bottomTop - 12 - top };
@@ -1499,11 +1505,15 @@ function layoutWith(
     const seq = elements.find((el): el is SequenceElement => el.type === "sequence");
     if (diagram) system = layoutSystem(diagram, t, region);
     if (seq) sequence = layoutSequence(seq, t, region);
+    const chart = elements.find((el): el is LoadChartElement => el.type === "load-chart");
+    if (chart) load = layoutLoadChart(chart, t, region);
   }
   return {
     system,
     sequence,
-    systemOverflow: Math.max(system?.overflow ?? 0, sequence?.overflow ?? 0) || undefined,
+    load,
+    systemOverflow:
+      Math.max(system?.overflow ?? 0, sequence?.overflow ?? 0, load?.overflow ?? 0) || undefined,
     rows: { ...layouts, ...listRows },
     bottomTop,
     heapRegion,

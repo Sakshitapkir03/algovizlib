@@ -68,6 +68,11 @@ The client was right to retry: from where it sits, a lost answer and a lost requ
       ],
     },
   ],
-  relatedPatterns: ["arrays-hashing"],
+  relatedPatterns: [
+    {
+      slug: "arrays-hashing",
+      reason: "The API finds a retry's stored result by looking its key up in a hash map, in one step.",
+    },
+  ],
   tags: ["idempotency", "retries", "payments"],
 });

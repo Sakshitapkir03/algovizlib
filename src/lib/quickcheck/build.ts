@@ -3,7 +3,15 @@ import type { Trace, TraceStep } from "@/lib/traces/types";
 
 import { pointerSubject } from "@/lib/tutor/suggestions";
 
-import { DECISION_OPTIONS, MAX_CHECKS, type QuickCheck, type QuickCheckClaim } from "./schema";
+import {
+  DECISION_OPTIONS,
+  MAX_CHECKS,
+  p99Trend,
+  P99_OPTIONS,
+  SATURATION_OPTIONS,
+  type QuickCheck,
+  type QuickCheckClaim,
+} from "./schema";
 
 /**
  * Quick checks for a video, from its trace (no model): at most three, each asked just before a key step's scene, about
@@ -95,7 +103,7 @@ const made = (
 };
 
 const YES_NO = ["Yes", "No"];
-const OP: Record<"+" | "-" | "×", string> = { "+": "+", "-": "−", "×": "×" };
+const OP: Record<"+" | "-" | "×" | "÷", string> = { "+": "+", "-": "−", "×": "×", "÷": "÷" };
 export const EXPLORE_OPTIONS = ["Go deeper", "Record an answer", "Cut the branch"] as const;
 
 export const COMPARE_OPTIONS = (target: number) => [
@@ -130,6 +138,40 @@ const pointersIn = (elements: readonly Element[]) =>
   elements.flatMap((e) => (e.type === "pointer" && e.binds ? [{ label: e.label, binds: e.binds }] : []));
 
 const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // A growth story's first saturation anywhere: "Which part saturates first?"
+  ({ step, scene }) => {
+    const load = step.sim?.load;
+    if (!load || load.current === undefined) return undefined;
+    if (!scene.elements.some((e) => e.type === "load-chart" || e.type === "system-diagram")) return undefined;
+    const now = load.windows[load.current];
+    if (!now.saturated.length || load.windows.slice(0, load.current).some((w) => w.saturated.length))
+      return undefined;
+    const servers = now.saturated.some((id) => id.startsWith("server"));
+    const correct = servers ? SATURATION_OPTIONS.servers : SATURATION_OPTIONS.db;
+    return made(
+      "Traffic passes what the system can take. Which part saturates first?",
+      Object.values(SATURATION_OPTIONS),
+      correct,
+      { kind: "saturates-first" },
+    );
+  },
+  // A growth story's next window: "What happens to p99?" (only when the change isn't close to a threshold).
+  ({ step, scene }) => {
+    const load = step.sim?.load;
+    if (!load || load.current === undefined || load.current === 0) return undefined;
+    if (!scene.elements.some((e) => e.type === "load-chart")) return undefined;
+    const now = load.windows[load.current];
+    const before = load.windows[load.current - 1];
+    if (before.group !== now.group || before.p99 <= 0) return undefined;
+    const ratio = now.p99 / before.p99;
+    if ([1.25, 3].some((edge) => Math.abs(ratio - edge) / edge < 0.1)) return undefined;
+    return made(
+      `Traffic goes from ${before.label} to ${now.label} requests a second. What happens to p99?`,
+      [...P99_OPTIONS],
+      p99Trend(before.p99, now.p99),
+      { kind: "p99-trend" },
+    );
+  },
   // A simulation's decision: "The retry reaches the API. What does the API do?"
   ({ step, scene }) => {
     const d = step.sim?.decision;

@@ -329,6 +329,15 @@ export function describeStep(step: TraceStep, index: number): string {
         `tables: ${s.tables.map((t) => `${t.id} [${t.rows.map((r) => `${r.cells.join(" ")}${r.mark ? ` (${r.mark})` : ""}`).join("; ") || "empty"}]`).join(", ")}`,
         `metrics: ${s.metrics.map((m) => `${m.id}=${m.value}${m.delta ? ` (+${m.delta})` : ""}`).join(", ")}`,
         s.violations.length ? `rules broken: ${s.violations.join("; ")}` : "",
+        s.load && s.load.current !== undefined
+          ? (() => {
+              const w = s.load.windows[s.load.current];
+              return `measured window "${w.label}" (${w.group}): offered ${w.offered}/s, served ${w.served}/s, p95 ${w.p95} ms, p99 ${w.p99} ms, errors ${w.errors}, utilization ${w.utilization.map((u) => `${u.id} ${Math.round(u.value * 100)}%`).join(", ")}, saturated ${w.saturated.length ? w.saturated.join(", ") : "none"}`;
+            })()
+          : s.load
+            ? `measured windows: ${s.load.windows.map((w) => `${w.group} ${w.label}/s→${w.served}/s p99 ${w.p99} ms${w.saturated.length ? " (saturated)" : ""}`).join("; ")}`
+            : "",
+        s.topology ? `components present: ${s.topology.nodes.map((n) => n.id).join(", ")}` : "",
         s.proof
           ? `proof: ${s.proof.runs} runs (${s.proof.singles} single, ${s.proof.pairs} paired lost messages), ${s.proof.doubleCharges} double charges`
           : "",

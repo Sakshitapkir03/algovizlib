@@ -1,0 +1,304 @@
+{
+  "id": "estimates-one-server",
+  "title": "Is one server enough?",
+  "concept": "Estimates & capacity",
+  "category": "system-design",
+  "summary": "Estimate the peak, measure where one server saturates, then add a balancer and a second server and measure again.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "capacity",
+    "load balancing",
+    "estimates"
+  ],
+  "takeaway": {
+    "pattern": "Estimate, measure, scale the bottleneck",
+    "summary": "Estimate the peak from users and requests, measure where the system saturates, and scale only the part that saturated.",
+    "timeComplexity": "The limit grows with servers × workers ÷ service time",
+    "spaceComplexity": "One more server and a balancer in front",
+    "whenToUse": [
+      "Before launch: will the busiest hour fit?",
+      "When latency climbs: find what's saturated before adding anything"
+    ]
+  },
+  "trace": {
+    "problem": "estimates/one-server",
+    "args": [
+      {
+        "users": 40000,
+        "requestsPerUser": 54,
+        "peakFactor": 3
+      },
+      [
+        {
+          "label": "1 server",
+          "seed": 11,
+          "workers": 4,
+          "serviceMs": 80,
+          "servers": 1,
+          "steps": [
+            25,
+            40,
+            60,
+            75
+          ]
+        },
+        {
+          "label": "2 servers",
+          "seed": 11,
+          "workers": 4,
+          "serviceMs": 80,
+          "servers": 2,
+          "steps": [
+            60,
+            75,
+            110,
+            130
+          ]
+        }
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "system-design-growth-v1",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-25T15:27:36.173Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "plan",
+      "narration": "A small team is launching on one app server with a database behind it. Before launch, they want to know if one server will hold the busiest hour. Estimate first, then measure.",
+      "caption": "One app server and a database: enough for launch?",
+      "durationInFrames": 420,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        }
+      ]
+    },
+    {
+      "id": "average",
+      "narration": "They expect 40,000 daily users making 54 requests each: 2,160,000 requests a day. Spread over the 86,400 seconds in a day, that's 25 requests a second on average.",
+      "caption": "2,160,000 requests a day is 25 a second on average",
+      "durationInFrames": 372,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "average",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "per second"
+        }
+      ]
+    },
+    {
+      "id": "peak",
+      "narration": "Traffic isn't even across the day. At the evening peak it runs about 3 times the average, so the server has to handle 75 requests a second.",
+      "caption": "The busiest hour is 3 times the average: 75 a second",
+      "durationInFrames": 360,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "peak",
+          "enterAt": 0,
+          "type": "equation",
+          "unit": "",
+          "verdict": "at peak"
+        }
+      ]
+    },
+    {
+      "id": "light",
+      "narration": "Now the simulation sends traffic in steps. At 25 requests a second the server is half busy, and 99 in 100 requests finish within 138 milliseconds. These latencies are illustrative: simulated service times, not real hardware.",
+      "caption": "At 25 a second, one server keeps up easily",
+      "durationInFrames": 468,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "requests / s"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "offered",
+            "served",
+            "p99",
+            "busy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "busier",
+      "narration": "At 40 requests a second the server is 76 percent busy. It still serves almost everything that arrives, and p99 rises only a little, to 184 milliseconds.",
+      "caption": "At 40 a second it's 76% busy and still keeps up",
+      "durationInFrames": 360,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "requests / s"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "offered",
+            "served",
+            "p99",
+            "busy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saturated",
+      "narration": "At 60 requests a second all 4 workers stay busy and the queue grows to 47. The server tops out at about 50 a second, and p99 jumps to a full second. The database is only 2 percent busy: the server is the bottleneck.",
+      "caption": "At 60 a second the server saturates: about 50 served, p99 1 second",
+      "durationInFrames": 564,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "requests / s"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "served",
+            "p99",
+            "busy",
+            "queue"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grow",
+      "narration": "The measurement says the app server ran out of workers, so that's what to scale. A load balancer goes in front and sends every other request to a second server. A bigger database would have changed nothing.",
+      "caption": "Scale what saturated: a balancer and a second server",
+      "durationInFrames": 480,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": [],
+          "stage": "grown"
+        },
+        {
+          "id": "fix",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "a second app server",
+          "rejected": "a bigger database",
+          "reason": "the server saturated; the database stayed 2% busy",
+          "label": "what to scale"
+        }
+      ]
+    },
+    {
+      "id": "peak-fits",
+      "narration": "Replay with two servers. At the estimated peak of 75 requests a second, each server is 70 percent busy, 70 requests a second are served, and p99 is back down to 151 milliseconds.",
+      "caption": "Two servers at the 75-a-second peak: p99 back to 151 ms",
+      "durationInFrames": 432,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "requests / s"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "offered",
+            "served",
+            "p99",
+            "busy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "new-limit",
+      "narration": "Push on to 110 requests a second and both servers saturate the same way: about 100 served a second, queues growing, p99 at 1.2 seconds. The second server raised the limit; it didn't remove it.",
+      "caption": "Past about 100 a second, both servers saturate too",
+      "durationInFrames": 456,
+      "traceStep": 9,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "requests / s"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "served",
+            "p99",
+            "busy",
+            "queue"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "limits",
+      "narration": "The estimate said 75 a second at peak. The simulation measured one server's limit at about 50 and two servers' at about 100. Estimate first, measure where it breaks, and scale the part that's actually saturated.",
+      "caption": "Estimate first, measure where it breaks, scale the bottleneck",
+      "durationInFrames": 468,
+      "traceStep": 11,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "peak",
+            "limit-0",
+            "limit-1"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Measured limits",
+          "detail": "Simulated: service times are illustrative",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

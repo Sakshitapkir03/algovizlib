@@ -172,4 +172,9 @@ export const TEXT = {
   /** A metric's label and value. */
   metricLabel: 16,
   metricValue: 24,
+  /** A load chart's group names, served values over the bars, p99 chips, and offered-load labels. */
+  chartGroup: 16,
+  chartValue: 18,
+  chartChip: 16,
+  chartLabel: 15,
 } as const;

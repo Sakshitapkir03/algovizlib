@@ -10,7 +10,7 @@ import type { VerdictTone } from "@/lib/storyboard/elements";
 
 export type TraceValue = number | string;
 export type TraceComparisonOp = "<" | "=" | ">";
-export type TraceOperator = "+" | "-" | "×";
+export type TraceOperator = "+" | "-" | "×" | "÷";
 
 export type TraceEquation = {
   terms: number[];
@@ -184,9 +184,32 @@ export type TraceStep = {
  */
 export type SimNodeKind = "client" | "server" | "store" | "external";
 export type TraceSystem = {
-  nodes: { id: string; label: string; kind: SimNodeKind; x: number; y: number }[];
+  /**
+   * `addedAfter` (growth stories): the component appears only after the simulation measured this other component
+   * saturated; the validator rejects a scene that shows it before a bound scene that measured that.
+   */
+  nodes: { id: string; label: string; kind: SimNodeKind; x: number; y: number; addedAfter?: string }[];
   edges: { from: string; to: string }[];
 };
+
+/**
+ * A growth story's measured windows, as the load chart draws them: offered load against served throughput, p99, and
+ * errors per window, grouped by replay ("1 server", "2 servers"); `current` is the window this step measured.
+ */
+export type TraceLoadWindow = {
+  label: string;
+  group: string;
+  offered: number;
+  served: number;
+  p95: number;
+  p99: number;
+  errors: number;
+  /** Components the simulation measured saturated in this window. */
+  saturated: string[];
+  /** Each component's utilization in the window (0–1), for "which part saturates first". */
+  utilization: { id: string; value: number }[];
+};
+export type TraceLoad = { windows: TraceLoadWindow[]; current?: number };
 
 /**
  * One row of a run's sequence view: a message between two components (sent at `at` ms; `delivered`, `lost` on the
@@ -243,6 +266,10 @@ export type TraceSim = {
   decision?: { actor: string; choice: "charge" | "stored-result" | "wait" | "dedupe" };
   violations: string[];
   proof?: { singles: number; pairs: number; runs: number; doubleCharges: number };
+  /** The components and links present at this step, when they differ from `trace.system` (before a growth step). */
+  topology?: TraceSystem;
+  /** A growth story's measured windows so far. */
+  load?: TraceLoad;
 };
 /**
  * Where a design problem's operation sequence is (the calls themselves are `trace.ops`): `current` is the call this
@@ -680,6 +707,8 @@ export type Trace = {
   };
   /** A system design simulation's components and links (display "system"); steps carry `sim`. */
   system?: TraceSystem;
+  /** A growth story's starting components and links, when they differ from `system` (its grown form). */
+  systemStart?: TraceSystem;
   /** A binary tree's shape (display "tree"); it never changes, steps record the walk over it. */
   tree?: { nodes: TraceTreeNode[] };
   /** A grid (display "grid"): its starting contents; steps record changes (`cells`) and the search (`bfs`). */

@@ -176,8 +176,18 @@ export const lessonSchema = z.object({
   rules: z.array(nonEmpty).min(1),
   takeaways: z.array(nonEmpty).min(2),
   replays: z.array(z.object({ args: z.array(jsonSchema) })).min(1),
-  /** DSA patterns that share an idea with this lesson. */
-  relatedPatterns: z.array(slug).default([]),
+  /**
+   * DSA patterns that share an idea the learner actually sees in this lesson, each with the one sentence that says
+   * which (shown on the page). Empty is fine: never a link that needs more than a sentence to justify.
+   */
+  relatedPatterns: z
+    .array(
+      z.object({
+        slug,
+        reason: nonEmpty.max(160).regex(/^[^.!?]*[.!?]$/, "one sentence, ending with a period"),
+      }),
+    )
+    .default([]),
   tags: z.array(nonEmpty).default([]),
 });
 

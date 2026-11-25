@@ -99,6 +99,8 @@ export const primitiveCatalog: Record<ElementType, string> = {
     'Stored data at this moment of a simulation, one or two small tables side by side (the API\'s idempotency keys, the provider\'s ledger): rows the step added are marked new, a row it read ✓, a duplicate ✕ in a dashed rose border, a row it waits on dashed. Set `show` to the step\'s table ids in order ("keys", "ledger") and omit tables; it needs a traceStep.',
   metrics:
     'A row of numbers from a simulation at this moment ("charges 2 +1", "attempts 2", "time 3229 ms"), with this step\'s change. Set `show` to the step\'s metric ids in order and omit items; it needs a traceStep.',
+  "load-chart":
+    "A growth story's measured traffic windows, one column each, grouped by replay (\"1 server\", \"2 servers\"): offered load as a dashed outline, served throughput as a bar (hatched with ✕ and the error count when the window saturated), p99 under each column (▲ when it tripled), a dashed line at each group's measured limit, and the step's window ringed. Omit windows/current to take the bound step's; it needs a traceStep.",
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };
@@ -109,4 +111,5 @@ export const SYSTEM_DESIGN_PRIMITIVES: readonly ElementType[] = [
   "sequence",
   "data-table",
   "metrics",
+  "load-chart",
 ];

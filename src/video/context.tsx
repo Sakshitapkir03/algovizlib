@@ -20,7 +20,7 @@ import type { TrieShape } from "./trie-layout";
 import type { ForestShape } from "./forest-layout";
 import type { NetworkShape } from "./network-layout";
 import type { OpLogShape } from "./oplog-layout";
-import type { SequenceShape, SystemShape } from "./system-layout";
+import type { LoadChartShape, SequenceShape, SystemShape } from "./system-layout";
 import type { VideoPalette } from "./theme";
 
 export type SceneContextValue = {
@@ -59,6 +59,7 @@ export type SceneContextValue = {
   /** A system design scene's diagram or sequence view, when it has one. */
   system?: SystemShape;
   sequence?: SequenceShape;
+  load?: LoadChartShape;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;

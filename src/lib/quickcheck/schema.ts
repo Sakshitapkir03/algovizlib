@@ -13,14 +13,14 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("compare"),
     terms: z.array(z.number()).min(2),
-    operator: z.enum(["+", "-", "×"]),
+    operator: z.enum(["+", "-", "×", "÷"]),
     target: z.number(),
   }),
   /** "4 + 45 vs 50: what happens next?": options are the video's own verdict words, one per comparison result. */
   z.object({
     kind: z.literal("verdict"),
     terms: z.array(z.number()).min(1),
-    operator: z.enum(["+", "-", "×"]),
+    operator: z.enum(["+", "-", "×", "÷"]),
     target: z.number(),
   }),
   /** "Where does 7 point next?": options are node values (or "null"); `node` is the node whose link changes. */
@@ -59,7 +59,20 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("output"), call: z.number().int().nonnegative() }),
   /** System design: "What does the API do?": options are the component's possible choices (`DECISION_OPTIONS`). */
   z.object({ kind: z.literal("decision"), actor: z.enum(["api", "provider"]) }),
+  /** Growth stories: "Traffic goes from 40 to 60 requests a second. What happens to p99?" (`P99_OPTIONS`). */
+  z.object({ kind: z.literal("p99-trend") }),
+  /** Growth stories: "Which part saturates first?" (`SATURATION_OPTIONS`). */
+  z.object({ kind: z.literal("saturates-first") }),
 ]);
+
+/** p99's change from the previous window, by ratio: under 1.25 the same, under 3 a little, else sharply. */
+export const P99_OPTIONS = ["Stays about the same", "Rises a little", "Climbs sharply"] as const;
+export function p99Trend(previous: number, current: number): (typeof P99_OPTIONS)[number] {
+  const ratio = previous > 0 ? current / previous : Infinity;
+  return ratio < 1.25 ? P99_OPTIONS[0] : ratio < 3 ? P99_OPTIONS[1] : P99_OPTIONS[2];
+}
+/** What each option of "which part saturates first?" names: the app servers, or the database. */
+export const SATURATION_OPTIONS = { servers: "An app server's workers", db: "The database" } as const;
 
 /** What each option of a decision question means: the simulation's recorded choice it names. */
 export const DECISION_OPTIONS = {

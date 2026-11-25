@@ -104,6 +104,7 @@ describe("video text at phone width", () => {
         "sequence",
         "data-table",
         "metrics",
+        "load-chart",
         "split-tree",
         "stack",
         "window",

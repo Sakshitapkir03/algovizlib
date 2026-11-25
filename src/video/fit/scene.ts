@@ -270,6 +270,7 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
       case "sequence":
       case "data-table":
       case "metrics":
+      case "load-chart":
         for (const problem of systemProblems(elements, t, el.type)) fail(problem);
         break;
       case "heap-tree":

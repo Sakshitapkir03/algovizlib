@@ -462,6 +462,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `sequence`       | system design: lifelines, one row per message (time, delivered / lost ✕ / in flight / ignored) or note, the current row ringed                                                          | canvas |
 | `data-table`     | system design: one or two stored tables (keys, ledger) side by side; new / read ✓ / duplicate ✕ / waiting as border styles                                                              | bottom |
 | `metrics`        | system design: numbers from the simulation (charges, attempts, time, runs checked) with this step's change                                                                              | bottom |
+| `load-chart`     | growth stories: a column per measured window (offered outline, served bar, hatched ✕ when saturated, p99 chips, the measured limit as a dashed line)                                    | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -1375,8 +1376,9 @@ lessons, built and planned; a built lesson lives at `/system-design/<topic>/<slu
 quick checks, reviews, and the tutor with DSA problems under the key `<topic>/<slug>` (topic slugs never reuse a
 pattern's: tested). Lessons are **incident replays** (a real class of bug followed message by message, then the fix
 replayed under the same failures) or **growth stories** (one server upward, a component added only after the
-simulation measures the bottleneck). One lesson is built: "Why was the customer charged twice?"
-(`idempotency/charged-twice`); the rest of the curriculum is listed as planned (`content/catalog/system-design`).
+simulation measures the bottleneck). Two lessons are built: "Why was the customer charged twice?"
+(`idempotency/charged-twice`, an incident replay) and "Is one server enough?" (`estimates/one-server`, a growth story);
+the rest of the curriculum is listed as planned (`content/catalog/system-design`).
 
 - **The simulation is the ground truth** (`src/lib/sim/`, app code: it runs in the browser and in tests), as traces are
   for DSA. `events.ts`: a discrete-event loop, a virtual clock in whole ms, events ordered by time then by scheduling
@@ -1419,10 +1421,45 @@ simulation measures the bottleneck). One lesson is built: "Why was the customer 
   learner's safeguards, lost message, timings, and retries into a scenario, simulates it with its proof, and builds a
   replay that passes the same checks (a scene that doesn't fit drops its panel, then it's refused); no progress or
   tutor, and its quick check answers are walkthrough answers (never reviews).
+- **The capacity model** (`capacity.ts`, "Is one server enough?"): arrivals with seeded exponential gaps at a rate
+  that rises in steps (one measured window per step, 10 simulated seconds in the lesson, 5 in "Your scenario"); a
+  round-robin balancer (1 ms) when there's more than one server; app servers with workers and a bounded queue (a full
+  one turns requests away: errors); a service time of 75–125% of the mean, of which a fixed query on a shared database
+  pool. Each window measures offered and served req/s, p50/p95/p99 and mean latency of the requests finished in it,
+  errors, time-averaged requests in the system, and each component's utilization and queue. **Saturated** = at least
+  95% busy and a growing queue or errors (`SATURATION_UTILIZATION`). Tests: Little's law (L = λW within 3–5% in
+  unsaturated windows) and the measured limit within 10% of servers × workers ÷ service time.
+- **Growth stories** (`traces/system-design/one-server.ts`): args `[estimate | null, scenarios]`. The estimate steps
+  carry equations (users × requests = daily, daily ÷ 86,400 = average, × peak factor = peak; the new `÷` operator is
+  exact division, and the estimate schema requires users × requests to divide evenly). Each scenario is a replay of
+  windows; steps carry `sim.load` (every window so far, the current one) and, before the system grows, `sim.topology`.
+  `trace.system` is the grown system, `trace.systemStart` the starting one, and components a later replay adds carry
+  `addedAfter` (the component the first replay measured saturated). **Growth rule** (validator): a scene may show a
+  component with `addedAfter: X` only after an earlier bound scene's step measured X saturated (the same scene doesn't
+  count). An unbound system-diagram shows the start, or the grown system with `stage: "grown"`; a bound one the step's
+  own components. Key steps: the peak estimate, the first window, each replay's first saturation, the estimated peak on
+  the grown system, and the summary (the measured limits; `answerDisplay` "51 → 101 req/s").
+- **`load-chart`** (canvas, `video/system-layout.ts`): a column per window grouped by replay, offered load as a dashed
+  outline, served as a bar (hatched rose with ✕ and errors when saturated), p99 chips (▲ when it tripled), a dashed line
+  at each group's measured limit, the current window ringed; on a phone only the current column shows its values (its
+  chip as wide as its text). Validated window by window against `sim.load`; it needs a bound step.
+- **Prompts by kind** (`generation/lesson.ts` `promptsFor`): incidents use `system-design-v1` (unchanged), growth
+  stories `system-design-growth-v1` (the estimate → measure → grow → measure arc and the growth rule).
+- **Quick checks** for growth stories: `saturates-first` (the first saturated window anywhere: "An app server's
+  workers" or "The database", from the measured saturation) and `p99-trend` ("Stays about the same" / "Rises a little" /
+  "Climbs sharply" by the ratio to the previous window in the replay: under 1.25, under 3, else; never asked within 10%
+  of a threshold). "Your scenario" (`lib/sim/capacity-scenario.ts`, `capacity-scenario-panel.tsx`): peak traffic,
+  servers, workers, service time; 288 combinations, all tested to build, validate, and fit a phone.
+- **Related patterns** on a lesson are `{ slug, reason }`, the reason one sentence the page shows, from the learner's
+  point of view (what they see in the lesson, never an implementation detail like the event heap); a lesson may have
+  none ("Is one server enough?" has none). Planned lessons carry no links.
 - **Limits** (said on the site): latencies are illustrative, not measurements; small runs, not traffic at scale; races
   come from scheduling, not threads; no clock skew; the proof is bounded (one scenario's timings, at most two lost
   messages, no crashes).
-- Tests: `tests/system-design.test.ts` (the event order, seeding and stream independence, exact replays, the four
+- Tests: `tests/system-design-growth.test.ts` (determinism and stream independence, Little's law, the knee within
+  10% for several sizes, which part saturates, the estimate's arithmetic, `addedAfter`, key steps, the storyboard and
+  its fit, quick checks (and that a near-threshold change isn't asked), tutor grounding, related-pattern reasons, the
+  growth rule and load chart mutations, every scenario combination) and `tests/system-design.test.ts` (the event order, seeding and stream independence, exact replays, the four
   replays against hand-computed outcomes, the proof over every link and its necessity, the lesson's storyboard,
   phone-width fit, quick checks, the tutor's grounding, validator mutations, every scenario combination, the catalog).
 

@@ -71,8 +71,12 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
   const storyboard = getLessonStoryboard(lesson);
   const key = lessonKey(lesson);
   const trace = storyboard?.trace ? runTrace(storyboard.trace.problem, storyboard.trace.args) : undefined;
-  const proof = trace?.steps.at(-1)?.sim?.proof;
-  const related = lesson.relatedPatterns.map((s) => getPattern(s)).filter((p) => p !== undefined);
+  const summary = trace?.steps.at(-1)?.sim;
+  const proof = summary?.proof;
+  const related = lesson.relatedPatterns.flatMap(({ slug: s, reason }) => {
+    const pattern = getPattern(s);
+    return pattern ? [{ pattern, reason }] : [];
+  });
 
   return (
     <>
@@ -107,6 +111,7 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
               <LessonVideo
                 storyboard={storyboard}
                 lessonKey={key}
+                kind={lesson.kind}
                 askEnabled={readTutorConfig().enabled}
                 quickChecks={getLessonQuickChecks(lesson)}
               />
@@ -149,6 +154,10 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
                   {proof.doubleCharges === 0 ? "✓" : "✕"} {proof.doubleCharges} double charges
                 </span>
               </p>
+            ) : summary?.load ? (
+              <p className="font-mono text-xs">
+                Measured: {summary.metrics.map((m) => `${m.label} ${m.value}`).join(" · ")}
+              </p>
             ) : null}
             <RichText text={lesson.proofScope} className="space-y-3 leading-relaxed text-muted-foreground" />
           </div>
@@ -169,16 +178,17 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
 
         {related.length > 0 && (
           <Section title="Related DSA patterns">
-            <ul className="flex flex-wrap gap-2">
-              {related.map((p) => (
-                <li key={p.slug}>
+            <ul className="space-y-2">
+              {related.map(({ pattern, reason }) => (
+                <li key={pattern.slug} className="text-sm">
                   <Link
-                    href={patternHref(p)}
+                    href={patternHref(pattern)}
                     prefetch={true}
                     className="rounded-md border px-2.5 py-1 font-mono text-xs hover:bg-muted/50"
                   >
-                    {p.name}
-                  </Link>
+                    {pattern.name}
+                  </Link>{" "}
+                  <span className="text-muted-foreground">{reason}</span>
                 </li>
               ))}
             </ul>

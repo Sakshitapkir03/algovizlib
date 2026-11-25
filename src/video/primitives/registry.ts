@@ -52,6 +52,7 @@ import { SystemDiagram } from "./SystemDiagram";
 import { Sequence } from "./Sequence";
 import { DataTable } from "./DataTable";
 import { Metrics } from "./Metrics";
+import { LoadChart } from "./LoadChart";
 import { Window } from "./Window";
 
 export type PrimitiveDefinition<K extends ElementType> = {
@@ -144,4 +145,5 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   sequence: { component: Sequence, slot: "canvas", layer: 0 },
   "data-table": { component: DataTable, slot: "bottom", layer: 0 },
   metrics: { component: Metrics, slot: "bottom", layer: 0 },
+  "load-chart": { component: LoadChart, slot: "canvas", layer: 0 },
 };

@@ -501,6 +501,11 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
   let lastStep = -1;
   let previous: TraceStep | undefined;
   let revealed = false;
+  /** Components measured saturated by a bound scene so far (the growth rule's evidence). */
+  const measured = new Set<string>();
+  const addedAfter = new Map(
+    (trace.system?.nodes ?? []).flatMap((n) => (n.addedAfter ? [[n.id, n.addedAfter] as const] : [])),
+  );
 
   for (const scene of storyboard.scenes) {
     const push = (
@@ -515,6 +520,22 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
     // The array as it stands at this scene's step (sorting rearranges it), else the trace's starting row.
     const expectedValues = boundStep?.values ?? trace.row.values;
     const checkedRows = new Set<string>();
+    // Growth stories: a component added after another saturates may appear only once an earlier scene, bound to a
+    // step, showed the simulation measuring that saturation.
+    for (const el of scene.elements) {
+      if (el.type !== "system-diagram") continue;
+      for (const node of el.nodes) {
+        const after = addedAfter.get(node.id);
+        if (after && !measured.has(after))
+          push(
+            `"${node.label}" is added before any earlier scene shows the simulation measuring ${after} saturated: show that bottleneck first`,
+            el.id,
+            "nodes",
+          );
+      }
+    }
+    const load = boundStep?.sim?.load;
+    const saturatedHere = load?.current !== undefined ? (load.windows[load.current]?.saturated ?? []) : [];
     const isSecond = (rowId: string) => {
       const row = rows.get(rowId);
       return row?.type === "item-row" && row.traceRow === "second";
@@ -645,8 +666,12 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
     };
 
     // A system diagram's components and links are the trace's (they never change).
+    // A system diagram's components and links are the trace's: a bound step's own (a growth story's topology before
+    // it grows), else the start or the grown system (`stage`).
     const checkSystem = (el: SystemDiagramElement) => {
-      const system = trace.system;
+      const system =
+        boundStep?.sim?.topology ??
+        (el.stage === "grown" || boundStep ? trace.system : (trace.systemStart ?? trace.system));
       if (!system) {
         push("This trace has no system to draw; remove the system-diagram", el.id, "nodes");
         return;
@@ -988,7 +1013,12 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               "tokens",
             );
         }
-        if (el.type === "sequence" || el.type === "data-table" || el.type === "metrics")
+        if (
+          el.type === "sequence" ||
+          el.type === "data-table" ||
+          el.type === "metrics" ||
+          el.type === "load-chart"
+        )
           push(`A ${el.type} needs a traceStep (it shows a moment of the simulation)`, el.id, "traceStep");
         if (el.type === "stack") {
           const drawn = pileFields(el);
@@ -2009,6 +2039,42 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
           });
           break;
         }
+        case "load-chart": {
+          const load = step.sim?.load;
+          if (!load) {
+            push(`Trace step ${stepIndex} has no measured load`, el.id, "windows");
+            break;
+          }
+          const expected = load.windows.map((w) => ({
+            label: w.label,
+            group: w.group,
+            offered: w.offered,
+            served: w.served,
+            p99: w.p99,
+            errors: w.errors,
+            saturated: w.saturated.length > 0,
+          }));
+          const show = (ws: readonly { label: string; served: number; p99: number; saturated: boolean }[]) =>
+            ws
+              .map((w) => `${w.label}: ${w.served}/s p99 ${w.p99}${w.saturated ? " saturated" : ""}`)
+              .join(" | ");
+          if (canon(el.windows) !== canon(expected))
+            push(
+              `The load chart doesn't match trace step ${stepIndex} (every window's load, throughput, p99, errors, saturation); omit windows`,
+              el.id,
+              "windows",
+              {
+                expected: show(expected),
+                actual: show(el.windows),
+              },
+            );
+          if (el.current !== load.current)
+            push(`The ringed window doesn't match trace step ${stepIndex}; omit current`, el.id, "current", {
+              expected: String(load.current ?? "none"),
+              actual: String(el.current ?? "none"),
+            });
+          break;
+        }
         case "metrics": {
           const sim = step.sim;
           if (!sim) {
@@ -2038,6 +2104,7 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
     }
     lastStep = Math.max(lastStep, stepIndex);
     previous = step;
+    for (const id of saturatedHere) measured.add(id);
   }
 
   trace.steps.forEach((step, i) => {

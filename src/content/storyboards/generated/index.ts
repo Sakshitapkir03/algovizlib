@@ -36,6 +36,7 @@ import dynamicProgrammingCoinChange from "./dynamic-programming/coin-change.json
 import dynamicProgrammingEditDistance from "./dynamic-programming/edit-distance.json";
 import dynamicProgrammingHouseRobber from "./dynamic-programming/house-robber.json";
 import dynamicProgrammingLongestCommonSubsequence from "./dynamic-programming/longest-common-subsequence.json";
+import estimatesOneServer from "./estimates/one-server.json";
 import fastSlowPointersCircularArrayLoop from "./fast-slow-pointers/circular-array-loop.json";
 import fastSlowPointersFindTheDuplicateNumber from "./fast-slow-pointers/find-the-duplicate-number.json";
 import fastSlowPointersLinkedListCycle from "./fast-slow-pointers/linked-list-cycle.json";
@@ -142,6 +143,7 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "dynamic-programming/edit-distance": loadStoryboard(dynamicProgrammingEditDistance),
   "dynamic-programming/house-robber": loadStoryboard(dynamicProgrammingHouseRobber),
   "dynamic-programming/longest-common-subsequence": loadStoryboard(dynamicProgrammingLongestCommonSubsequence),
+  "estimates/one-server": loadStoryboard(estimatesOneServer),
   "fast-slow-pointers/circular-array-loop": loadStoryboard(fastSlowPointersCircularArrayLoop),
   "fast-slow-pointers/find-the-duplicate-number": loadStoryboard(fastSlowPointersFindTheDuplicateNumber),
   "fast-slow-pointers/linked-list-cycle": loadStoryboard(fastSlowPointersLinkedListCycle),

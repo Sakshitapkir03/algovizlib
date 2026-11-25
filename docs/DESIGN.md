@@ -52,6 +52,9 @@ scenario ──► simulation ──────────────► stor
 - **What a step records:** the event and its time; each component's state and a short note; the messages on their
   links; the replay's sequence of messages and notes so far; the stored tables (idempotency keys, a ledger); metrics;
   the decision a component made (charge, return a stored result, wait, deduplicate); the lesson's rules broken so far.
+- **Growth rule.** In a growth story, a component the system grows (a balancer, a second server) is marked as added
+  after the component the simulation measured saturated; the validator rejects any scene that shows it before an
+  earlier scene showed that measurement.
 - **Proving the fix.** For small scenarios, the tests and the lesson's last step lose every message of a failure-free
   run, and for each of those every message sent after it (which reaches the retries' own messages). Without the fix
   some placement breaks the rule; with it none does. Bounded, and said so on screen.
@@ -67,6 +70,12 @@ keys, concurrent writes, idempotency and retry storms, backpressure, rate limiti
 shortener, rate limiter service, chat, news feed, payments), each an **incident replay** (a real class of bug, then
 the fix under the same failures) or a **growth story** (one server upward, a component added only after the
 simulation measures the bottleneck that justifies it).
+
+**The first growth story, "Is one server enough?"** Estimate the peak (40,000 users × 54 requests a day ÷ 86,400 s
+= 25 req/s on average, × 3 = 75 at peak), then ramp traffic on one server: at 60 req/s its 4 workers saturate (about
+50 served a second, the queue growing, p99 at a second; the database 2% busy). Only after that measured bottleneck
+does a balancer and a second server appear (the validator's growth rule), and the replay measures the new limit
+(about 100 req/s). Tests check the saturation point against workers ÷ service time and Little's law.
 
 **The flagship, "Why was the customer charged twice?"** A client pays through an API that charges a payment provider;
 either hop can lose a message. Without protection, a retry after a lost "paid" answer is a second payment. The fix: one

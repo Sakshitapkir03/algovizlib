@@ -1,5 +1,6 @@
 import type {
   DataTableElement,
+  LoadChartElement,
   MetricsElement,
   SequenceElement,
   SequenceRow,
@@ -252,3 +253,103 @@ export function layoutMetrics(el: MetricsElement, t: TextMetrics): MetricsShape 
 }
 
 export const SYSTEM_MARGIN = MARGIN;
+
+// --- Load chart (canvas) -----------------------------------------------------------------------------------------
+
+export type LoadChartShape = {
+  columns: { x: number; w: number }[];
+  /** The distance between two columns' centers (a chip may use all of it but a small gap). */
+  pitch: number;
+  groups: { from: number; to: number; x0: number; x1: number; label: string; limit?: number }[];
+  /** Top of the group names, the served values, the bars' area, the p99 chips, and the offered labels. */
+  groupY: number;
+  valueY: number;
+  barTop: number;
+  barBottom: number;
+  chipY: number;
+  labelY: number;
+  rowH: { group: number; value: number; chip: number; label: number };
+  /** The y of a throughput (requests per second) on the bars' scale. */
+  y: (rps: number) => number;
+  /** Whether a column shows its served value and p99 (all on a large player; on a phone only the current one). */
+  shows: (k: number) => boolean;
+  /**
+   * A column's p99 chip: the column's width on a large player; on a phone (where only the current column shows one)
+   * as wide as its text needs, kept on the stage.
+   */
+  chip: (k: number, text: string) => Box;
+  overflow: number;
+};
+
+/** `minBars`: below it the chart doesn't fit; `idealBars`: the layout asks the bottom stack to move down until it gets this. */
+const CHART = { groupGap: 36, minBars: 90, idealBars: 240, maxBar: 72 };
+
+/** "1.9 s" or "138 ms". */
+export const chartMs = (ms: number) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`);
+
+/** A group's measured limit: the most it served in a saturated window. */
+export function groupLimit(
+  windows: LoadChartElement["windows"],
+  from: number,
+  to: number,
+): number | undefined {
+  const sat = windows.slice(from, to + 1).filter((w) => w.saturated);
+  return sat.length ? Math.max(...sat.map((w) => w.served)) : undefined;
+}
+
+export function layoutLoadChart(el: LoadChartElement, t: TextMetrics, region: Box): LoadChartShape {
+  const groupsRaw: { from: number; to: number; label: string }[] = [];
+  el.windows.forEach((w, k) => {
+    const last = groupsRaw.at(-1);
+    if (last && last.label === w.group) last.to = k;
+    else groupsRaw.push({ from: k, to: k, label: w.group });
+  });
+  const n = el.windows.length;
+  const colW = (region.w - (groupsRaw.length - 1) * CHART.groupGap) / n;
+  const columns: { x: number; w: number }[] = [];
+  const groups: LoadChartShape["groups"] = [];
+  let x = region.x;
+  for (const g of groupsRaw) {
+    const x0 = x;
+    for (let k = g.from; k <= g.to; k++) {
+      columns.push({ x: x + colW / 2, w: Math.min(CHART.maxBar, colW * 0.55) });
+      x += colW;
+    }
+    groups.push({ ...g, x0, x1: x, limit: groupLimit(el.windows, g.from, g.to) });
+    x += CHART.groupGap;
+  }
+  const rowH = {
+    group: Math.ceil(t.size(TEXT.chartGroup) * 1.25) + 8,
+    value: Math.ceil(t.size(TEXT.chartValue) * 1.25) + 4,
+    chip: Math.ceil(t.size(TEXT.chartChip) * 1.25) + 14,
+    label: Math.ceil(t.size(TEXT.chartLabel) * 1.25) + 6,
+  };
+  const groupY = region.y;
+  const valueY = groupY + rowH.group;
+  const barTop = valueY + rowH.value;
+  const fixedBelow = rowH.chip + rowH.label + 8;
+  const barBottom = Math.max(barTop + CHART.minBars, region.y + region.h - fixedBelow);
+  const overflow = Math.max(0, barTop + CHART.idealBars + fixedBelow - (region.y + region.h));
+  const max = Math.max(1, ...el.windows.map((w) => Math.max(w.offered, w.served))) * 1.08;
+  return {
+    columns,
+    pitch: colW,
+    groups,
+    groupY,
+    valueY,
+    barTop,
+    barBottom,
+    chipY: barBottom + 6,
+    labelY: barBottom + 6 + rowH.chip + 2,
+    rowH,
+    y: (v) => barBottom - (v / max) * (barBottom - barTop),
+    shows: (k) => !t.compact || k === el.current,
+    chip: (k, text) => {
+      const need = t.width(text, t.size(TEXT.chartChip), "mono") + 28;
+      const w = t.compact ? need : Math.min(colW - 8, need + 40);
+      const x = Math.min(Math.max(columns[k].x - w / 2, 8), region.x + region.w + 56 - w);
+      return { x, y: barBottom + 6, w, h: rowH.chip - 4 };
+    },
+    overflow,
+  };
+}

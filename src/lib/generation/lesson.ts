@@ -3,6 +3,7 @@ import { getTraceDefinition, runTrace } from "@/lib/traces";
 
 import { hashTrace, type CacheKey } from "./cache";
 import type { GenerationContext } from "./draft";
+import { systemDesignGrowthPromptV1 } from "./prompts/system-design-growth-v1";
 import { systemDesignPromptV1, type LessonPromptInput } from "./prompts/system-design-v1";
 import type { StoryboardWriter } from "./writer";
 
@@ -16,10 +17,14 @@ export type PreparedLesson = {
   key: CacheKey;
   ctx: GenerationContext;
   promptInput: LessonPromptInput;
+  prompts: ReturnType<typeof promptsFor>;
   existing?: "generated";
 };
 
+/** The prompt for a lesson's kind: incident replays and growth stories tell different arcs. */
 export const lessonPrompts = systemDesignPromptV1;
+export const promptsFor = (kind: "incident" | "growth") =>
+  kind === "growth" ? systemDesignGrowthPromptV1 : systemDesignPromptV1;
 
 export function prepareLesson(
   key: string,
@@ -33,7 +38,7 @@ export function prepareLesson(
   const trace = runTrace(key, args);
   const topicName = getTopic(topicSlug)?.name ?? topicSlug;
   return {
-    key: { problem: key, promptVersion: lessonPrompts.version, traceHash: hashTrace(args, trace) },
+    key: { problem: key, promptVersion: promptsFor(lesson.kind).version, traceHash: hashTrace(args, trace) },
     ctx: {
       problem: { patternSlug: topicSlug, slug, tags: lesson.tags },
       patternName: topicName,
@@ -42,6 +47,7 @@ export function prepareLesson(
       args,
     },
     promptInput: { lesson, topicName, trace },
+    prompts: promptsFor(lesson.kind),
     ...(writer.exists(key) && { existing: "generated" as const }),
   };
 }

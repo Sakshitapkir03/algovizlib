@@ -5,7 +5,7 @@
 import path from "node:path";
 
 import { createCatalogAccess, findTarget } from "@/lib/generation/catalog-access";
-import { lessonPrompts, prepareLesson } from "@/lib/generation/lesson";
+import { prepareLesson } from "@/lib/generation/lesson";
 import { prepareTarget } from "@/lib/generation/pipeline";
 import { currentPrompts } from "@/lib/generation/prompts";
 import { createFileWriter } from "@/lib/generation/writer";
@@ -17,10 +17,10 @@ const target = key && !lesson ? findTarget(createCatalogAccess(writer), key) : u
 const prepared = target && prepareTarget(target, currentPrompts.version);
 if (lesson) {
   console.log(
-    `<!-- prompt ${lessonPrompts.version} for ${key}: write the JSON to .cache/drafts/${key}.json -->`,
+    `<!-- prompt ${lesson.prompts.version} for ${key}: write the JSON to .cache/drafts/${key}.json -->`,
   );
   console.log(
-    `\n# SYSTEM\n\n${lessonPrompts.systemPrompt()}\n\n# USER\n\n${lessonPrompts.generatePrompt(lesson.promptInput)}`,
+    `\n# SYSTEM\n\n${lesson.prompts.systemPrompt()}\n\n# USER\n\n${lesson.prompts.generatePrompt(lesson.promptInput)}`,
   );
 } else if (!prepared) {
   console.error(

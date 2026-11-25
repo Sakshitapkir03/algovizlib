@@ -1285,7 +1285,8 @@ export const calloutElementSchema = z.object({
 });
 
 export const comparisonOpSchema = z.enum(["<", "=", ">"]);
-export const operatorSchema = z.enum(["+", "-", "×"]);
+/** "÷" is exact division only (the validator checks the arithmetic), for back-of-envelope estimates. */
+export const operatorSchema = z.enum(["+", "-", "×", "÷"]);
 /** How the verdict reads: good news, bad news, or just information. */
 export const verdictToneSchema = z.enum(["positive", "negative", "neutral"]);
 
@@ -1364,6 +1365,11 @@ const systemDiagramShape = {
   nodes: z.array(simNodeSchema).min(2).max(6),
   edges: z.array(z.object({ from: nonEmpty, to: nonEmpty })).max(8),
   tokens: z.array(simTokenSchema).max(6).default([]),
+  /**
+   * Growth stories, in a scene with no traceStep: "start" (default) shows the components the story starts with,
+   * "grown" the system after its growth step. A bound scene shows the step's own components.
+   */
+  stage: z.enum(["start", "grown"]).optional(),
 };
 export const systemDiagramElementSchema = z.object(systemDiagramShape);
 export const systemDiagramSourceSchema = z.object({
@@ -1465,10 +1471,42 @@ const metricsShape = {
     .max(4),
 };
 export const metricsElementSchema = z.object(metricsShape);
+
+const loadChartShape = {
+  ...baseElement,
+  type: z.literal("load-chart"),
+  /**
+   * One column per measured window, in order, grouped by replay ("1 server", "2 servers"): offered load as a dashed
+   * outline, served throughput as a bar (hatched when the window saturated), p99 under it.
+   */
+  windows: z
+    .array(
+      z.object({
+        label: nonEmpty.max(6),
+        group: nonEmpty.max(12),
+        offered: z.number().nonnegative(),
+        served: z.number().nonnegative(),
+        p99: z.number().int().nonnegative(),
+        errors: z.number().int().nonnegative(),
+        saturated: z.boolean(),
+      }),
+    )
+    .min(1)
+    .max(8),
+  /** The window this step measured (ringed). */
+  current: index.optional(),
+  label: nonEmpty.max(16).default("requests / s"),
+};
 export const metricsSourceSchema = z.object({
   ...metricsShape,
   /** Omit items to take the bound step's (metrics need a bound step). */
   items: metricsShape.items.optional(),
+});
+export const loadChartElementSchema = z.object(loadChartShape);
+export const loadChartSourceSchema = z.object({
+  ...loadChartShape,
+  /** Omit windows/current to take the bound step's (a load chart needs a bound step). */
+  windows: loadChartShape.windows.optional(),
 });
 
 export const elementSchemas = [
@@ -1523,6 +1561,7 @@ export const elementSchemas = [
   sequenceElementSchema,
   dataTableElementSchema,
   metricsElementSchema,
+  loadChartElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1577,6 +1616,7 @@ export const elementSourceSchemas = [
   sequenceSourceSchema,
   dataTableSourceSchema,
   metricsSourceSchema,
+  loadChartSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1651,6 +1691,7 @@ export type SequenceElement = ElementOf<"sequence">;
 export type SequenceRow = z.infer<typeof sequenceRowSchema>;
 export type DataTableElement = ElementOf<"data-table">;
 export type MetricsElement = ElementOf<"metrics">;
+export type LoadChartElement = ElementOf<"load-chart">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

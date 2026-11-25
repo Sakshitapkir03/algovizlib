@@ -1,5 +1,6 @@
 import { definePlannedLesson, type AnyLesson } from "@/lib/catalog";
 
+import { oneServer } from "./lessons/estimates/one-server";
 import { chargedTwice } from "./lessons/idempotency/charged-twice";
 import { topicGroups, topics } from "./topics";
 
@@ -20,14 +21,7 @@ const planned = (
 ) => definePlannedLesson({ topicSlug, slug, title, kind, symptom, order, status: "planned" });
 
 export const lessons: readonly AnyLesson[] = [
-  planned(
-    "estimates",
-    "one-server",
-    "Is one server enough?",
-    "growth",
-    "Signups doubled and every page got slow.",
-    0,
-  ),
+  oneServer,
   planned(
     "load-balancing",
     "slow-server",

@@ -10,6 +10,7 @@ const OPERATORS = {
   "+": (a: number, b: number) => a + b,
   "-": (a: number, b: number) => a - b,
   "×": (a: number, b: number) => a * b,
+  "÷": (a: number, b: number) => a / b,
 } as const;
 
 /** For traces whose steps carry their own arrays: the largest number the array ever holds, so bars keep one scale. */
@@ -782,7 +783,12 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
           };
         }
         case "system-diagram": {
-          const system = trace?.system;
+          // A growth story's bound step shows its own components; an unbound scene the start or the grown system.
+          const system =
+            step?.sim?.topology ??
+            (el.stage === "grown" || scene.traceStep !== undefined
+              ? trace?.system
+              : (trace?.systemStart ?? trace?.system));
           if (!el.nodes && !system) return (missing(el, "nodes"), el);
           if (step && !step.sim) return (noState(el, "tokens", "simulation state"), el);
           // An unbound diagram (the intro, the idea, the closing) shows the components at rest.
@@ -824,6 +830,25 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             return el;
           }
           return { ...el, tables: tables as NonNullable<(typeof tables)[number]>[] };
+        }
+        case "load-chart": {
+          const load = step?.sim?.load;
+          if (!load) return (noState(el, "windows", "measured load"), el);
+          return {
+            ...el,
+            windows:
+              el.windows ??
+              load.windows.map((w) => ({
+                label: w.label,
+                group: w.group,
+                offered: w.offered,
+                served: w.served,
+                p99: w.p99,
+                errors: w.errors,
+                saturated: w.saturated.length > 0,
+              })),
+            current: el.current ?? load.current,
+          };
         }
         case "metrics": {
           if (el.items) return el;

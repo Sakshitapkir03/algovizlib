@@ -174,9 +174,10 @@ function storyboardFor(c: ScenarioChoices, scenario: PaymentScenario, lean: Set<
   };
 }
 
-type Checked = { storyboard?: Storyboard; problems: { scene?: string; text: string }[] };
+export type Checked = { storyboard?: Storyboard; problems: { scene?: string; text: string }[] };
 
-function check(input: unknown): Checked {
+/** The checks every committed video passes: source schema, resolution, the validator, and the phone-width fit. */
+export function checkReplay(input: unknown): Checked {
   const located = (texts: string[]): Checked => ({
     problems: texts.map((text) => ({ scene: /^scene "([^"]+)"/.exec(text)?.[1], text })),
   });
@@ -211,7 +212,7 @@ export function buildScenarioReplay(c: ScenarioChoices): ScenarioReplay {
   for (let round = 0; round < 2; round++) {
     const input = storyboardFor(c, scenario, lean);
     if (input.scenes.length > 14) return { ok: false, message: TOO_BIG };
-    const checked = check(input);
+    const checked = checkReplay(input);
     if (checked.storyboard) {
       const storyboard = checked.storyboard;
       const trace = chargedTwice([scenario]);

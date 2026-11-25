@@ -20,16 +20,19 @@ export default async function Image({ params }: { params: Promise<{ topic: strin
   const topic = getTopic(topicSlug);
   if (!lesson || !topic) notFound();
   const storyboard = getLessonStoryboard(lesson);
-  const proof = storyboard?.trace
-    ? runTrace(storyboard.trace.problem, storyboard.trace.args).steps.at(-1)?.sim?.proof
-    : undefined;
+  const trace = storyboard?.trace ? runTrace(storyboard.trace.problem, storyboard.trace.args) : undefined;
+  const proof = trace?.steps.at(-1)?.sim?.proof;
   return ogImage({
     eyebrow: `system-design / ${topic.slug}`,
     title: lesson.title,
     subtitle: `${topic.name} · ${KIND_LABEL[lesson.kind].words}`,
     facts: [
-      "simulated replay",
-      ...(proof ? [`${proof.runs} single and double losses checked`] : []),
+      lesson.kind === "growth" ? "measured in a simulation" : "simulated replay",
+      ...(proof
+        ? [`${proof.runs} single and double losses checked`]
+        : trace && lesson.kind === "growth"
+          ? [`limits ${trace.answerDisplay}`]
+          : []),
       `${lesson.minutes} min`,
     ],
   });

@@ -1,6 +1,7 @@
 import type { Element } from "@/lib/storyboard";
 import { layoutScene } from "@/video/layout";
 import {
+  chartMs,
   layoutDataTable,
   layoutMetrics,
   MIN_SEQUENCE_ROWS,
@@ -23,7 +24,7 @@ export function systemProblems(
   t: TextMetrics,
   type: Element["type"],
 ): string[] {
-  const { system, sequence, bottomTop } = layoutScene(elements, t);
+  const { system, sequence, load, bottomTop } = layoutScene(elements, t);
   const problems: string[] = [];
   const fail = (what: string) => problems.push(what);
   for (const el of elements) {
@@ -81,6 +82,24 @@ export function systemProblems(
             if (pill.x < 4 || pill.x + pill.w > STAGE - 4) fail(`note "${row.text}" runs off the stage`);
           }
         }
+        break;
+      }
+      case "load-chart": {
+        if (!load) return ["load chart has no layout"];
+        if (load.barBottom - load.barTop < 80) fail("the load chart's bars have no room to grow");
+        if (load.labelY + load.rowH.label > bottomTop + 2) fail("the load chart runs into the bottom stack");
+        for (const g of load.groups)
+          if (!t.fits(g.label, t.size(TEXT.chartGroup), g.x1 - g.x0 - 8))
+            fail(`group "${g.label}" is wider than its columns`);
+        el.windows.forEach((w, k) => {
+          if (!t.fits(`${w.label}/s`, t.size(TEXT.chartLabel), load.pitch - 6, "mono"))
+            fail(`load label "${w.label}/s" is wider than its column`);
+          if (!load.shows(k)) return;
+          const chip = load.chip(k, `▲ ${chartMs(w.p99)}`);
+          if (!t.fits(`▲ ${chartMs(w.p99)}`, t.size(TEXT.chartChip), chip.w - 16, "mono"))
+            fail(`p99 "${chartMs(w.p99)}" is wider than its column`);
+          if (chip.x < 4 || chip.x + chip.w > STAGE - 4) fail(`p99 "${chartMs(w.p99)}" runs off the stage`);
+        });
         break;
       }
       case "data-table": {

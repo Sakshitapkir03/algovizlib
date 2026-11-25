@@ -1,7 +1,13 @@
 import { applyOperator, type Storyboard } from "@/lib/storyboard";
 import type { Trace, TraceStep } from "@/lib/traces/types";
 
-import { DECISION_OPTIONS, quickCheckSchema, type QuickCheck } from "./schema";
+import {
+  DECISION_OPTIONS,
+  P99_OPTIONS,
+  quickCheckSchema,
+  SATURATION_OPTIONS,
+  type QuickCheck,
+} from "./schema";
 
 /**
  * Proves every quick check against the trace, without the builder's code: for each option it works out from the
@@ -203,6 +209,27 @@ function truth(
       const call = trace.ops?.[c.call];
       if (!call || step.op?.current !== c.call || !step.op.returned) return undefined;
       return option === call.output;
+    }
+    case "p99-trend": {
+      const load = step.sim?.load;
+      if (!load || load.current === undefined || load.current === 0) return undefined;
+      const now = load.windows[load.current];
+      const before = load.windows[load.current - 1];
+      if (before.group !== now.group || !(P99_OPTIONS as readonly string[]).includes(option))
+        return undefined;
+      // Recomputed here from the ratio, independently of the builder.
+      const ratio = before.p99 > 0 ? now.p99 / before.p99 : Infinity;
+      const meaning = ratio < 1.25 ? 0 : ratio < 3 ? 1 : 2;
+      return option === P99_OPTIONS[meaning];
+    }
+    case "saturates-first": {
+      const load = step.sim?.load;
+      if (!load || load.current === undefined) return undefined;
+      const now = load.windows[load.current];
+      if (load.windows.slice(0, load.current).some((w) => w.saturated.length)) return undefined;
+      if (option === SATURATION_OPTIONS.servers) return now.saturated.some((id) => id.startsWith("server"));
+      if (option === SATURATION_OPTIONS.db) return now.saturated.includes("db");
+      return undefined;
     }
     case "decision": {
       const d = step.sim?.decision;
