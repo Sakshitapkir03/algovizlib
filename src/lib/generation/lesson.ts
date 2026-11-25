@@ -4,7 +4,8 @@ import { getTraceDefinition, runTrace } from "@/lib/traces";
 import { hashTrace, type CacheKey } from "./cache";
 import type { GenerationContext } from "./draft";
 import { systemDesignGrowthPromptV1 } from "./prompts/system-design-growth-v1";
-import { systemDesignPromptV1, type LessonPromptInput } from "./prompts/system-design-v1";
+import { type LessonPromptInput } from "./prompts/system-design-v1";
+import { systemDesignPromptV2 } from "./prompts/system-design-v2";
 import type { StoryboardWriter } from "./writer";
 
 /**
@@ -21,10 +22,12 @@ export type PreparedLesson = {
   existing?: "generated";
 };
 
-/** The prompt for a lesson's kind: incident replays and growth stories tell different arcs. */
-export const lessonPrompts = systemDesignPromptV1;
+/**
+ * The prompt for a lesson's kind: incident replays and growth stories tell different arcs. Incidents use version 2
+ * (version 1, which the flagship's storyboard records, plus the load chart, followed requests, and health checks).
+ */
 export const promptsFor = (kind: "incident" | "growth") =>
-  kind === "growth" ? systemDesignGrowthPromptV1 : systemDesignPromptV1;
+  kind === "growth" ? systemDesignGrowthPromptV1 : systemDesignPromptV2;
 
 export function prepareLesson(
   key: string,

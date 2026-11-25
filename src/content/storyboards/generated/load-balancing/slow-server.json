@@ -1,0 +1,327 @@
+{
+  "id": "load-balancing-slow-server",
+  "title": "One slow server takes everyone down",
+  "concept": "Load balancing",
+  "category": "system-design",
+  "summary": "Round robin keeps feeding a server that slowed down; least-outstanding routing and health checks route around it.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "load balancing",
+    "health checks",
+    "latency"
+  ],
+  "takeaway": {
+    "pattern": "Least-outstanding routing + health checks",
+    "summary": "Send each request to the server with the fewest in progress, and take a server that fails its health checks out of rotation until it passes again.",
+    "timeComplexity": "One comparison of in-progress counts per request",
+    "spaceComplexity": "One in-progress count and one health state per server",
+    "whenToUse": [
+      "Servers whose speed can change: a noisy neighbor, a failing disk, a long garbage-collection pause",
+      "Any pool where one bad member shouldn't slow everyone"
+    ]
+  },
+  "trace": {
+    "problem": "load-balancing/slow-server",
+    "args": [
+      [
+        {
+          "label": "round robin",
+          "seed": 3,
+          "workers": 4,
+          "serviceMs": 80,
+          "rps": 40,
+          "degrade": {
+            "atMs": 3000,
+            "factor": 6,
+            "recoverAtMs": 9000
+          },
+          "followAtMs": 3500,
+          "policy": "round-robin",
+          "health": null
+        },
+        {
+          "label": "the fix",
+          "seed": 3,
+          "workers": 4,
+          "serviceMs": 80,
+          "rps": 40,
+          "degrade": {
+            "atMs": 3000,
+            "factor": 6,
+            "recoverAtMs": 9000
+          },
+          "followAtMs": 3500,
+          "policy": "least-outstanding",
+          "health": {
+            "intervalMs": 1000
+          }
+        }
+      ],
+      {
+        "seeds": [
+          1,
+          20
+        ],
+        "factors": [
+          3,
+          5,
+          8,
+          50
+        ]
+      }
+    ]
+  },
+  "generation": {
+    "promptVersion": "system-design-v2",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-25T16:45:57.213Z",
+    "repairAttempts": 1
+  },
+  "scenes": [
+    {
+      "id": "setup",
+      "narration": "Two app servers with 4 workers each sit behind a load balancer, which takes turns: one request to each. At 40 requests a second, both have room to spare. Then, 3 seconds in, server 2's disk slows down and its work takes 6 times longer.",
+      "caption": "Two servers behind a round-robin balancer, both comfortable",
+      "durationInFrames": 576,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        }
+      ]
+    },
+    {
+      "id": "turn",
+      "narration": "Follow two requests. R139 went to server 1. R140 arrives next, and round robin sends it to server 2 because it's server 2's turn. It doesn't look at how busy either server is.",
+      "caption": "R140 arrives: round robin sends it to Server 2, whose turn it is",
+      "durationInFrames": 432,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "round robin"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "in-1",
+            "in-2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "waits",
+      "narration": "Server 2 already has a queue, so R140 waits behind 5 requests. When it was routed, server 1 had 1 request in progress and 3 free workers. That breaks rule 1: never send a request to a full server while another has room.",
+      "caption": "R140 waits behind 5 on Server 2 while Server 1 has 3 free workers",
+      "durationInFrames": 552,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "round robin"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "in-1",
+            "in-2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "damage",
+      "narration": "R140 times out after a second. Over those 3 seconds, 41 requests timed out and 46 percent were slower than half a second or timed out, while server 1 stayed only about a third busy. These latencies are illustrative.",
+      "caption": "3 to 6 seconds: p99 hits the 1-second timeout, 46% of requests affected",
+      "durationInFrames": 504,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "requests / s",
+          "limitLine": false,
+          "labelUnit": ""
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "p99",
+            "affected",
+            "broken"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "idea",
+      "narration": "Two changes. Least-outstanding routing sends each request to the server with the fewest in progress: with equal servers, that one has a free worker whenever either does. Health checks take a server that can't answer out of rotation.",
+      "caption": "Send work where there's room, and stop sending it where it can't finish",
+      "durationInFrames": 492,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        },
+        {
+          "id": "fix",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "fewest in progress",
+          "rejected": "whoever's turn it is",
+          "reason": "with equal servers, the emptiest one has room if anyone does",
+          "label": "where to send"
+        }
+      ]
+    },
+    {
+      "id": "least",
+      "narration": "Replay the same slowdown with the fix. When R140 arrives, server 1 has 2 requests in progress and server 2 has 4, so least outstanding sends it to server 1, which finishes it in about 100 milliseconds.",
+      "caption": "Same incident: least outstanding sends R140 to Server 1 instead",
+      "durationInFrames": 480,
+      "traceStep": 15,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "the fix"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "in-1",
+            "in-2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unhealthy",
+      "narration": "Every second the balancer checks each server. Server 2 misses the 200-millisecond deadline twice in a row, so the balancer marks it unhealthy and stops sending it requests.",
+      "caption": "Server 2 fails 2 health checks in a row: marked unhealthy",
+      "durationInFrames": 372,
+      "traceStep": 20,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "the fix"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "health-2",
+            "in-2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recovered",
+      "narration": "With server 2 out of rotation, server 1 handles everything. Over those 3 seconds p99 is 177 milliseconds, nothing times out, and no request waited while a server had room.",
+      "caption": "6 to 9 seconds: Server 1 alone, p99 177 ms, no timeouts",
+      "durationInFrames": 396,
+      "traceStep": 24,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "requests / s",
+          "limitLine": false,
+          "labelUnit": ""
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "p99",
+            "affected",
+            "broken"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "back",
+      "narration": "At 9 seconds server 2 is back to normal speed. It passes 2 health checks in a row, and the balancer marks it healthy and starts sending it requests again, with no one stepping in.",
+      "caption": "Server 2 recovers, passes 2 checks, and gets requests again",
+      "durationInFrames": 456,
+      "traceStep": 26,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "the fix"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "health-2",
+            "in-2"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proof",
+      "narration": "Checked over seeds 1 to 20 and four slowdowns, 3, 5, and 8 times slower and hanging, at 40 requests a second with both servers at 4 workers: round robin broke rule 1 in all 80 runs, the fix in none. The guarantee needs servers with the same number of workers. Route by load, and check health.",
+      "caption": "Rule 1, seeds 1–20 × 4 slowdowns, both servers at 4 workers: fix 0 of 80",
+      "durationInFrames": 720,
+      "traceStep": 28,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "baseline",
+            "fixed"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Rule 1 broken with the fix",
+          "detail": "Seeds 1–20 × 3×, 5×, 8×, hanging; 40 req/s; 4 workers each",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

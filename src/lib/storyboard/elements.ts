@@ -1496,6 +1496,10 @@ const loadChartShape = {
   /** The window this step measured (ringed). */
   current: index.optional(),
   label: nonEmpty.max(16).default("requests / s"),
+  /** false: no "measured limit" line (a lesson whose windows saturate from a fault, not from load). */
+  limitLine: z.boolean().optional(),
+  /** Appended to each window's label under the chart; default "/s" (offered load). "" for windows named by time. */
+  labelUnit: z.string().max(3).optional(),
 };
 export const metricsSourceSchema = z.object({
   ...metricsShape,

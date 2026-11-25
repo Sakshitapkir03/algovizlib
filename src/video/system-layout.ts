@@ -315,7 +315,12 @@ export function layoutLoadChart(el: LoadChartElement, t: TextMetrics, region: Bo
       columns.push({ x: x + colW / 2, w: Math.min(CHART.maxBar, colW * 0.55) });
       x += colW;
     }
-    groups.push({ ...g, x0, x1: x, limit: groupLimit(el.windows, g.from, g.to) });
+    groups.push({
+      ...g,
+      x0,
+      x1: x,
+      limit: el.limitLine === false ? undefined : groupLimit(el.windows, g.from, g.to),
+    });
     x += CHART.groupGap;
   }
   const rowH = {

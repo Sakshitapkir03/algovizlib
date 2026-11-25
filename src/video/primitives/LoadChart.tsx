@@ -205,7 +205,8 @@ export function LoadChart({ element }: { element: LoadChartElement }) {
                 fontWeight: current ? 800 : 500,
               }}
             >
-              {w.label}/s
+              {w.label}
+              {element.labelUnit ?? "/s"}
             </div>
           </div>
         );

@@ -92,8 +92,9 @@ export function systemProblems(
           if (!t.fits(g.label, t.size(TEXT.chartGroup), g.x1 - g.x0 - 8))
             fail(`group "${g.label}" is wider than its columns`);
         el.windows.forEach((w, k) => {
-          if (!t.fits(`${w.label}/s`, t.size(TEXT.chartLabel), load.pitch - 6, "mono"))
-            fail(`load label "${w.label}/s" is wider than its column`);
+          const label = `${w.label}${el.labelUnit ?? "/s"}`;
+          if (!t.fits(label, t.size(TEXT.chartLabel), load.pitch - 6, "mono"))
+            fail(`load label "${label}" is wider than its column`);
           if (!load.shows(k)) return;
           const chip = load.chip(k, `▲ ${chartMs(w.p99)}`);
           if (!t.fits(`▲ ${chartMs(w.p99)}`, t.size(TEXT.chartChip), chip.w - 16, "mono"))

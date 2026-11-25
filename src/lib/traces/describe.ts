@@ -338,6 +338,15 @@ export function describeStep(step: TraceStep, index: number): string {
             ? `measured windows: ${s.load.windows.map((w) => `${w.group} ${w.label}/s→${w.served}/s p99 ${w.p99} ms${w.saturated.length ? " (saturated)" : ""}`).join("; ")}`
             : "",
         s.topology ? `components present: ${s.topology.nodes.map((n) => n.id).join(", ")}` : "",
+        s.route
+          ? `routing ${s.route.request} (${s.route.policy}): in progress ${s.route.outstanding.map((o) => `${o.id} ${o.n}`).join(", ")}; chose ${s.route.chosen}`
+          : "",
+        s.health
+          ? `health: ${s.health.map((h) => `${h.id} ${h.healthy ? "healthy" : "unhealthy"}`).join(", ")}`
+          : "",
+        s.ruleProof
+          ? `rule checked over seeds ${s.ruleProof.seeds[0]}–${s.ruleProof.seeds[1]} × slowdowns ${s.ruleProof.factors.join(", ")}× at ${s.ruleProof.rps} req/s with ${s.ruleProof.workers} workers per server: broken in ${s.ruleProof.baseline} of ${s.ruleProof.runs} runs before the fix, ${s.ruleProof.fixed} after`
+          : "",
         s.proof
           ? `proof: ${s.proof.runs} runs (${s.proof.singles} single, ${s.proof.pairs} paired lost messages), ${s.proof.doubleCharges} double charges`
           : "",

@@ -270,6 +270,28 @@ export type TraceSim = {
   topology?: TraceSystem;
   /** A growth story's measured windows so far. */
   load?: TraceLoad;
+  /** A balancer's routing decision at this step: the request, the policy, each server's requests in progress, the pick. */
+  route?: {
+    request: string;
+    policy: "round-robin" | "least-outstanding";
+    outstanding: { id: string; n: number }[];
+    chosen: string;
+  };
+  /** Each server's health as the balancer sees it after this step. */
+  health?: { id: string; healthy: boolean }[];
+  /**
+   * A rule checked over a stated range of runs (seeds × slowdowns at one traffic level and worker count): how many runs
+   * broke it with the first replay's setup and with the last's.
+   */
+  ruleProof?: {
+    runs: number;
+    seeds: [number, number];
+    factors: number[];
+    rps: number;
+    workers: number;
+    baseline: number;
+    fixed: number;
+  };
 };
 /**
  * Where a design problem's operation sequence is (the calls themselves are `trace.ops`): `current` is the call this

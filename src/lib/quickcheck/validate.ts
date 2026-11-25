@@ -6,6 +6,7 @@ import {
   P99_OPTIONS,
   quickCheckSchema,
   SATURATION_OPTIONS,
+  SERVER_NAMES,
   type QuickCheck,
 } from "./schema";
 
@@ -215,8 +216,9 @@ function truth(
       if (!load || load.current === undefined || load.current === 0) return undefined;
       const now = load.windows[load.current];
       const before = load.windows[load.current - 1];
-      if (before.group !== now.group || !(P99_OPTIONS as readonly string[]).includes(option))
-        return undefined;
+      // Only a change of traffic is a question (the same rate twice is a fault, not a ramp).
+      if (before.group !== now.group || before.offered === now.offered) return undefined;
+      if (!(P99_OPTIONS as readonly string[]).includes(option)) return undefined;
       // Recomputed here from the ratio, independently of the builder.
       const ratio = before.p99 > 0 ? now.p99 / before.p99 : Infinity;
       const meaning = ratio < 1.25 ? 0 : ratio < 3 ? 1 : 2;
@@ -230,6 +232,18 @@ function truth(
       if (option === SATURATION_OPTIONS.servers) return now.saturated.some((id) => id.startsWith("server"));
       if (option === SATURATION_OPTIONS.db) return now.saturated.includes("db");
       return undefined;
+    }
+    case "route": {
+      const r = step.sim?.route;
+      if (!r || r.request !== c.request) return undefined;
+      const id = Object.entries(SERVER_NAMES).find(([, name]) => name === option)?.[0];
+      if (!id) return undefined;
+      return id === r.chosen;
+    }
+    case "health": {
+      const h = step.sim?.health?.find((x) => x.id === c.server);
+      if (!h || yes === undefined) return undefined;
+      return yes === !h.healthy;
     }
     case "decision": {
       const d = step.sim?.decision;

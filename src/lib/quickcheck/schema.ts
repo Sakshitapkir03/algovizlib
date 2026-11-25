@@ -63,7 +63,14 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("p99-trend") }),
   /** Growth stories: "Which part saturates first?" (`SATURATION_OPTIONS`). */
   z.object({ kind: z.literal("saturates-first") }),
+  /** Load balancing: "Where does round robin send R140?": options are the servers' names. */
+  z.object({ kind: z.literal("route"), request: z.string() }),
+  /** Load balancing: "Is Server 2 marked unhealthy now?": Yes / No. */
+  z.object({ kind: z.literal("health"), server: z.string() }),
 ]);
+
+/** The servers a route question names, by id. */
+export const SERVER_NAMES: Record<string, string> = { "server-1": "Server 1", "server-2": "Server 2" };
 
 /** p99's change from the previous window, by ratio: under 1.25 the same, under 3 a little, else sharply. */
 export const P99_OPTIONS = ["Stays about the same", "Rises a little", "Climbs sharply"] as const;

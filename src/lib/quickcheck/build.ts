@@ -9,6 +9,7 @@ import {
   p99Trend,
   P99_OPTIONS,
   SATURATION_OPTIONS,
+  SERVER_NAMES,
   type QuickCheck,
   type QuickCheckClaim,
 } from "./schema";
@@ -138,6 +139,31 @@ const pointersIn = (elements: readonly Element[]) =>
   elements.flatMap((e) => (e.type === "pointer" && e.binds ? [{ label: e.label, binds: e.binds }] : []));
 
 const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // A balancer's routing decision: "Where does round robin send R140?"
+  ({ step, scene }) => {
+    const r = step.sim?.route;
+    if (!r || !scene.elements.some((e) => e.type === "sequence")) return undefined;
+    const prompt =
+      r.policy === "round-robin"
+        ? `${r.request} arrives at the balancer. Where does round robin send it?`
+        : `${r.request} arrives at the balancer. Which server does least outstanding pick?`;
+    return made(prompt, Object.values(SERVER_NAMES), SERVER_NAMES[r.chosen], {
+      kind: "route",
+      request: r.request,
+    });
+  },
+  // A health check's verdict: "Is Server 2 marked unhealthy now?"
+  ({ step, scene }) => {
+    if (step.kind !== "unhealthy" && step.kind !== "healthy") return undefined;
+    if (!step.sim?.health || !scene.elements.some((e) => e.type === "sequence" || e.type === "data-table"))
+      return undefined;
+    const server = "server-2";
+    const unhealthy = step.sim.health.find((h) => h.id === server)?.healthy === false;
+    return made(`Is ${SERVER_NAMES[server]} marked unhealthy now?`, ["Yes", "No"], unhealthy ? "Yes" : "No", {
+      kind: "health",
+      server,
+    });
+  },
   // A growth story's first saturation anywhere: "Which part saturates first?"
   ({ step, scene }) => {
     const load = step.sim?.load;
@@ -162,7 +188,8 @@ const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
     if (!scene.elements.some((e) => e.type === "load-chart")) return undefined;
     const now = load.windows[load.current];
     const before = load.windows[load.current - 1];
-    if (before.group !== now.group || before.p99 <= 0) return undefined;
+    // Only when the traffic changed (a growth story's ramp), not between windows of a fault at one rate.
+    if (before.group !== now.group || before.p99 <= 0 || before.offered === now.offered) return undefined;
     const ratio = now.p99 / before.p99;
     if ([1.25, 3].some((edge) => Math.abs(ratio - edge) / edge < 0.1)) return undefined;
     return made(

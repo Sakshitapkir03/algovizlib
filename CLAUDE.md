@@ -1376,8 +1376,9 @@ lessons, built and planned; a built lesson lives at `/system-design/<topic>/<slu
 quick checks, reviews, and the tutor with DSA problems under the key `<topic>/<slug>` (topic slugs never reuse a
 pattern's: tested). Lessons are **incident replays** (a real class of bug followed message by message, then the fix
 replayed under the same failures) or **growth stories** (one server upward, a component added only after the
-simulation measures the bottleneck). Two lessons are built: "Why was the customer charged twice?"
-(`idempotency/charged-twice`, an incident replay) and "Is one server enough?" (`estimates/one-server`, a growth story);
+simulation measures the bottleneck). Three lessons are built: "Why was the customer charged twice?"
+(`idempotency/charged-twice`, an incident replay), "Is one server enough?" (`estimates/one-server`, a growth story),
+and "One slow server takes everyone down" (`load-balancing/slow-server`, an incident replay);
 the rest of the curriculum is listed as planned (`content/catalog/system-design`).
 
 - **The simulation is the ground truth** (`src/lib/sim/`, app code: it runs in the browser and in tests), as traces are
@@ -1450,13 +1451,39 @@ the rest of the curriculum is listed as planned (`content/catalog/system-design`
   "Climbs sharply" by the ratio to the previous window in the replay: under 1.25, under 3, else; never asked within 10%
   of a threshold). "Your scenario" (`lib/sim/capacity-scenario.ts`, `capacity-scenario-panel.tsx`): peak traffic,
   servers, workers, service time; 288 combinations, all tested to build, validate, and fit a phone.
+- **The balancing model** (`balancing.ts`, "One slow server takes everyone down"; a sibling of `capacity.ts`, which is
+  unchanged): two servers with the same workers behind a balancer, steady traffic, a client timeout (the server still
+  finishes the work), a degradation at a set time (`factor`; 50× stands for hanging) and a recovery. Routing: round
+  robin (each healthy server in turn) or least-outstanding (fewest requests sent and not finished; ties to the lower
+  number). Health checks: a probe every `intervalMs` that waits for a worker like a request and fails past
+  `timeoutMs`; `unhealthyAfter` failures in a row take a server out of rotation, `healthyAfter` passes bring it back.
+  Per-request tracking follows the first two requests from `followAtMs` (route, wait, done, timeout). **Outstanding
+  counts are exact**: from routing (so requests in transit count) to the moment the server finishes, probes included;
+  `completionLagMs` exists only for the test showing a late count breaks the guarantee. **Rule 1 is checked at the
+  routing decision** ("never send a request to a server with no free worker while another healthy server has one"):
+  a worker that frees up after routing can't be counted by any balancer. Least-outstanding guarantees it only when
+  both servers have the same workers (stated on screen and in the lesson; "Your scenario" keeps them equal). Rule 2: no
+  routes to an unhealthy server. `traces/system-design/slow-server.ts`: args `[scenarios, { seeds, factors }]`;
+  steps interleave the followed events, the health verdicts that change something, and window closes (each a second
+  after its end, so its requests had the full timeout); sim carries `route` (the decision with each server's in-progress
+  count), `health`, sequence rows, tables (servers, in progress, health), metrics, `load` (windows by time, chart with
+  `labelUnit: ""` and `limitLine: false`); the last step's `ruleProof` (seeds 1–20 × 3×/5×/8×/hanging at 40 req/s,
+  4 workers each: round robin 80 of 80, the fix 0 of 80; `answerDisplay` "0 of 80"). Quick checks `route` ("Where
+  does round robin send R140?") and `health` ("Is Server 2 marked unhealthy now?"); `p99-trend` is asked only when the
+  traffic changed. Incident prompts are `system-design-v2` (v1 plus the load chart, followed requests, health checks,
+  and stating a proof's range); the flagship's storyboard keeps its v1 provenance. "Your scenario": routing, slowdown,
+  health checks (off or every 0.5/1/2 s), traffic (20/30/40 req/s): 96 combinations, all tested.
 - **Related patterns** on a lesson are `{ slug, reason }`, the reason one sentence the page shows, from the learner's
   point of view (what they see in the lesson, never an implementation detail like the event heap); a lesson may have
   none ("Is one server enough?" has none). Planned lessons carry no links.
 - **Limits** (said on the site): latencies are illustrative, not measurements; small runs, not traffic at scale; races
   come from scheduling, not threads; no clock skew; the proof is bounded (one scenario's timings, at most two lost
   messages, no crashes).
-- Tests: `tests/system-design-growth.test.ts` (determinism and stream independence, Little's law, the knee within
+- Tests: `tests/system-design-balancing.test.ts` (determinism, followed requests, the measured damage, health
+  checks, rule 1 over the stated range for each setup, the in-transit and late-count edges, key steps, storyboard and
+  fit, the stated range and condition on screen, quick checks, tutor grounding, mutations, all 96 scenarios, and pins
+  that every existing storyboard file and both earlier lessons' traces are byte-identical),
+  `tests/system-design-growth.test.ts` (determinism and stream independence, Little's law, the knee within
   10% for several sizes, which part saturates, the estimate's arithmetic, `addedAfter`, key steps, the storyboard and
   its fit, quick checks (and that a near-threshold change isn't asked), tutor grounding, related-pattern reasons, the
   growth rule and load chart mutations, every scenario combination) and `tests/system-design.test.ts` (the event order, seeding and stream independence, exact replays, the four

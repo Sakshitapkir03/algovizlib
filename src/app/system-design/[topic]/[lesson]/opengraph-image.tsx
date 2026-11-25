@@ -22,6 +22,7 @@ export default async function Image({ params }: { params: Promise<{ topic: strin
   const storyboard = getLessonStoryboard(lesson);
   const trace = storyboard?.trace ? runTrace(storyboard.trace.problem, storyboard.trace.args) : undefined;
   const proof = trace?.steps.at(-1)?.sim?.proof;
+  const ruleProof = trace?.steps.at(-1)?.sim?.ruleProof;
   return ogImage({
     eyebrow: `system-design / ${topic.slug}`,
     title: lesson.title,
@@ -30,9 +31,11 @@ export default async function Image({ params }: { params: Promise<{ topic: strin
       lesson.kind === "growth" ? "measured in a simulation" : "simulated replay",
       ...(proof
         ? [`${proof.runs} single and double losses checked`]
-        : trace && lesson.kind === "growth"
-          ? [`limits ${trace.answerDisplay}`]
-          : []),
+        : ruleProof
+          ? [`checked over ${ruleProof.runs} runs`]
+          : trace && lesson.kind === "growth"
+            ? [`limits ${trace.answerDisplay}`]
+            : []),
       `${lesson.minutes} min`,
     ],
   });

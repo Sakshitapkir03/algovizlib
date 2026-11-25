@@ -25,7 +25,9 @@ review queue of what to revisit.
   message by message in a deterministic, seeded simulation, then replays the fix (an idempotency key, claimed first,
   stored with the result, forwarded to the payment provider). The fix is checked against every single and double lost message on both
   hops. "Is one server enough?" estimates the peak, measures where one server saturates, and only then adds a load
-  balancer and a second server (the validator enforces that order). Learners can change the failures, timings,
+  balancer and a second server (the validator enforces that order). "One slow server takes everyone down" follows
+  requests through a round-robin balancer to a degraded server, then replays the incident with least-outstanding
+  routing and health checks. Learners can change the failures, timings,
   safeguards, traffic, and servers and replay their own scenario. The rest of the curriculum is planned.
 - **A curated catalog.** 20 patterns in four groups, 4–8 problems each with easy, medium, and hard. Statements are
   original, examples are machine-checked, hints are progressive, and the approach stays hidden behind a toggle.
@@ -66,7 +68,7 @@ ElevenLabs and ffmpeg (offline narration) · Vercel AI SDK (offline generation, 
 
 ## Testing
 
-`pnpm test` runs **2,495 tests in 45 files** in about 15 seconds, with no network access. Among them:
+`pnpm test` runs **2,528 tests in 46 files** in about 15 seconds, with no network access. Among them:
 
 - **321 catalog examples** are checked against 103 independent reference solutions (test-only code), using each
   problem's judge.

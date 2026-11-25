@@ -2,6 +2,7 @@ import { definePlannedLesson, type AnyLesson } from "@/lib/catalog";
 
 import { oneServer } from "./lessons/estimates/one-server";
 import { chargedTwice } from "./lessons/idempotency/charged-twice";
+import { slowServer } from "./lessons/load-balancing/slow-server";
 import { topicGroups, topics } from "./topics";
 
 /**
@@ -22,14 +23,7 @@ const planned = (
 
 export const lessons: readonly AnyLesson[] = [
   oneServer,
-  planned(
-    "load-balancing",
-    "slow-server",
-    "One slow server takes everyone down",
-    "incident",
-    "One server's disk slowed down, and every user's requests started timing out.",
-    0,
-  ),
+  slowServer,
   planned(
     "caching",
     "stale-price",

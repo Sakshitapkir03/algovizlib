@@ -154,6 +154,15 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
                   {proof.doubleCharges === 0 ? "✓" : "✕"} {proof.doubleCharges} double charges
                 </span>
               </p>
+            ) : summary?.ruleProof ? (
+              <p className="font-mono text-xs">
+                Rule 1 over seeds {summary.ruleProof.seeds[0]}–{summary.ruleProof.seeds[1]} × slowdowns{" "}
+                {summary.ruleProof.factors.map((f) => (f >= 50 ? "hanging" : `${f}×`)).join(", ")} at{" "}
+                {summary.ruleProof.rps} req/s, both servers at {summary.ruleProof.workers} workers (the
+                guarantee needs equal servers): broken in {summary.ruleProof.baseline} of{" "}
+                {summary.ruleProof.runs} runs before the fix, {summary.ruleProof.fixed === 0 ? "✓" : "✕"}{" "}
+                {summary.ruleProof.fixed} of {summary.ruleProof.runs} with it
+              </p>
             ) : summary?.load ? (
               <p className="font-mono text-xs">
                 Measured: {summary.metrics.map((m) => `${m.label} ${m.value}`).join(" · ")}

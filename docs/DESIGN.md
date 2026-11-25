@@ -77,6 +77,13 @@ simulation measures the bottleneck that justifies it).
 does a balancer and a second server appear (the validator's growth rule), and the replay measures the new limit
 (about 100 req/s). Tests check the saturation point against workers ÷ service time and Little's law.
 
+**"One slow server takes everyone down."** Two servers behind a round-robin balancer; server 2 becomes 6× slower.
+Round robin keeps sending it every other request, so about half of all requests are slow or time out while server
+1 sits mostly idle. Least-outstanding routing never sends a request to a full server while the other has room (with
+equal workers on both, checked at every routing decision, counting requests in transit), and health checks take
+server 2 out of rotation until it recovers. Checked over seeds 1–20 × four slowdowns at 40 req/s: round robin breaks
+the rule in 80 of 80 runs, the fix in 0.
+
 **The flagship, "Why was the customer charged twice?"** A client pays through an API that charges a payment provider;
 either hop can lose a message. Without protection, a retry after a lost "paid" answer is a second payment. The fix: one
 idempotency key per order, sent on every retry; the API claims it as "in progress" atomically before charging (an
