@@ -190,6 +190,8 @@ export type TraceSystem = {
    */
   nodes: { id: string; label: string; kind: SimNodeKind; x: number; y: number; addedAfter?: string }[];
   edges: { from: string; to: string }[];
+  /** The sequence's lifelines, left to right, when they aren't every component but the stores (replicas: stores). */
+  lanes?: string[];
 };
 
 /**
@@ -209,7 +211,16 @@ export type TraceLoadWindow = {
   /** Each component's utilization in the window (0–1), for "which part saturates first". */
   utilization: { id: string; value: number }[];
 };
-export type TraceLoad = { windows: TraceLoadWindow[]; current?: number };
+/**
+ * `sweep`: the columns are settings, not traffic windows (each column's label is a setting's value in `unit`;
+ * `offered` counts `counted` and `served` how many of them `hit`), e.g. reloads right after a write that came back
+ * stale, at each mean replication lag.
+ */
+export type TraceLoad = {
+  windows: TraceLoadWindow[];
+  current?: number;
+  sweep?: { setting: string; unit: string; counted: string; hit: string };
+};
 
 /**
  * One row of a run's sequence view: a message between two components (sent at `at` ms; `delivered`, `lost` on the
@@ -283,6 +294,33 @@ export type TraceSim = {
    * A rule checked over a stated range of runs (seeds × slowdowns at one traffic level and worker count): how many runs
    * broke it with the first replay's setup and with the last's.
    */
+  /**
+   * A read at this step (replication): the store that served it, the version it returned, the session's token (its
+   * last confirmed write's version; 0 for none), the replica's applied version when the app decided, and whether
+   * read-your-writes was on.
+   */
+  read?: {
+    user: string;
+    store: "primary" | "replica";
+    returned: number;
+    token: number;
+    replicaAt: number;
+    fix: boolean;
+  };
+  /**
+   * Replication's rule checked over a stated range (seeds × mean lags × with and without a lag spike × how soon users
+   * reload after writing): how many runs broke it with the first replay's setup and with the last's.
+   */
+  readProof?: {
+    runs: number;
+    seeds: [number, number];
+    lags: number[];
+    spikes: boolean[];
+    spike: { lagMs: number; durationMs: number };
+    readAfter: number[];
+    baseline: number;
+    fixed: number;
+  };
   ruleProof?: {
     runs: number;
     seeds: [number, number];
@@ -805,4 +843,12 @@ export function keepsOrder(order: "increasing" | "decreasing", items: readonly {
     if (k === 0 || item.key === undefined || below === undefined) return true;
     return order === "increasing" ? item.key >= below : item.key <= below;
   });
+}
+
+/** A sequence's lifelines: the system's `lanes` when set, otherwise every component but the stores. */
+export function sequenceLanes(system: TraceSystem): { id: string; label: string }[] {
+  const nodes = system.lanes
+    ? system.lanes.flatMap((id) => system.nodes.filter((n) => n.id === id))
+    : system.nodes.filter((n) => n.kind !== "store");
+  return nodes.map((n) => ({ id: n.id, label: n.label }));
 }

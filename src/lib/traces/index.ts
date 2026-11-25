@@ -61,6 +61,7 @@ import { lfuCacheTrace } from "./design/lfu-cache";
 import { chargedTwiceTrace } from "./system-design/charged-twice";
 import { oneServerTrace } from "./system-design/one-server";
 import { slowServerTrace } from "./system-design/slow-server";
+import { vanishedCommentTrace } from "./system-design/vanished-comment";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -219,6 +220,7 @@ const definitions = [
   chargedTwiceTrace,
   oneServerTrace,
   slowServerTrace,
+  vanishedCommentTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

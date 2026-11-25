@@ -166,7 +166,7 @@ export function LoadChart({ element }: { element: LoadChartElement }) {
                 {value}
               </div>
             ) : null}
-            {show ? (
+            {show && element.chips !== false ? (
               <div
                 style={{
                   position: "absolute",

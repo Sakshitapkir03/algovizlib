@@ -74,6 +74,7 @@ import prefixSumProductOfArrayExceptSelf from "./prefix-sum/product-of-array-exc
 import prefixSumRangeSumQueries from "./prefix-sum/range-sum-queries.json";
 import prefixSumSubarraySumEqualsK from "./prefix-sum/subarray-sum-equals-k.json";
 import prefixSumSubmatricesThatSumToTarget from "./prefix-sum/submatrices-that-sum-to-target.json";
+import replicationVanishedComment from "./replication/vanished-comment.json";
 import slidingWindowLongestRepeatingCharacterReplacement from "./sliding-window/longest-repeating-character-replacement.json";
 import slidingWindowLongestSubstringWithoutRepeatingCharacters from "./sliding-window/longest-substring-without-repeating-characters.json";
 import slidingWindowMaximumSumSubarrayOfSizeK from "./sliding-window/maximum-sum-subarray-of-size-k.json";
@@ -182,6 +183,7 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "prefix-sum/range-sum-queries": loadStoryboard(prefixSumRangeSumQueries),
   "prefix-sum/subarray-sum-equals-k": loadStoryboard(prefixSumSubarraySumEqualsK),
   "prefix-sum/submatrices-that-sum-to-target": loadStoryboard(prefixSumSubmatricesThatSumToTarget),
+  "replication/vanished-comment": loadStoryboard(replicationVanishedComment),
   "sliding-window/longest-repeating-character-replacement": loadStoryboard(slidingWindowLongestRepeatingCharacterReplacement),
   "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(slidingWindowLongestSubstringWithoutRepeatingCharacters),
   "sliding-window/maximum-sum-subarray-of-size-k": loadStoryboard(slidingWindowMaximumSumSubarrayOfSizeK),

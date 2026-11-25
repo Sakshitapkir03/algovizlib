@@ -298,7 +298,9 @@ describe("existing lessons and videos are unchanged", () => {
       }
     };
     walk("src/content/storyboards/generated");
-    const existing = files.filter((f) => !f.includes(`load-balancing${path.sep}slow-server`)).sort();
+    // Later lessons add their own files (the replication lesson pins this one's in its own test).
+    const later = [`load-balancing${path.sep}slow-server`, `replication${path.sep}vanished-comment`];
+    const existing = files.filter((f) => !later.some((l) => f.includes(l))).sort();
     const h = createHash("sha256");
     for (const f of existing) h.update(f).update(readFileSync(f));
     expect([existing.length, h.digest("hex").slice(0, 16)]).toEqual([104, "628cb6712893e378"]);

@@ -1377,7 +1377,7 @@ export const systemDiagramSourceSchema = z.object({
   /** Omit nodes/edges/tokens to take the trace's components and the bound step's states and messages. */
   nodes: systemDiagramShape.nodes.optional(),
   edges: systemDiagramShape.edges.optional(),
-  tokens: systemDiagramShape.tokens.optional(),
+  tokens: z.array(simTokenSchema).max(6).optional(),
 });
 
 export const sequenceRowSchema = z.discriminatedUnion("kind", [
@@ -1500,6 +1500,8 @@ const loadChartShape = {
   limitLine: z.boolean().optional(),
   /** Appended to each window's label under the chart; default "/s" (offered load). "" for windows named by time. */
   labelUnit: z.string().max(3).optional(),
+  /** false: no p99 chips (columns that count something other than requests, e.g. stale reads at each lag). */
+  chips: z.boolean().optional(),
 };
 export const metricsSourceSchema = z.object({
   ...metricsShape,

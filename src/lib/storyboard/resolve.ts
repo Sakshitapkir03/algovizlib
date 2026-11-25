@@ -1,4 +1,4 @@
-import { finalPositions, runTrace, type Trace, type TraceStep } from "@/lib/traces";
+import { finalPositions, runTrace, sequenceLanes, type Trace, type TraceStep } from "@/lib/traces";
 
 import type { Element, ElementSource } from "./elements";
 import { zodIssues, type ValidationIssue } from "./issues";
@@ -808,9 +808,7 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
         case "sequence": {
           const sim = step?.sim;
           if (!sim) return (noState(el, "rows", "simulation state"), el);
-          const lanes =
-            el.lanes ??
-            trace?.system?.nodes.filter((n) => n.kind !== "store").map((n) => ({ id: n.id, label: n.label }));
+          const lanes = el.lanes ?? (trace?.system && sequenceLanes(trace.system));
           if (!lanes) return (missing(el, "lanes"), el);
           return { ...el, lanes, rows: el.rows ?? sim.rows, current: el.current ?? sim.current };
         }

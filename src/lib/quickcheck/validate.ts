@@ -5,6 +5,7 @@ import {
   DECISION_OPTIONS,
   P99_OPTIONS,
   quickCheckSchema,
+  READ_ROUTE_OPTIONS,
   SATURATION_OPTIONS,
   SERVER_NAMES,
   type QuickCheck,
@@ -244,6 +245,29 @@ function truth(
       const h = step.sim?.health?.find((x) => x.id === c.server);
       if (!h || yes === undefined) return undefined;
       return yes === !h.healthy;
+    }
+    case "replica-version": {
+      const r = step.sim?.read;
+      const asked = /^v(\d+)$/.exec(option);
+      if (!r || r.store !== "replica" || !asked) return undefined;
+      // A replica applies versions in order, so a read can't return less than it had when the app decided.
+      if (r.returned < r.replicaAt) throw new Error("the replica returned less than it had applied");
+      return Number(asked[1]) === r.returned;
+    }
+    case "caught-up": {
+      const r = step.sim?.read;
+      if (!r || !r.token || yes === undefined) return undefined;
+      return yes === r.replicaAt >= r.token;
+    }
+    case "read-route": {
+      const r = step.sim?.read;
+      if (!r?.fix || !r.token) return undefined;
+      // Read-your-writes, recomputed: the replica only if it had applied the session's token.
+      const store = r.replicaAt >= r.token ? "replica" : "primary";
+      if (store !== r.store) throw new Error("the read didn't go where read-your-writes sends it");
+      const named = Object.entries(READ_ROUTE_OPTIONS).find(([, words]) => words === option)?.[0];
+      if (named === undefined) return undefined;
+      return named === store;
     }
     case "decision": {
       const d = step.sim?.decision;

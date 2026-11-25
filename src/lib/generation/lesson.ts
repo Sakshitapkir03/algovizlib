@@ -5,7 +5,7 @@ import { hashTrace, type CacheKey } from "./cache";
 import type { GenerationContext } from "./draft";
 import { systemDesignGrowthPromptV1 } from "./prompts/system-design-growth-v1";
 import { type LessonPromptInput } from "./prompts/system-design-v1";
-import { systemDesignPromptV2 } from "./prompts/system-design-v2";
+import { systemDesignPromptV3 } from "./prompts/system-design-v3";
 import type { StoryboardWriter } from "./writer";
 
 /**
@@ -23,11 +23,12 @@ export type PreparedLesson = {
 };
 
 /**
- * The prompt for a lesson's kind: incident replays and growth stories tell different arcs. Incidents use version 2
- * (version 1, which the flagship's storyboard records, plus the load chart, followed requests, and health checks).
+ * The prompt for a lesson's kind: incident replays and growth stories tell different arcs. Incidents use version 3
+ * (version 2, which "One slow server" records, plus reads from replicas, sweeps, and the fix's cost; version 1 is the
+ * flagship's).
  */
 export const promptsFor = (kind: "incident" | "growth") =>
-  kind === "growth" ? systemDesignGrowthPromptV1 : systemDesignPromptV2;
+  kind === "growth" ? systemDesignGrowthPromptV1 : systemDesignPromptV3;
 
 export function prepareLesson(
   key: string,

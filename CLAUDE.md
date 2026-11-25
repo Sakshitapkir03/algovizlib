@@ -462,7 +462,7 @@ scene's duration, so timing survives the switch to audio-driven lengths).
 | `sequence`       | system design: lifelines, one row per message (time, delivered / lost ✕ / in flight / ignored) or note, the current row ringed                                                          | canvas |
 | `data-table`     | system design: one or two stored tables (keys, ledger) side by side; new / read ✓ / duplicate ✕ / waiting as border styles                                                              | bottom |
 | `metrics`        | system design: numbers from the simulation (charges, attempts, time, runs checked) with this step's change                                                                              | bottom |
-| `load-chart`     | growth stories: a column per measured window (offered outline, served bar, hatched ✕ when saturated, p99 chips, the measured limit as a dashed line)                                    | canvas |
+| `load-chart`     | a column per measured window or setting (offered outline, served bar, hatched ✕ when saturated, p99 chips unless `chips: false`, the measured limit as a dashed line)                   | canvas |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -1376,9 +1376,10 @@ lessons, built and planned; a built lesson lives at `/system-design/<topic>/<slu
 quick checks, reviews, and the tutor with DSA problems under the key `<topic>/<slug>` (topic slugs never reuse a
 pattern's: tested). Lessons are **incident replays** (a real class of bug followed message by message, then the fix
 replayed under the same failures) or **growth stories** (one server upward, a component added only after the
-simulation measures the bottleneck). Three lessons are built: "Why was the customer charged twice?"
+simulation measures the bottleneck). Four lessons are built: "Why was the customer charged twice?"
 (`idempotency/charged-twice`, an incident replay), "Is one server enough?" (`estimates/one-server`, a growth story),
-and "One slow server takes everyone down" (`load-balancing/slow-server`, an incident replay);
+"One slow server takes everyone down" (`load-balancing/slow-server`, an incident replay), and "I posted a comment and
+it vanished" (`replication/vanished-comment`, an incident replay);
 the rest of the curriculum is listed as planned (`content/catalog/system-design`).
 
 - **The simulation is the ground truth** (`src/lib/sim/`, app code: it runs in the browser and in tests), as traces are
@@ -1473,13 +1474,54 @@ the rest of the curriculum is listed as planned (`content/catalog/system-design`
   traffic changed. Incident prompts are `system-design-v2` (v1 plus the load chart, followed requests, health checks,
   and stating a proof's range); the flagship's storyboard keeps its v1 provenance. "Your scenario": routing, slowdown,
   health checks (off or every 0.5/1/2 s), traffic (20/30/40 req/s): 96 combinations, all tested.
+- **The replication model** (`replication.ts`, "I posted a comment and it vanished"): a primary and one read replica
+  holding one comment thread (version 40 at the start). A write goes to the primary, which gives the thread its next
+  version and confirms it; at commit an ordered replication stream schedules the replica's apply after a delay drawn
+  around the mean `lagMs` (half the mean plus an exponential tail) or around `spike.lagMs` for versions committed
+  during a lag spike, never before the versions ahead of it (`lastApply`). Users: one followed user ("Ana") posts at
+  `follow.atMs` and reloads `readAfterMs` after the confirmation, then every `retryEveryMs` until she sees her version
+  (at most `maxReloads`); background users post at `writesPerSec` (each reloading about `readAfterMs` later) and browse
+  at `readsPerSec`. Write hops and read hops draw from separate streams (`net:write`, `net:read`), so the fix (fewer
+  reloads) never shifts when writes land. **Read-your-writes**: the session's token is its last confirmed write's
+  version; the app sends a read to the replica only if the replica's applied version, at the decision, is at least the
+  token (it can only grow while the read travels), else to the primary. **The rule**, checked on every read: a read
+  issued after the user's write was confirmed never returns an older version (a read already on its way when the
+  confirmation lands is concurrent, not "later": counting those made the fix look broken in 24 of 480 runs).
+  `deviceSwitch` (test only) sends Ana's reloads from a device without the token: the comment vanishes again, the
+  stated condition. Every read records its store, the version returned, the token, and the replica's version.
+  `traces/system-design/vanished-comment.ts`: args `[scenarios, { seeds, lags, spikes, readAfter }]`; per replay, the
+  followed events (spike, write with the stream row in flight and a `stream` token on the diagram, confirmation, each
+  reload as reload → read → "✕ comment gone (v49)" / "✓ comment there", the replica applying Ana's version), then a
+  `sweep` step (the same setup at `LAG_LEVELS` 50/200/500/1000 ms, nobody followed: reloads right after a write and how
+  many came back stale, as load-chart columns with `load.sweep` describing them) and, with the fix, a `cost` step
+  (primary reads a second out of all reads a second per lag, as a chart and a `primary-load` table); sim carries `read`
+  and the last step `readProof` (seeds 1–20 × 4 lags × spike off/on × reloads 100/300/1000 ms: no fix 469 of 480, the
+  fix 0 of 480; `answerDisplay` "0 of 480"). `trace.system.lanes` (new, optional) makes the stores lifelines
+  (`sequenceLanes()`; without it lanes are every component but the stores, as before). Tables keep the newest two
+  versions per store, so both fit beside a diagram on a phone; read scenes pair the sequence with version metrics. The
+  load chart got `chips: false` (no p99 chips: columns that aren't traffic windows) and a bound system-diagram now takes
+  the step's tokens when they're omitted (the source schema had defaulted them to none). Quick checks
+  `replica-version` ("Which version does the replica return here?", on a stale replica read), `caught-up` ("Has the
+  replica caught up to her write, v51, yet?", on a fresh one), and `read-route` ("Where does this read go with
+  read-your-writes?" Replica / Primary; the validator recomputes the routing rule and rejects a read recorded at the
+  other store). Incidents now use `system-design-v3` (v2 plus reads from replicas, sweeps, the fix's cost, and a
+  closing scene stating the range); earlier storyboards keep v1 / v2. "Your scenario" (`lib/sim/replication-scenario.ts`,
+  `replication-scenario-panel.tsx`): mean lag, spike on/off, read-your-writes on/off, reload delay; 48 combinations,
+  all tested. No DSA link. Every existing video was pixel-identical before and after (every scene of all 106 at
+  343/500/640/1280 px dark and 500 px light, a deterministic capture: software rasterization, whole-pixel frames).
 - **Related patterns** on a lesson are `{ slug, reason }`, the reason one sentence the page shows, from the learner's
   point of view (what they see in the lesson, never an implementation detail like the event heap); a lesson may have
   none ("Is one server enough?" has none). Planned lessons carry no links.
 - **Limits** (said on the site): latencies are illustrative, not measurements; small runs, not traffic at scale; races
   come from scheduling, not threads; no clock skew; the proof is bounded (one scenario's timings, at most two lost
   messages, no crashes).
-- Tests: `tests/system-design-balancing.test.ts` (determinism, followed requests, the measured damage, health
+- Tests: `tests/system-design-replication.test.ts` (determinism and independent streams, Ana's vanishing and
+  returning comment, versions in order, stale reloads growing with lag and the primary's load with the fix, the rule
+  over the stated range per lag and spike, the second-device and concurrent-read edges, key steps, the stores side by
+  side and the stream token, the sweep and cost numbers, storyboard and fit at 343/500/640/1280, the range on screen,
+  quick checks and a rerouted-read mutation, tutor grounding, validator mutations, all 48 scenarios, and pins that every
+  existing storyboard file, every existing video's resolved storyboard, and all three earlier lessons' traces are
+  byte-identical), `tests/system-design-balancing.test.ts` (determinism, followed requests, the measured damage, health
   checks, rule 1 over the stated range for each setup, the in-transit and late-count edges, key steps, storyboard and
   fit, the stated range and condition on screen, quick checks, tutor grounding, mutations, all 96 scenarios, and pins
   that every existing storyboard file and both earlier lessons' traces are byte-identical),
@@ -1615,7 +1657,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
    the catalog and storyboards behind the repository into the database, and let users paste their own question.
    Email + password in production once a Resend sending domain is verified.
 4. **Practice mode.** See "Practice mode (planned)" above.
-5. **System design.** The engine and the first lesson are built (see "System design"). Next: the planned lessons, each
+5. **System design.** The engine and four lessons are built (see "System design"). Next: the planned lessons, each
    adding its components to the engine (load balancer, cache, replicas, queue, rate limiter) with its own model and
    proof, and growth stories, whose validator checks a component is added only after a step measures its bottleneck.
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for

@@ -163,6 +163,23 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
                 {summary.ruleProof.runs} runs before the fix, {summary.ruleProof.fixed === 0 ? "✓" : "✕"}{" "}
                 {summary.ruleProof.fixed} of {summary.ruleProof.runs} with it
               </p>
+            ) : summary?.readProof ? (
+              <p className="font-mono text-xs">
+                Over seeds {summary.readProof.seeds[0]}–{summary.readProof.seeds[1]} × mean lags{" "}
+                {summary.readProof.lags.join(", ")} ms ×{" "}
+                {summary.readProof.spikes
+                  .map((on) =>
+                    on
+                      ? `a ${summary.readProof!.spike.durationMs / 1000} s spike to ${summary.readProof!.spike.lagMs / 1000} s`
+                      : "no spike",
+                  )
+                  .join(" / ")}{" "}
+                × reloads {summary.readProof.readAfter.join(", ")} ms after writing: a user saw an older
+                version than their own write in {summary.readProof.baseline} of {summary.readProof.runs} runs
+                reading the replica, {summary.readProof.fixed === 0 ? "✓" : "✕"} {summary.readProof.fixed} of{" "}
+                {summary.readProof.runs} with read-your-writes (needs one primary, the token on every read,
+                and no failover)
+              </p>
             ) : summary?.load ? (
               <p className="font-mono text-xs">
                 Measured: {summary.metrics.map((m) => `${m.label} ${m.value}`).join(" · ")}

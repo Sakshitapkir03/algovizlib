@@ -3,6 +3,7 @@ import { definePlannedLesson, type AnyLesson } from "@/lib/catalog";
 import { oneServer } from "./lessons/estimates/one-server";
 import { chargedTwice } from "./lessons/idempotency/charged-twice";
 import { slowServer } from "./lessons/load-balancing/slow-server";
+import { vanishedComment } from "./lessons/replication/vanished-comment";
 import { topicGroups, topics } from "./topics";
 
 /**
@@ -40,14 +41,7 @@ export const lessons: readonly AnyLesson[] = [
     "The home page's cache entry expired and the database went down a second later.",
     1,
   ),
-  planned(
-    "replication",
-    "vanished-comment",
-    "I posted a comment and it vanished",
-    "incident",
-    "A user posted a comment, reloaded, and it was gone; it came back a minute later.",
-    0,
-  ),
+  vanishedComment,
   planned(
     "sharding",
     "hot-key",

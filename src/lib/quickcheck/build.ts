@@ -8,6 +8,7 @@ import {
   MAX_CHECKS,
   p99Trend,
   P99_OPTIONS,
+  READ_ROUTE_OPTIONS,
   SATURATION_OPTIONS,
   SERVER_NAMES,
   type QuickCheck,
@@ -138,7 +139,43 @@ function verdictWords(scenes: readonly Scene[], trace: Trace): Map<string, Set<s
 const pointersIn = (elements: readonly Element[]) =>
   elements.flatMap((e) => (e.type === "pointer" && e.binds ? [{ label: e.label, binds: e.binds }] : []));
 
+/** Every version ("v49") a scene's step shows in its tables. */
+const shownVersions = (step: TraceStep) =>
+  (step.sim?.tables ?? []).flatMap((t) => t.rows.map((r) => r.cells[0])).filter((c) => /^v\d+$/.test(c));
+
 const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // Reads from a replica. With read-your-writes: "Where does this read go?"; without it, a read that comes back stale
+  // asks which version the replica returns, and one that doesn't asks whether the replica has caught up.
+  ({ step, scene }) => {
+    const r = step.sim?.read;
+    if (!r || !r.token || !scene.elements.some((e) => e.type === "sequence" || e.type === "data-table"))
+      return undefined;
+    const write = `v${r.token}`;
+    if (r.fix)
+      return made(
+        `${r.user} reloads carrying her token, ${write}. Where does this read go with read-your-writes?`,
+        Object.values(READ_ROUTE_OPTIONS),
+        READ_ROUTE_OPTIONS[r.store],
+        { kind: "read-route" },
+      );
+    if (r.store !== "replica") return undefined;
+    if (r.returned < r.token) {
+      const returned = `v${r.returned}`;
+      const options = [...new Set([returned, write, ...shownVersions(step)])].slice(0, 3);
+      return made(
+        `${r.user} reloads, and the app reads from the replica. Which version does the replica return here?`,
+        arrange(options, returned, scene.id),
+        returned,
+        { kind: "replica-version" },
+      );
+    }
+    return made(
+      `${r.user} reloads again. Has the replica caught up to her write, ${write}, yet?`,
+      YES_NO,
+      r.replicaAt >= r.token ? "Yes" : "No",
+      { kind: "caught-up" },
+    );
+  },
   // A balancer's routing decision: "Where does round robin send R140?"
   ({ step, scene }) => {
     const r = step.sim?.route;

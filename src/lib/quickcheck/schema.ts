@@ -67,7 +67,16 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("route"), request: z.string() }),
   /** Load balancing: "Is Server 2 marked unhealthy now?": Yes / No. */
   z.object({ kind: z.literal("health"), server: z.string() }),
+  /** Replication: "Which version does the replica return here?": options are versions ("v49"). */
+  z.object({ kind: z.literal("replica-version") }),
+  /** Replication: "Has the replica caught up to Ana's write (v51) yet?": Yes / No. */
+  z.object({ kind: z.literal("caught-up") }),
+  /** Replication: "Where does this read go with read-your-writes?" (`READ_ROUTE_OPTIONS`). */
+  z.object({ kind: z.literal("read-route") }),
 ]);
+
+/** Where a read can go, as the sequence's lanes name the stores. */
+export const READ_ROUTE_OPTIONS = { replica: "Replica", primary: "Primary" } as const;
 
 /** The servers a route question names, by id. */
 export const SERVER_NAMES: Record<string, string> = { "server-1": "Server 1", "server-2": "Server 2" };

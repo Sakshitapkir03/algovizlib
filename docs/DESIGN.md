@@ -84,6 +84,17 @@ equal workers on both, checked at every routing decision, counting requests in t
 server 2 out of rotation until it recovers. Checked over seeds 1–20 × four slowdowns at 40 req/s: round robin breaks
 the rule in 80 of 80 runs, the fix in 0.
 
+**"I posted a comment and it vanished."** Writes go to a primary, reads to a replica fed by an ordered replication
+stream (a mean lag with a long tail, plus a lag spike). Ana posts during a spike, reloads 300 ms after "posted", and
+the replica, two versions behind, returns the page without her comment; it comes back once the replica applies her
+version 1.8 s later. Rerunning the traffic at mean lags of 50, 200, 500, and 1000 ms shows the stale reloads growing.
+The fix, read-your-writes: the session keeps its last confirmed write's version, and the replica serves a read only
+once it has applied it (otherwise the primary does). Its cost is measured: 11–20% of reads move to the primary as lag
+grows. Checked on every read issued after a confirmed write over seeds 1–20 × 4 lags × spike on/off × 3 reload delays:
+reading the replica breaks the rule in 469 of 480 runs, the fix in 0. It depends on one primary with one ordered stream,
+the token on every read of the session (a second device without it breaks it, tested), and no failover; versions, not
+clock times, decide.
+
 **The flagship, "Why was the customer charged twice?"** A client pays through an API that charges a payment provider;
 either hop can lose a message. Without protection, a retry after a lost "paid" answer is a second payment. The fix: one
 idempotency key per order, sent on every retry; the API claims it as "in progress" atomically before charging (an

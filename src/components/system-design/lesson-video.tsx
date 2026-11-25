@@ -20,6 +20,10 @@ const PANELS = {
   "idempotency/charged-twice": dynamic(() => import("./scenario-panel"), { ssr: false, loading }),
   "estimates/one-server": dynamic(() => import("./capacity-scenario-panel"), { ssr: false, loading }),
   "load-balancing/slow-server": dynamic(() => import("./balancing-scenario-panel"), { ssr: false, loading }),
+  "replication/vanished-comment": dynamic(() => import("./replication-scenario-panel"), {
+    ssr: false,
+    loading,
+  }),
 } as const;
 
 /**

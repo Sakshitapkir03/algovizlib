@@ -1,4 +1,4 @@
-import { finalPositions, isHeap, keepsOrder, runTrace, type Trace, type TraceStep } from "@/lib/traces";
+import { finalPositions, isHeap, keepsOrder, runTrace, sequenceLanes, type Trace, type TraceStep } from "@/lib/traces";
 
 import type {
   TraceHeap,
@@ -699,7 +699,7 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
         });
     };
     const checkLanes = (el: SequenceElement) => {
-      const expected = (trace.system?.nodes ?? []).filter((n) => n.kind !== "store");
+      const expected = trace.system ? sequenceLanes(trace.system) : [];
       const show = (lanes: readonly { id: string; label: string }[]) =>
         lanes.map((l) => `${l.id}:${l.label}`).join(" ");
       if (show(el.lanes) !== show(expected))

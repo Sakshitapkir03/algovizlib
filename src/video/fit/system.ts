@@ -95,7 +95,7 @@ export function systemProblems(
           const label = `${w.label}${el.labelUnit ?? "/s"}`;
           if (!t.fits(label, t.size(TEXT.chartLabel), load.pitch - 6, "mono"))
             fail(`load label "${label}" is wider than its column`);
-          if (!load.shows(k)) return;
+          if (!load.shows(k) || el.chips === false) return;
           const chip = load.chip(k, `▲ ${chartMs(w.p99)}`);
           if (!t.fits(`▲ ${chartMs(w.p99)}`, t.size(TEXT.chartChip), chip.w - 16, "mono"))
             fail(`p99 "${chartMs(w.p99)}" is wider than its column`);

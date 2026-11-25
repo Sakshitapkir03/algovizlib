@@ -329,20 +329,28 @@ export function describeStep(step: TraceStep, index: number): string {
         `tables: ${s.tables.map((t) => `${t.id} [${t.rows.map((r) => `${r.cells.join(" ")}${r.mark ? ` (${r.mark})` : ""}`).join("; ") || "empty"}]`).join(", ")}`,
         `metrics: ${s.metrics.map((m) => `${m.id}=${m.value}${m.delta ? ` (+${m.delta})` : ""}`).join(", ")}`,
         s.violations.length ? `rules broken: ${s.violations.join("; ")}` : "",
-        s.load && s.load.current !== undefined
-          ? (() => {
-              const w = s.load.windows[s.load.current];
-              return `measured window "${w.label}" (${w.group}): offered ${w.offered}/s, served ${w.served}/s, p95 ${w.p95} ms, p99 ${w.p99} ms, errors ${w.errors}, utilization ${w.utilization.map((u) => `${u.id} ${Math.round(u.value * 100)}%`).join(", ")}, saturated ${w.saturated.length ? w.saturated.join(", ") : "none"}`;
-            })()
-          : s.load
-            ? `measured windows: ${s.load.windows.map((w) => `${w.group} ${w.label}/s→${w.served}/s p99 ${w.p99} ms${w.saturated.length ? " (saturated)" : ""}`).join("; ")}`
-            : "",
+        s.load?.sweep
+          ? `measured at each ${s.load.sweep.setting}${s.load.current !== undefined ? ` (this step: ${s.load.windows[s.load.current].group})` : ""}: ${s.load.windows.map((w) => `${w.group} ${w.label} ${s.load!.sweep!.unit}: ${w.served} of ${w.offered} ${s.load!.sweep!.counted} ${s.load!.sweep!.hit}`).join("; ")}`
+          : s.load && s.load.current !== undefined
+            ? (() => {
+                const w = s.load.windows[s.load.current];
+                return `measured window "${w.label}" (${w.group}): offered ${w.offered}/s, served ${w.served}/s, p95 ${w.p95} ms, p99 ${w.p99} ms, errors ${w.errors}, utilization ${w.utilization.map((u) => `${u.id} ${Math.round(u.value * 100)}%`).join(", ")}, saturated ${w.saturated.length ? w.saturated.join(", ") : "none"}`;
+              })()
+            : s.load
+              ? `measured windows: ${s.load.windows.map((w) => `${w.group} ${w.label}/s→${w.served}/s p99 ${w.p99} ms${w.saturated.length ? " (saturated)" : ""}`).join("; ")}`
+              : "",
         s.topology ? `components present: ${s.topology.nodes.map((n) => n.id).join(", ")}` : "",
         s.route
           ? `routing ${s.route.request} (${s.route.policy}): in progress ${s.route.outstanding.map((o) => `${o.id} ${o.n}`).join(", ")}; chose ${s.route.chosen}`
           : "",
         s.health
           ? `health: ${s.health.map((h) => `${h.id} ${h.healthy ? "healthy" : "unhealthy"}`).join(", ")}`
+          : "",
+        s.read
+          ? `read by ${s.read.user}${s.read.fix ? " (read-your-writes on)" : ""}: token v${s.read.token}, replica at v${s.read.replicaAt} when the app decided, served by the ${s.read.store}, returned v${s.read.returned}${s.read.returned < s.read.token ? " (older than the user's own write)" : ""}`
+          : "",
+        s.readProof
+          ? `rule checked over seeds ${s.readProof.seeds[0]}–${s.readProof.seeds[1]} × mean lags ${s.readProof.lags.join(", ")} ms × ${s.readProof.spikes.map((on) => (on ? `a ${s.readProof!.spike.durationMs} ms spike to ${s.readProof!.spike.lagMs} ms` : "no spike")).join(" / ")} × reloads ${s.readProof.readAfter.join(", ")} ms after writing: broken in ${s.readProof.baseline} of ${s.readProof.runs} runs before the fix, ${s.readProof.fixed} after`
           : "",
         s.ruleProof
           ? `rule checked over seeds ${s.ruleProof.seeds[0]}–${s.ruleProof.seeds[1]} × slowdowns ${s.ruleProof.factors.join(", ")}× at ${s.ruleProof.rps} req/s with ${s.ruleProof.workers} workers per server: broken in ${s.ruleProof.baseline} of ${s.ruleProof.runs} runs before the fix, ${s.ruleProof.fixed} after`
