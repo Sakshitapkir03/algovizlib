@@ -32,17 +32,16 @@ export function Sequence({ element }: { element: SequenceElement }) {
   const first = shape.lanes[0];
   const firstBoxW = text.width(first.label, laneSize) + 28;
   const title = element.title && !text.compact ? element.title : undefined;
-  // "↑ 3 earlier" sits at the right end of the header row. With four or more lanes, when the last lane's name reaches
-  // into it, it goes just under the header instead (three-lane sequences keep their place exactly as before).
+  // "↑ 3 earlier" sits at the right end of the header row. When the last lane's name reaches into it, it goes just
+  // under the header instead.
   const lastLane = shape.lanes.at(-1)!;
   const earlierText = `↑ ${shape.hidden} earlier`;
   const earlierBelow =
-    shape.lanes.length >= 4 &&
     lastLane.x +
       (text.width(lastLane.label, laneSize) + 28) / 2 +
       12 +
       text.width(earlierText, timeSize, "mono") >
-      CANVAS.width - 12;
+    CANVAS.width - 12;
 
   const arrow = (row: Extract<SequenceRow, { kind: "message" }>, y: number) => {
     const x1 = laneX.get(row.from)!;
