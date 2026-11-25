@@ -95,6 +95,16 @@ reading the replica breaks the rule in 469 of 480 runs, the fix in 0. It depends
 the token on every read of the session (a second device without it breaks it, tested), and no failover; versions, not
 clock times, decide.
 
+**"The price changed but users see the old one."** A product page reads the price ($49, version 7) through a cache,
+cache-aside, with a 10-second TTL. The admin changes it to $39. Not told, the cache serves $49 for about 10 seconds
+after the update is saved. Deleting the entry after the write fixes most reads, but not this race: Ben's page missed,
+read $49, paused, and stored it after the delete, replacing a fresh $39, so the old price is back for another TTL. The
+fix, versioned invalidation: the delete leaves the new version behind and the cache keeps a store only if it isn't
+older (Memcached's check-and-set or a Redis script can do that check atomically). Every interleaving of one writer and
+one or two readers, warm and cold, plus a read after everything: no invalidation 72 of 148, delete after write 71 of
+577, versioned 0 of 577, under the conditions that the conditional store is atomic and the version marker outlives any
+read. The cost: about one extra database read per update.
+
 **"Two edits, one lost."** One stock row at version 7 (20 in stock); Bo sells 3 and Cy receives 5. Both read version 7;
 Bo's write lands as version 8 (17), then Cy's, computed from version 7, replaces it with 25: Bo's sale is gone with no
 error. The fix, compare-and-set on the version: Cy's write expects version 7, finds version 8, and is rejected; Cy

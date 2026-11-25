@@ -23,7 +23,7 @@ export default async function Image({ params }: { params: Promise<{ topic: strin
   const trace = storyboard?.trace ? runTrace(storyboard.trace.problem, storyboard.trace.args) : undefined;
   const proof = trace?.steps.at(-1)?.sim?.proof;
   const ruleProof = trace?.steps.at(-1)?.sim?.ruleProof ?? trace?.steps.at(-1)?.sim?.readProof;
-  const interleavings = trace?.steps.at(-1)?.sim?.interleavingProof;
+  const interleavings = trace?.steps.at(-1)?.sim?.interleavingProof ?? trace?.steps.at(-1)?.sim?.cacheProof;
   return ogImage({
     eyebrow: `system-design / ${topic.slug}`,
     title: lesson.title,

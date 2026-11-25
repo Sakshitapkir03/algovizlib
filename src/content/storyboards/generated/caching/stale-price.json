@@ -1,0 +1,310 @@
+{
+  "id": "caching-stale-price",
+  "title": "The price changed but users see the old one",
+  "concept": "Caching",
+  "category": "system-design",
+  "summary": "A cache that isn't told about a price change serves the old price until it expires; deleting the entry leaves a race; versioned invalidation keeps a slow reader's old price out.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "caching",
+    "cache invalidation",
+    "consistency"
+  ],
+  "takeaway": {
+    "pattern": "Versioned cache invalidation",
+    "summary": "On a write, delete the cache entry and leave the new version behind; keep a store only if its version is at least the newest the cache knows.",
+    "timeComplexity": "One version comparison per store, plus about one extra database read per update",
+    "spaceComplexity": "One version marker per updated key",
+    "whenToUse": [
+      "Reads go through a cache-aside cache in front of data that changes: prices, stock, profiles",
+      "A stale value matters for more than a moment, so a short TTL alone isn't enough"
+    ]
+  },
+  "trace": {
+    "problem": "caching/stale-price",
+    "args": [
+      [
+        {
+          "label": "not told",
+          "seed": 1,
+          "ttlMs": 10000,
+          "slow": {
+            "atMs": 2005,
+            "stallMs": 200
+          },
+          "invalidation": "none"
+        },
+        {
+          "label": "delete",
+          "seed": 1,
+          "ttlMs": 10000,
+          "slow": {
+            "atMs": 2005,
+            "stallMs": 200
+          },
+          "invalidation": "delete"
+        },
+        {
+          "label": "versioned",
+          "seed": 1,
+          "ttlMs": 10000,
+          "slow": {
+            "atMs": 2005,
+            "stallMs": 200
+          },
+          "invalidation": "versioned"
+        }
+      ],
+      {
+        "readers": [
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  "generation": {
+    "promptVersion": "system-design-v3",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-25T20:52:51.370Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "report",
+      "narration": "The admin cuts a price from 49 to 39 dollars and sees saved. Ana reloads the product page and still sees 49 dollars. The page reads the price through a cache: on a miss it reads the database and stores the price for 10 seconds.",
+      "caption": "The admin cuts the price from $49 to $39, but the page keeps showing $49",
+      "durationInFrames": 576,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        }
+      ]
+    },
+    {
+      "id": "stale-hit",
+      "narration": "The database now says 39 dollars, version 8, and the update was saved at 2033 milliseconds. Nobody told the cache. Ana reloads 0.3 seconds later, the cache still holds 49 dollars, version 7, and she gets the old price.",
+      "caption": "Saved at 2033 ms, but the cache still holds $49 v7: Ana's reload hits it",
+      "durationInFrames": 504,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "tables",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "cache",
+            "db"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ttl",
+      "narration": "Ana keeps reloading. Five of her reloads see 49 dollars. Only after the entry expires does a read go to the database, and at 12354 milliseconds, 10.3 seconds after the update was saved, she finally sees 39.",
+      "caption": "Only when the entry expires does Ana see $39: 10.3 s after it was saved",
+      "durationInFrames": 480,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "not told"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "cache",
+            "stale"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "race-read",
+      "narration": "First fix: after updating the database, delete the cache entry. Replay the same moment. The entry has just expired, so Ben's page misses, reads 49 dollars, version 7, from the database, and pauses for 200 milliseconds before storing it.",
+      "caption": "Fix one: delete the entry on update. But Ben's page already read $49 v7",
+      "durationInFrames": 504,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "delete"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "cache",
+            "db"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "race-store",
+      "narration": "Meanwhile the admin wrote 39 dollars and deleted the entry, and another shopper's read stored 39. At 2212 milliseconds Ben's page stores the 49 it read earlier, replacing 39. The old price is back for the next 10 seconds, although the database says 39.",
+      "caption": "Ben's late store puts $49 v7 back, replacing $39: stale for 10 s again",
+      "durationInFrames": 564,
+      "traceStep": 16,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "tables",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "cache",
+            "db"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "idea",
+      "narration": "The fix is versioned invalidation. Deleting the entry leaves the new version behind, and the cache keeps a store only if its version is at least the newest it knows. Memcached's check-and-set and Redis scripts can do that check in one step; a short TTL stays as a safety net.",
+      "caption": "Leave the new version behind, and keep a store only if it's not older",
+      "durationInFrames": 636,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "fix",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "keep only if not older",
+          "rejected": "always keep it",
+          "reason": "an old value read before the update can't come back",
+          "label": "on a store"
+        }
+      ]
+    },
+    {
+      "id": "kept-out",
+      "narration": "Replay the same race. The admin's delete leaves version 8 behind. When Ben's page tries to store 49 dollars, version 7, the cache knows version 8 is newer, so it keeps the old price out.",
+      "caption": "Same race: the cache knows v8, so Ben's store of $49 v7 is kept out",
+      "durationInFrames": 456,
+      "traceStep": 28,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "tables",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "cache",
+            "db"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fresh",
+      "narration": "Ana reloads 0.3 seconds after the update was saved, and the cache has 39 dollars, version 8. She sees the new price straight away.",
+      "caption": "Ana reloads 0.3 s after the update and gets $39",
+      "durationInFrames": 324,
+      "traceStep": 29,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "versioned"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "cache",
+            "stale"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cost",
+      "narration": "Invalidation isn't free. Every update sends the next read to the database. Over a minute at 20 reads a second, 60 updates meant 66 database reads against 8 without invalidation, about one extra per update. Without it, those updates left 1100 reads with an old price.",
+      "caption": "The cost: about 1 extra database read per update, 66 vs 8 a minute at 60",
+      "durationInFrames": 588,
+      "traceStep": 30,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "db reads/min",
+          "limitLine": false,
+          "labelUnit": "",
+          "chips": false
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "extra",
+            "at-max"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proof",
+      "narration": "Checked over every interleaving of one writer and one or two readers, from a warm and an empty cache, with a read after everything. A read started after the update saw the old price in 72 of 148 with no invalidation, 71 of 577 with delete after write, and none of 577 with versioned invalidation. It needs the conditional store to be atomic and the version marker to outlive any read.",
+      "caption": "Every interleaving: not told 72, delete 71, versioned 0 let a later read see $49",
+      "durationInFrames": 888,
+      "traceStep": 31,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "delete",
+            "versioned"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Schedules with a stale read",
+          "detail": "Every interleaving: 1 writer, 1–2 readers, warm and cold",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

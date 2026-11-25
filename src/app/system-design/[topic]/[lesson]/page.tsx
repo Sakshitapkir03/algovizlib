@@ -163,6 +163,22 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
                 {summary.ruleProof.runs} runs before the fix, {summary.ruleProof.fixed === 0 ? "✓" : "✕"}{" "}
                 {summary.ruleProof.fixed} of {summary.ruleProof.runs} with it
               </p>
+            ) : summary?.cacheProof ? (
+              <p className="font-mono text-xs">
+                Every interleaving of one writer and{" "}
+                {[...new Set(summary.cacheProof.cases.map((c) => c.readers))].join(" or ")} readers, from a
+                warm and a cold cache, plus a read after everything: a later read saw the old price in{" "}
+                {(["none", "delete", "versioned"] as const)
+                  .map((inv) => {
+                    const c = summary.cacheProof!.cases.filter((x) => x.invalidation === inv);
+                    const n = c.reduce((t, x) => t + x.violating, 0);
+                    const all = c.reduce((t, x) => t + x.schedules, 0);
+                    return `${n} of ${all} ${inv === "none" ? "with no invalidation" : inv === "delete" ? "with delete after write" : "with versioned invalidation"}`;
+                  })
+                  .join(", ")}{" "}
+                {summary.cacheProof.fixed === 0 ? "✓" : "✕"} (needs the conditional store to be atomic and the
+                version marker to outlive any read)
+              </p>
             ) : summary?.interleavingProof ? (
               <p className="font-mono text-xs">
                 Every interleaving of{" "}

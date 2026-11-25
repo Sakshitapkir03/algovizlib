@@ -1,4 +1,12 @@
-import { finalPositions, isHeap, keepsOrder, runTrace, sequenceLanes, type Trace, type TraceStep } from "@/lib/traces";
+import {
+  finalPositions,
+  isHeap,
+  keepsOrder,
+  runTrace,
+  sequenceLanes,
+  type Trace,
+  type TraceStep,
+} from "@/lib/traces";
 
 import type {
   TraceHeap,

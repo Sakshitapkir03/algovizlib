@@ -5,7 +5,9 @@ import {
   DECISION_OPTIONS,
   P99_OPTIONS,
   quickCheckSchema,
+  HIT_OPTIONS,
   READ_ROUTE_OPTIONS,
+  SET_OPTIONS,
   WRITE_OUTCOME_OPTIONS,
   SATURATION_OPTIONS,
   SERVER_NAMES,
@@ -307,6 +309,34 @@ function truth(
       if (after === undefined || String(after) !== e.after)
         throw new Error("the row's value isn't what the write computed");
       return Number(option) === after;
+    }
+    case "cache-hit": {
+      const c = step.sim?.cacheOp;
+      if (!c || c.op !== "get") return undefined;
+      // A hit is a live entry when the get arrives.
+      const hit = c.entryBefore !== undefined;
+      if (hit !== c.hit) throw new Error("the read's hit or miss doesn't match the cache");
+      const named = Object.entries(HIT_OPTIONS).find(([, words]) => words === option)?.[0];
+      return named === undefined ? undefined : (named === "hit") === hit;
+    }
+    case "read-price": {
+      const c = step.sim?.cacheOp;
+      const asked = /^\$(\d+)$/.exec(option);
+      if (!c || c.op !== "get" || !asked) return undefined;
+      // Cache-aside: a hit returns the cached price; a miss, the database's.
+      const price = c.entryBefore ? c.entryBefore.price : c.db.price;
+      if (price !== c.price) throw new Error("the read didn't return what cache-aside returns");
+      return Number(asked[1]) === price;
+    }
+    case "set-kept": {
+      const c = step.sim?.cacheOp;
+      if (!c || c.op !== "set" || c.version === undefined) return undefined;
+      // A versioned store is kept only if its version is at least the newest the cache knows.
+      const outcome =
+        !c.versioned || c.knownBefore === undefined || c.version >= c.knownBefore ? "stored" : "rejected";
+      if (outcome !== c.outcome) throw new Error("the store's outcome isn't what the cache's rule decides");
+      const named = Object.entries(SET_OPTIONS).find(([, words]) => words === option)?.[0];
+      return named === undefined ? undefined : named === outcome;
     }
     case "decision": {
       const d = step.sim?.decision;

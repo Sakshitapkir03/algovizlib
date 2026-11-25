@@ -26,6 +26,7 @@ import bitManipulationShortestPathVisitingAllNodes from "./bit-manipulation/shor
 import bitManipulationSingleNumber from "./bit-manipulation/single-number.json";
 import bitManipulationSingleNumberIi from "./bit-manipulation/single-number-ii.json";
 import bitManipulationSumOfTwoIntegers from "./bit-manipulation/sum-of-two-integers.json";
+import cachingStalePrice from "./caching/stale-price.json";
 import consistencyLostUpdate from "./consistency/lost-update.json";
 import designImplementQueueUsingStacks from "./design/implement-queue-using-stacks.json";
 import designLfuCache from "./design/lfu-cache.json";
@@ -136,6 +137,7 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "bit-manipulation/single-number": loadStoryboard(bitManipulationSingleNumber),
   "bit-manipulation/single-number-ii": loadStoryboard(bitManipulationSingleNumberIi),
   "bit-manipulation/sum-of-two-integers": loadStoryboard(bitManipulationSumOfTwoIntegers),
+  "caching/stale-price": loadStoryboard(cachingStalePrice),
   "consistency/lost-update": loadStoryboard(consistencyLostUpdate),
   "design/implement-queue-using-stacks": loadStoryboard(designImplementQueueUsingStacks),
   "design/lfu-cache": loadStoryboard(designLfuCache),

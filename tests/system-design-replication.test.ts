@@ -406,7 +406,11 @@ describe("existing lessons and videos are unchanged", () => {
     };
     walk("src/content/storyboards/generated");
     // Later lessons add their own files (each pins the rest in its own test).
-    const later = [`replication${path.sep}vanished-comment`, `consistency${path.sep}lost-update`];
+    const later = [
+      `replication${path.sep}vanished-comment`,
+      `consistency${path.sep}lost-update`,
+      `caching${path.sep}stale-price`,
+    ];
     const existing = files.filter((f) => !later.some((l) => f.includes(l))).sort();
     const h = createHash("sha256");
     for (const f of existing) h.update(f).update(readFileSync(f));
@@ -417,7 +421,10 @@ describe("existing lessons and videos are unchanged", () => {
     const h = createHash("sha256");
     const ids = storyboards
       .map((s) => s.id)
-      .filter((id) => id !== "replication-vanished-comment" && id !== "consistency-lost-update")
+      .filter(
+        (id) =>
+          !["replication-vanished-comment", "consistency-lost-update", "caching-stale-price"].includes(id),
+      )
       .sort();
     for (const id of ids) h.update(id).update(JSON.stringify(storyboards.find((s) => s.id === id)));
     expect([ids.length, h.digest("hex").slice(0, 16)]).toEqual([106, "c1a0c91c9c5013f8"]);

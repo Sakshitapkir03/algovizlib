@@ -8,8 +8,10 @@ import {
   MAX_CHECKS,
   p99Trend,
   P99_OPTIONS,
+  HIT_OPTIONS,
   READ_ROUTE_OPTIONS,
   SATURATION_OPTIONS,
+  SET_OPTIONS,
   WRITE_OUTCOME_OPTIONS,
   SERVER_NAMES,
   type QuickCheck,
@@ -145,6 +147,43 @@ const shownVersions = (step: TraceStep) =>
   (step.sim?.tables ?? []).flatMap((t) => t.rows.map((r) => r.cells[0])).filter((c) => /^v\d+$/.test(c));
 
 const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // Cache-aside. A read that hits a stale entry asks hit or miss; the last replay's first fresh read asks the price;
+  // a versioned store asks whether it's kept.
+  ({ step, scene, trace, index }) => {
+    const c = step.sim?.cacheOp;
+    if (!c || !scene.elements.some((x) => x.type === "sequence" || x.type === "data-table")) return undefined;
+    if (c.op === "set" && c.versioned && c.outcome && c.price !== undefined)
+      return made(
+        `${c.actor}'s page stores $${c.price} (v${c.version}). Is it stored or kept out?`,
+        Object.values(SET_OPTIONS),
+        SET_OPTIONS[c.outcome],
+        { kind: "set-kept" },
+      );
+    if (c.op !== "get" || c.price === undefined) return undefined;
+    const stale = c.version !== undefined && c.version < c.db.version;
+    if (c.hit && stale)
+      return made(`${c.actor} reloads the page. Hit or miss?`, Object.values(HIT_OPTIONS), HIT_OPTIONS.hit, {
+        kind: "cache-hit",
+      });
+    const lastRun = Math.max(...trace.steps.map((s) => (s.sim?.cacheOp ? s.sim.run : -1)));
+    const firstRead = !trace.steps
+      .slice(0, index)
+      .some(
+        (s) => s.sim?.run === step.sim!.run && s.sim.cacheOp?.op === "get" && s.sim.cacheOp.actor === c.actor,
+      );
+    if (!stale && step.sim!.run === lastRun && firstRead) {
+      const prices = [
+        ...new Set([c.price, c.db.price, ...(c.entryBefore ? [c.entryBefore.price] : []), 49, 39]),
+      ]
+        .slice(0, 2)
+        .sort((a, b) => b - a)
+        .map((p) => `$${p}`);
+      return made(`${c.actor} reloads the page. Which price does this read return?`, prices, `$${c.price}`, {
+        kind: "read-price",
+      });
+    }
+    return undefined;
+  },
   // Concurrent edits. A blind write that overwrites an edit asks the stock after it; a compare-and-set write that's
   // rejected asks whether it applies; a retry that applies asks which version it expects.
   ({ step, scene, trace }) => {

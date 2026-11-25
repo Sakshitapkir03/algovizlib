@@ -1376,11 +1376,11 @@ lessons, built and planned; a built lesson lives at `/system-design/<topic>/<slu
 quick checks, reviews, and the tutor with DSA problems under the key `<topic>/<slug>` (topic slugs never reuse a
 pattern's: tested). Lessons are **incident replays** (a real class of bug followed message by message, then the fix
 replayed under the same failures) or **growth stories** (one server upward, a component added only after the
-simulation measures the bottleneck). Five lessons are built: "Why was the customer charged twice?"
+simulation measures the bottleneck). Six lessons are built: "Why was the customer charged twice?"
 (`idempotency/charged-twice`, an incident replay), "Is one server enough?" (`estimates/one-server`, a growth story),
 "One slow server takes everyone down" (`load-balancing/slow-server`, an incident replay), "I posted a comment and
-it vanished" (`replication/vanished-comment`, an incident replay), and "Two edits, one lost" (`consistency/lost-update`,
-an incident replay);
+it vanished" (`replication/vanished-comment`, an incident replay), "Two edits, one lost" (`consistency/lost-update`,
+an incident replay), and "The price changed but users see the old one" (`caching/stale-price`, an incident replay);
 the rest of the curriculum is listed as planned (`content/catalog/system-design`).
 
 - **The simulation is the ground truth** (`src/lib/sim/`, app code: it runs in the browser and in tests), as traces are
@@ -1539,13 +1539,50 @@ the rest of the curriculum is listed as planned (`content/catalog/system-design`
   built lesson registers a scenario panel in `lesson-video.tsx`. No DSA link: the interleavings are the proof's, never
   drawn as a search tree, and they're merges, not permutations. Every existing video was pixel-identical before and
   after (all 107, the same capture as the replication lesson's).
+- **The cache model** (`caching.ts`, "The price changed but users see the old one"): a product page reads one price
+  through a cache, cache-aside; the database holds the price and a version. `PriceCache` (shared by the timed replay
+  and the proof): `get` (a live entry), `set` (plain, or versioned: kept only if its version is at least the newest the
+  cache knows, entry or marker, in one atomic step), `invalidate` (delete; versioned leaves a marker with the new
+  version), TTLs for entries and markers (`markerTtlMs`, default the TTL). The admin writes the database, then
+  invalidates (`none` / `delete` / `versioned`), then the update is acknowledged. Followed: Ben, whose page misses just
+  after the entry expires and pauses `stallMs` between reading the database and storing; Ana, who reloads after the
+  acknowledgement until she sees the new price; plus background shoppers. Every request records hit or miss, price,
+  version, and the store's outcome; a store also records the entry it replaced and the newest version known (from
+  the engine, since background reads aren't logged and change the cache between followed steps). **The rule**
+  (zero tolerance, so a cache that's never told can't pass by waiting out its TTL): once a price update is
+  acknowledged, no read that starts after that returns an older price. `enumerateCacheSchedules(invalidation, readers,
+warm)`: every interleaving of the writer (write, invalidate) and one or two readers (get; on a miss, read the
+  database, store), from a warm or cold cache, plus a probe read after everything (so a stale value left behind counts
+  with one reader): no invalidation 72 of 148, delete after write 71 of 577 (the race needs a cold cache), versioned 0
+  of 577. Conditions: the database confirms before the invalidation, the invalidation finishes before the
+  acknowledgement, the conditional store is atomic, and the marker outlives any read (a test: a 50 ms marker during a
+  200 ms pause lets $49 back). `traces/system-design/stale-price.ts`: three replays ("not told", "delete",
+  "versioned"); keys by kind (not told: Ana's stale hit and her first fresh read; delete: Ben's database read and his
+  store, which replaces $39 with $49; versioned: Ben's store kept out and Ana's first read), and with invalidation a
+  `cost` step on the last replay (database reads a minute at 1/6/30/60 updates a minute with invalidation, bar, against
+  the same traffic without, outline: about one extra read per update; without it, 1100 stale reads at 60 a minute).
+  Topology on two rows (Ben, Cache, Admin; Ana, Database: both shoppers' links cross) so the diagram fits above the
+  cache and database tables; lanes Admin, Ben, Ana, Cache, Database. sim carries `cacheOp` and the last step
+  `cacheProof` (`answerDisplay` "0 of 577"). Quick checks `cache-hit` (a stale hit: "Hit or miss?"), `set-kept` (a
+  versioned store: "Is it stored or kept out?", recomputed from the version and the newest known), and `read-price`
+  (the last replay's first fresh read: hit → the cached price, miss → the database's). The fix text says how real
+  caches store conditionally (Memcached's `cas` with the value from `gets`; Redis runs a Lua script atomically),
+  checked against memcached's protocol.txt and redis.io's scripting guide. Alternatives (short TTL, leases, writing
+  the cache on update, a delayed second delete) are described, not simulated. "Your scenario" (`lib/sim/cache-scenario.ts`,
+  `cache-scenario-panel.tsx`): invalidation × TTL 5/10/30 s × Ben's pause 0/50/200 ms; 27 combinations, all tested at
+  every width. No DSA link (the cache expires by TTL and never shows eviction, so LRU Cache would mean nothing here).
+  Every existing video was pixel-identical before and after (all 108).
 - **Related patterns** on a lesson are `{ slug, reason }`, the reason one sentence the page shows, from the learner's
   point of view (what they see in the lesson, never an implementation detail like the event heap); a lesson may have
   none ("Is one server enough?" has none). Planned lessons carry no links.
 - **Limits** (said on the site): latencies are illustrative, not measurements; small runs, not traffic at scale; races
   come from scheduling, not threads; no clock skew; the proof is bounded (one scenario's timings, at most two lost
   messages, no crashes).
-- Tests: `tests/system-design-concurrency.test.ts` (determinism, the blind and compare-and-set replays, the row's
+- Tests: `tests/system-design-caching.test.ts` (determinism, each replay's outcome, the cache's versioned rule, the
+  marker-expiry edge, every interleaving for all three kinds of invalidation, the cost, key steps, the recorded
+  requests, the tables, storyboard and fit at every width, what was enumerated and the conditional-store sentence,
+  quick checks and recomputation mutations, tutor grounding, validator mutations, all 27 scenarios, and pins on every
+  existing storyboard file, resolved storyboard, and the five earlier lessons' traces), `tests/system-design-concurrency.test.ts` (determinism, the blind and compare-and-set replays, the row's
   atomic compare-and-set, tags, non-overlapping editors, every interleaving of 2 and 3 editors with and without it, a
   non-atomic check losing edits, retries and starvation under contention, key steps, the recorded edits, the tables,
   the cost chart's average and maximum, storyboard and fit at 343/500/640/1280, what was enumerated on screen, quick
@@ -1693,7 +1730,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
    the catalog and storyboards behind the repository into the database, and let users paste their own question.
    Email + password in production once a Resend sending domain is verified.
 4. **Practice mode.** See "Practice mode (planned)" above.
-5. **System design.** The engine and five lessons are built (see "System design"). Next: the planned lessons, each
+5. **System design.** The engine and six lessons are built (see "System design"). Next: the planned lessons, each
    adding its components to the engine (load balancer, cache, replicas, queue, rate limiter) with its own model and
    proof, and growth stories, whose validator checks a component is added only after a step measures its bottleneck.
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for

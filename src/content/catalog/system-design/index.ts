@@ -2,6 +2,7 @@ import { definePlannedLesson, type AnyLesson } from "@/lib/catalog";
 
 import { oneServer } from "./lessons/estimates/one-server";
 import { chargedTwice } from "./lessons/idempotency/charged-twice";
+import { stalePrice } from "./lessons/caching/stale-price";
 import { lostUpdate } from "./lessons/consistency/lost-update";
 import { slowServer } from "./lessons/load-balancing/slow-server";
 import { vanishedComment } from "./lessons/replication/vanished-comment";
@@ -26,14 +27,7 @@ const planned = (
 export const lessons: readonly AnyLesson[] = [
   oneServer,
   slowServer,
-  planned(
-    "caching",
-    "stale-price",
-    "The price changed but users see the old one",
-    "incident",
-    "A price was cut at 9:00; customers still saw the old price at 9:20.",
-    0,
-  ),
+  stalePrice,
   planned(
     "caching",
     "stampede",

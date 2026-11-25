@@ -25,6 +25,7 @@ const PANELS = {
     loading,
   }),
   "consistency/lost-update": dynamic(() => import("./concurrency-scenario-panel"), { ssr: false, loading }),
+  "caching/stale-price": dynamic(() => import("./cache-scenario-panel"), { ssr: false, loading }),
 } as const;
 
 /**

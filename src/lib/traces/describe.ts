@@ -354,6 +354,12 @@ export function describeStep(step: TraceStep, index: number): string {
             ? `${s.edit.editor} reads version ${s.edit.expected}: ${s.edit.read}`
             : `${s.edit.editor} writes ${s.edit.local} (computed from version ${s.edit.expected}, value ${s.edit.read}; ${s.edit.cas ? "compare-and-set" : "blind"}); the row was at version ${s.edit.rowVersion}; ${s.edit.outcome}${s.edit.overwrote.length ? `, overwriting ${s.edit.overwrote.join(", ")}'s edit` : ""}; row now ${s.edit.after}`
           : "",
+        s.cacheOp
+          ? `${s.cacheOp.actor} ${s.cacheOp.op}${s.cacheOp.hit !== undefined ? (s.cacheOp.hit ? " (hit)" : " (miss)") : ""}${s.cacheOp.price !== undefined ? ` $${s.cacheOp.price}` : ""}${s.cacheOp.version !== undefined ? ` v${s.cacheOp.version}` : ""}${s.cacheOp.outcome ? ` → ${s.cacheOp.outcome}` : ""}; cache before: ${s.cacheOp.entryBefore ? `$${s.cacheOp.entryBefore.price} v${s.cacheOp.entryBefore.version}` : "no entry"}${s.cacheOp.knownBefore !== undefined ? `, newest known v${s.cacheOp.knownBefore}` : ""}; database $${s.cacheOp.db.price} v${s.cacheOp.db.version}; ${s.cacheOp.versioned ? "versioned stores" : "plain stores"}`
+          : "",
+        s.cacheProof
+          ? `every interleaving enumerated: ${s.cacheProof.cases.map((c) => `${c.invalidation}, ${c.readers} reader${c.readers > 1 ? "s" : ""}, ${c.warm ? "warm" : "cold"} cache: ${c.violating} of ${c.schedules} let a later read see the old price`).join("; ")}`
+          : "",
         s.interleavingProof
           ? `every interleaving enumerated: ${s.interleavingProof.cases.map((c) => `${c.editors} editors: blind ${c.blind.lost} of ${c.blind.schedules} lose an edit, compare-and-set ${c.cas.lost} of ${c.cas.schedules}`).join("; ")}`
           : "",

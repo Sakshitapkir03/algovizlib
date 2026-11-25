@@ -79,7 +79,17 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("write-outcome") }),
   /** Concurrent edits: "What's the stock after Cy's write?": options are stock counts. */
   z.object({ kind: z.literal("final-value") }),
+  /** Caching: "Ana reloads. Hit or miss?" (`HIT_OPTIONS`). */
+  z.object({ kind: z.literal("cache-hit") }),
+  /** Caching: "Which price does this read return?": options are prices ("$39"). */
+  z.object({ kind: z.literal("read-price") }),
+  /** Caching: "Does this store get kept?" (`SET_OPTIONS`). */
+  z.object({ kind: z.literal("set-kept") }),
 ]);
+
+/** A cache lookup's outcomes, and a store's. */
+export const HIT_OPTIONS = { hit: "Hit", miss: "Miss" } as const;
+export const SET_OPTIONS = { stored: "It's stored", rejected: "It's kept out" } as const;
 
 /** A write's outcomes, as a question names them. */
 export const WRITE_OUTCOME_OPTIONS = { applied: "It applies", rejected: "It's rejected" } as const;

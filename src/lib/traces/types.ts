@@ -347,7 +347,45 @@ export type TraceSim = {
    * acknowledged edit with blind writes and with compare-and-set (retries included).
    */
   interleavingProof?: {
-    cases: { editors: number; blind: { schedules: number; lost: number }; cas: { schedules: number; lost: number } }[];
+    cases: {
+      editors: number;
+      blind: { schedules: number; lost: number };
+      cas: { schedules: number; lost: number };
+    }[];
+    runs: number;
+    fixed: number;
+  };
+  /**
+   * A cache-aside step (caching): who acted, what (a get that hit or missed, a database read, a store and whether it
+   * was kept, the admin's write, invalidation, or acknowledgement), the price and version involved, the cache's entry and
+   * the newest version it knew before the step, and whether the cache stores conditionally on the version.
+   */
+  cacheOp?: {
+    actor: string;
+    op: "get" | "db-read" | "set" | "write" | "invalidate" | "ack";
+    versioned: boolean;
+    hit?: boolean;
+    price?: number;
+    version?: number;
+    /** The cache before this step: its live entry, and the newest version it knew (entry or marker). */
+    entryBefore?: { price: number; version: number };
+    knownBefore?: number;
+    /** The database at this step. */
+    db: { price: number; version: number };
+    outcome?: "stored" | "rejected";
+  };
+  /**
+   * Every interleaving of one writer and one or two readers (warm or cold cache, plus a read after everything), for
+   * each kind of invalidation: how many schedules let a read that started after the acknowledgement see the old price.
+   */
+  cacheProof?: {
+    cases: {
+      invalidation: "none" | "delete" | "versioned";
+      readers: number;
+      warm: boolean;
+      schedules: number;
+      violating: number;
+    }[];
     runs: number;
     fixed: number;
   };
