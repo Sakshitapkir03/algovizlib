@@ -21,6 +21,11 @@ review queue of what to revisit.
   street of houses) or through one analogy for abstract problems (a price-sorted shelf for two pointers). There are 47
   visual primitives, including bars, linked lists, trees, grids, heaps, DP tables, tries, union-find forests, and
   timelines.
+- **System design as incident replays.** "Why was the customer charged twice?" replays a lost answer and a retry
+  message by message in a deterministic, seeded simulation, then replays the fix (an idempotency key, claimed first,
+  stored with the result, forwarded to the payment provider). The fix is checked against every single and double lost message on both
+  hops. Learners can change the failures, timings, and safeguards and replay their own scenario. The rest of the
+  curriculum is planned.
 - **A curated catalog.** 20 patterns in four groups, 4–8 problems each with easy, medium, and hard. Statements are
   original, examples are machine-checked, hints are progressive, and the approach stays hidden behind a toggle.
 - **Quick checks.** 89 of the videos pause before a few key steps and ask what happens next (220 questions). Questions
@@ -60,7 +65,7 @@ ElevenLabs and ffmpeg (offline narration) · Vercel AI SDK (offline generation, 
 
 ## Testing
 
-`pnpm test` runs **2,422 tests in 43 files** in about 15 seconds, with no network access. Among them:
+`pnpm test` runs **2,463 tests in 44 files** in about 15 seconds, with no network access. Among them:
 
 - **321 catalog examples** are checked against 103 independent reference solutions (test-only code), using each
   problem's judge.
@@ -71,6 +76,10 @@ ElevenLabs and ffmpeg (offline narration) · Vercel AI SDK (offline generation, 
 - **220 quick-check questions** are validated against their traces, and every word must be on screen.
 - **70 "Try your own input" specs** run on seeded random inputs. Each must match the reference answer and build a
   walkthrough that validates and fits.
+- **The system design simulation:** event order, seeding, and exact replays; the flagship's four replays against
+  hand-computed outcomes; the fix against every single and paired lost message on both hops (0 double charges) and
+  each safeguard shown necessary; validator mutations; and every "Your scenario" combination built, validated, and
+  fitted to a phone.
 - Auth, rate limits, account linking, progress merging, the review queue, the tutor's grounding and limits, and the
   narration pipeline. Postgres integration tests run against a local database.
 

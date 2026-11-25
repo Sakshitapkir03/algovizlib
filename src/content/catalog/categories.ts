@@ -12,24 +12,7 @@ export const categories = [
     slug: "system-design",
     name: "System Design",
     description:
-      "How real systems stay fast and reliable under load, explained with boxes, arrows, and requests.",
-    status: "coming-soon",
-    plannedTopics: [
-      {
-        name: "Load balancing",
-        summary: "Spreading requests across servers, and what happens when one fails.",
-      },
-      { name: "Caching", summary: "Where to cache, what to evict, and how stale data sneaks in." },
-      {
-        name: "Rate limiting",
-        summary: "Token buckets and sliding windows that keep one client from hogging a service.",
-      },
-      { name: "Databases and sharding", summary: "Replication, partitioning, and choosing a shard key." },
-      { name: "Message queues", summary: "Decoupling producers from consumers, retries, and ordering." },
-      {
-        name: "URL shortener design",
-        summary: "An end-to-end design: IDs, storage, redirects, and analytics.",
-      },
-    ],
+      "Real classes of production bugs, replayed request by request in a deterministic simulation, then fixed and replayed again.",
+    status: "available",
   }),
 ];

@@ -121,6 +121,76 @@ export const problemSchema = z.object({
   externalRefs: z.array(externalRefSchema).default([]),
 });
 
+// --- System design --------------------------------------------------------------------------------------------
+
+/** The sections of the /system-design page, in display order. */
+export const topicGroupSlugSchema = z.enum(["foundations", "data", "reliability", "case-studies"]);
+
+/** A system design topic: what patterns are to problems, topics are to lessons. */
+export const topicSchema = z.object({
+  slug,
+  name: nonEmpty,
+  group: topicGroupSlugSchema,
+  /** One sentence for the topic's heading. */
+  summary: nonEmpty,
+  order: z.number().int().min(0),
+});
+
+/**
+ * "incident": a replay of a real class of bug, followed request by request, then the fix replayed so the bug can't
+ * happen. "growth": a system that grows from one server, adding a component only after the simulation measures the
+ * bottleneck that justifies it.
+ */
+export const lessonKindSchema = z.enum(["incident", "growth"]);
+
+const lessonShape = {
+  slug,
+  topicSlug: slug,
+  title: nonEmpty,
+  kind: lessonKindSchema,
+  /** The symptom, the way a support ticket would put it ("A customer was charged $40 twice"). */
+  symptom: nonEmpty.max(100),
+  /** Position within the topic (ascending). */
+  order: z.number().int().min(0),
+};
+
+/** A lesson that's listed but not built yet: no page, no link. */
+export const plannedLessonSchema = z.object({ ...lessonShape, status: z.literal("planned") });
+
+/**
+ * A built lesson. Paragraph fields use the same text format as problem statements (blank lines, "- " bullets,
+ * `backticks`). `replays` are the simulation scenarios the video runs (the trace's args, as a problem example's
+ * `args` are); `rules` are what the simulation checks on every replay.
+ */
+export const lessonSchema = z.object({
+  ...lessonShape,
+  status: z.literal("available"),
+  minutes: z.number().int().min(1).max(30),
+  /** "The report": what was seen, before anyone knew why. */
+  report: nonEmpty,
+  /** Behind the spoiler toggle with `fix`. */
+  whatWentWrong: nonEmpty,
+  fix: nonEmpty,
+  /** What the simulation's proof covers, and what it doesn't. */
+  proofScope: nonEmpty,
+  rules: z.array(nonEmpty).min(1),
+  takeaways: z.array(nonEmpty).min(2),
+  replays: z.array(z.object({ args: z.array(jsonSchema) })).min(1),
+  /** DSA patterns that share an idea with this lesson. */
+  relatedPatterns: z.array(slug).default([]),
+  tags: z.array(nonEmpty).default([]),
+});
+
+export const anyLessonSchema = z.discriminatedUnion("status", [lessonSchema, plannedLessonSchema]);
+
+export type TopicGroupSlug = z.infer<typeof topicGroupSlugSchema>;
+export type Topic = z.infer<typeof topicSchema>;
+export type LessonKind = z.infer<typeof lessonKindSchema>;
+export type Lesson = z.infer<typeof lessonSchema>;
+export type LessonInput = z.input<typeof lessonSchema>;
+export type PlannedLesson = z.infer<typeof plannedLessonSchema>;
+export type AnyLesson = z.infer<typeof anyLessonSchema>;
+
 export type Category = z.infer<typeof categorySchema>;
 export type CategoryInput = z.input<typeof categorySchema>;
 export type CategorySlug = z.infer<typeof categorySlugSchema>;

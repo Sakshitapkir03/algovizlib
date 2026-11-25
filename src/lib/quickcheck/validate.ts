@@ -1,7 +1,7 @@
 import { applyOperator, type Storyboard } from "@/lib/storyboard";
 import type { Trace, TraceStep } from "@/lib/traces/types";
 
-import { quickCheckSchema, type QuickCheck } from "./schema";
+import { DECISION_OPTIONS, quickCheckSchema, type QuickCheck } from "./schema";
 
 /**
  * Proves every quick check against the trace, without the builder's code: for each option it works out from the
@@ -203,6 +203,13 @@ function truth(
       const call = trace.ops?.[c.call];
       if (!call || step.op?.current !== c.call || !step.op.returned) return undefined;
       return option === call.output;
+    }
+    case "decision": {
+      const d = step.sim?.decision;
+      if (!d || d.actor !== c.actor) return undefined;
+      const meaning = Object.entries(DECISION_OPTIONS[c.actor]).find(([, words]) => words === option)?.[0];
+      if (meaning === undefined) return undefined;
+      return meaning === d.choice;
     }
   }
 }

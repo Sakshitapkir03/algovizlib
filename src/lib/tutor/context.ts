@@ -1,4 +1,10 @@
-import { getProblem, getProblemStoryboard } from "@/lib/catalog/repository";
+import {
+  getLesson,
+  getLessonStoryboard,
+  getProblem,
+  getProblemStoryboard,
+  getTopic,
+} from "@/lib/catalog/repository";
 import type { Element } from "@/lib/storyboard";
 import { runTrace, type Trace, type TraceStep } from "@/lib/traces";
 import { describeStep } from "@/lib/traces/describe";
@@ -34,8 +40,9 @@ export function buildStepContext(problemKey: string, sceneId: string): StepConte
   const [patternSlug, slug] = problemKey.split("/");
   if (!patternSlug || !slug) return undefined;
   const problem = getProblem(patternSlug, slug);
-  const storyboard = problem && getProblemStoryboard(problem);
-  if (!problem || !storyboard) return undefined;
+  const lesson = problem ? undefined : getLesson(patternSlug, slug);
+  const storyboard = problem ? getProblemStoryboard(problem) : lesson && getLessonStoryboard(lesson);
+  if ((!problem && !lesson) || !storyboard) return undefined;
   const sceneIndex = storyboard.scenes.findIndex((s) => s.id === sceneId);
   if (sceneIndex < 0) return undefined;
   const scene = storyboard.scenes[sceneIndex];
@@ -52,9 +59,11 @@ export function buildStepContext(problemKey: string, sceneId: string): StepConte
   const next = index !== undefined ? trace?.steps[index + 1] : undefined;
   // The example the video animates: the one whose args the trace runs on (falls back to the first).
   const example =
-    problem.examples.find(
+    problem &&
+    (problem.examples.find(
       (e) => storyboard.trace && JSON.stringify(e.args) === JSON.stringify(storyboard.trace.args),
-    ) ?? problem.examples[0];
+    ) ??
+      problem.examples[0]);
 
   const label = `Step ${sceneIndex + 1} of ${storyboard.scenes.length}: ${scene.caption}`;
   // What the viewer sees things called: the trace's variable names (j, lo) are internal.
@@ -65,14 +74,32 @@ export function buildStepContext(problemKey: string, sceneId: string): StepConte
       return [`a ${el.type.replace("-", " ")} labeled "${el.label}"`];
     return [];
   });
+  const about =
+    problem && example
+      ? [
+          `Problem: ${problem.title} (${problem.difficulty})`,
+          problem.statement,
+          "",
+          `Example the video animates: ${example.input} → ${example.output}`,
+          ...(storyboard.analogy ? [`The video tells it as: ${storyboard.analogy.scenario}`] : []),
+          "",
+          `The approach takes ${problem.complexity.time} time and ${problem.complexity.space} space.`,
+        ]
+      : lesson
+        ? [
+            `System design lesson: ${lesson.title} (${getTopic(lesson.topicSlug)?.name ?? lesson.topicSlug}, a ${lesson.kind} replayed in a deterministic simulation)`,
+            lesson.report,
+            "",
+            `What went wrong: ${lesson.whatWentWrong}`,
+            "",
+            `The fix: ${lesson.fix}`,
+            "",
+            `What the simulation's proof covers: ${lesson.proofScope}`,
+            "Simulated latencies and timings are illustrative, not measurements of real systems.",
+          ]
+        : [];
   const lines = [
-    `Problem: ${problem.title} (${problem.difficulty})`,
-    problem.statement,
-    "",
-    `Example the video animates: ${example.input} → ${example.output}`,
-    ...(storyboard.analogy ? [`The video tells it as: ${storyboard.analogy.scenario}`] : []),
-    "",
-    `The approach takes ${problem.complexity.time} time and ${problem.complexity.space} space.`,
+    ...about,
     "",
     `Current moment: scene ${sceneIndex + 1} of ${storyboard.scenes.length}, "${scene.caption}"`,
     `Narration: ${scene.narration}`,
@@ -91,7 +118,12 @@ export function buildStepContext(problemKey: string, sceneId: string): StepConte
       next ? `The step after it:\n${describeStep(next, index + 1)}` : "This is the algorithm's last step.",
     );
   } else {
-    lines.push("", "This scene shows no algorithm step: it introduces the problem or sums up the approach.");
+    lines.push(
+      "",
+      lesson
+        ? "This scene shows no simulation step: it introduces the incident or the idea behind the fix."
+        : "This scene shows no algorithm step: it introduces the problem or sums up the approach.",
+    );
   }
   return {
     problemKey,

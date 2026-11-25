@@ -14,6 +14,7 @@ import {
   validateDraftFiles,
   type DraftFile,
 } from "@/lib/generation/drafts";
+import { prepareLesson } from "@/lib/generation/lesson";
 import { currentPrompts } from "@/lib/generation/prompts";
 import { exitStatus, formatFailures, formatSummaryTable } from "@/lib/generation/report";
 import { createFileWriter } from "@/lib/generation/writer";
@@ -21,8 +22,9 @@ import { createFileWriter } from "@/lib/generation/writer";
 const ROOT = process.cwd();
 const USAGE = `Usage: pnpm storyboards:validate-draft <path...> [--dry-run] [--force] [--model <id>]
 
-Validates drafts in the model's draft format (write them to .cache/drafts/<pattern>/<slug>.json; render the
-instructions with pnpm storyboards:prompt <pattern>/<slug>). Valid drafts are saved like generated storyboards.
+Validates drafts in the model's draft format (write them to .cache/drafts/<pattern>/<slug>.json, or
+.cache/drafts/<topic>/<slug>.json for a system design lesson; render the instructions with
+pnpm storyboards:prompt <key>). Valid drafts are saved like generated storyboards.
 
   --dry-run      validate and print only; write nothing
   --force        replace an existing generated storyboard (hand-written ones are never replaced)
@@ -64,6 +66,7 @@ function main() {
       attempts: createFileAttemptLog(path.join(ROOT, ".cache/drafts/attempts.json")),
       savedRepairs: (problem) => savedRepairs(problem),
       findTarget: (problem) => findTarget(catalog, problem),
+      findLesson: (key) => prepareLesson(key, writer),
       modelId: values.model,
       now: () => new Date(),
     },

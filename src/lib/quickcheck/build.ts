@@ -3,7 +3,7 @@ import type { Trace, TraceStep } from "@/lib/traces/types";
 
 import { pointerSubject } from "@/lib/tutor/suggestions";
 
-import { MAX_CHECKS, type QuickCheck, type QuickCheckClaim } from "./schema";
+import { DECISION_OPTIONS, MAX_CHECKS, type QuickCheck, type QuickCheckClaim } from "./schema";
 
 /**
  * Quick checks for a video, from its trace (no model): at most three, each asked just before a key step's scene, about
@@ -130,6 +130,20 @@ const pointersIn = (elements: readonly Element[]) =>
   elements.flatMap((e) => (e.type === "pointer" && e.binds ? [{ label: e.label, binds: e.binds }] : []));
 
 const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // A simulation's decision: "The retry reaches the API. What does the API do?"
+  ({ step, scene }) => {
+    const d = step.sim?.decision;
+    if (!d || (d.actor !== "api" && d.actor !== "provider")) return undefined;
+    if (!scene.elements.some((e) => e.type === "sequence" || e.type === "system-diagram")) return undefined;
+    const options: Record<string, string> = DECISION_OPTIONS[d.actor];
+    const correct = options[d.choice];
+    if (!correct) return undefined;
+    const prompt =
+      d.actor === "api"
+        ? "A retry with the same key reaches the API. What does the API do?"
+        : "A second charge request reaches the provider. What does the provider do?";
+    return made(prompt, Object.values(options), correct, { kind: "decision", actor: d.actor });
+  },
   // A design call's output: "What does get(1) return?"
   ({ trace, step, scene }) => {
     if (!step.op?.returned || !trace.ops) return undefined;

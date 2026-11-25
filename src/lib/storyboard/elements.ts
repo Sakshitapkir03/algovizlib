@@ -19,7 +19,7 @@ import { z } from "zod";
  * linked lists add "linked-list" (and heap-tree values from a step's `heap`); trees add "binary-tree" and
  * "call-stack"; breadth-first search adds "grid", "graph", and "queue"; dynamic programming adds "dp-table", "staircase", and
  * "house-row"; stacks add "stack" (apart from "call-stack"); backtracking adds
- * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; tries add "trie"; advanced graphs add "digraph" (apart from "graph") and "union-find"; data structure design adds "op-log" (plus linked-list `prev` links and stack `traceStack`); priority queues add "heap" (built
+ * "search-tree" and "partial"; hashing adds "hash-map"; fast and slow pointers add "race" (over a linked-list); greedy adds "choice" and "reach"; prefix sums add "prefix-row" and "prefix-grid"; intervals add "timeline"; bit manipulation adds "bits"; tries add "trie"; advanced graphs add "digraph" (apart from "graph") and "union-find"; data structure design adds "op-log" (plus linked-list `prev` links and stack `traceStack`); system design adds "system-diagram", "sequence", "data-table", and "metrics" (bound to a simulation's steps); priority queues add "heap" (built
  * apart from "heap-tree", which stays exactly as heap sort uses it).
  */
 
@@ -1334,6 +1334,143 @@ export const resultSourceSchema = z.object({
   value: resultShape.value.optional(),
 });
 
+// --- System design (src/lib/sim) --------------------------------------------------------------------------------
+
+const simNodeSchema = z.object({
+  id: nonEmpty.max(16),
+  label: nonEmpty.max(12),
+  kind: z.enum(["client", "server", "store", "external"]),
+  /** A spot on a small grid: columns left to right, rows top to bottom. */
+  x: index.max(3),
+  y: index.max(2),
+  /** Busy is a thick accent border, waiting a dashed one, idle a thin one. */
+  state: z.enum(["idle", "busy", "waiting"]).default("idle"),
+  /** A short note under the box ("charging", "waits on R1′"); hidden on a phone-sized player. */
+  badge: z.string().max(22).optional(),
+});
+
+const simTokenSchema = z.object({
+  id: nonEmpty,
+  label: nonEmpty.max(24),
+  from: nonEmpty,
+  to: nonEmpty,
+  /** Moving travels its edge during the scene; arrived sits at `to`; lost stops halfway with ✕. */
+  status: z.enum(["moving", "arrived", "lost"]),
+});
+
+const systemDiagramShape = {
+  ...baseElement,
+  type: z.literal("system-diagram"),
+  nodes: z.array(simNodeSchema).min(2).max(6),
+  edges: z.array(z.object({ from: nonEmpty, to: nonEmpty })).max(8),
+  tokens: z.array(simTokenSchema).max(6).default([]),
+};
+export const systemDiagramElementSchema = z.object(systemDiagramShape);
+export const systemDiagramSourceSchema = z.object({
+  ...systemDiagramShape,
+  /** Omit nodes/edges/tokens to take the trace's components and the bound step's states and messages. */
+  nodes: systemDiagramShape.nodes.optional(),
+  edges: systemDiagramShape.edges.optional(),
+  tokens: systemDiagramShape.tokens.optional(),
+});
+
+export const sequenceRowSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("message"),
+    id: nonEmpty,
+    from: nonEmpty,
+    to: nonEmpty,
+    label: nonEmpty.max(24),
+    at: z.number().int().nonnegative(),
+    status: z.enum(["delivered", "lost", "in-flight", "ignored"]),
+  }),
+  z.object({
+    kind: z.literal("note"),
+    id: nonEmpty,
+    lane: nonEmpty,
+    text: nonEmpty.max(30),
+    at: z.number().int().nonnegative(),
+    tone: verdictToneSchema,
+  }),
+]);
+
+const sequenceShape = {
+  ...baseElement,
+  type: z.literal("sequence"),
+  /** One lifeline per component, left to right. */
+  lanes: z
+    .array(z.object({ id: nonEmpty, label: nonEmpty.max(12) }))
+    .min(2)
+    .max(5),
+  /** The replay so far, top to bottom; the view keeps the latest rows in sight. */
+  rows: z.array(sequenceRowSchema).max(60),
+  /** The row this step added or changed (ringed). */
+  current: nonEmpty.optional(),
+  /** Shown above the lanes ("no key", "with key"); hidden on a phone-sized player. */
+  title: z.string().max(24).optional(),
+};
+export const sequenceElementSchema = z.object(sequenceShape);
+export const sequenceSourceSchema = z.object({
+  ...sequenceShape,
+  /** Omit lanes/rows/current to take them from the trace and the bound step (a sequence needs a bound step). */
+  lanes: sequenceShape.lanes.optional(),
+  rows: sequenceShape.rows.optional(),
+});
+
+const dataTableSchema = z.object({
+  id: nonEmpty,
+  title: nonEmpty.max(18),
+  columns: z.tuple([nonEmpty.max(10), nonEmpty.max(10)]),
+  rows: z
+    .array(
+      z.object({
+        cells: z.tuple([nonEmpty.max(14), nonEmpty.max(16)]),
+        /** What this step did to the row: new (accent), read (✓ found), duplicate (✕, dashed rose), waiting (dashed). */
+        mark: z.enum(["new", "read", "duplicate", "waiting"]).optional(),
+      }),
+    )
+    .max(5),
+});
+
+const dataTableShape = {
+  ...baseElement,
+  type: z.literal("data-table"),
+  /** Which of the step's tables to show, side by side ("keys", "ledger"). */
+  show: z.array(nonEmpty).min(1).max(2),
+  tables: z.array(dataTableSchema).min(1).max(2),
+};
+export const dataTableElementSchema = z.object(dataTableShape);
+export const dataTableSourceSchema = z.object({
+  ...dataTableShape,
+  /** Omit tables to take the bound step's (a data-table needs a bound step). */
+  tables: dataTableShape.tables.optional(),
+});
+
+const metricsShape = {
+  ...baseElement,
+  type: z.literal("metrics"),
+  /** Which of the step's metrics to show, in order ("charges", "attempts", "time"). */
+  show: z.array(nonEmpty).min(1).max(4),
+  items: z
+    .array(
+      z.object({
+        id: nonEmpty,
+        label: nonEmpty.max(16),
+        value: nonEmpty.max(12),
+        /** This step's change ("+1"). */
+        delta: z.number().int().optional(),
+      }),
+    )
+    .min(1)
+    .max(4),
+};
+export const metricsElementSchema = z.object(metricsShape);
+export const metricsSourceSchema = z.object({
+  ...metricsShape,
+  /** Omit items to take the bound step's (metrics need a bound step). */
+  items: metricsShape.items.optional(),
+});
+
 export const elementSchemas = [
   itemRowElementSchema,
   barRowElementSchema,
@@ -1382,6 +1519,10 @@ export const elementSchemas = [
   digraphElementSchema,
   unionFindElementSchema,
   opLogElementSchema,
+  systemDiagramElementSchema,
+  sequenceElementSchema,
+  dataTableElementSchema,
+  metricsElementSchema,
 ] as const;
 
 export const elementSourceSchemas = [
@@ -1432,6 +1573,10 @@ export const elementSourceSchemas = [
   digraphSourceSchema,
   unionFindSourceSchema,
   opLogSourceSchema,
+  systemDiagramSourceSchema,
+  sequenceSourceSchema,
+  dataTableSourceSchema,
+  metricsSourceSchema,
 ] as const;
 
 export const elementSchema = z.discriminatedUnion("type", elementSchemas);
@@ -1501,6 +1646,11 @@ export type NetworkNode = z.infer<typeof networkNodeSchema>;
 export type NetworkEdge = z.infer<typeof networkEdgeSchema>;
 export type UnionFindElement = ElementOf<"union-find">;
 export type OpLogElement = ElementOf<"op-log">;
+export type SystemDiagramElement = ElementOf<"system-diagram">;
+export type SequenceElement = ElementOf<"sequence">;
+export type SequenceRow = z.infer<typeof sequenceRowSchema>;
+export type DataTableElement = ElementOf<"data-table">;
+export type MetricsElement = ElementOf<"metrics">;
 export type CellKind = z.infer<typeof cellKindSchema>;
 export type BfsCheckElement = z.infer<typeof bfsCheckSchema>;
 export type ComparisonOp = z.infer<typeof comparisonOpSchema>;

@@ -14,6 +14,7 @@ import { prefixProblems } from "./prefix";
 import { raceProblems } from "./race";
 import { searchProblems } from "./search";
 import { stackProblems } from "./stack";
+import { systemProblems } from "./system";
 import { timelineProblems } from "./timeline";
 import { treeProblems } from "./tree";
 import { trieProblems } from "./trie";
@@ -98,13 +99,9 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
       case "merge-buffer": {
         const layout = rows[el.rowId];
         for (const v of el.values)
-          if (
-            v !== null &&
-            !t.fits(String(v), t.size(TEXT.countCell), layout.cardWidth - 8, "mono")
-          )
+          if (v !== null && !t.fits(String(v), t.size(TEXT.countCell), layout.cardWidth - 8, "mono"))
             fail(`buffer value ${v} is wider than its slot`);
-        if (layout.panelTop + sizes.cell(t) > bottomTop + 2)
-          fail("the buffer runs into the bottom stack");
+        if (layout.panelTop + sizes.cell(t) > bottomTop + 2) fail("the buffer runs into the bottom stack");
         break;
       }
       case "split-tree": {
@@ -119,8 +116,7 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
       }
       case "window": {
         const layout = rows[el.rowId];
-        const label =
-          el.value === undefined ? "" : [el.label, el.value].filter((v) => v !== "").join(" ");
+        const label = el.value === undefined ? "" : [el.label, el.value].filter((v) => v !== "").join(" ");
         if (!t.fits(label, t.size(TEXT.windowLabel), 1280 - 16 - 28, "mono"))
           fail(`window label "${label}" doesn't fit the stage`);
         const labelTop = layout.top - sizes.window(t);
@@ -130,8 +126,7 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
       }
       case "freq-table": {
         const cell = sizes.freqCell(t, el.entries);
-        const width =
-          t.width(el.label, t.size(TEXT.panelLabel)) + el.entries.length * (cell + 16);
+        const width = t.width(el.label, t.size(TEXT.panelLabel)) + el.entries.length * (cell + 16);
         if (width > 1280 - 32) fail("the counts panel is wider than the stage");
         break;
       }
@@ -140,8 +135,7 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
         const row = elements.find((e) => e.id === el.rowId);
         const values = row?.type === "item-row" ? row.items.map((i) => String(i.value)) : [];
         for (const v of values)
-          if (!t.fits(v, t.size(TEXT.countCell), cell - 8, "mono"))
-            fail(`deque value ${v} overflows`);
+          if (!t.fits(v, t.size(TEXT.countCell), cell - 8, "mono")) fail(`deque value ${v} overflows`);
         const cells = el.indices.length + (el.poppedBack?.length ?? 0) + (el.poppedFront?.length ?? 0);
         const width =
           t.width(el.label, t.size(TEXT.panelLabel)) +
@@ -189,8 +183,7 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
         for (const node of el.nodes)
           if (!node.dummy && !t.fits(String(node.value), size, list.nodeWidth - 8, "mono"))
             fail(`node value ${node.value} is wider than its box (${Math.round(list.nodeWidth)}px)`);
-        if (list.nodeHeight < size + 8)
-          fail(`nodes are too short for their values (${list.nodeHeight}px)`);
+        if (list.nodeHeight < size + 8) fail(`nodes are too short for their values (${list.nodeHeight}px)`);
         // Every node (and a null end after it) stays on the stage.
         for (const node of el.nodes)
           if (list.slotLeft(node.lane, node.slot + 1) > 1280 - 8)
@@ -229,9 +222,7 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
           (el.display === "rows"
             ? Math.max(
                 0,
-                ...el.entries.map(
-                  (e) => cell(e.key) + (el.kind === "map" ? cell(e.value ?? "") + 60 : 0),
-                ),
+                ...el.entries.map((e) => cell(e.key) + (el.kind === "map" ? cell(e.value ?? "") + 60 : 0)),
               ) + 160
             : el.entries.reduce(
                 (sum, e) => sum + cell(el.kind === "map" ? `${e.key}:${e.value ?? ""}` : e.key) + 10,
@@ -274,6 +265,12 @@ export function sceneFitProblems(elements: readonly Element[], t: TextMetrics = 
       case "graph":
       case "queue":
         for (const problem of searchProblems(elements, t, el.type)) fail(problem);
+        break;
+      case "system-diagram":
+      case "sequence":
+      case "data-table":
+      case "metrics":
+        for (const problem of systemProblems(elements, t, el.type)) fail(problem);
         break;
       case "heap-tree":
         for (const v of el.values)

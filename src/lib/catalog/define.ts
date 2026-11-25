@@ -1,6 +1,9 @@
 import type { z } from "zod";
 
 import {
+  anyLessonSchema,
+  lessonSchema,
+  topicSchema,
   categorySchema,
   patternGroupSchema,
   patternSchema,
@@ -12,6 +15,10 @@ import {
   type PatternInput,
   type Problem,
   type ProblemInput,
+  type AnyLesson,
+  type Lesson,
+  type LessonInput,
+  type Topic,
 } from "./schema";
 
 function parse<S extends z.ZodType>(schema: S, input: z.input<S>, label: string): z.output<S> {
@@ -43,4 +50,19 @@ export function definePattern(input: PatternInput): Pattern {
 /** Parse an authored problem, applying defaults. Throws a readable error if invalid. */
 export function defineProblem(input: ProblemInput): Problem {
   return parse(problemSchema, input, `problem "${input.slug}"`);
+}
+
+/** Parse an authored system design topic. Throws a readable error if invalid. */
+export function defineTopic(input: z.input<typeof topicSchema>): Topic {
+  return parse(topicSchema, input, `topic "${input.slug}"`);
+}
+
+/** Parse an authored (built) lesson, applying defaults. Throws a readable error if invalid. */
+export function defineLesson(input: LessonInput): Lesson {
+  return parse(lessonSchema, input, `lesson "${input.topicSlug}/${input.slug}"`);
+}
+
+/** Parse a planned lesson (listed, not built). Throws a readable error if invalid. */
+export function definePlannedLesson(input: z.input<typeof anyLessonSchema>): AnyLesson {
+  return parse(anyLessonSchema, input, `lesson "${input.topicSlug}/${input.slug}"`);
 }

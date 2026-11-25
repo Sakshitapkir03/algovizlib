@@ -174,6 +174,75 @@ export type TraceStep = {
   op?: TraceOp;
   /** A second stack beside `pile` (a queue built from two stacks: `pile` takes pushes, this one serves pops). */
   secondPile?: TracePile;
+  /** A system design simulation's state after this event (src/lib/sim). See `TraceSim`. */
+  sim?: TraceSim;
+};
+
+/**
+ * System design: a simulation's components and the links between them, as the system diagram draws them. `x`/`y`
+ * are spots on a small grid (columns, rows). The topology never changes within a trace.
+ */
+export type SimNodeKind = "client" | "server" | "store" | "external";
+export type TraceSystem = {
+  nodes: { id: string; label: string; kind: SimNodeKind; x: number; y: number }[];
+  edges: { from: string; to: string }[];
+};
+
+/**
+ * One row of a run's sequence view: a message between two components (sent at `at` ms; `delivered`, `lost` on the
+ * way, still `in-flight`, or `ignored`: it arrived after its sender stopped waiting), or a note on one component's
+ * lifeline ("⏱ timeout", "charge ch_2 ✕ duplicate") with the tone of the news it carries.
+ */
+export type TraceSimRow =
+  | {
+      kind: "message";
+      id: string;
+      from: string;
+      to: string;
+      label: string;
+      at: number;
+      status: "delivered" | "lost" | "in-flight" | "ignored";
+    }
+  | { kind: "note"; id: string; lane: string; text: string; at: number; tone: VerdictTone };
+
+/** A request or response drawn on the system diagram: moving along its edge, just arrived, or lost on the way. */
+export type TraceSimToken = {
+  id: string;
+  label: string;
+  from: string;
+  to: string;
+  status: "moving" | "arrived" | "lost";
+};
+
+/** A small table of stored data (idempotency keys, the provider's ledger); `mark` flags what this step did to a row. */
+export type TraceSimTable = {
+  id: string;
+  title: string;
+  columns: [string, string];
+  rows: { cells: [string, string]; mark?: "new" | "read" | "duplicate" | "waiting" }[];
+};
+
+/**
+ * A simulation's state after one event. `run` numbers the replay this step belongs to (a lesson's video replays the
+ * bug, then the fix, under a few failures); `rows` is that run's sequence so far and `current` the row this step
+ * added or changed. `decision` names what a component chose at this step, for quick checks: the API charging, returning
+ * a stored result, or waiting on a key in progress; the provider charging or deduplicating. `violations` are the
+ * lesson's rules broken so far in this run ("order 17 charged twice"). The last step of a lesson carries `proof`: how
+ * many lost-message failure points were checked with the fix and how many still double-charged.
+ */
+export type TraceSim = {
+  run: number;
+  runLabel: string;
+  t: number;
+  nodes: { id: string; state: "idle" | "busy" | "waiting"; badge?: string }[];
+  tokens: TraceSimToken[];
+  rows: TraceSimRow[];
+  current?: string;
+  tables: TraceSimTable[];
+  metrics: { id: string; label: string; value: string; delta?: number }[];
+  decision?: { actor: string; choice: "charge" | "stored-result" | "wait" | "dedupe" };
+  violations: string[];
+  proof?: { singles: number; pairs: number; runs: number; doubleCharges: number };
 };
 /**
  * Where a design problem's operation sequence is (the calls themselves are `trace.ops`): `current` is the call this
@@ -606,8 +675,11 @@ export type Trace = {
   row: {
     values: TraceValue[];
     /** "stairs" and "houses" are drawn by the staircase and house-row primitives (Climbing Stairs, House Robber). */
-    display: "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "network" | "stairs" | "houses";
+    display:
+      "cards" | "bars" | "list" | "tree" | "grid" | "graph" | "network" | "stairs" | "houses" | "system";
   };
+  /** A system design simulation's components and links (display "system"); steps carry `sim`. */
+  system?: TraceSystem;
   /** A binary tree's shape (display "tree"); it never changes, steps record the walk over it. */
   tree?: { nodes: TraceTreeNode[] };
   /** A grid (display "grid"): its starting contents; steps record changes (`cells`) and the search (`bfs`). */

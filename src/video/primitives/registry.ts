@@ -48,6 +48,10 @@ import { Trie } from "./Trie";
 import { Digraph } from "./Digraph";
 import { UnionFind } from "./UnionFind";
 import { OpLog } from "./OpLog";
+import { SystemDiagram } from "./SystemDiagram";
+import { Sequence } from "./Sequence";
+import { DataTable } from "./DataTable";
+import { Metrics } from "./Metrics";
 import { Window } from "./Window";
 
 export type PrimitiveDefinition<K extends ElementType> = {
@@ -136,4 +140,8 @@ export const primitiveRegistry: { [K in ElementType]: PrimitiveDefinition<K> } =
   callout: { component: Callout, slot: "canvas", layer: 3 },
   equation: { component: Equation, slot: "bottom", layer: 0 },
   result: { component: Result, slot: "bottom", layer: 0 },
+  "system-diagram": { component: SystemDiagram, slot: "canvas", layer: 0 },
+  sequence: { component: Sequence, slot: "canvas", layer: 0 },
+  "data-table": { component: DataTable, slot: "bottom", layer: 0 },
+  metrics: { component: Metrics, slot: "bottom", layer: 0 },
 };

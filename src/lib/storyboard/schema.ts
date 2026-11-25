@@ -1144,6 +1144,71 @@ export const sceneSchema = z
               });
           }
           break;
+        case "system-diagram": {
+          const ids = new Set(el.nodes.map((n) => n.id));
+          if (ids.size !== el.nodes.length)
+            ctx.addIssue({ code: "custom", path: [...path, "nodes"], message: "Node ids must be unique" });
+          el.edges.forEach((e, k) => {
+            if (!ids.has(e.from) || !ids.has(e.to))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "edges", k],
+                message: `Edge ${e.from} → ${e.to} names a node the diagram doesn't have`,
+              });
+          });
+          el.tokens.forEach((tok, k) => {
+            const linked = el.edges.some(
+              (e) => (e.from === tok.from && e.to === tok.to) || (e.from === tok.to && e.to === tok.from),
+            );
+            if (!linked)
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "tokens", k],
+                message: `Token "${tok.label}" travels ${tok.from} → ${tok.to}, which isn't an edge`,
+              });
+          });
+          break;
+        }
+        case "sequence": {
+          const lanes = new Set(el.lanes.map((l) => l.id));
+          const rowIds = new Set<string>();
+          el.rows.forEach((row, k) => {
+            if (rowIds.has(row.id))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "rows", k],
+                message: `Duplicate row id "${row.id}"`,
+              });
+            rowIds.add(row.id);
+            const ends = row.kind === "message" ? [row.from, row.to] : [row.lane];
+            if (ends.some((id) => !lanes.has(id)))
+              ctx.addIssue({
+                code: "custom",
+                path: [...path, "rows", k],
+                message: `Row "${row.id}" names a lane the sequence doesn't have`,
+              });
+          });
+          if (el.current !== undefined && !rowIds.has(el.current))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, "current"],
+              message: `current "${el.current}" isn't one of the rows`,
+            });
+          break;
+        }
+        case "data-table":
+        case "metrics": {
+          const drawn = el.type === "data-table" ? el.tables : el.items;
+          if (new Set(el.show).size !== el.show.length)
+            ctx.addIssue({ code: "custom", path: [...path, "show"], message: "show lists an id twice" });
+          if (drawn.map((d) => d.id).join("|") !== el.show.join("|"))
+            ctx.addIssue({
+              code: "custom",
+              path: [...path, el.type === "data-table" ? "tables" : "items"],
+              message: `The ${el.type} must draw exactly what show lists, in order (${el.show.join(", ")})`,
+            });
+          break;
+        }
         default:
           break;
       }

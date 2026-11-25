@@ -156,4 +156,20 @@ export const TEXT = {
   /** An op log's calls and outputs ("put(1, 10)", "-1"), and its title. */
   opCall: 20,
   opTitle: 15,
+  /** System design: a component's label and the note under it, and a message token on a link. */
+  systemLabel: 26,
+  systemBadge: 16,
+  systemToken: 15,
+  /** A sequence view's lane headers, message labels, notes, and times (and the replay's name). */
+  seqLane: 22,
+  seqLabel: 17,
+  seqNote: 17,
+  seqTime: 13,
+  /** A data table's title, column headers, and cells. */
+  tableTitle: 16,
+  tableHeader: 13,
+  tableCell: 19,
+  /** A metric's label and value. */
+  metricLabel: 16,
+  metricValue: 24,
 } as const;

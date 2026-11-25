@@ -781,6 +781,67 @@ export function resolveStoryboard(source: StoryboardSource): ResolveResult {
             poppedFront: el.poppedFront ?? step.deque.poppedFront,
           };
         }
+        case "system-diagram": {
+          const system = trace?.system;
+          if (!el.nodes && !system) return (missing(el, "nodes"), el);
+          if (step && !step.sim) return (noState(el, "tokens", "simulation state"), el);
+          // An unbound diagram (the intro, the idea, the closing) shows the components at rest.
+          const states = new Map(step?.sim?.nodes.map((n) => [n.id, n]));
+          return {
+            ...el,
+            nodes:
+              el.nodes ??
+              system!.nodes.map((n) => {
+                const s = states.get(n.id);
+                return { ...n, state: s?.state ?? "idle", ...(s?.badge && { badge: s.badge }) };
+              }),
+            edges: el.edges ?? system!.edges,
+            tokens: el.tokens ?? step?.sim?.tokens ?? [],
+          };
+        }
+        case "sequence": {
+          const sim = step?.sim;
+          if (!sim) return (noState(el, "rows", "simulation state"), el);
+          const lanes =
+            el.lanes ??
+            trace?.system?.nodes.filter((n) => n.kind !== "store").map((n) => ({ id: n.id, label: n.label }));
+          if (!lanes) return (missing(el, "lanes"), el);
+          return { ...el, lanes, rows: el.rows ?? sim.rows, current: el.current ?? sim.current };
+        }
+        case "data-table": {
+          if (el.tables) return el;
+          const sim = step?.sim;
+          if (!sim) return (noState(el, "tables", "simulation state"), el);
+          const tables = el.show.map((id) => sim.tables.find((t) => t.id === id));
+          const unknown = el.show.filter((_, k) => !tables[k]);
+          if (unknown.length) {
+            issues.push({
+              sceneId: scene.id,
+              elementId: el.id,
+              field: "show",
+              message: `Trace step ${scene.traceStep} has no table ${unknown.map((u) => `"${u}"`).join(", ")} (it has: ${sim.tables.map((t) => t.id).join(", ")})`,
+            });
+            return el;
+          }
+          return { ...el, tables: tables as NonNullable<(typeof tables)[number]>[] };
+        }
+        case "metrics": {
+          if (el.items) return el;
+          const sim = step?.sim;
+          if (!sim) return (noState(el, "items", "simulation state"), el);
+          const items = el.show.map((id) => sim.metrics.find((m) => m.id === id));
+          const unknown = el.show.filter((_, k) => !items[k]);
+          if (unknown.length) {
+            issues.push({
+              sceneId: scene.id,
+              elementId: el.id,
+              field: "show",
+              message: `Trace step ${scene.traceStep} has no metric ${unknown.map((u) => `"${u}"`).join(", ")} (it has: ${sim.metrics.map((m) => m.id).join(", ")})`,
+            });
+            return el;
+          }
+          return { ...el, items: items as NonNullable<(typeof items)[number]>[] };
+        }
       }
     });
 

@@ -1,0 +1,359 @@
+{
+  "id": "idempotency-charged-twice",
+  "title": "Why was the customer charged twice?",
+  "concept": "Idempotency & retries",
+  "category": "system-design",
+  "summary": "A lost answer, a sensible retry, and $40 charged twice, replayed message by message, then fixed with an idempotency key.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "idempotency",
+    "retries",
+    "payments"
+  ],
+  "takeaway": {
+    "pattern": "Idempotency key",
+    "summary": "Send one key per operation on every retry; claim it atomically before the work, store the result under it, and pass it to every service that must not do the work twice.",
+    "timeComplexity": "One key lookup per request",
+    "spaceComplexity": "One stored result per key",
+    "whenToUse": [
+      "Any request a client may retry: payments, orders, emails, transfers",
+      "Calls to another service that must not happen twice"
+    ]
+  },
+  "trace": {
+    "problem": "idempotency/charged-twice",
+    "args": [
+      [
+        {
+          "label": "no key",
+          "seed": 7,
+          "clientTimeoutMs": 2000,
+          "clientRetries": 2,
+          "retryBackoffMs": 300,
+          "providerTimeoutMs": 3000,
+          "providerRetries": 1,
+          "providerWorkMs": 800,
+          "key": false,
+          "forwardKey": false,
+          "inProgress": false,
+          "lose": [
+            {
+              "link": "api→client",
+              "nth": 1
+            }
+          ]
+        },
+        {
+          "label": "key, answer lost",
+          "seed": 7,
+          "clientTimeoutMs": 2000,
+          "clientRetries": 2,
+          "retryBackoffMs": 300,
+          "providerTimeoutMs": 3000,
+          "providerRetries": 1,
+          "providerWorkMs": 800,
+          "key": true,
+          "forwardKey": true,
+          "inProgress": true,
+          "lose": [
+            {
+              "link": "api→client",
+              "nth": 1
+            }
+          ]
+        },
+        {
+          "label": "key, provider lost",
+          "seed": 7,
+          "clientTimeoutMs": 5000,
+          "clientRetries": 2,
+          "retryBackoffMs": 300,
+          "providerTimeoutMs": 3000,
+          "providerRetries": 1,
+          "providerWorkMs": 800,
+          "key": true,
+          "forwardKey": true,
+          "inProgress": true,
+          "lose": [
+            {
+              "link": "provider→api",
+              "nth": 1
+            }
+          ]
+        },
+        {
+          "label": "key, overlap",
+          "seed": 7,
+          "clientTimeoutMs": 2000,
+          "clientRetries": 2,
+          "retryBackoffMs": 300,
+          "providerTimeoutMs": 3000,
+          "providerRetries": 1,
+          "providerWorkMs": 2600,
+          "key": true,
+          "forwardKey": true,
+          "inProgress": true,
+          "lose": []
+        }
+      ]
+    ]
+  },
+  "generation": {
+    "promptVersion": "system-design-v1",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-25T04:24:15.015Z",
+    "repairAttempts": 0
+  },
+  "scenes": [
+    {
+      "id": "report",
+      "narration": "A customer clicks Pay once for order 17, and their bank shows two charges of 40 dollars. The client, the API, and the payment provider all say they did their job. Let's replay the payment, one message at a time.",
+      "caption": "One click on Pay, two charges of $40",
+      "durationInFrames": 516,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        },
+        {
+          "id": "ticket",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Support ticket · 14:02",
+          "value": "Charged twice",
+          "detail": "order 17, one click on Pay",
+          "showsAnswer": false,
+          "tone": "info"
+        }
+      ]
+    },
+    {
+      "id": "answer-lost",
+      "narration": "The client sends R1, the API asks the provider to charge 40 dollars, and the provider creates charge ch_1. The API answers paid, but that answer is lost on the way back. The client has only heard silence.",
+      "caption": "The charge works, but the API's \"paid\" answer is lost",
+      "durationInFrames": 492,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "no key"
+        },
+        {
+          "id": "data",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "keys",
+            "ledger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "charged-again",
+      "narration": "After 2000 milliseconds R1 times out, and the client sends R1 prime. Nothing tells the API it's the same payment, so it charges again: ch_2. Order 17 is now charged twice, and the client still shows one payment.",
+      "caption": "The retry looks brand new, so the provider charges again",
+      "durationInFrames": 492,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "no key"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "charges",
+            "attempts",
+            "time"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "idea",
+      "narration": "The client was right to retry: a lost answer and a lost request look the same from where it sits. So the client sends one key, k-17, with every attempt. The API claims the key before charging, stores the result under it, and passes the key on to the provider.",
+      "caption": "Name the payment once: an idempotency key",
+      "durationInFrames": 636,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        },
+        {
+          "id": "idea",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "one key, claimed first",
+          "rejected": "check, then charge",
+          "reason": "only one attempt can claim the key; the rest get its result",
+          "label": "the fix"
+        }
+      ]
+    },
+    {
+      "id": "key-answer-lost",
+      "narration": "Replay the same loss with the key. The API records k-17 as in progress, the provider charges ch_1, and the API stores ch_1 under the key. Then the paid answer is lost again.",
+      "caption": "With a key, the API stores ch_1 under k-17",
+      "durationInFrames": 432,
+      "traceStep": 16,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "key, answer lost"
+        },
+        {
+          "id": "data",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "keys",
+            "ledger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stored-result",
+      "narration": "R1 prime arrives with the same key. The API finds k-17 already done and returns the stored result, ch_1, without calling the provider. One charge, and the customer still gets their answer.",
+      "caption": "The retry finds k-17 done and gets ch_1 back, with no charge",
+      "durationInFrames": 420,
+      "traceStep": 19,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "key, answer lost"
+        },
+        {
+          "id": "data",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "keys",
+            "ledger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "provider-lost",
+      "narration": "The other hop can lose a message too. This time the provider charges ch_1, but its answer never reaches the API. The API waits up to 3000 milliseconds for it.",
+      "caption": "Now the provider's answer to the API is lost",
+      "durationInFrames": 396,
+      "traceStep": 25,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "key, provider lost"
+        },
+        {
+          "id": "data",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "keys",
+            "ledger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "provider-dedupe",
+      "narration": "The API sends the charge again, with the same key. Because the key was forwarded, the provider recognizes k-17 and returns ch_1 instead of charging a second time.",
+      "caption": "The API retries with the same key; the provider returns ch_1",
+      "durationInFrames": 372,
+      "traceStep": 28,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "key, provider lost"
+        },
+        {
+          "id": "data",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "keys",
+            "ledger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "overlap",
+      "narration": "Last, a slow provider: R1 is still being charged when the client gives up and sends R1 prime. A plain check for a finished record would find nothing and charge again. The in-progress record makes R1 prime wait for R1's result instead.",
+      "caption": "A retry arrives mid-charge: k-17 is in progress, so it waits",
+      "durationInFrames": 540,
+      "traceStep": 36,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "key, overlap"
+        },
+        {
+          "id": "data",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "keys",
+            "ledger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proof",
+      "narration": "With the key claimed first, stored with its result, and forwarded, the simulation loses every single message on both hops, then every pair of messages, under each replay's timings. 66 runs, and not one double charge. That's the idempotency key pattern; the check covers lost messages, not crashes.",
+      "caption": "One charge after every single and double lost message (not crashes)",
+      "durationInFrames": 612,
+      "traceStep": 42,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram",
+          "tokens": []
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "runs",
+            "double"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Double charges with the fix",
+          "detail": "Every single and double lost message (not crashes)",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

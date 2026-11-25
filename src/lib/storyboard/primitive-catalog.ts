@@ -91,6 +91,22 @@ export const primitiveCatalog: Record<ElementType, string> = {
     'A hash map or set under the input: entries in the order they were added, as rows ("6 → #3", a group\'s words "opst → stop, pots") or compact cells ("l:1"). Omit everything but `label` to take the step\'s map: the key just looked up is ringed with "✓ found" or "✗ not found", a new entry slides in marked "new", and a changed value shows its old value struck through. An unbound scene shows it empty. Use it in every bound scene of a hashing trace.',
   "op-log":
     'A design problem\'s calls as a column on the left of the stage, one row per call ("put(1, 10)") with its output beside it ("—" for none), like the problem page\'s operation table: the call being run is ringed, finished calls show their outputs, later calls are dashed and empty, and a long sequence scrolls to keep the running call in view. The internal structures (stacks, a hash map, a linked list, a history row) sit to its right. Omit `calls`/`current`/`shown` to take them from the trace and the step; an unbound scene shows the calls before any runs. Use one in every scene of a design trace, first.',
+  "system-diagram":
+    "A system design simulation's components as labeled boxes on a small grid (client, API, a store under it, an external service) with the links between them. In a bound scene, the step's messages travel their links as small labeled tokens (a lost one stops halfway with ✕), a busy component gets a thick accent border and a waiting one a dashed border, with a short note under the box. Omit nodes/edges/tokens to take them from the trace and the step; an unbound scene shows the components at rest (use it for the intro, the idea, and the closing).",
+  sequence:
+    'A sequence view of one simulation replay: a lifeline per component, one row per message (an arrow with its label and time; lost arrows end in ✕, ignored ones are dashed) or note ("⏱ R1 timed out", "charge ch_2 ✕ duplicate"), newest at the bottom, the row this step added ringed. Omit lanes/rows/current to take them from the trace and the step; it needs a traceStep. Give `title` the replay\'s name ("no key", "with key"). The best view for retries, timeouts, and races.',
+  "data-table":
+    'Stored data at this moment of a simulation, one or two small tables side by side (the API\'s idempotency keys, the provider\'s ledger): rows the step added are marked new, a row it read ✓, a duplicate ✕ in a dashed rose border, a row it waits on dashed. Set `show` to the step\'s table ids in order ("keys", "ledger") and omit tables; it needs a traceStep.',
+  metrics:
+    'A row of numbers from a simulation at this moment ("charges 2 +1", "attempts 2", "time 3229 ms"), with this step\'s change. Set `show` to the step\'s metric ids in order and omit items; it needs a traceStep.',
   result:
     'A final-answer or stat card (title + value + optional detail). For the answer set `showsAnswer: true` and omit `value` to display the trace\'s answer exactly. Also fine for info cards (e.g. "21 checks for 7 items", tone "info").',
 };
+
+/** Primitives only system design simulations use; the DSA generator prompt leaves them out (so it stays unchanged). */
+export const SYSTEM_DESIGN_PRIMITIVES: readonly ElementType[] = [
+  "system-diagram",
+  "sequence",
+  "data-table",
+  "metrics",
+];

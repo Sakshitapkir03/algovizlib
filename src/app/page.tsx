@@ -8,6 +8,7 @@ import { ReviewTodayCard } from "@/components/review/review-today-card";
 import {
   getAllProblems,
   getCategories,
+  getLessons,
   getPatterns,
   getProgressIndex,
   hasVideo,
@@ -42,6 +43,7 @@ export default function Home() {
   const patterns = getPatterns("dsa");
   const problems = getAllProblems();
   const videos = problems.filter(hasVideo).length;
+  const lessons = getLessons().length;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -94,7 +96,11 @@ export default function Home() {
                     </Link>
                   </h3>
                   <span className="rounded-md border px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
-                    {available ? `${patterns.length} patterns` : "coming soon"}
+                    {!available
+                      ? "coming soon"
+                      : c.slug === "dsa"
+                        ? `${patterns.length} patterns`
+                        : `${lessons} ${lessons === 1 ? "lesson" : "lessons"} · more planned`}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{c.description}</p>

@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { Problem } from "@/lib/catalog";
-import { getProblemStoryboard } from "@/lib/catalog/repository";
+import type { Lesson, Problem } from "@/lib/catalog";
+import { getLessonStoryboard, getProblemStoryboard } from "@/lib/catalog/repository";
 import { runTrace } from "@/lib/traces";
 
 import { buildQuickChecks } from "./build";
@@ -14,6 +14,15 @@ import { validateQuickChecks } from "./validate";
  */
 export function getQuickChecks(problem: Problem): QuickCheck[] {
   const storyboard = getProblemStoryboard(problem);
+  if (!storyboard?.trace) return [];
+  const trace = runTrace(storyboard.trace.problem, storyboard.trace.args);
+  const checks = buildQuickChecks(storyboard, trace);
+  return validateQuickChecks(storyboard, trace, checks).length === 0 ? checks : [];
+}
+
+/** A system design lesson's quick checks (the same rules: built from the simulation's steps, never shown unvalidated). */
+export function getLessonQuickChecks(lesson: Lesson): QuickCheck[] {
+  const storyboard = getLessonStoryboard(lesson);
   if (!storyboard?.trace) return [];
   const trace = runTrace(storyboard.trace.problem, storyboard.trace.args);
   const checks = buildQuickChecks(storyboard, trace);

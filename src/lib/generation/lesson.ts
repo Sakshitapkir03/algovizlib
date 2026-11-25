@@ -1,0 +1,47 @@
+import { getLesson, getTopic } from "@/lib/catalog/repository";
+import { getTraceDefinition, runTrace } from "@/lib/traces";
+
+import { hashTrace, type CacheKey } from "./cache";
+import type { GenerationContext } from "./draft";
+import { systemDesignPromptV1, type LessonPromptInput } from "./prompts/system-design-v1";
+import type { StoryboardWriter } from "./writer";
+
+/**
+ * A system design lesson as a storyboard target for the authoring fallback (`pnpm storyboards:prompt` and
+ * `pnpm storyboards:validate-draft` with a lesson key, "<topic>/<slug>"): the lesson's first replay is the trace's
+ * args, the prompt is the system design one, and the draft passes the same checks as any storyboard. Saved like a
+ * generated storyboard (content/storyboards/generated/<topic>/<slug>.json), where the repository finds it.
+ */
+export type PreparedLesson = {
+  key: CacheKey;
+  ctx: GenerationContext;
+  promptInput: LessonPromptInput;
+  existing?: "generated";
+};
+
+export const lessonPrompts = systemDesignPromptV1;
+
+export function prepareLesson(
+  key: string,
+  writer: Pick<StoryboardWriter, "exists">,
+): PreparedLesson | undefined {
+  const [topicSlug, slug] = key.split("/");
+  const lesson = topicSlug && slug ? getLesson(topicSlug, slug) : undefined;
+  const definition = getTraceDefinition(key);
+  if (!lesson || !definition) return undefined;
+  const args = lesson.replays[definition.exampleIndex].args;
+  const trace = runTrace(key, args);
+  const topicName = getTopic(topicSlug)?.name ?? topicSlug;
+  return {
+    key: { problem: key, promptVersion: lessonPrompts.version, traceHash: hashTrace(args, trace) },
+    ctx: {
+      problem: { patternSlug: topicSlug, slug, tags: lesson.tags },
+      patternName: topicName,
+      category: "system-design",
+      definition,
+      args,
+    },
+    promptInput: { lesson, topicName, trace },
+    ...(writer.exists(key) && { existing: "generated" as const }),
+  };
+}

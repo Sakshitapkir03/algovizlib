@@ -1,5 +1,5 @@
 import type { Problem } from "@/lib/catalog";
-import { primitiveCatalog, type ValidationIssue } from "@/lib/storyboard";
+import { primitiveCatalog, SYSTEM_DESIGN_PRIMITIVES, type ValidationIssue } from "@/lib/storyboard";
 import type { Trace } from "@/lib/traces";
 import { describeStep } from "@/lib/traces/describe";
 
@@ -21,6 +21,7 @@ export type StoryboardPromptInput = {
 };
 
 const ELEMENT_GUIDE = Object.entries(primitiveCatalog)
+  .filter(([type]) => !SYSTEM_DESIGN_PRIMITIVES.includes(type as keyof typeof primitiveCatalog))
   .map(([type, text]) => `- ${type}: ${text}`)
   .join("\n");
 

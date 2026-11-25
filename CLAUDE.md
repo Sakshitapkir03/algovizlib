@@ -49,6 +49,7 @@ src/
     api/checks/              quick check answers: GET the latest, POST a batch (see "Quick checks")
     api/review/              review schedule: GET, POST one change; api/review/merge (see "Review queue")
     review/                  the review queue (static shell, client island)
+    system-design/           topics and lessons; [topic]/[lesson]/ lesson page (+ its opengraph-image)
   components/
     ui/                      shadcn/ui (radix-nova). Slider has thumbLabel/thumbValueText for a11y
     catalog/                 difficulty badge, path breadcrumb, problem table, hints, approach toggle, progress UI
@@ -59,6 +60,7 @@ src/
     site/                    header, Cmd/Ctrl+K command palette, theme toggle/provider
     account/                 AccountProvider (session + progress sync), user menu, verify banner, auth forms, /me
     review/                  review list (reason, Reviewed / Snooze), "Review today" card, the /review queue
+    system-design/           lesson video ("Original replay" / "Your scenario"), scenario panel (lazy), kind badge
   content/
     catalog/                 categories, patterns/<slug>.ts, problems/<pattern>/<slug>.ts, index.ts
     storyboards/             hand-written storyboards + registry (index.ts)
@@ -83,6 +85,8 @@ src/
                              (browser recorder), server (API logic, Prisma store), for-problem (page, server-only)
     review/                  the review queue: rules (queue, intervals, merge; pure), server (API logic, Prisma
                              store), the tab's hub (browser / account copy, `useReviewQueue`)
+    sim/                     system design: the discrete-event loop, seeded streams, the payments model and its
+                             lost-message proof, "Your scenario" (see "System design")
     tutor/                   "Ask about this step": config + flag, step context, suggestions, prompt, usage counts +
                              answer cache, model (the app's one AI SDK use, server-only), service, deps
     generation/              OFFLINE ONLY: model adapter, prompts/, pipeline, cache, writer, CLI (never in the app)
@@ -405,55 +409,59 @@ Two forms of the same schema:
 `Element` is a Zod discriminated union on `type`. Every element has `id` and `enterAt` (0–1, a **fraction** of the
 scene's duration, so timing survives the switch to audio-driven lengths).
 
-| type            | purpose                                                                                                                                                                                 | slot   |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `item-row`      | labeled cards with values (product + price, `a[i]` + value, a character)                                                                                                                | canvas |
-| `bar-row`       | vertical bars on a baseline; optional container `fill`, per-bar `water`, `moves` (bars slide; a swap arcs), `empty` (dashed slots), `maxValue` (one scale per video)                    | canvas |
-| `pointer`       | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer                                                                                                 | canvas |
-| `highlight`     | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)                                                                                       | canvas |
-| `callout`       | speech bubble; anchored to an item or floating at the top                                                                                                                               | canvas |
-| `equation`      | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                                      | bottom |
-| `result`        | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                                           | bottom |
-| `sorted-region` | positions in final order (`indices`: a range or a scattered set): a shaded band per run + baseline segment, "✓ sorted" beside the row                                                   | canvas |
-| `held-value`    | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                                           | canvas |
-| `count-array`   | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                                                | canvas |
-| `segments`      | brackets under the bars for the current split (groups drawn apart); the active group gets a thick bracket, a faint band, and "▶ level d"                                                | canvas |
-| `split-tree`    | static overview of every split level at once (whole array → single values), each group a small box of its values                                                                        | bottom |
-| `merge-buffer`  | merge output so far, one slot per position under the range being merged; the slot just written gets a thick border and "▲ new"                                                          | canvas |
-| `partition`     | quick sort: "◆ pivot" tag above the pivot bar, dashed boundary with "◀ smaller", bars outside the range dimmed                                                                          | canvas |
-| `heap-tree`     | the same array as a binary tree (children 2i+1, 2i+2) on the right; compared parent/child ringed and labeled, nodes past the heap dashed with ✓, moves match the bars                   | canvas |
-| `counter`       | a labeled running total with this step's "+N" (inversions here; reusable for swaps, comparisons…)                                                                                       | bottom |
-| `window`        | sliding window: a bracket above the cards it covers plus a faint band, labeled with its value ("sum 13"); edges slide from the previous bound scene (`fromRange`)                       | canvas |
-| `freq-table`    | character counts in the window, one cell per letter ("2"), or have/need ("1/1", ✓ when met); the changed letter gets a thick border and ▲                                               | bottom |
-| `deque`         | Sliding Window Maximum's deque front → back (value + position); values removed this step crossed out and dashed, "◀ front" / "✕ back"; the maxima so far beside it                      | bottom |
-| `search-range`  | binary search over a row: bracket over the cards still in play (notch over `mid`), dropped cards dimmed, dashed, ✕; a rotated list's sorted half tinted, "✓ sorted"                     | canvas |
-| `number-line`   | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                                        | bottom |
-| `cut`           | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                                        | canvas |
-| `linked-list`   | node boxes in lanes with an arrow to each `next` (and `prev`, doubly linked), a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; ids address nodes        | canvas |
-| `binary-tree`   | a tree by depth: running call ringed, open path in orange, finished ✓ with "↑ 3", null stubs, values travel up edges                                                                    | canvas |
-| `call-stack`    | recursion frames beside the tree, bottom to top: "depth(5) waiting for left", "returns 3"; pushed frames slide in                                                                       | canvas |
-| `grid`          | BFS grid: cell glyph + word (≈ water, ■ wall), current ringed, frontier dashed, levels in corners, check arrows (✕ + reason)                                                            | canvas |
-| `graph`         | BFS graph in columns by level from node 0: current ringed, frontier dashed, level labels, checked edges lit (✕ if seen)                                                                 | canvas |
-| `queue`         | BFS queue front → back: dequeued fades struck out, enqueued slides in; a divider + "level 2" marker between levels                                                                      | bottom |
-| `heap`          | priority queue: tree + backing array (one list), min/max, "size 2/2"; push sifts up and pop sifts down swap by swap; two side by side                                                   | canvas |
-| `dp-table`      | DP table (row or grid, headers): unfilled cells dashed, current ringed, read arrows (winner solid), answer cell ✓                                                                       | canvas |
-| `staircase`     | Climbing Stairs: numbered steps over table cells, a climber, the +1 / +2 hops onto the step as arcs                                                                                     | canvas |
-| `house-row`     | House Robber: houses over table cells with their cash, neighbors linked (shared alarm), ✓ take / ✕ skip plan                                                                            | canvas |
-| `stack`         | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row; two side by side (`traceStack`)             | canvas |
-| `search-tree`   | backtracking decision tree (any branching): path in orange, dead ends faded/folded, pruned stubs dashed + reason, solutions ✓                                                           | canvas |
-| `partial`       | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                                    | bottom |
-| `hash-map`      | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                                                 | bottom |
-| `race`          | fast and slow pointers over a linked-list: hop arcs "+1" / "+2" along the links, the meeting node ringed (◎ meet), the loop's start (✓), the loop link in orange                        | canvas |
-| `choice`        | a greedy decision: "✓" the option taken (solid green) beside "✕" the one turned down (dashed, struck), and a one-line reason it's safe                                                  | bottom |
-| `reach`         | the stretch of a row a greedy scan has committed to: a band under the cards ("reach 5"), the step's jump arc over them ("+3"), closed pieces with lengths and cuts                      | canvas |
-| `prefix-row`    | running totals under an item-row, one cell per boundary (cell i between items i − 1 and i): unbuilt dashed, built ringed, spans as brackets whose edges drop to their two cells (+ / −) | canvas |
-| `prefix-grid`   | a small matrix beside its 2D prefix grid: rectangles added (+, solid accent) or subtracted (−, dashed) for inclusion-exclusion, signed prefix cells, a found rectangle ✓                | canvas |
-| `timeline`      | intervals as bars on lanes over a number line: waiting, active, current, done, absorbed (merged in), removed (✕), result (✓); sorts slide, merges grow, overlaps shaded, a sweep marker | canvas |
-| `bits`          | numbers as rows of bits in aligned columns (place values or bit meanings above), the operator before each result row, changed bits highlighted, shifts sliding, decimals beside         | bottom |
-| `trie`          | a prefix tree of letter nodes by depth: word ends double-ringed with ✓ (and a note), the root-to-current path in orange, new nodes pop in, a missing child as a dashed ✕ stub           | canvas |
-| `digraph`       | a directed graph at fixed spots: arrows with weights, in-degree badges ("in 2"), ready dashed, current ringed, done ✓, stuck ✕; edges new, used (faint), better ✓, worse ✕              | canvas |
-| `union-find`    | union-find as trees: arrows up to parents, roots with "chief · 3", find paths lit, compressed links ghosted and redrawn, unions sliding trees together, a shared root ✕                 | canvas |
-| `op-log`        | a design problem's calls in a column on the left ("put(1, 10)" and its output): finished solid, the running call ringed in the accent, later calls dashed; scrolls to keep it in view   | canvas |
+| type             | purpose                                                                                                                                                                                 | slot   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `item-row`       | labeled cards with values (product + price, `a[i]` + value, a character)                                                                                                                | canvas |
+| `bar-row`        | vertical bars on a baseline; optional container `fill`, per-bar `water`, `moves` (bars slide; a swap arcs), `empty` (dashed slots), `maxValue` (one scale per video)                    | canvas |
+| `pointer`        | named marker on an item; `fromIndex` makes it slide; `binds` ties it to a trace pointer                                                                                                 | canvas |
+| `highlight`      | emphasize items: `active` / `rejected` / `found` (glyph + word + border style, never color alone)                                                                                       | canvas |
+| `callout`        | speech bubble; anchored to an item or floating at the top                                                                                                                               | canvas |
+| `equation`       | `terms` joined by `operator` (+, −, ×), `result`, optional `comparison`, `verdict` + `verdictTone`                                                                                      | bottom |
+| `result`         | final answer / stat card; `showsAnswer` / `indices` checked against the trace                                                                                                           | bottom |
+| `sorted-region`  | positions in final order (`indices`: a range or a scattered set): a shaded band per run + baseline segment, "✓ sorted" beside the row                                                   | canvas |
+| `held-value`     | a value lifted out of the row (insertion sort's key) in a strip above its gap                                                                                                           | canvas |
+| `count-array`    | tally panel under the bars, one cell per key; the changed cell gets a thick border and ▲                                                                                                | canvas |
+| `segments`       | brackets under the bars for the current split (groups drawn apart); the active group gets a thick bracket, a faint band, and "▶ level d"                                                | canvas |
+| `split-tree`     | static overview of every split level at once (whole array → single values), each group a small box of its values                                                                        | bottom |
+| `merge-buffer`   | merge output so far, one slot per position under the range being merged; the slot just written gets a thick border and "▲ new"                                                          | canvas |
+| `partition`      | quick sort: "◆ pivot" tag above the pivot bar, dashed boundary with "◀ smaller", bars outside the range dimmed                                                                          | canvas |
+| `heap-tree`      | the same array as a binary tree (children 2i+1, 2i+2) on the right; compared parent/child ringed and labeled, nodes past the heap dashed with ✓, moves match the bars                   | canvas |
+| `counter`        | a labeled running total with this step's "+N" (inversions here; reusable for swaps, comparisons…)                                                                                       | bottom |
+| `window`         | sliding window: a bracket above the cards it covers plus a faint band, labeled with its value ("sum 13"); edges slide from the previous bound scene (`fromRange`)                       | canvas |
+| `freq-table`     | character counts in the window, one cell per letter ("2"), or have/need ("1/1", ✓ when met); the changed letter gets a thick border and ▲                                               | bottom |
+| `deque`          | Sliding Window Maximum's deque front → back (value + position); values removed this step crossed out and dashed, "◀ front" / "✕ back"; the maxima so far beside it                      | bottom |
+| `search-range`   | binary search over a row: bracket over the cards still in play (notch over `mid`), dropped cards dimmed, dashed, ✕; a rotated list's sorted half tinted, "✓ sorted"                     | canvas |
+| `number-line`    | binary search on the answer: one cell per candidate; ruled out dashed + struck + ✕, known to work solid + ✓, the tested `mid` thick with "▲ mid"                                        | bottom |
+| `cut`            | a partition divider through a row (left side shaded) that slides between scenes; Median's two lists get one each                                                                        | canvas |
+| `linked-list`    | node boxes in lanes with an arrow to each `next` (and `prev`, doubly linked), a "null" end, a dashed dummy; rewired links ghost and redraw, moved nodes slide; ids address nodes        | canvas |
+| `binary-tree`    | a tree by depth: running call ringed, open path in orange, finished ✓ with "↑ 3", null stubs, values travel up edges                                                                    | canvas |
+| `call-stack`     | recursion frames beside the tree, bottom to top: "depth(5) waiting for left", "returns 3"; pushed frames slide in                                                                       | canvas |
+| `grid`           | BFS grid: cell glyph + word (≈ water, ■ wall), current ringed, frontier dashed, levels in corners, check arrows (✕ + reason)                                                            | canvas |
+| `graph`          | BFS graph in columns by level from node 0: current ringed, frontier dashed, level labels, checked edges lit (✕ if seen)                                                                 | canvas |
+| `queue`          | BFS queue front → back: dequeued fades struck out, enqueued slides in; a divider + "level 2" marker between levels                                                                      | bottom |
+| `heap`           | priority queue: tree + backing array (one list), min/max, "size 2/2"; push sifts up and pop sifts down swap by swap; two side by side                                                   | canvas |
+| `dp-table`       | DP table (row or grid, headers): unfilled cells dashed, current ringed, read arrows (winner solid), answer cell ✓                                                                       | canvas |
+| `staircase`      | Climbing Stairs: numbered steps over table cells, a climber, the +1 / +2 hops onto the step as arcs                                                                                     | canvas |
+| `house-row`      | House Robber: houses over table cells with their cash, neighbors linked (shared alarm), ✓ take / ✕ skip plan                                                                            | canvas |
+| `stack`          | a stack column beside the input (bottom → top, top marked), push/pop animated, monotonic order label, resolve arcs + answers under the row; two side by side (`traceStack`)             | canvas |
+| `search-tree`    | backtracking decision tree (any branching): path in orange, dead ends faded/folded, pruned stubs dashed + reason, solutions ✓                                                           | canvas |
+| `partial`        | the answer being built as chips (the newest slides in, an undone one slides out struck) and the answers found so far                                                                    | bottom |
+| `hash-map`       | hash map / set as rows (key → value, grouped buckets) or cells: lookup ringed with ✓ found / ✗ not found, new entries slide in, updates                                                 | bottom |
+| `race`           | fast and slow pointers over a linked-list: hop arcs "+1" / "+2" along the links, the meeting node ringed (◎ meet), the loop's start (✓), the loop link in orange                        | canvas |
+| `choice`         | a greedy decision: "✓" the option taken (solid green) beside "✕" the one turned down (dashed, struck), and a one-line reason it's safe                                                  | bottom |
+| `reach`          | the stretch of a row a greedy scan has committed to: a band under the cards ("reach 5"), the step's jump arc over them ("+3"), closed pieces with lengths and cuts                      | canvas |
+| `prefix-row`     | running totals under an item-row, one cell per boundary (cell i between items i − 1 and i): unbuilt dashed, built ringed, spans as brackets whose edges drop to their two cells (+ / −) | canvas |
+| `prefix-grid`    | a small matrix beside its 2D prefix grid: rectangles added (+, solid accent) or subtracted (−, dashed) for inclusion-exclusion, signed prefix cells, a found rectangle ✓                | canvas |
+| `timeline`       | intervals as bars on lanes over a number line: waiting, active, current, done, absorbed (merged in), removed (✕), result (✓); sorts slide, merges grow, overlaps shaded, a sweep marker | canvas |
+| `bits`           | numbers as rows of bits in aligned columns (place values or bit meanings above), the operator before each result row, changed bits highlighted, shifts sliding, decimals beside         | bottom |
+| `trie`           | a prefix tree of letter nodes by depth: word ends double-ringed with ✓ (and a note), the root-to-current path in orange, new nodes pop in, a missing child as a dashed ✕ stub           | canvas |
+| `digraph`        | a directed graph at fixed spots: arrows with weights, in-degree badges ("in 2"), ready dashed, current ringed, done ✓, stuck ✕; edges new, used (faint), better ✓, worse ✕              | canvas |
+| `union-find`     | union-find as trees: arrows up to parents, roots with "chief · 3", find paths lit, compressed links ghosted and redrawn, unions sliding trees together, a shared root ✕                 | canvas |
+| `op-log`         | a design problem's calls in a column on the left ("put(1, 10)" and its output): finished solid, the running call ringed in the accent, later calls dashed; scrolls to keep it in view   | canvas |
+| `system-diagram` | system design: components on a small grid with their links; busy/waiting borders; messages travel their link as pills, a lost one ✕                                                     | canvas |
+| `sequence`       | system design: lifelines, one row per message (time, delivered / lost ✕ / in flight / ignored) or note, the current row ringed                                                          | canvas |
+| `data-table`     | system design: one or two stored tables (keys, ledger) side by side; new / read ✓ / duplicate ✕ / waiting as border styles                                                              | bottom |
+| `metrics`        | system design: numbers from the simulation (charges, attempts, time, runs checked) with this step's change                                                                              | bottom |
 
 `src/video/primitives/registry.ts` maps each type to `{ component, slot, layer }`. Its type is
 `{ [K in ElementType]: PrimitiveDefinition<K> }`, so **a schema variant without a renderer fails typecheck**.
@@ -1360,6 +1368,64 @@ one small record per problem the learner reviewed or snoozed.
   validation, rate limit, clamping, and 503s), `tests/db.integration.test.ts` (per user, merge, cascade, missing table),
   `tests/health.test.ts`.
 
+## System design
+
+`/system-design` lists topics (grouped Foundations / Data & consistency / Reliability / Case studies) with their
+lessons, built and planned; a built lesson lives at `/system-design/<topic>/<slug>` and shares progress, resume,
+quick checks, reviews, and the tutor with DSA problems under the key `<topic>/<slug>` (topic slugs never reuse a
+pattern's: tested). Lessons are **incident replays** (a real class of bug followed message by message, then the fix
+replayed under the same failures) or **growth stories** (one server upward, a component added only after the
+simulation measures the bottleneck). One lesson is built: "Why was the customer charged twice?"
+(`idempotency/charged-twice`); the rest of the curriculum is listed as planned (`content/catalog/system-design`).
+
+- **The simulation is the ground truth** (`src/lib/sim/`, app code: it runs in the browser and in tests), as traces are
+  for DSA. `events.ts`: a discrete-event loop, a virtual clock in whole ms, events ordered by time then by scheduling
+  order. `random.ts`: no `Math.random` or clock; every draw comes from a named stream (`latency:api→provider`,
+  `work:provider`) seeded from the scenario's seed and its name, so streams are independent and a scenario replays
+  exactly. A model is a set of state machines on the loop; it records a step at each event worth showing.
+- **The payments model** (`payments.ts`): client → API → provider, both hops lossy (`lose: { link, nth }`: the nth
+  message on that link). The client times out (2 s) and retries; the API times out on the provider (3 s) and retries
+  that once. Safeguards, each a switch: `key` (one idempotency key per order, the API keeps the result), `inProgress`
+  (the API inserts the key "in progress" atomically before charging, so an overlapping retry waits; without it the API
+  only reads for a finished record and writes it after charging), `forwardKey` (the provider deduplicates by the key,
+  so the API's own retries are safe). The key store is reliable and nothing crashes. `proveAgainstLostMessages()`
+  loses every message of the failure-free run (singles) and, for each, every message sent after it (pairs, which reach
+  the retries' own messages). With all three safeguards: 0 double charges on every link and timing (tested); removing
+  any one brings them back under some failure (tested).
+- **Trace binding** (`traces/system-design/charged-twice.ts`): args are `[scenarios]`, one replay each, steps
+  concatenated; the last step is the proof (the last replay's safeguards over every replay's timings: 66 runs, 14
+  single and 52 paired, 0 double charges; `answerDisplay` "0 of 66"). Steps carry `sim` (`TraceSim`: replay, time,
+  component states and notes, messages on links, the replay's sequence rows, the tables, metrics, the decision made,
+  rules broken, the proof) and the trace carries `system` (components and links), `display: "system"`. Key steps: a
+  lost message, a duplicate charge, a deduplication (stored result, wait, provider dedupe), and the proof.
+- **Primitives** (built apart; every DSA video is unchanged): `system-diagram` (components on a small grid, states as
+  border styles, messages as pills travelling their link, a lost one ✕ halfway; unbound = the components at rest),
+  `sequence` (lifelines, one row per message or note, newest at the bottom, windowed to keep the current row in view;
+  needs a bound step), `data-table` (one or two stored tables, row marks as border styles), `metrics` (numbers with
+  this step's change). Geometry in `video/system-layout.ts`, fit checks in `video/fit/system.ts` (a phone hides badges,
+  token labels, times, and non-current message labels). The validator checks every node state and badge, token,
+  sequence row (time and status), table row and mark, and metric against the step, and the topology against the trace.
+- **Lessons** (`lessonSchema`): symptom, the report, what went wrong, the fix (both behind "Show what went wrong and the
+  fix"), what the proof covers (`proofScope`: lost messages, not crashes), rules, takeaways, `replays` (the trace's
+  args). The lesson page shows the proof's numbers from the trace. Storyboards come from the authoring fallback:
+  `pnpm storyboards:prompt idempotency/charged-twice` renders the system design prompt
+  (`prompts/system-design-v1.ts`; the DSA prompt filters out these primitives and stays byte-identical), and
+  `storyboards:validate-draft .cache/drafts/idempotency/charged-twice.json` saves it to
+  `generated/idempotency/charged-twice.json`, where the repository finds it by key.
+- **Learning loop.** Quick checks get a `decision` kind ("A retry with the same key reaches the API. What does the API
+  do?"; options from `DECISION_OPTIONS`, proven against the step's recorded decision). The tutor's context for a
+  lesson is the report, what went wrong, the fix, the proof's scope, and the simulation step (`describeStep` covers
+  `sim`). "Your scenario" (`lib/sim/scenario.ts`, `components/system-design/scenario-panel.tsx`, lazy) turns the
+  learner's safeguards, lost message, timings, and retries into a scenario, simulates it with its proof, and builds a
+  replay that passes the same checks (a scene that doesn't fit drops its panel, then it's refused); no progress or
+  tutor, and its quick check answers are walkthrough answers (never reviews).
+- **Limits** (said on the site): latencies are illustrative, not measurements; small runs, not traffic at scale; races
+  come from scheduling, not threads; no clock skew; the proof is bounded (one scenario's timings, at most two lost
+  messages, no crashes).
+- Tests: `tests/system-design.test.ts` (the event order, seeding and stream independence, exact replays, the four
+  replays against hand-computed outcomes, the proof over every link and its necessity, the lesson's storyboard,
+  phone-width fit, quick checks, the tutor's grounding, validator mutations, every scenario combination, the catalog).
+
 ## Choosing the example
 
 `exampleSource` decides where the real-world example comes from. The schema enforces it.
@@ -1485,8 +1551,9 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
    the catalog and storyboards behind the repository into the database, and let users paste their own question.
    Email + password in production once a Resend sending domain is verified.
 4. **Practice mode.** See "Practice mode (planned)" above.
-5. **System design explainers.** `box-arrow` primitive (services, queues, caches, arrows with animated requests),
-   plus traces/validators for things like consistent hashing, rate limiters, and load balancing.
+5. **System design.** The engine and the first lesson are built (see "System design"). Next: the planned lessons, each
+   adding its components to the engine (load balancer, cache, replicas, queue, rate limiter) with its own model and
+   proof, and growth stories, whose validator checks a component is added only after a step measures its bottleneck.
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for
    generation and narration endpoints (both cost money), plus caching identical requests.
 7. Planned DSA primitives: `coin-set` (Coin Change uses an item-row today), with its trace.

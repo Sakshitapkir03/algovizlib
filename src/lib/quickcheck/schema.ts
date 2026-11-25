@@ -57,7 +57,19 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("trie-new") }),
   /** "What does get(1) return?": options are outputs; `call` is the call's index in the trace's ops. */
   z.object({ kind: z.literal("output"), call: z.number().int().nonnegative() }),
+  /** System design: "What does the API do?": options are the component's possible choices (`DECISION_OPTIONS`). */
+  z.object({ kind: z.literal("decision"), actor: z.enum(["api", "provider"]) }),
 ]);
+
+/** What each option of a decision question means: the simulation's recorded choice it names. */
+export const DECISION_OPTIONS = {
+  api: {
+    charge: "Charges again",
+    "stored-result": "Returns the stored result",
+    wait: "Waits for the first attempt",
+  },
+  provider: { charge: "Charges again", dedupe: "Returns the first charge" },
+} as const;
 
 export const quickCheckSchema = z
   .object({

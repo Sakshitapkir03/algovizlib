@@ -32,10 +32,54 @@ catalog problem ──► trace ──────────────► st
 5. **Player.** `@remotion/player` renders the storyboard as a composition in the browser (no video files). Theme,
    reduced motion, and the player's on-screen width are inputs, so text stays readable on a phone.
 
+## System design: a simulation as the ground truth
+
+System design lessons use the same loop with a **deterministic, seeded discrete-event simulation** in place of a
+trace (`src/lib/sim/`). It runs in the browser and in tests, and every number on screen (which message was lost,
+when a client timed out, which request read which stored value, how many charges the ledger holds) comes from it.
+
+```
+scenario ──► simulation ──────────────► storyboard ──► validator ──► player
+ (components,   (event loop, virtual        (scenes bound     (every message,
+  timings,       clock, seeded streams;      to simulation     state, table row,
+  failures,      a step per event worth      steps)            metric, and the
+  safeguards)    showing; rule checks)                         topology)
+```
+
+- **Determinism.** A virtual clock in whole milliseconds; events ordered by time, then by when they were scheduled.
+  No `Math.random` and no real clock: every draw comes from a named stream seeded from the scenario's seed and the
+  stream's name, so streams don't affect each other and the same scenario always replays exactly.
+- **What a step records:** the event and its time; each component's state and a short note; the messages on their
+  links; the replay's sequence of messages and notes so far; the stored tables (idempotency keys, a ledger); metrics;
+  the decision a component made (charge, return a stored result, wait, deduplicate); the lesson's rules broken so far.
+- **Proving the fix.** For small scenarios, the tests and the lesson's last step lose every message of a failure-free
+  run, and for each of those every message sent after it (which reaches the retries' own messages). Without the fix
+  some placement breaks the rule; with it none does. Bounded, and said so on screen.
+- **Limits.** Latencies are illustrative distributions, not measurements; runs are small (no traffic at scale); races
+  come from scheduling, not threads; there's no clock skew yet; the proof covers lost messages, not crashes.
+- **Plugging in.** A lesson's storyboard binds to the simulation through the same trace binding (steps carry a `sim`
+  state; the trace carries the system's components), so resolution, key-step coverage, quick checks, the tutor's step
+  context, progress, resume, and the review queue work unchanged. Four primitives draw it: a system diagram with
+  messages travelling links, a sequence view of one replay, stored tables, and metrics.
+
+**Curriculum.** Fundamentals (estimates, load balancing, caching and stampedes, replication lag, sharding and hot
+keys, concurrent writes, idempotency and retry storms, backpressure, rate limiting, timeouts) and case studies (URL
+shortener, rate limiter service, chat, news feed, payments), each an **incident replay** (a real class of bug, then
+the fix under the same failures) or a **growth story** (one server upward, a component added only after the
+simulation measures the bottleneck that justifies it).
+
+**The flagship, "Why was the customer charged twice?"** A client pays through an API that charges a payment provider;
+either hop can lose a message. Without protection, a retry after a lost "paid" answer is a second payment. The fix: one
+idempotency key per order, sent on every retry; the API claims it as "in progress" atomically before charging (an
+overlapping retry waits for the result), stores the result under it, and forwards it to the provider, which
+deduplicates too (so the API's own retries are safe). Checked against every single and double lost message on both hops (not crashes): 66 runs, 0
+double charges. A crash between charging and recording is left for the Payments case study.
+
 ## Where things live
 
 ```
-src/app/            routes (Next.js App Router, Cache Components): landing, /dsa, patterns, problems, /review,
+src/app/            routes (Next.js App Router, Cache Components): landing, /dsa, patterns, problems, /system-design
+                    and its lessons, /review,
                     /me, auth pages, /api/* (auth, progress, quick checks, review, tutor, health)
 src/content/        catalog (one file per pattern and problem), storyboards (+ generated JSON), narration manifest
 src/lib/catalog/    schemas and the repository: the only way pages read content
@@ -46,6 +90,7 @@ src/lib/progress/   progress records and rules, browser and account copies
 src/lib/quickcheck/ questions built from the trace, their validator, and recorded answers
 src/lib/walkthrough/"Try your own input": specs, parsing, and the in-browser build pipeline
 src/lib/review/     the review queue's rules and schedule
+src/lib/sim/        system design: the event loop, seeded streams, models (payments), proofs, "Your scenario"
 src/lib/tutor/      "Ask about this step" (server only)
 src/lib/generation/ offline storyboard and narration generation (never imported by the app)
 tests/              Vitest; tests/reference-solutions/ is test-only

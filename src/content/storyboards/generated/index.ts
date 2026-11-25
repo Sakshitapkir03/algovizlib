@@ -56,6 +56,7 @@ import heapKClosestPointsToOrigin from "./heap/k-closest-points-to-origin.json";
 import heapKthLargestElementInAnArray from "./heap/kth-largest-element-in-an-array.json";
 import heapLastStoneWeight from "./heap/last-stone-weight.json";
 import heapTopKFrequentElements from "./heap/top-k-frequent-elements.json";
+import idempotencyChargedTwice from "./idempotency/charged-twice.json";
 import intervalsInsertInterval from "./intervals/insert-interval.json";
 import intervalsMeetingRooms from "./intervals/meeting-rooms.json";
 import intervalsMergeIntervals from "./intervals/merge-intervals.json";
@@ -127,9 +128,7 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "binary-search/search-insert-position": loadStoryboard(binarySearchSearchInsertPosition),
   "binary-search/search-sorted-array": loadStoryboard(binarySearchSearchSortedArray),
   "bit-manipulation/counting-bits": loadStoryboard(bitManipulationCountingBits),
-  "bit-manipulation/shortest-path-visiting-all-nodes": loadStoryboard(
-    bitManipulationShortestPathVisitingAllNodes,
-  ),
+  "bit-manipulation/shortest-path-visiting-all-nodes": loadStoryboard(bitManipulationShortestPathVisitingAllNodes),
   "bit-manipulation/single-number": loadStoryboard(bitManipulationSingleNumber),
   "bit-manipulation/single-number-ii": loadStoryboard(bitManipulationSingleNumberIi),
   "bit-manipulation/sum-of-two-integers": loadStoryboard(bitManipulationSumOfTwoIntegers),
@@ -142,9 +141,7 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "dynamic-programming/coin-change": loadStoryboard(dynamicProgrammingCoinChange),
   "dynamic-programming/edit-distance": loadStoryboard(dynamicProgrammingEditDistance),
   "dynamic-programming/house-robber": loadStoryboard(dynamicProgrammingHouseRobber),
-  "dynamic-programming/longest-common-subsequence": loadStoryboard(
-    dynamicProgrammingLongestCommonSubsequence,
-  ),
+  "dynamic-programming/longest-common-subsequence": loadStoryboard(dynamicProgrammingLongestCommonSubsequence),
   "fast-slow-pointers/circular-array-loop": loadStoryboard(fastSlowPointersCircularArrayLoop),
   "fast-slow-pointers/find-the-duplicate-number": loadStoryboard(fastSlowPointersFindTheDuplicateNumber),
   "fast-slow-pointers/linked-list-cycle": loadStoryboard(fastSlowPointersLinkedListCycle),
@@ -165,12 +162,11 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "heap/kth-largest-element-in-an-array": loadStoryboard(heapKthLargestElementInAnArray),
   "heap/last-stone-weight": loadStoryboard(heapLastStoneWeight),
   "heap/top-k-frequent-elements": loadStoryboard(heapTopKFrequentElements),
+  "idempotency/charged-twice": loadStoryboard(idempotencyChargedTwice),
   "intervals/insert-interval": loadStoryboard(intervalsInsertInterval),
   "intervals/meeting-rooms": loadStoryboard(intervalsMeetingRooms),
   "intervals/merge-intervals": loadStoryboard(intervalsMergeIntervals),
-  "intervals/minimum-interval-to-include-each-query": loadStoryboard(
-    intervalsMinimumIntervalToIncludeEachQuery,
-  ),
+  "intervals/minimum-interval-to-include-each-query": loadStoryboard(intervalsMinimumIntervalToIncludeEachQuery),
   "intervals/non-overlapping-intervals": loadStoryboard(intervalsNonOverlappingIntervals),
   "linked-list/merge-k-sorted-lists": loadStoryboard(linkedListMergeKSortedLists),
   "linked-list/merge-two-sorted-lists": loadStoryboard(linkedListMergeTwoSortedLists),
@@ -182,12 +178,8 @@ export const generatedStoryboards: Readonly<Record<string, Storyboard>> = {
   "prefix-sum/range-sum-queries": loadStoryboard(prefixSumRangeSumQueries),
   "prefix-sum/subarray-sum-equals-k": loadStoryboard(prefixSumSubarraySumEqualsK),
   "prefix-sum/submatrices-that-sum-to-target": loadStoryboard(prefixSumSubmatricesThatSumToTarget),
-  "sliding-window/longest-repeating-character-replacement": loadStoryboard(
-    slidingWindowLongestRepeatingCharacterReplacement,
-  ),
-  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(
-    slidingWindowLongestSubstringWithoutRepeatingCharacters,
-  ),
+  "sliding-window/longest-repeating-character-replacement": loadStoryboard(slidingWindowLongestRepeatingCharacterReplacement),
+  "sliding-window/longest-substring-without-repeating-characters": loadStoryboard(slidingWindowLongestSubstringWithoutRepeatingCharacters),
   "sliding-window/maximum-sum-subarray-of-size-k": loadStoryboard(slidingWindowMaximumSumSubarrayOfSizeK),
   "sliding-window/minimum-window-substring": loadStoryboard(slidingWindowMinimumWindowSubstring),
   "sliding-window/sliding-window-maximum": loadStoryboard(slidingWindowSlidingWindowMaximum),

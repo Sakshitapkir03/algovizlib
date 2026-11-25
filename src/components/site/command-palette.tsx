@@ -1,6 +1,6 @@
 "use client";
 
-import { FileCode2, FolderTree, Layers, RotateCcw, Search, SunMoon } from "lucide-react";
+import { FileCode2, FolderTree, Layers, Network, RotateCcw, Search, SunMoon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -125,6 +125,22 @@ export function CommandPalette({ index }: { index: SearchIndex }) {
                   <span className="min-w-0 truncate">{p.title}</span>
                   <CommandShortcut className="shrink-0 font-mono whitespace-nowrap">
                     {p.patternName} · {DIFFICULTY_LABEL[p.difficulty]}
+                  </CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandGroup heading="System design">
+              {index.lessons.map((l) => (
+                <CommandItem
+                  key={l.key}
+                  value={l.title}
+                  keywords={[l.topicName, "system design"]}
+                  onSelect={() => go(l.href)}
+                >
+                  <Network aria-hidden className="text-muted-foreground" />
+                  <span className="min-w-0 truncate">{l.title}</span>
+                  <CommandShortcut className="shrink-0 font-mono whitespace-nowrap">
+                    {l.topicName}
                   </CommandShortcut>
                 </CommandItem>
               ))}

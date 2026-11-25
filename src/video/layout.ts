@@ -18,12 +18,22 @@ import type {
   DigraphElement,
   UnionFindElement,
   OpLogElement,
+  SequenceElement,
+  SystemDiagramElement,
 } from "@/lib/storyboard";
 import { VIDEO_HEIGHT, VIDEO_WIDTH } from "@/lib/storyboard";
 
 import { layoutBits } from "./bits-layout";
 import { layoutChoice, reachAbove, reachBelow } from "./greedy-layout";
 import { prefixBand } from "./prefix-layout";
+import {
+  layoutDataTable,
+  layoutMetrics,
+  layoutSequence,
+  layoutSystem,
+  type SequenceShape,
+  type SystemShape,
+} from "./system-layout";
 import { layoutTimeline, TIMELINE_SPLIT } from "./timeline-layout";
 import { layoutTrie, type TrieShape } from "./trie-layout";
 import { layoutForest, type ForestShape } from "./forest-layout";
@@ -261,6 +271,9 @@ export type SceneLayout = {
   piles?: Record<string, PileLayout>;
   /** A design problem's op log column on the left, when the scene has one. */
   opLog?: OpLogShape;
+  /** A system design scene's diagram or sequence view, when it has one. */
+  system?: SystemShape;
+  sequence?: SequenceShape;
 };
 
 /** Beside a heap, a digraph takes the stage left of this x and the heap the right. */
@@ -420,6 +433,10 @@ function bottomHeight(el: Element, t: TextMetrics): number {
       return layoutChoice(el, t).height;
     case "bits":
       return layoutBits(el, t).height;
+    case "data-table":
+      return layoutDataTable(el, t).height;
+    case "metrics":
+      return layoutMetrics(el, t).height;
     default:
       return 0;
   }
@@ -1120,6 +1137,7 @@ export function layoutScene(elements: readonly Element[], text: TextMetrics = te
     first.networkOverflow ?? 0,
     first.forestOverflow ?? 0,
     first.opLogOverflow ?? 0,
+    first.systemOverflow ?? 0,
   );
   if (need <= 0 || first.bottomTop >= lowestTop) return first;
   return layoutWith(elements, t, Math.min(lowestTop, first.bottomTop + need));
@@ -1140,6 +1158,7 @@ function layoutWith(
   networkOverflow?: number;
   forestOverflow?: number;
   opLogOverflow?: number;
+  systemOverflow?: number;
 } {
   // A design problem's op log takes a column on the left; everything else in the scene moves right of it.
   const opLogElement = elements.find((el): el is OpLogElement => el.type === "op-log");
@@ -1470,7 +1489,21 @@ function layoutWith(
           })
         : layoutHeaps(heapElement, t, top, bottomTop));
   }
+  // System design: a diagram or a sequence view takes the stage between the caption and the bottom stack.
+  let system: SystemShape | undefined;
+  let sequence: SequenceShape | undefined;
+  {
+    const top = captionBottom(t) + 8;
+    const region = { x: GRID.margin, y: top, w: VIDEO_WIDTH - 2 * GRID.margin, h: bottomTop - 12 - top };
+    const diagram = elements.find((el): el is SystemDiagramElement => el.type === "system-diagram");
+    const seq = elements.find((el): el is SequenceElement => el.type === "sequence");
+    if (diagram) system = layoutSystem(diagram, t, region);
+    if (seq) sequence = layoutSequence(seq, t, region);
+  }
   return {
+    system,
+    sequence,
+    systemOverflow: Math.max(system?.overflow ?? 0, sequence?.overflow ?? 0) || undefined,
     rows: { ...layouts, ...listRows },
     bottomTop,
     heapRegion,

@@ -10,7 +10,16 @@ import { applyProgress } from "@/lib/progress/use-progress";
  * Hides the key idea and complexity until the learner asks, so the page never spoils the solution by default.
  * With `problemKey`, opening it marks the problem "Learning" (only if it's "Not started").
  */
-export function ApproachToggle({ children, problemKey }: { children: ReactNode; problemKey?: string }) {
+export function ApproachToggle({
+  children,
+  problemKey,
+  label = "approach",
+}: {
+  children: ReactNode;
+  problemKey?: string;
+  /** What's hidden, as in "Show approach" (a lesson: "what went wrong and the fix"). */
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const onOpenChange = (next: boolean) => {
     setOpen(next);
@@ -24,7 +33,7 @@ export function ApproachToggle({ children, problemKey }: { children: ReactNode; 
           className="size-4 text-muted-foreground transition-transform data-[open=true]:rotate-90 motion-reduce:transition-none"
           data-open={open}
         />
-        {open ? "Hide approach" : "Show approach"}
+        {open ? `Hide ${label}` : `Show ${label}`}
         <span className="ml-auto font-mono text-xs font-normal text-muted-foreground">spoilers</span>
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 border-t px-4 py-4">{children}</CollapsibleContent>

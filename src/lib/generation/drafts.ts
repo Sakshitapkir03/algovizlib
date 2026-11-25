@@ -6,6 +6,7 @@ import type { GenerationMeta, ValidationIssue } from "@/lib/storyboard";
 import type { GenerationCache } from "./cache";
 import { evaluateDraft } from "./draft";
 import { prepareTarget, type GenerationTarget, type RowResult, type RunSummary } from "./pipeline";
+import type { PreparedLesson } from "./lesson";
 import type { PromptSet } from "./prompts";
 import type { StoryboardWriter } from "./writer";
 
@@ -45,6 +46,8 @@ export type DraftDeps = {
   savedRepairs: (problem: string) => number;
   /** The catalog target for "pattern/slug", including whether it already has a storyboard. */
   findTarget: (problem: string) => GenerationTarget | undefined;
+  /** A system design lesson for "<topic>/<slug>", prepared with its own prompt (see `lesson.ts`). */
+  findLesson?: (key: string) => PreparedLesson | undefined;
   /** Recorded as the storyboard's `generation.model` ("claude-code" if unknown). */
   modelId: string;
   now: () => Date;
@@ -75,7 +78,8 @@ export function validateDraftFiles(
       return { ...row, detail, issues, repairs: repairsSoFar() };
     };
 
-    const target = deps.findTarget(problem);
+    const lesson = deps.findLesson?.(problem);
+    const target: Pick<GenerationTarget, "existing"> | undefined = lesson ?? deps.findTarget(problem);
     if (!target) {
       return fail([
         { message: `No catalog problem "${problem}". Name the file .cache/drafts/<pattern>/<slug>.json.` },
@@ -87,8 +91,9 @@ export function validateDraftFiles(
     if (target.existing === "generated" && !options.force && !options.dryRun) {
       return { ...row, status: "skipped", detail: "already generated (use --force to replace)" };
     }
-    const prepared = prepareTarget(target, deps.prompts.version);
+    const prepared = lesson ?? prepareTarget(target as GenerationTarget, deps.prompts.version);
     if (!prepared) return fail([{ message: `"${problem}" has no trace, so it can't be validated yet.` }]);
+    const promptVersion = lesson ? lesson.key.promptVersion : deps.prompts.version;
 
     let raw: unknown;
     try {
@@ -98,7 +103,7 @@ export function validateDraftFiles(
     }
 
     const meta: GenerationMeta = {
-      promptVersion: deps.prompts.version,
+      promptVersion,
       provider: AUTHOR_PROVIDER,
       model: deps.modelId,
       generatedAt: deps.now().toISOString(),

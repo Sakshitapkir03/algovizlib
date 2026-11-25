@@ -310,6 +310,33 @@ export function describeStep(step: TraceStep, index: number): string {
     );
   }
   if (step.op) parts.push(`call #${step.op.current}${step.op.returned ? " (returned)" : " (running)"}`);
+  if (step.sim) {
+    const s = step.sim;
+    const current = s.rows.find((r) => r.id === s.current);
+    parts.push(
+      [
+        `replay ${s.run} "${s.runLabel}" at t=${s.t} ms`,
+        current
+          ? current.kind === "message"
+            ? `this step: message ${current.id} "${current.label}" ${current.from}→${current.to} (${current.status})`
+            : `this step: note ${current.id} on ${current.lane} "${current.text}"`
+          : "",
+        s.decision ? `decision: ${s.decision.actor} ${s.decision.choice}` : "",
+        `components: ${s.nodes.map((n) => `${n.id} ${n.state}${n.badge ? ` (${n.badge})` : ""}`).join(", ")}`,
+        s.tokens.length
+          ? `messages on links: ${s.tokens.map((t) => `"${t.label}" ${t.from}→${t.to} ${t.status}`).join(", ")}`
+          : "",
+        `tables: ${s.tables.map((t) => `${t.id} [${t.rows.map((r) => `${r.cells.join(" ")}${r.mark ? ` (${r.mark})` : ""}`).join("; ") || "empty"}]`).join(", ")}`,
+        `metrics: ${s.metrics.map((m) => `${m.id}=${m.value}${m.delta ? ` (+${m.delta})` : ""}`).join(", ")}`,
+        s.violations.length ? `rules broken: ${s.violations.join("; ")}` : "",
+        s.proof
+          ? `proof: ${s.proof.runs} runs (${s.proof.singles} single, ${s.proof.pairs} paired lost messages), ${s.proof.doubleCharges} double charges`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("; "),
+    );
+  }
   if (step.secondPile) {
     const p = step.secondPile;
     parts.push(

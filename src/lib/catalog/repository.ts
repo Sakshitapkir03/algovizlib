@@ -1,4 +1,5 @@
 import { categories, patternGroups, patterns, problems } from "@/content/catalog";
+import { lessons, topicGroups, topics } from "@/content/catalog/system-design";
 import { getGeneratedStoryboard, getStoryboard } from "@/content/storyboards";
 import { TRY_INPUT_PROBLEMS } from "@/lib/walkthrough/supported";
 
@@ -11,6 +12,10 @@ import {
   type PatternGroup,
   type PatternGroupSlug,
   type Problem,
+  type AnyLesson,
+  type Lesson,
+  type Topic,
+  type TopicGroupSlug,
 } from "./schema";
 
 /**
@@ -183,6 +188,8 @@ export function getPatternListing(patternSlug: string): ProblemSummary[] {
 
 export type SearchIndex = {
   groups: { slug: string; name: string; href: string; patternCount: number }[];
+  /** Built system design lessons. */
+  lessons: { key: string; title: string; topicName: string; href: string }[];
   patterns: { slug: string; name: string; groupName: string; href: string; problemCount: number }[];
   problems: (ProblemSummary & { patternName: string })[];
 };
@@ -196,6 +203,12 @@ export function getSearchIndex(): SearchIndex {
       name: group.name,
       href: groupHref(group),
       patternCount: list.length,
+    })),
+    lessons: getLessons().map((l) => ({
+      key: lessonKey(l),
+      title: l.title,
+      topicName: getTopic(l.topicSlug)?.name ?? l.topicSlug,
+      href: lessonHref(l),
     })),
     patterns: dsa.map((p) => ({
       slug: p.slug,
@@ -242,8 +255,8 @@ export function getProgressIndex(): ProgressIndex {
         problems: getProblems(p.slug).map(({ patternSlug, slug }) => ({ patternSlug, slug })),
       })),
     })),
-    problems: Object.fromEntries(
-      getAllProblems().map((p) => [
+    problems: Object.fromEntries([
+      ...getAllProblems().map((p) => [
         `${p.patternSlug}/${p.slug}`,
         {
           title: p.title,
@@ -252,6 +265,69 @@ export function getProgressIndex(): ProgressIndex {
           hasVideo: hasVideo(p),
         },
       ]),
-    ),
+      // System design lessons share the progress, resume, and review machinery (keyed "<topic>/<slug>").
+      ...getLessons().map((l) => [
+        lessonKey(l),
+        {
+          title: l.title,
+          href: lessonHref(l),
+          patternName: getTopic(l.topicSlug)?.name ?? l.topicSlug,
+          hasVideo: getLessonStoryboard(l) !== undefined,
+        },
+      ]),
+    ]),
   };
+}
+
+// --- System design --------------------------------------------------------------------------------------------
+
+export function getTopics(): Topic[] {
+  return [...topics].sort(byOrder);
+}
+
+export function getTopic(slug: string): Topic | undefined {
+  return topics.find((t) => t.slug === slug);
+}
+
+/** The /system-design page's sections: each group with its topics, in order. */
+export function getTopicsByGroup(): {
+  group: { slug: TopicGroupSlug; name: string; summary: string };
+  topics: Topic[];
+}[] {
+  return topicGroups
+    .map((group) => ({ group, topics: getTopics().filter((t) => t.group === group.slug) }))
+    .filter((section) => section.topics.length > 0);
+}
+
+/** A topic's lessons, built and planned, in order. */
+export function getTopicLessons(topicSlug: string): AnyLesson[] {
+  return lessons.filter((l) => l.topicSlug === topicSlug).sort(byOrder);
+}
+
+/** Every built lesson. */
+export function getLessons(): Lesson[] {
+  return lessons.filter((l): l is Lesson => l.status === "available");
+}
+
+/** A built lesson by its URL. */
+export function getLesson(topicSlug: string, slug: string): Lesson | undefined {
+  return getLessons().find((l) => l.topicSlug === topicSlug && l.slug === slug);
+}
+
+export function lessonKey(lesson: Pick<AnyLesson, "topicSlug" | "slug">): string {
+  return `${lesson.topicSlug}/${lesson.slug}`;
+}
+
+export function lessonHref(lesson: Pick<AnyLesson, "topicSlug" | "slug">): string {
+  return `/system-design/${lesson.topicSlug}/${lesson.slug}`;
+}
+
+/** A lesson's video: the storyboard saved for its key (content/storyboards/generated/<topic>/<slug>.json). */
+export function getLessonStoryboard(lesson: Pick<Lesson, "topicSlug" | "slug">) {
+  return getGeneratedStoryboard(lessonKey(lesson));
+}
+
+/** Every key progress, quick checks, and reviews may be stored under: DSA problems and built lessons. */
+export function getProgressKeys(): Set<string> {
+  return new Set([...problems.map((p) => `${p.patternSlug}/${p.slug}`), ...getLessons().map(lessonKey)]);
 }

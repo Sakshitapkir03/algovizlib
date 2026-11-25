@@ -50,8 +50,11 @@ export const draftSchema = z.object({
 export type Draft = z.infer<typeof draftSchema>;
 
 export type GenerationContext = {
-  problem: Problem;
+  /** The catalog entry the storyboard is for: a DSA problem, or a system design lesson (`patternSlug` = its topic). */
+  problem: Pick<Problem, "patternSlug" | "slug" | "tags">;
   patternName: string;
+  /** Default "dsa". */
+  category?: "dsa" | "system-design";
   definition: Pick<TraceDefinition, "problem" | "exampleIndex" | "exampleSource">;
   args: unknown[];
 };
@@ -66,7 +69,7 @@ export function assembleStoryboard(
     id: `${ctx.problem.patternSlug}-${ctx.problem.slug}`,
     title: draft.title,
     concept: ctx.patternName,
-    category: "dsa",
+    category: ctx.category ?? "dsa",
     summary: draft.summary,
     exampleSource: draft.exampleSource,
     analogy: draft.analogy,

@@ -33,6 +33,8 @@ import type {
   GridElement,
   LinkedListElement,
   OpLogElement,
+  SequenceElement,
+  SystemDiagramElement,
 } from "./elements";
 import type { ValidationIssue, ValidationResult } from "./issues";
 import { applyOperator, keptFrames } from "./resolve";
@@ -53,6 +55,16 @@ const sameList = <T>(a: readonly T[], b: readonly T[]) =>
 
 /** Structural equality for small trace-shaped values (key order matches: both come from the same schemas). */
 const sameJson = (a: unknown, b: unknown) => b !== undefined && JSON.stringify(a) === JSON.stringify(b);
+
+/** JSON with object keys sorted, so two structures compare equal whatever order their fields were written in. */
+const canon = (value: unknown): string =>
+  JSON.stringify(value, (_k, v: unknown) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(
+          Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)),
+        )
+      : v,
+  );
 
 /** A set of positions as compact runs, e.g. "0–2, 5". */
 const positions = (indices: readonly number[]) => {
@@ -632,6 +644,46 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
         });
     };
 
+    // A system diagram's components and links are the trace's (they never change).
+    const checkSystem = (el: SystemDiagramElement) => {
+      const system = trace.system;
+      if (!system) {
+        push("This trace has no system to draw; remove the system-diagram", el.id, "nodes");
+        return;
+      }
+      const shape = (nodes: readonly { id: string; label: string; kind: string; x: number; y: number }[]) =>
+        canon(
+          [...nodes]
+            .map(({ id, label, kind, x, y }) => ({ id, label, kind, x, y }))
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        );
+      if (shape(el.nodes) !== shape(system.nodes))
+        push("The diagram's components don't match the trace; omit nodes", el.id, "nodes", {
+          expected: system.nodes.map((n) => `${n.id}@${n.x},${n.y}`).join(" "),
+          actual: el.nodes.map((n) => `${n.id}@${n.x},${n.y}`).join(" "),
+        });
+      const links = (edges: readonly { from: string; to: string }[]) =>
+        edges
+          .map((e) => `${e.from}→${e.to}`)
+          .sort()
+          .join(" ");
+      if (links(el.edges) !== links(system.edges))
+        push("The diagram's links don't match the trace; omit edges", el.id, "edges", {
+          expected: links(system.edges),
+          actual: links(el.edges),
+        });
+    };
+    const checkLanes = (el: SequenceElement) => {
+      const expected = (trace.system?.nodes ?? []).filter((n) => n.kind !== "store");
+      const show = (lanes: readonly { id: string; label: string }[]) =>
+        lanes.map((l) => `${l.id}:${l.label}`).join(" ");
+      if (show(el.lanes) !== show(expected))
+        push("The sequence's lanes don't match the trace's components; omit lanes", el.id, "lanes", {
+          expected: show(expected),
+          actual: show(el.lanes),
+        });
+    };
+
     // Reveals and answer checks apply with or without a bound step.
     for (const el of scene.elements) {
       // An op log with every output filled in is the answer (the outputs are what the calls return).
@@ -927,6 +979,17 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
               { expected: `0 or ${el.calls.length}`, actual: String(el.shown) },
             );
         }
+        if (el.type === "system-diagram") {
+          checkSystem(el);
+          if (el.tokens.length || el.nodes.some((n) => n.state !== "idle" || n.badge))
+            push(
+              "Without a traceStep, a system diagram shows the components at rest (no messages, states, or notes); omit tokens and states",
+              el.id,
+              "tokens",
+            );
+        }
+        if (el.type === "sequence" || el.type === "data-table" || el.type === "metrics")
+          push(`A ${el.type} needs a traceStep (it shows a moment of the simulation)`, el.id, "traceStep");
         if (el.type === "stack") {
           const drawn = pileFields(el);
           const empty = pileFields({ order: el.order });
@@ -1853,6 +1916,120 @@ function validateAgainstTrace(storyboard: Storyboard, trace: Trace, issues: Vali
                 );
             }
           }
+          break;
+        }
+        case "system-diagram": {
+          checkSystem(el);
+          const sim = step.sim;
+          if (!sim) {
+            push(`Trace step ${stepIndex} has no simulation state`, el.id, "tokens");
+            break;
+          }
+          const states = (nodes: readonly { id: string; state: string; badge?: string }[]) =>
+            canon(
+              [...nodes]
+                .map(({ id, state, badge }) => ({ id, state, badge: badge ?? null }))
+                .sort((a, b) => a.id.localeCompare(b.id)),
+            );
+          if (states(el.nodes) !== states(sim.nodes))
+            push(`The components' states don't match trace step ${stepIndex}; omit nodes`, el.id, "nodes", {
+              expected: sim.nodes
+                .map((n) => `${n.id}:${n.state}${n.badge ? ` (${n.badge})` : ""}`)
+                .join(", "),
+              actual: el.nodes.map((n) => `${n.id}:${n.state}${n.badge ? ` (${n.badge})` : ""}`).join(", "),
+            });
+          if (canon(el.tokens) !== canon(sim.tokens))
+            push(
+              `The messages on the diagram don't match trace step ${stepIndex}; omit tokens`,
+              el.id,
+              "tokens",
+              {
+                expected:
+                  sim.tokens.map((t) => `${t.label} ${t.from}→${t.to} ${t.status}`).join(" | ") || "none",
+                actual:
+                  el.tokens.map((t) => `${t.label} ${t.from}→${t.to} ${t.status}`).join(" | ") || "none",
+              },
+            );
+          break;
+        }
+        case "sequence": {
+          checkLanes(el);
+          const sim = step.sim;
+          if (!sim) {
+            push(`Trace step ${stepIndex} has no simulation state`, el.id, "rows");
+            break;
+          }
+          if (canon(el.rows) !== canon(sim.rows))
+            push(
+              `The sequence doesn't match trace step ${stepIndex} (every message, its time, and what happened to it); omit rows`,
+              el.id,
+              "rows",
+              {
+                expected: `${sim.rows.length} rows`,
+                actual: `${el.rows.length} rows`,
+              },
+            );
+          if (el.current !== sim.current)
+            push(
+              `The highlighted row doesn't match trace step ${stepIndex}; omit current`,
+              el.id,
+              "current",
+              {
+                expected: sim.current ?? "none",
+                actual: el.current ?? "none",
+              },
+            );
+          break;
+        }
+        case "data-table": {
+          const sim = step.sim;
+          if (!sim) {
+            push(`Trace step ${stepIndex} has no simulation state`, el.id, "tables");
+            break;
+          }
+          el.tables.forEach((table, k) => {
+            const expected = sim.tables.find((t) => t.id === table.id);
+            if (!expected || canon(table) !== canon(expected))
+              push(
+                `Table "${table.id}" doesn't match trace step ${stepIndex}; omit tables`,
+                el.id,
+                `tables.${k}`,
+                {
+                  expected: expected
+                    ? expected.rows
+                        .map((r) => `${r.cells.join(" ")}${r.mark ? ` (${r.mark})` : ""}`)
+                        .join(" | ") || "empty"
+                    : "no such table",
+                  actual:
+                    table.rows
+                      .map((r) => `${r.cells.join(" ")}${r.mark ? ` (${r.mark})` : ""}`)
+                      .join(" | ") || "empty",
+                },
+              );
+          });
+          break;
+        }
+        case "metrics": {
+          const sim = step.sim;
+          if (!sim) {
+            push(`Trace step ${stepIndex} has no simulation state`, el.id, "items");
+            break;
+          }
+          el.items.forEach((item, k) => {
+            const expected = sim.metrics.find((m) => m.id === item.id);
+            if (!expected || canon(item) !== canon(expected))
+              push(
+                `Metric "${item.id}" doesn't match trace step ${stepIndex}; omit items`,
+                el.id,
+                `items.${k}`,
+                {
+                  expected: expected
+                    ? `${expected.label} ${expected.value}${expected.delta ? ` (+${expected.delta})` : ""}`
+                    : "no such metric",
+                  actual: `${item.label} ${item.value}${item.delta ? ` (+${item.delta})` : ""}`,
+                },
+              );
+          });
           break;
         }
         default:

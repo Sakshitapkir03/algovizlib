@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getGeneratedStoryboard } from "@/content/storyboards";
 import { twoPointersStoryboard } from "@/content/storyboards/two-pointers";
-import { getProblem } from "@/lib/catalog/repository";
+import { getLessons, getProblem, lessonKey } from "@/lib/catalog/repository";
 import {
   assembleStoryboard,
   evaluateDraft,
@@ -50,11 +50,17 @@ const messages = (problemKey: string, draft: Draft) => {
   return result.ok ? [] : result.issues.map(formatIssue);
 };
 
-describe.each(Object.keys(traceRegistry))("a correct trace-bound storyboard for %s", (problemKey) => {
-  it("resolves every omitted value from the trace and passes the validator", () => {
-    expect(messages(problemKey, buildDraft(problemKey))).toEqual([]);
-  });
-});
+// The DSA fixture builder doesn't know simulations; a lesson's storyboard is checked in tests/system-design.test.ts.
+const lessonKeys = new Set(getLessons().map(lessonKey));
+
+describe.each(Object.keys(traceRegistry).filter((k) => !lessonKeys.has(k)))(
+  "a correct trace-bound storyboard for %s",
+  (problemKey) => {
+    it("resolves every omitted value from the trace and passes the validator", () => {
+      expect(messages(problemKey, buildDraft(problemKey))).toEqual([]);
+    });
+  },
+);
 
 describe("resolution", () => {
   it("fills pointers, slides, equations, highlights, fills, and the answer from the bound step", () => {

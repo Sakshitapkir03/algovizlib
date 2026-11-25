@@ -98,6 +98,8 @@ const STRUCTURE_QUESTIONS: Partial<Record<string, string>> = {
   bits: "How do these bits combine?",
   grid: "Why do these cells join the search?",
   graph: "Why do these nodes join the search?",
+  sequence: "Why does this message matter here?",
+  "system-diagram": "Where does each message go next?",
 };
 
 /** The words the questions above are made of (everything else in a question comes from the scene). */
@@ -108,6 +110,7 @@ export const SUGGESTION_WORDS = new Set(
     // The structure questions: generic words about the structure the scene draws, not names.
     "call return and tried or cut which cells one depend on heap reorder like queue change here stack trie branch",
     "these groups join not node go links intervals overlap bits combine search nodes",
+    "message matter each",
   ]
     .join(" ")
     .split(" "),

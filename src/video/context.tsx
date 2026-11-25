@@ -20,6 +20,7 @@ import type { TrieShape } from "./trie-layout";
 import type { ForestShape } from "./forest-layout";
 import type { NetworkShape } from "./network-layout";
 import type { OpLogShape } from "./oplog-layout";
+import type { SequenceShape, SystemShape } from "./system-layout";
 import type { VideoPalette } from "./theme";
 
 export type SceneContextValue = {
@@ -55,6 +56,9 @@ export type SceneContextValue = {
   network?: NetworkShape;
   /** A union-find's trees (before and after the scene's work), when the scene has one. */
   forest?: ForestShape;
+  /** A system design scene's diagram or sequence view, when it has one. */
+  system?: SystemShape;
+  sequence?: SequenceShape;
   palette: VideoPalette;
   reducedMotion: boolean;
   sceneDurationInFrames: number;
