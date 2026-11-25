@@ -3,6 +3,7 @@ import type { Trace, TraceStep } from "@/lib/traces/types";
 
 import {
   DECISION_OPTIONS,
+  FETCH_OPTIONS,
   P99_OPTIONS,
   quickCheckSchema,
   HIT_OPTIONS,
@@ -337,6 +338,27 @@ function truth(
       if (outcome !== c.outcome) throw new Error("the store's outcome isn't what the cache's rule decides");
       const named = Object.entries(SET_OPTIONS).find(([, words]) => words === option)?.[0];
       return named === undefined ? undefined : named === outcome;
+    }
+    case "expire-together": {
+      const st = step.sim?.stampede;
+      if (st?.event !== "deploy" || !st.expires?.length || yes === undefined) return undefined;
+      return yes === (new Set(st.expires.map((x) => x.at)).size === 1);
+    }
+    case "fetch-or-wait": {
+      const st = step.sim?.stampede;
+      if (st?.event !== "miss" || st.inflightNode === undefined) return undefined;
+      // Single-flight: a miss waits when a fetch for its key is already on its way from its node.
+      const action = st.singleFlight && st.inflightNode > 0 ? "wait" : "fetch";
+      if (action !== st.action) throw new Error("the miss didn't do what single-flight decides");
+      const named = Object.entries(FETCH_OPTIONS).find(([, words]) => words === option)?.[0];
+      return named === undefined ? undefined : named === action;
+    }
+    case "db-count": {
+      const st = step.sim?.stampede;
+      if (st?.event !== "miss" || st.inflightAll === undefined || !/^\d+$/.test(option)) return undefined;
+      if (st.singleFlight || st.action !== "fetch") return undefined;
+      // Without single-flight every miss is another fetch: the ones already on their way, plus this one.
+      return Number(option) === st.inflightAll + 1;
     }
     case "decision": {
       const d = step.sim?.decision;

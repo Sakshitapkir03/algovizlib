@@ -85,7 +85,16 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("read-price") }),
   /** Caching: "Does this store get kept?" (`SET_OPTIONS`). */
   z.object({ kind: z.literal("set-kept") }),
+  /** Stampede: "How many fetches of trending will the database have?": options are counts. */
+  z.object({ kind: z.literal("db-count") }),
+  /** Stampede: "Does R4544 fetch trending or wait?" (`FETCH_OPTIONS`). */
+  z.object({ kind: z.literal("fetch-or-wait") }),
+  /** Stampede: "Do these keys expire together?": Yes / No. */
+  z.object({ kind: z.literal("expire-together") }),
 ]);
+
+/** A miss's two paths under single-flight. */
+export const FETCH_OPTIONS = { fetch: "It queries the database", wait: "It waits for that fetch" } as const;
 
 /** A cache lookup's outcomes, and a store's. */
 export const HIT_OPTIONS = { hit: "Hit", miss: "Miss" } as const;

@@ -479,7 +479,11 @@ describe("existing lessons and videos are unchanged", () => {
     };
     walk("src/content/storyboards/generated");
     // Later lessons add their own files (each pins the rest in its own test).
-    const later = [`consistency${path.sep}lost-update`, `caching${path.sep}stale-price`];
+    const later = [
+      `consistency${path.sep}lost-update`,
+      `caching${path.sep}stale-price`,
+      `caching${path.sep}stampede`,
+    ];
     const existing = files.filter((f) => !later.some((l) => f.includes(l))).sort();
     const h = createHash("sha256");
     for (const f of existing) h.update(f).update(readFileSync(f));
@@ -490,7 +494,7 @@ describe("existing lessons and videos are unchanged", () => {
     const h = createHash("sha256");
     const ids = storyboards
       .map((s) => s.id)
-      .filter((id) => id !== "consistency-lost-update" && id !== "caching-stale-price")
+      .filter((id) => !["consistency-lost-update", "caching-stale-price", "caching-stampede"].includes(id))
       .sort();
     for (const id of ids) h.update(id).update(JSON.stringify(storyboards.find((s) => s.id === id)));
     expect([ids.length, h.digest("hex").slice(0, 16)]).toEqual([107, "0916c0f0a9962fe4"]);

@@ -361,8 +361,9 @@ describe("the catalog", () => {
       expect(getLessonStoryboard(lesson), lesson.slug).toBeDefined();
       expect(() => runTrace(lessonKey(lesson), lesson.replays[0].args)).not.toThrow();
     }
-    expect(getLesson("caching", "stampede")).toBeUndefined();
-  });
+    expect(getLesson("sharding", "hot-key")).toBeUndefined();
+    // Every lesson's trace runs here, some with a proof that takes a second or so the first time.
+  }, 60_000);
 
   it("lessons share progress, quick check, and review keys with problems", () => {
     expect(getProgressKeys().has(KEY)).toBe(true);

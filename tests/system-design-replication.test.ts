@@ -410,6 +410,7 @@ describe("existing lessons and videos are unchanged", () => {
       `replication${path.sep}vanished-comment`,
       `consistency${path.sep}lost-update`,
       `caching${path.sep}stale-price`,
+      `caching${path.sep}stampede`,
     ];
     const existing = files.filter((f) => !later.some((l) => f.includes(l))).sort();
     const h = createHash("sha256");
@@ -423,7 +424,12 @@ describe("existing lessons and videos are unchanged", () => {
       .map((s) => s.id)
       .filter(
         (id) =>
-          !["replication-vanished-comment", "consistency-lost-update", "caching-stale-price"].includes(id),
+          ![
+            "replication-vanished-comment",
+            "consistency-lost-update",
+            "caching-stale-price",
+            "caching-stampede",
+          ].includes(id),
       )
       .sort();
     for (const id of ids) h.update(id).update(JSON.stringify(storyboards.find((s) => s.id === id)));

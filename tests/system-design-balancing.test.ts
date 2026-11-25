@@ -304,6 +304,7 @@ describe("existing lessons and videos are unchanged", () => {
       `replication${path.sep}vanished-comment`,
       `consistency${path.sep}lost-update`,
       `caching${path.sep}stale-price`,
+      `caching${path.sep}stampede`,
     ];
     const existing = files.filter((f) => !later.some((l) => f.includes(l))).sort();
     const h = createHash("sha256");

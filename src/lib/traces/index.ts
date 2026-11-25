@@ -64,6 +64,7 @@ import { slowServerTrace } from "./system-design/slow-server";
 import { vanishedCommentTrace } from "./system-design/vanished-comment";
 import { lostUpdateTrace } from "./system-design/lost-update";
 import { stalePriceTrace } from "./system-design/stale-price";
+import { stampedeTrace } from "./system-design/stampede";
 import { floodFillTrace } from "./graphs-bfs/flood-fill";
 import { numberOfIslandsTrace } from "./graphs-bfs/number-of-islands";
 import { rottingOrangesTrace } from "./graphs-bfs/rotting-oranges";
@@ -225,6 +226,7 @@ const definitions = [
   vanishedCommentTrace,
   lostUpdateTrace,
   stalePriceTrace,
+  stampedeTrace,
 ] as const;
 
 // Each definition is typed with its own argument tuple; the registry erases that behind `runTrace`, which

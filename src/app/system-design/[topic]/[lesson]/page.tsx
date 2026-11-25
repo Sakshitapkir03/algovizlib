@@ -163,6 +163,17 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
                 {summary.ruleProof.runs} runs before the fix, {summary.ruleProof.fixed === 0 ? "✓" : "✕"}{" "}
                 {summary.ruleProof.fixed} of {summary.ruleProof.runs} with it
               </p>
+            ) : summary?.stampedeProof ? (
+              <p className="font-mono text-xs">
+                Over seeds {summary.stampedeProof.seeds[0]}–{summary.stampedeProof.seeds[1]} ×{" "}
+                {summary.stampedeProof.rps.join(", ")} pages a second ×{" "}
+                {summary.stampedeProof.keys.join(", ")} keys, one app node: rule 1 · rule 2 broken in{" "}
+                {summary.stampedeProof.setups
+                  .map((x) => `${x.rule1} · ${x.rule2} of ${summary.stampedeProof!.runs} (${x.name})`)
+                  .join(", ")}{" "}
+                {summary.stampedeProof.fixed === 0 ? "✓" : "✕"} (needs one app node or coordinated
+                single-flight, a fetch that succeeds, and jittered TTLs)
+              </p>
             ) : summary?.cacheProof ? (
               <p className="font-mono text-xs">
                 Every interleaving of one writer and{" "}

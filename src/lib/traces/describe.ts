@@ -357,6 +357,14 @@ export function describeStep(step: TraceStep, index: number): string {
         s.cacheOp
           ? `${s.cacheOp.actor} ${s.cacheOp.op}${s.cacheOp.hit !== undefined ? (s.cacheOp.hit ? " (hit)" : " (miss)") : ""}${s.cacheOp.price !== undefined ? ` $${s.cacheOp.price}` : ""}${s.cacheOp.version !== undefined ? ` v${s.cacheOp.version}` : ""}${s.cacheOp.outcome ? ` → ${s.cacheOp.outcome}` : ""}; cache before: ${s.cacheOp.entryBefore ? `$${s.cacheOp.entryBefore.price} v${s.cacheOp.entryBefore.version}` : "no entry"}${s.cacheOp.knownBefore !== undefined ? `, newest known v${s.cacheOp.knownBefore}` : ""}; database $${s.cacheOp.db.price} v${s.cacheOp.db.version}; ${s.cacheOp.versioned ? "versioned stores" : "plain stores"}`
           : "",
+        s.stampede
+          ? s.stampede.event === "deploy"
+            ? `keys expire at: ${(s.stampede.expires ?? []).map((x) => `${x.key} ${x.at} ms`).join(", ")}`
+            : `${s.stampede.request} misses ${s.stampede.key} and ${s.stampede.action === "wait" ? "waits for the fetch already running" : "queries the database"} (single-flight ${s.stampede.singleFlight ? "on" : "off"}; fetches of this key already sent: ${s.stampede.inflightNode} from this node, ${s.stampede.inflightAll} in all)`
+          : "",
+        s.stampedeProof
+          ? `rules checked over seeds ${s.stampedeProof.seeds[0]}–${s.stampedeProof.seeds[1]} × ${s.stampedeProof.rps.join("/")} pages/s × ${s.stampedeProof.keys.join("/")} keys: ${s.stampedeProof.setups.map((x) => `${x.name}: rule 1 broken in ${x.rule1}, rule 2 in ${x.rule2} of ${s.stampedeProof!.runs}`).join("; ")}`
+          : "",
         s.cacheProof
           ? `every interleaving enumerated: ${s.cacheProof.cases.map((c) => `${c.invalidation}, ${c.readers} reader${c.readers > 1 ? "s" : ""}, ${c.warm ? "warm" : "cold"} cache: ${c.violating} of ${c.schedules} let a later read see the old price`).join("; ")}`
           : "",

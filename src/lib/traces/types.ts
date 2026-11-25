@@ -389,6 +389,34 @@ export type TraceSim = {
     runs: number;
     fixed: number;
   };
+  /**
+   * A cache stampede's step: the deploy (every key's first expiry time), or a followed request's miss (whether it
+   * fetched or waited on another request's fetch for the key, with the fetches for that key already sent to the
+   * database from its app node and in all), and whether single-flight is on.
+   */
+  stampede?: {
+    event: "deploy" | "miss";
+    singleFlight: boolean;
+    expires?: { key: string; at: number }[];
+    request?: string;
+    key?: string;
+    action?: "fetch" | "wait";
+    inflightNode?: number;
+    inflightAll?: number;
+  };
+  /**
+   * The stampede's two rules over a stated range (seeds × traffic × key counts, one app node) for each setup (no fix,
+   * single-flight, jitter, both): how many runs broke rule 1 (two fetches for one key at once on a node) and rule 2
+   * (the database's queue past its workers, or a page turned away or timed out).
+   */
+  stampedeProof?: {
+    runs: number;
+    seeds: [number, number];
+    rps: number[];
+    keys: number[];
+    setups: { name: string; singleFlight: boolean; jitter: number; rule1: number; rule2: number }[];
+    fixed: number;
+  };
   ruleProof?: {
     runs: number;
     seeds: [number, number];

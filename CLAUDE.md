@@ -1376,11 +1376,12 @@ lessons, built and planned; a built lesson lives at `/system-design/<topic>/<slu
 quick checks, reviews, and the tutor with DSA problems under the key `<topic>/<slug>` (topic slugs never reuse a
 pattern's: tested). Lessons are **incident replays** (a real class of bug followed message by message, then the fix
 replayed under the same failures) or **growth stories** (one server upward, a component added only after the
-simulation measures the bottleneck). Six lessons are built: "Why was the customer charged twice?"
+simulation measures the bottleneck). Seven lessons are built: "Why was the customer charged twice?"
 (`idempotency/charged-twice`, an incident replay), "Is one server enough?" (`estimates/one-server`, a growth story),
 "One slow server takes everyone down" (`load-balancing/slow-server`, an incident replay), "I posted a comment and
 it vanished" (`replication/vanished-comment`, an incident replay), "Two edits, one lost" (`consistency/lost-update`,
-an incident replay), and "The price changed but users see the old one" (`caching/stale-price`, an incident replay);
+an incident replay), "The price changed but users see the old one" (`caching/stale-price`, an incident replay), and
+"Everything fell over when the cache expired" (`caching/stampede`, an incident replay);
 the rest of the curriculum is listed as planned (`content/catalog/system-design`).
 
 - **The simulation is the ground truth** (`src/lib/sim/`, app code: it runs in the browser and in tests), as traces are
@@ -1572,13 +1573,43 @@ warm)`: every interleaving of the writer (write, invalidate) and one or two read
   `cache-scenario-panel.tsx`): invalidation × TTL 5/10/30 s × Ben's pause 0/50/200 ms; 27 combinations, all tested at
   every width. No DSA link (the cache expires by TTL and never shows eviction, so LRU Cache would mean nothing here).
   Every existing video was pixel-identical before and after (all 108).
+- **The stampede model** (`stampede.ts`, "Everything fell over when the cache expired"; `caching.ts` and the price
+  lesson are untouched: that cache holds one versioned key, this one many keys with in-flight fetches): a home page
+  built from `keys` cached entries (trending, deals, banner, categories, then "key 5"…), filled by a deploy with the
+  same TTL or TTLs jittered by `jitter`; every page view reads every key cache-aside (one event per page). The
+  database has `workers` (8) and a bounded queue (64; one more is turned away, and its pages fail); pages time out
+  after 500 ms. `singleFlight`: a miss for a key already being fetched on the same app node waits for that fetch
+  (coalescing is per node; `nodes` app nodes share the cache). Arrival gaps are rounded to the nearest whole ms with 0
+  allowed (a 1 ms floor lowered 500/s to about 450/s). It reuses the event loop, seeded streams, and capacity's
+  `percentile`. **Rule 1**: within one app node, the database never has more than one fetch per key at a time
+  (counted from the moment a fetch is sent, queued or running). **Rule 2**: the queue never holds more requests than
+  the workers, and no page is turned away or times out. `traces/system-design/stampede.ts`: three replays (no fix,
+  "coalesced", and "+ jitter" with 32 keys); steps interleave the deploy, the followed misses of "trending" (fetch or
+  wait, with the fetches already sent), their fetches and pages, and eight 500 ms windows (offered is the configured
+  rate, so the growth story's "p99 trend" isn't asked of noise); keys: the first duplicate fetch, the peak window, the
+  first wait (replays without jitter), the jittered deploy, a `keys-sweep` (single-flight alone queues 0/8/16/24 for
+  8/16/24/32 keys expiring together against 8 workers; with jitter 0), and a `cost` step (waiting p99 58 ms vs 1 ms for
+  a hit; 3 uncoordinated nodes send 3 fetches of a key). The last step's `stampedeProof` covers seeds 1–10 ×
+  200/500/1000 pages/s × 1/4/16/32 keys on one node for four setups: no fix 119·108, single-flight 0·30 (all at 32
+  keys), jitter 120·99, both 0·0 (`answerDisplay` "0 of 120"). `stampedeRuns` and the sweep are memoized (pure and
+  deterministic; a learner's scenario repeats them). Quick checks `db-count` (a duplicate fetch: how many fetches of
+  the key), `fetch-or-wait` (recomputed from single-flight and the node's in-flight fetch), and `expire-together`
+  (a deploy's expiry times); `saturates-first` now asks only where app servers were measured too, so it isn't asked of
+  a database-only window (existing lessons unchanged, tested). Stale-while-revalidate, early refresh, and a lock in the
+  shared cache are described, not simulated. "Your scenario" (`lib/sim/stampede-scenario.ts`,
+  `stampede-scenario-panel.tsx`): traffic × single-flight × jitter × 1/4/16/32 keys; 48 combinations, all tested at
+  every width. No DSA link. Every existing video was pixel-identical before and after (all 109).
 - **Related patterns** on a lesson are `{ slug, reason }`, the reason one sentence the page shows, from the learner's
   point of view (what they see in the lesson, never an implementation detail like the event heap); a lesson may have
   none ("Is one server enough?" has none). Planned lessons carry no links.
 - **Limits** (said on the site): latencies are illustrative, not measurements; small runs, not traffic at scale; races
   come from scheduling, not threads; no clock skew; the proof is bounded (one scenario's timings, at most two lost
   messages, no crashes).
-- Tests: `tests/system-design-caching.test.ts` (determinism, each replay's outcome, the cache's versioned rule, the
+- Tests: `tests/system-design-stampede.test.ts` (determinism, each replay's outcome, jitter's spread, per-node
+  coalescing, both rules over the stated range for all four setups, key steps, the measured windows, the keys sweep and
+  the cost, storyboard and fit at every width, the range and conditions on screen, quick checks and a recomputation
+  mutation, the growth questions not asked, tutor grounding, validator mutations, all 48 scenarios, and pins on every
+  existing storyboard file, resolved storyboard, and the six earlier lessons' traces), `tests/system-design-caching.test.ts` (determinism, each replay's outcome, the cache's versioned rule, the
   marker-expiry edge, every interleaving for all three kinds of invalidation, the cost, key steps, the recorded
   requests, the tables, storyboard and fit at every width, what was enumerated and the conditional-store sentence,
   quick checks and recomputation mutations, tutor grounding, validator mutations, all 27 scenarios, and pins on every
@@ -1730,7 +1761,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
    the catalog and storyboards behind the repository into the database, and let users paste their own question.
    Email + password in production once a Resend sending domain is verified.
 4. **Practice mode.** See "Practice mode (planned)" above.
-5. **System design.** The engine and six lessons are built (see "System design"). Next: the planned lessons, each
+5. **System design.** The engine and seven lessons are built (see "System design"). Next: the planned lessons, each
    adding its components to the engine (load balancer, cache, replicas, queue, rate limiter) with its own model and
    proof, and growth stories, whose validator checks a component is added only after a step measures its bottleneck.
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for

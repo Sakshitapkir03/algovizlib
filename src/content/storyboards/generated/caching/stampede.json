@@ -1,0 +1,321 @@
+{
+  "id": "caching-stampede",
+  "title": "Everything fell over when the cache expired",
+  "concept": "Caching",
+  "category": "system-design",
+  "summary": "Keys set together expire together, and every request in that instant queries the database; single-flight sends one query per key, and jittered TTLs spread the expiries.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "caching",
+    "cache stampede",
+    "load"
+  ],
+  "takeaway": {
+    "pattern": "Single-flight + jittered TTLs",
+    "summary": "Let the first miss for a key fetch it while the others wait for that result, and spread the TTLs of keys set together so they don't expire at once.",
+    "timeComplexity": "One database query per key per expiry (per app node); waiting requests take the fetch's time",
+    "spaceComplexity": "One in-flight entry per key being fetched",
+    "whenToUse": [
+      "Popular cached entries whose misses all go to the same database",
+      "Many keys set at the same moment: after a deploy, a cache restart, or a bulk load"
+    ]
+  },
+  "trace": {
+    "problem": "caching/stampede",
+    "args": [
+      [
+        {
+          "label": "no fix",
+          "seed": 1,
+          "keys": 4,
+          "rps": 500,
+          "trafficFromMs": 7500,
+          "singleFlight": false,
+          "jitter": 0
+        },
+        {
+          "label": "coalesced",
+          "seed": 1,
+          "keys": 4,
+          "rps": 500,
+          "trafficFromMs": 7500,
+          "singleFlight": true,
+          "jitter": 0
+        },
+        {
+          "label": "+ jitter",
+          "seed": 1,
+          "keys": 32,
+          "rps": 500,
+          "trafficFromMs": 7500,
+          "singleFlight": true,
+          "jitter": 0.2
+        }
+      ],
+      {
+        "seeds": [
+          1,
+          10
+        ],
+        "rps": [
+          200,
+          500,
+          1000
+        ],
+        "keys": [
+          1,
+          4,
+          16,
+          32
+        ]
+      }
+    ]
+  },
+  "generation": {
+    "promptVersion": "system-design-v3",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-25T21:40:23.962Z",
+    "repairAttempts": 1
+  },
+  "scenes": [
+    {
+      "id": "report",
+      "narration": "The home page is built from four cached entries, and at 500 page views a second almost every read hits the cache. Ten seconds after a deploy, the database's queue fills in an instant and pages fail. Query times are illustrative.",
+      "caption": "The home page's cache expires, and the database falls over a moment later",
+      "durationInFrames": 528,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        }
+      ]
+    },
+    {
+      "id": "duplicates",
+      "narration": "The deploy set all four keys with the same 10-second TTL, so they all expire at 10 seconds. R1274 misses trending and queries the database. In the same millisecond R1275 misses it too and sends a second query for the same thing, and R1276 a third.",
+      "caption": "All 4 keys expire at 10.0 s: R1275 queries trending too, now 2 fetches",
+      "durationInFrames": 588,
+      "traceStep": 5,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "no fix"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "fetches",
+            "queue"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pileup",
+      "narration": "In the next half second the database gets 76 queries for just four values. Its 8 workers can't keep up, the queue fills to its limit of 64, p99 reaches 447 milliseconds, and 19 pages are turned away.",
+      "caption": "10.0–10.5 s: 76 queries for 4 values, queue 64, p99 447 ms, 19 pages failed",
+      "durationInFrames": 492,
+      "traceStep": 15,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "pages / s",
+          "limitLine": false,
+          "labelUnit": "s"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "peak-queue",
+            "errors"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "idea",
+      "narration": "Two fixes. Single-flight lets the first miss for a key fetch it, while other misses for that key wait for the same result. Jittered TTLs spread out keys that were set together. Serving the stale value while one request refreshes it is another option: nobody waits, but users briefly see old data.",
+      "caption": "Let one miss fetch while the others wait, and spread the expiries",
+      "durationInFrames": 660,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "fix",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "wait for the fetch",
+          "rejected": "query the database too",
+          "reason": "one query per key, however many requests miss it",
+          "label": "on a miss"
+        }
+      ]
+    },
+    {
+      "id": "coalesced",
+      "narration": "Replay the same expiry with single-flight. R1274 misses trending and queries the database. R1275 misses it in the same millisecond, sees a fetch already running on this app node, and waits for that result instead.",
+      "caption": "Same expiry: R1275 misses trending but waits for R1274's fetch",
+      "durationInFrames": 456,
+      "traceStep": 24,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "coalesced"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "fetches",
+            "queue"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calm",
+      "narration": "One query per key: 4 queries in that half second instead of 76. The queue stays empty, nothing fails, and p99 is 57 milliseconds, the time of one fetch.",
+      "caption": "10.0–10.5 s: 4 queries, no queue, p99 57 ms, no failed pages",
+      "durationInFrames": 384,
+      "traceStep": 32,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "pages / s",
+          "limitLine": false,
+          "labelUnit": "s"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "queries",
+            "p99"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jitter",
+      "narration": "Now a bigger deploy fills 32 keys at once. With each TTL drawn within 20 percent of 10 seconds, they expire spread between 8.3 and 11.9 seconds instead of all together.",
+      "caption": "A bigger deploy fills 32 keys, with TTLs jittered 20%: 8.3 s to 11.9 s",
+      "durationInFrames": 408,
+      "traceStep": 36,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "keys",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "keys"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "keys",
+      "narration": "Why jitter too? Every key that expires at the same moment still sends one query. With 8 workers the queue grows with the keys: 8 deep with 16 keys, 24 deep with 32, past the workers in every run. With jittered TTLs the queue stays empty.",
+      "caption": "Single-flight alone: 32 keys expiring together still queue 24 deep",
+      "durationInFrames": 588,
+      "traceStep": 53,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "queue at most",
+          "limitLine": false,
+          "labelUnit": "",
+          "chips": false
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "same-32",
+            "jitter-32"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cost",
+      "narration": "Single-flight isn't free. A request that waits takes as long as the fetch, 58 milliseconds at p99 against 1 for a hit. And it only coalesces within one app node: with 3 app nodes, up to 3 fetches of a key reach the database at once, unless they coordinate, for example with a short lock in the shared cache.",
+      "caption": "The cost: waiting takes the fetch's time, and 3 app nodes send 3 fetches",
+      "durationInFrames": 744,
+      "traceStep": 54,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "cost",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "cost"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proof",
+      "narration": "Checked over seeds 1 to 10, 200, 500, and 1000 page views a second, and 1, 4, 16, and 32 keys, on one app node: without a fix 119 of 120 runs broke a rule; single-flight alone broke the queue rule in 30 runs, all with 32 keys; with both fixes, no run broke either rule. It needs one app node or coordinated single-flight, a fetch that succeeds, and jittered TTLs.",
+      "caption": "Seeds 1–10 × 3 rates × 1–32 keys: no fix 119 broken, both fixes 0 of 120",
+      "durationInFrames": 888,
+      "traceStep": 55,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "no-fix",
+            "both"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Runs breaking a rule (both fixes)",
+          "detail": "Seeds 1–10 × 200/500/1000 pages/s × 1, 4, 16, 32 keys",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { pointerSubject } from "@/lib/tutor/suggestions";
 
 import {
   DECISION_OPTIONS,
+  FETCH_OPTIONS,
   MAX_CHECKS,
   p99Trend,
   P99_OPTIONS,
@@ -147,6 +148,42 @@ const shownVersions = (step: TraceStep) =>
   (step.sim?.tables ?? []).flatMap((t) => t.rows.map((r) => r.cells[0])).filter((c) => /^v\d+$/.test(c));
 
 const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // A cache stampede. A deploy asks whether its keys expire together; a miss under single-flight asks fetch or wait;
+  // a duplicate miss without it asks how many fetches of the key the database now has.
+  ({ step, scene }) => {
+    const st = step.sim?.stampede;
+    if (!st || !scene.elements.some((x) => x.type === "sequence" || x.type === "data-table"))
+      return undefined;
+    if (st.event === "deploy" && st.expires?.length && st.expires.length > 1) {
+      const together = new Set(st.expires.map((x) => x.at)).size === 1;
+      return made(
+        "The deploy has just filled every key. Do these keys expire together?",
+        YES_NO,
+        together ? "Yes" : "No",
+        {
+          kind: "expire-together",
+        },
+      );
+    }
+    if (st.event !== "miss" || !st.request || !st.key || st.action === undefined) return undefined;
+    if (st.singleFlight && st.action === "wait")
+      return made(
+        `${st.request} misses ${st.key} while another request fetches it. Does ${st.request} query the database or wait?`,
+        Object.values(FETCH_OPTIONS),
+        FETCH_OPTIONS[st.action],
+        { kind: "fetch-or-wait" },
+      );
+    if (!st.singleFlight && st.action === "fetch" && (st.inflightAll ?? 0) > 0) {
+      const n = (st.inflightAll ?? 0) + 1;
+      return made(
+        `${st.request} misses ${st.key} too. How many fetches of ${st.key} is the database handling now?`,
+        numeric([n - 1, n, n + 1].filter((x) => x >= 1)),
+        String(n),
+        { kind: "db-count" },
+      );
+    }
+    return undefined;
+  },
   // Cache-aside. A read that hits a stale entry asks hit or miss; the last replay's first fresh read asks the price;
   // a versioned store asks whether it's kept.
   ({ step, scene, trace, index }) => {
@@ -304,6 +341,8 @@ const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
     const now = load.windows[load.current];
     if (!now.saturated.length || load.windows.slice(0, load.current).some((w) => w.saturated.length))
       return undefined;
+    // The question compares app servers with the database: only where both were measured.
+    if (!now.utilization.some((u) => u.id.startsWith("server"))) return undefined;
     const servers = now.saturated.some((id) => id.startsWith("server"));
     const correct = servers ? SATURATION_OPTIONS.servers : SATURATION_OPTIONS.db;
     return made(

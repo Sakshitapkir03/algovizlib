@@ -34,8 +34,10 @@ review queue of what to revisit.
   the stale write; every interleaving of two and of three editors is enumerated, and the retries the fix costs under
   contention are measured. "The price changed but users see the old one" shows a cache serving an old price until
   it expires, the race that survives deleting the entry on update, and versioned invalidation closing it, checked over
-  every interleaving. Learners can change the failures, timings, safeguards, traffic, servers, replication lag,
-  editors, and invalidation and replay their own scenario. The rest of the curriculum is planned.
+  every interleaving. "Everything fell over when the cache expired" shows keys set together expiring together and
+  flooding the database, then single-flight and jittered TTLs, checked over a stated range of seeds, traffic, and key
+  counts. Learners can change the failures, timings, safeguards, traffic, servers, replication lag, editors,
+  invalidation, and caching and replay their own scenario. The rest of the curriculum is planned.
 - **A curated catalog.** 20 patterns in four groups, 4–8 problems each with easy, medium, and hard. Statements are
   original, examples are machine-checked, hints are progressive, and the approach stays hidden behind a toggle.
 - **Quick checks.** 89 of the videos pause before a few key steps and ask what happens next (220 questions). Questions
@@ -75,7 +77,7 @@ ElevenLabs and ffmpeg (offline narration) · Vercel AI SDK (offline generation, 
 
 ## Testing
 
-`pnpm test` runs **2,643 tests in 49 files** in about 15 seconds, with no network access. Among them:
+`pnpm test` runs **2,676 tests in 50 files** in about 15 seconds, with no network access. Among them:
 
 - **321 catalog examples** are checked against 103 independent reference solutions (test-only code), using each
   problem's judge.

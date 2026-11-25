@@ -95,6 +95,16 @@ reading the replica breaks the rule in 469 of 480 runs, the fix in 0. It depends
 the token on every read of the session (a second device without it breaks it, tested), and no failover; versions, not
 clock times, decide.
 
+**"Everything fell over when the cache expired."** The home page is built from four cached entries, all filled by a
+deploy with the same 10-second TTL; at 500 page views a second the database's 8 workers sit idle. At 10 s all four
+expire together: 76 queries for 4 values in half a second, the 64-slot queue full, p99 447 ms, 19 pages failed.
+Single-flight (the first miss for a key fetches; the others wait for that result) makes it 4 queries, p99 57 ms.
+Jittered TTLs (within 20%) spread keys set together; single-flight alone still queues 24 deep when 32 keys expire
+together against 8 workers. Over seeds 1–10 × 200/500/1000 pages a second × 1/4/16/32 keys on one app node, both fixes
+together break neither rule (one fetch per key at a time per node; a queue no longer than the workers, no failed pages).
+The cost: waiting requests take the fetch's time, and single-flight is per app node unless coordinated.
+Stale-while-revalidate and early refresh are described, not simulated.
+
 **"The price changed but users see the old one."** A product page reads the price ($49, version 7) through a cache,
 cache-aside, with a 10-second TTL. The admin changes it to $39. Not told, the cache serves $49 for about 10 seconds
 after the update is saved. Deleting the entry after the write fixes most reads, but not this race: Ben's page missed,

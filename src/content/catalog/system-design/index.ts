@@ -3,6 +3,7 @@ import { definePlannedLesson, type AnyLesson } from "@/lib/catalog";
 import { oneServer } from "./lessons/estimates/one-server";
 import { chargedTwice } from "./lessons/idempotency/charged-twice";
 import { stalePrice } from "./lessons/caching/stale-price";
+import { stampede } from "./lessons/caching/stampede";
 import { lostUpdate } from "./lessons/consistency/lost-update";
 import { slowServer } from "./lessons/load-balancing/slow-server";
 import { vanishedComment } from "./lessons/replication/vanished-comment";
@@ -28,14 +29,7 @@ export const lessons: readonly AnyLesson[] = [
   oneServer,
   slowServer,
   stalePrice,
-  planned(
-    "caching",
-    "stampede",
-    "Everything fell over when the cache expired",
-    "incident",
-    "The home page's cache entry expired and the database went down a second later.",
-    1,
-  ),
+  stampede,
   vanishedComment,
   planned(
     "sharding",
