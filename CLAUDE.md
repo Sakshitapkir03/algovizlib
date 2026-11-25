@@ -1376,10 +1376,11 @@ lessons, built and planned; a built lesson lives at `/system-design/<topic>/<slu
 quick checks, reviews, and the tutor with DSA problems under the key `<topic>/<slug>` (topic slugs never reuse a
 pattern's: tested). Lessons are **incident replays** (a real class of bug followed message by message, then the fix
 replayed under the same failures) or **growth stories** (one server upward, a component added only after the
-simulation measures the bottleneck). Four lessons are built: "Why was the customer charged twice?"
+simulation measures the bottleneck). Five lessons are built: "Why was the customer charged twice?"
 (`idempotency/charged-twice`, an incident replay), "Is one server enough?" (`estimates/one-server`, a growth story),
-"One slow server takes everyone down" (`load-balancing/slow-server`, an incident replay), and "I posted a comment and
-it vanished" (`replication/vanished-comment`, an incident replay);
+"One slow server takes everyone down" (`load-balancing/slow-server`, an incident replay), "I posted a comment and
+it vanished" (`replication/vanished-comment`, an incident replay), and "Two edits, one lost" (`consistency/lost-update`,
+an incident replay);
 the rest of the curriculum is listed as planned (`content/catalog/system-design`).
 
 - **The simulation is the ground truth** (`src/lib/sim/`, app code: it runs in the browser and in tests), as traces are
@@ -1509,13 +1510,48 @@ the rest of the curriculum is listed as planned (`content/catalog/system-design`
   `replication-scenario-panel.tsx`): mean lag, spike on/off, read-your-writes on/off, reload delay; 48 combinations,
   all tested. No DSA link. Every existing video was pixel-identical before and after (every scene of all 106 at
   343/500/640/1280 px dark and 500 px light, a deterministic capture: software rasterization, whole-pixel frames).
+- **The concurrency model** (`concurrency.ts`, "Two edits, one lost"): one row with a version that goes up on every
+  write, shared by the timed replay and the proof as `Row` (`read()` a snapshot; `write()` blind, or compare-and-set:
+  compare the version and write in one atomic step). There was no general compare-and-set in the engine before (only
+  the payments key store's insert-if-absent, left untouched). Editors read, work out their change from what they read
+  (`applyEdit`: a stock `delta`, or adding a `tag`; both composable, so "reflected in the final value" is exact), and
+  write about `thinkMs` later; a rejected editor reads again and retries (at most `maxRetries` = 10 in the timed replay).
+  The row records which editors' edits each version contains, so a write computed from a stale read that replaces a
+  newer version reports the edits it `overwrote` as it happens. **The rule**: every acknowledged edit is reflected in
+  the final value. `enumerateSchedules(n, cas, kind)` is a depth-first search over "who moves next" for every schedule
+  of n editors' atomic reads and writes (a rejected write sends its editor back to read, until it applies; finite,
+  since every rejection means another write applied): 2 editors, 6 interleavings, 4 lose an edit blind and 0 of 6
+  schedules with compare-and-set; 3 editors, 90 and 84, then 0 of 498 (a test shows a non-atomic check-then-write loses
+  edits again). `traces/system-design/lost-update.ts`: args `[scenarios, { editors: [2, 3] }]`; per replay every read
+  ("read → v7: 20") and write ("write 25 if v7", then a database note "✓ v9 = 25 · Bo's edit lost" or "✕ rejected: row
+  at v8"), with tables `row` (the newest two versions) and `copies` (each clerk's "v7 → 17", ✕ when lost or rejected),
+  then a `sweep` step: 2, 4, 8, 16 editors starting within the same 10 ms over seeds 1–20 (blind: edits lost of edits;
+  compare-and-set: retries per editor, the average as the bar and the maximum as the outline, and how many gave up
+  after 10 retries: 56 of 320 with 16, the starvation compare-and-set doesn't prevent, said in the note and narration).
+  sim carries `edit` (editor, read or write, compare-and-set or not, the version read, the row's version, values,
+  outcome, overwrote, the edit) and the last step `interleavingProof` (`answerDisplay` "0 of 504"). Quick checks
+  `final-value` ("What's the stock after it?", on a blind write that overwrites), `write-outcome` ("Does it apply or get
+  rejected?", recomputed from the versions), and `cas-expect` ("Which version does the new write expect?", the
+  editor's last read); scenarios whose editors never overlap get none rather than a forced one. Alternatives (atomic
+  increment, lock) are in the lesson and the idea scene, not simulated. "Your scenario"
+  (`lib/sim/concurrency-scenario.ts`, `concurrency-scenario-panel.tsx`): two or three editors, the gap between their
+  starts, compare-and-set on or off, stock or tags; 32 combinations, all tested at every width. A test checks every
+  built lesson registers a scenario panel in `lesson-video.tsx`. No DSA link: the interleavings are the proof's, never
+  drawn as a search tree, and they're merges, not permutations. Every existing video was pixel-identical before and
+  after (all 107, the same capture as the replication lesson's).
 - **Related patterns** on a lesson are `{ slug, reason }`, the reason one sentence the page shows, from the learner's
   point of view (what they see in the lesson, never an implementation detail like the event heap); a lesson may have
   none ("Is one server enough?" has none). Planned lessons carry no links.
 - **Limits** (said on the site): latencies are illustrative, not measurements; small runs, not traffic at scale; races
   come from scheduling, not threads; no clock skew; the proof is bounded (one scenario's timings, at most two lost
   messages, no crashes).
-- Tests: `tests/system-design-replication.test.ts` (determinism and independent streams, Ana's vanishing and
+- Tests: `tests/system-design-concurrency.test.ts` (determinism, the blind and compare-and-set replays, the row's
+  atomic compare-and-set, tags, non-overlapping editors, every interleaving of 2 and 3 editors with and without it, a
+  non-atomic check losing edits, retries and starvation under contention, key steps, the recorded edits, the tables,
+  the cost chart's average and maximum, storyboard and fit at 343/500/640/1280, what was enumerated on screen, quick
+  checks and recomputation mutations, tutor grounding, validator mutations, all 32 scenarios, a scenario panel for every
+  built lesson, and pins on every existing storyboard file, resolved storyboard, and the four earlier lessons' traces),
+  `tests/system-design-replication.test.ts` (determinism and independent streams, Ana's vanishing and
   returning comment, versions in order, stale reloads growing with lag and the primary's load with the fix, the rule
   over the stated range per lag and spike, the second-device and concurrent-read edges, key steps, the stores side by
   side and the stream token, the sweep and cost numbers, storyboard and fit at 343/500/640/1280, the range on screen,
@@ -1657,7 +1693,7 @@ The UI shows a badge: "Real-world problem" (problem-native) or "Explained with a
    the catalog and storyboards behind the repository into the database, and let users paste their own question.
    Email + password in production once a Resend sending domain is verified.
 4. **Practice mode.** See "Practice mode (planned)" above.
-5. **System design.** The engine and four lessons are built (see "System design"). Next: the planned lessons, each
+5. **System design.** The engine and five lessons are built (see "System design"). Next: the planned lessons, each
    adding its components to the engine (load balancer, cache, replicas, queue, rate limiter) with its own model and
    proof, and growth stories, whose validator checks a component is added only after a step measures its bottleneck.
 6. **Rate limiting.** Auth and progress are limited (Postgres counters, `lib/auth/rate-limit.ts`); reuse them for

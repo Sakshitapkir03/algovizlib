@@ -349,6 +349,14 @@ export function describeStep(step: TraceStep, index: number): string {
         s.read
           ? `read by ${s.read.user}${s.read.fix ? " (read-your-writes on)" : ""}: token v${s.read.token}, replica at v${s.read.replicaAt} when the app decided, served by the ${s.read.store}, returned v${s.read.returned}${s.read.returned < s.read.token ? " (older than the user's own write)" : ""}`
           : "",
+        s.edit
+          ? s.edit.op === "read"
+            ? `${s.edit.editor} reads version ${s.edit.expected}: ${s.edit.read}`
+            : `${s.edit.editor} writes ${s.edit.local} (computed from version ${s.edit.expected}, value ${s.edit.read}; ${s.edit.cas ? "compare-and-set" : "blind"}); the row was at version ${s.edit.rowVersion}; ${s.edit.outcome}${s.edit.overwrote.length ? `, overwriting ${s.edit.overwrote.join(", ")}'s edit` : ""}; row now ${s.edit.after}`
+          : "",
+        s.interleavingProof
+          ? `every interleaving enumerated: ${s.interleavingProof.cases.map((c) => `${c.editors} editors: blind ${c.blind.lost} of ${c.blind.schedules} lose an edit, compare-and-set ${c.cas.lost} of ${c.cas.schedules}`).join("; ")}`
+          : "",
         s.readProof
           ? `rule checked over seeds ${s.readProof.seeds[0]}–${s.readProof.seeds[1]} × mean lags ${s.readProof.lags.join(", ")} ms × ${s.readProof.spikes.map((on) => (on ? `a ${s.readProof!.spike.durationMs} ms spike to ${s.readProof!.spike.lagMs} ms` : "no spike")).join(" / ")} × reloads ${s.readProof.readAfter.join(", ")} ms after writing: broken in ${s.readProof.baseline} of ${s.readProof.runs} runs before the fix, ${s.readProof.fixed} after`
           : "",

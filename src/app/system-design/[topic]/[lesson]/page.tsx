@@ -163,6 +163,21 @@ async function LessonContent({ params }: { params: PageProps<"/system-design/[to
                 {summary.ruleProof.runs} runs before the fix, {summary.ruleProof.fixed === 0 ? "✓" : "✕"}{" "}
                 {summary.ruleProof.fixed} of {summary.ruleProof.runs} with it
               </p>
+            ) : summary?.interleavingProof ? (
+              <p className="font-mono text-xs">
+                Every interleaving of{" "}
+                {summary.interleavingProof.cases.map((c) => `${c.editors} editors'`).join(" and of ")} reads
+                and writes:{" "}
+                {summary.interleavingProof.cases
+                  .map((c) => `${c.blind.lost} of ${c.blind.schedules}`)
+                  .join(" and ")}{" "}
+                lose an edit with blind writes, {summary.interleavingProof.fixed === 0 ? "✓" : "✕"}{" "}
+                {summary.interleavingProof.cases
+                  .map((c) => `${c.cas.lost} of ${c.cas.schedules}`)
+                  .join(" and ")}{" "}
+                with compare-and-set, retries included (needs one database comparing and writing atomically,
+                and retries until the write applies)
+              </p>
             ) : summary?.readProof ? (
               <p className="font-mono text-xs">
                 Over seeds {summary.readProof.seeds[0]}–{summary.readProof.seeds[1]} × mean lags{" "}

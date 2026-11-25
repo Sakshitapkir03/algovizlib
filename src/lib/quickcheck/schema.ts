@@ -73,7 +73,16 @@ export const quickCheckClaimSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("caught-up") }),
   /** Replication: "Where does this read go with read-your-writes?" (`READ_ROUTE_OPTIONS`). */
   z.object({ kind: z.literal("read-route") }),
+  /** Concurrent edits: "Which version does Cy's retry expect?": options are versions ("v8"). */
+  z.object({ kind: z.literal("cas-expect") }),
+  /** Concurrent edits: "Does Cy's write apply or get rejected?" (`WRITE_OUTCOME_OPTIONS`). */
+  z.object({ kind: z.literal("write-outcome") }),
+  /** Concurrent edits: "What's the stock after Cy's write?": options are stock counts. */
+  z.object({ kind: z.literal("final-value") }),
 ]);
+
+/** A write's outcomes, as a question names them. */
+export const WRITE_OUTCOME_OPTIONS = { applied: "It applies", rejected: "It's rejected" } as const;
 
 /** Where a read can go, as the sequence's lanes name the stores. */
 export const READ_ROUTE_OPTIONS = { replica: "Replica", primary: "Primary" } as const;

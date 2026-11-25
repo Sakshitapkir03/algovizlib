@@ -1,0 +1,320 @@
+{
+  "id": "consistency-lost-update",
+  "title": "Two edits, one lost",
+  "concept": "Consistency",
+  "category": "system-design",
+  "summary": "Two clerks read the same stock row, and the later write silently replaces the earlier one; compare-and-set on the version rejects the stale write so the clerk retries on top of the new value.",
+  "exampleSource": "problem-native",
+  "tags": [
+    "consistency",
+    "concurrency",
+    "compare-and-set"
+  ],
+  "takeaway": {
+    "pattern": "Compare-and-set on a version",
+    "summary": "Write only if the row is still at the version you read; if it isn't, read again and redo your change on top of the new value.",
+    "timeComplexity": "One version comparison per write, plus a retry per conflict",
+    "spaceComplexity": "One version number per row",
+    "whenToUse": [
+      "Several people or processes read, change, and write the same record: stock, a document, a profile",
+      "Conflicts are occasional, so retrying is cheaper than making everyone wait for a lock"
+    ]
+  },
+  "trace": {
+    "problem": "consistency/lost-update",
+    "args": [
+      [
+        {
+          "label": "blind writes",
+          "seed": 2,
+          "kind": "stock",
+          "editors": [
+            {
+              "name": "Bo",
+              "startMs": 0,
+              "delta": -3
+            },
+            {
+              "name": "Cy",
+              "startMs": 10,
+              "delta": 5
+            }
+          ],
+          "mode": "blind"
+        },
+        {
+          "label": "the fix",
+          "seed": 2,
+          "kind": "stock",
+          "editors": [
+            {
+              "name": "Bo",
+              "startMs": 0,
+              "delta": -3
+            },
+            {
+              "name": "Cy",
+              "startMs": 10,
+              "delta": 5
+            }
+          ],
+          "mode": "compare-and-set"
+        }
+      ],
+      {
+        "editors": [
+          2,
+          3
+        ]
+      }
+    ]
+  },
+  "generation": {
+    "promptVersion": "system-design-v3",
+    "provider": "claude-code",
+    "model": "claude-opus-5-5",
+    "generatedAt": "2026-11-25T20:19:00.214Z",
+    "repairAttempts": 1
+  },
+  "scenes": [
+    {
+      "id": "report",
+      "narration": "The shop has 20 of an item. Bo sells 3, and a moment later Cy receives 5, so there should be 22. Both see saved, but the stock says 25. Bo's sale is gone, and nobody saw an error.",
+      "caption": "Bo sells 3 and Cy receives 5 of an item with 20 in stock. It says 25",
+      "durationInFrames": 504,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        }
+      ]
+    },
+    {
+      "id": "both-read",
+      "narration": "Each clerk's screen reads the row, changes it, and writes it back. Bo reads version 7, stock 20, and will write 17. Cy reads the same version 7 at 12 milliseconds and will write 25. Each local copy knows nothing of the other.",
+      "caption": "Both clerks read version 7, stock 20, and work out their own new value",
+      "durationInFrames": 552,
+      "traceStep": 1,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "tables",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "row",
+            "copies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bo-lands",
+      "narration": "Bo's write arrives at 54 milliseconds and applies as version 8, stock 17. So far, so good: the stock should end at 22.",
+      "caption": "Bo's write lands first: version 8, stock 17",
+      "durationInFrames": 312,
+      "traceStep": 2,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "blind writes"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "value",
+            "expected"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "overwrite",
+      "narration": "Cy's write arrives at 72 milliseconds and replaces the row with 25, worked out from version 7. The row was at version 8, which held Bo's sale, so Bo's edit is lost. The database did exactly what it was told, and nobody sees an error.",
+      "caption": "Cy writes 25, computed from version 7: Bo's sale is overwritten",
+      "durationInFrames": 576,
+      "traceStep": 3,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "tables",
+          "enterAt": 0,
+          "type": "data-table",
+          "show": [
+            "row",
+            "copies"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "how-often",
+      "narration": "Rerun it with 2, 4, 8, and 16 clerks starting within the same 10 milliseconds, over 20 seeds. Blind writes lost 20 of 40 edits with 2 clerks, 60 of 80 with 4, 140 of 160 with 8, and 300 of 320 with 16.",
+      "caption": "More editors at once, more lost: 20 of 40 edits up to 300 of 320",
+      "durationInFrames": 564,
+      "traceStep": 4,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "edits lost",
+          "limitLine": false,
+          "labelUnit": "",
+          "chips": false
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "lost-2",
+            "lost-16"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "idea",
+      "narration": "The fix is compare-and-set on the version. Each write says which version it was computed from, and the database compares and writes in one step. If the row has moved on, the write is rejected and the clerk redoes the change on the new value. For a plain counter an atomic increment works too, and a lock suits long edits but makes everyone wait.",
+      "caption": "Write only if the row is still at the version you read",
+      "durationInFrames": 804,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "fix",
+          "enterAt": 0,
+          "type": "choice",
+          "chosen": "write if still v7",
+          "rejected": "write whatever I have",
+          "reason": "a stale write is rejected, then redone on the new value",
+          "label": "how to write"
+        }
+      ]
+    },
+    {
+      "id": "rejected",
+      "narration": "Replay the same moment with compare-and-set. Bo's write applies as version 8. Cy's write arrives expecting version 7, but the row is at version 8, so it's rejected, and nothing is lost.",
+      "caption": "Same timing: Cy's write expects v7, the row is at v8, so it's rejected",
+      "durationInFrames": 420,
+      "traceStep": 8,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "the fix"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "version",
+            "retries"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "retry",
+      "narration": "Cy's screen reads again: version 8, stock 17. It redoes the delivery on top of that and writes 22, expecting version 8. The row is still at version 8, so the write applies, and both edits are in the stock.",
+      "caption": "Cy reads v8, stock 17, redoes receive 5, and writes 22: both edits survive",
+      "durationInFrames": 516,
+      "traceStep": 10,
+      "elements": [
+        {
+          "id": "seq",
+          "enterAt": 0,
+          "type": "sequence",
+          "title": "the fix"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "value",
+            "expected"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cost",
+      "narration": "Nothing is lost, but a clerk who loses the race has to retry. With 2 clerks that's 0.5 retries on average and at most 1; with 16 it's 5.9 on average and at most 10, and 56 of 320 edits gave up after 10 retries. Compare-and-set prevents lost updates, but it doesn't guarantee every editor finishes quickly under heavy contention.",
+      "caption": "The cost: retries grow with contention, up to 5.9 on average and 10 at most",
+      "durationInFrames": 756,
+      "traceStep": 11,
+      "elements": [
+        {
+          "id": "chart",
+          "enterAt": 0,
+          "type": "load-chart",
+          "label": "retries avg/max",
+          "limitLine": false,
+          "labelUnit": "",
+          "chips": false
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "avg-16",
+            "max-16"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proof",
+      "narration": "Checked over every interleaving of two editors' reads and writes, and of three editors'. Blind writes lose an edit in 4 of 6 and 84 of 90. Compare-and-set, counting every retry, loses none of 6 and none of 498. It needs one database comparing and writing atomically on the version, changes recomputed from the value just read, and retries until the write applies.",
+      "caption": "Every interleaving: blind loses edits in 88 of 96, compare-and-set in 0 of 504",
+      "durationInFrames": 792,
+      "traceStep": 12,
+      "elements": [
+        {
+          "id": "system",
+          "enterAt": 0,
+          "type": "system-diagram"
+        },
+        {
+          "id": "metrics",
+          "enterAt": 0,
+          "type": "metrics",
+          "show": [
+            "cas-2",
+            "cas-3"
+          ]
+        },
+        {
+          "id": "answer",
+          "enterAt": 0,
+          "type": "result",
+          "title": "Schedules that lose an edit",
+          "detail": "Every interleaving of 2 and 3 editors, retries included",
+          "showsAnswer": true,
+          "tone": "success"
+        }
+      ]
+    }
+  ]
+}

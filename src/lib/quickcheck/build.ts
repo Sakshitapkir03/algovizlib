@@ -10,6 +10,7 @@ import {
   P99_OPTIONS,
   READ_ROUTE_OPTIONS,
   SATURATION_OPTIONS,
+  WRITE_OUTCOME_OPTIONS,
   SERVER_NAMES,
   type QuickCheck,
   type QuickCheckClaim,
@@ -144,6 +145,61 @@ const shownVersions = (step: TraceStep) =>
   (step.sim?.tables ?? []).flatMap((t) => t.rows.map((r) => r.cells[0])).filter((c) => /^v\d+$/.test(c));
 
 const KINDS: ((ctx: Ctx) => Made | undefined)[] = [
+  // Concurrent edits. A blind write that overwrites an edit asks the stock after it; a compare-and-set write that's
+  // rejected asks whether it applies; a retry that applies asks which version it expects.
+  ({ step, scene, trace }) => {
+    const e = step.sim?.edit;
+    if (
+      !e ||
+      e.op !== "write" ||
+      !scene.elements.some((x) => x.type === "sequence" || x.type === "data-table")
+    )
+      return undefined;
+    if (!e.cas && e.overwrote.length && e.kind === "stock" && e.local !== undefined) {
+      const options = [e.local, e.after, String(Number(e.read) + (e.delta ?? 0))];
+      const row = step.sim!.tables.find((t) => t.id === "row");
+      const before = row?.rows.at(-2)?.cells[1];
+      const expected = step.sim!.metrics.find((m) => m.id === "expected")?.value;
+      const picks = [
+        ...new Set([e.after, ...(before ? [before] : []), ...(expected ? [expected] : []), ...options]),
+      ]
+        .filter((o) => /^-?\d+$/.test(o))
+        .slice(0, 3);
+      return made(
+        `${e.editor}'s write arrives. What's the stock after it?`,
+        numeric(picks.map(Number)),
+        e.after,
+        { kind: "final-value" },
+      );
+    }
+    if ((e.cas && e.outcome === "rejected") || (!e.cas && e.overwrote.length))
+      return made(
+        e.cas
+          ? `${e.editor}'s write expects v${e.expected}. Does it apply or get rejected?`
+          : `${e.editor}'s write was worked out from v${e.expected}. Does it apply or get rejected?`,
+        Object.values(WRITE_OUTCOME_OPTIONS),
+        WRITE_OUTCOME_OPTIONS[e.outcome ?? "applied"],
+        { kind: "write-outcome" },
+      );
+    // A retry: an earlier write by the same editor in this replay was rejected.
+    const retry = trace.steps.some(
+      (s, k) =>
+        k < trace.steps.indexOf(step) &&
+        s.sim?.run === step.sim!.run &&
+        s.sim?.edit?.editor === e.editor &&
+        s.sim.edit.outcome === "rejected",
+    );
+    if (e.cas && e.outcome === "applied" && retry) {
+      const v = e.expected;
+      return made(
+        `${e.editor} retries the change. Which version does the new write expect?`,
+        [`v${v - 1}`, `v${v}`, `v${v + 1}`],
+        `v${v}`,
+        { kind: "cas-expect" },
+      );
+    }
+    return undefined;
+  },
   // Reads from a replica. With read-your-writes: "Where does this read go?"; without it, a read that comes back stale
   // asks which version the replica returns, and one that doesn't asks whether the replica has caught up.
   ({ step, scene }) => {

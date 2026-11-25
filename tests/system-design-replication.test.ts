@@ -380,7 +380,7 @@ describe("your own scenario", () => {
             const r = buildReplicationReplay(choices);
             expect(r.ok, JSON.stringify(choices)).toBe(true);
             if (!r.ok) continue;
-            for (const width of [343, 500])
+            for (const width of [343, 500, 640, 1280])
               for (const scene of r.storyboard.scenes)
                 expect(sceneFitProblems(scene.elements, textMetrics(width))).toEqual([]);
             const t = runTrace(KEY, r.storyboard.trace!.args);
@@ -405,7 +405,9 @@ describe("existing lessons and videos are unchanged", () => {
       }
     };
     walk("src/content/storyboards/generated");
-    const existing = files.filter((f) => !f.includes(`replication${path.sep}vanished-comment`)).sort();
+    // Later lessons add their own files (each pins the rest in its own test).
+    const later = [`replication${path.sep}vanished-comment`, `consistency${path.sep}lost-update`];
+    const existing = files.filter((f) => !later.some((l) => f.includes(l))).sort();
     const h = createHash("sha256");
     for (const f of existing) h.update(f).update(readFileSync(f));
     expect([existing.length, h.digest("hex").slice(0, 16)]).toEqual([105, "22c95cfb6c55b1d2"]);
@@ -415,7 +417,7 @@ describe("existing lessons and videos are unchanged", () => {
     const h = createHash("sha256");
     const ids = storyboards
       .map((s) => s.id)
-      .filter((id) => id !== "replication-vanished-comment")
+      .filter((id) => id !== "replication-vanished-comment" && id !== "consistency-lost-update")
       .sort();
     for (const id of ids) h.update(id).update(JSON.stringify(storyboards.find((s) => s.id === id)));
     expect([ids.length, h.digest("hex").slice(0, 16)]).toEqual([106, "c1a0c91c9c5013f8"]);

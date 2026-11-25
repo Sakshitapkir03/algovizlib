@@ -29,8 +29,11 @@ review queue of what to revisit.
   requests through a round-robin balancer to a degraded server, then replays the incident with least-outstanding
   routing and health checks. "I posted a comment and it vanished" follows one user's comment from the primary
   database through a lagging replication stream to a read replica, shows how often reads come back stale as lag grows,
-  then replays it with read-your-writes and measures the load the fix moves back to the primary. Learners can change
-  the failures, timings, safeguards, traffic, servers, and replication lag and replay their own scenario. The rest of the curriculum is planned.
+  then replays it with read-your-writes and measures the load the fix moves back to the primary. "Two edits, one
+  lost" shows two clerks' read → modify → write silently losing a sale, then compare-and-set on the version rejecting
+  the stale write; every interleaving of two and of three editors is enumerated, and the retries the fix costs under
+  contention are measured. Learners can change the failures, timings, safeguards, traffic, servers, replication lag,
+  and editors and replay their own scenario. The rest of the curriculum is planned.
 - **A curated catalog.** 20 patterns in four groups, 4–8 problems each with easy, medium, and hard. Statements are
   original, examples are machine-checked, hints are progressive, and the approach stays hidden behind a toggle.
 - **Quick checks.** 89 of the videos pause before a few key steps and ask what happens next (220 questions). Questions
@@ -70,7 +73,7 @@ ElevenLabs and ffmpeg (offline narration) · Vercel AI SDK (offline generation, 
 
 ## Testing
 
-`pnpm test` runs **2,566 tests in 47 files** in about 15 seconds, with no network access. Among them:
+`pnpm test` runs **2,608 tests in 48 files** in about 15 seconds, with no network access. Among them:
 
 - **321 catalog examples** are checked against 103 independent reference solutions (test-only code), using each
   problem's judge.

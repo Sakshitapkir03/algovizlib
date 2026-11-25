@@ -2,6 +2,7 @@ import { definePlannedLesson, type AnyLesson } from "@/lib/catalog";
 
 import { oneServer } from "./lessons/estimates/one-server";
 import { chargedTwice } from "./lessons/idempotency/charged-twice";
+import { lostUpdate } from "./lessons/consistency/lost-update";
 import { slowServer } from "./lessons/load-balancing/slow-server";
 import { vanishedComment } from "./lessons/replication/vanished-comment";
 import { topicGroups, topics } from "./topics";
@@ -50,14 +51,7 @@ export const lessons: readonly AnyLesson[] = [
     "One account's followers took down a whole shard.",
     0,
   ),
-  planned(
-    "consistency",
-    "lost-update",
-    "Two edits, one lost",
-    "incident",
-    "Two editors saved the same page and one person's changes disappeared.",
-    0,
-  ),
+  lostUpdate,
   chargedTwice,
   planned(
     "idempotency",

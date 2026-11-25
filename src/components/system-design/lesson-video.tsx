@@ -24,6 +24,7 @@ const PANELS = {
     ssr: false,
     loading,
   }),
+  "consistency/lost-update": dynamic(() => import("./concurrency-scenario-panel"), { ssr: false, loading }),
 } as const;
 
 /**

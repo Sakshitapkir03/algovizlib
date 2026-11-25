@@ -6,6 +6,7 @@ import {
   P99_OPTIONS,
   quickCheckSchema,
   READ_ROUTE_OPTIONS,
+  WRITE_OUTCOME_OPTIONS,
   SATURATION_OPTIONS,
   SERVER_NAMES,
   type QuickCheck,
@@ -268,6 +269,44 @@ function truth(
       const named = Object.entries(READ_ROUTE_OPTIONS).find(([, words]) => words === option)?.[0];
       if (named === undefined) return undefined;
       return named === store;
+    }
+    case "cas-expect": {
+      const e = step.sim?.edit;
+      const asked = /^v(\d+)$/.exec(option);
+      if (!e?.cas || e.op !== "write" || !asked) return undefined;
+      // What the write expects is the version its editor last read, in this replay.
+      const read = trace.steps
+        .slice(0, check.step)
+        .reverse()
+        .find(
+          (s) => s.sim?.run === step.sim!.run && s.sim?.edit?.editor === e.editor && s.sim.edit.op === "read",
+        );
+      if (!read) return undefined;
+      if (read.sim!.edit!.expected !== e.expected)
+        throw new Error("the write doesn't expect the version its editor read");
+      return Number(asked[1]) === read.sim!.edit!.expected;
+    }
+    case "write-outcome": {
+      const e = step.sim?.edit;
+      if (!e || e.op !== "write") return undefined;
+      // Blind writes always apply; compare-and-set applies only if the row is still at the expected version.
+      const outcome = !e.cas || e.rowVersion === e.expected ? "applied" : "rejected";
+      if (outcome !== e.outcome)
+        throw new Error("the write's recorded outcome isn't what compare-and-set decides");
+      const named = Object.entries(WRITE_OUTCOME_OPTIONS).find(([, words]) => words === option)?.[0];
+      if (named === undefined) return undefined;
+      return named === outcome;
+    }
+    case "final-value": {
+      const e = step.sim?.edit;
+      if (!e || e.op !== "write" || e.kind !== "stock" || e.delta === undefined || !/^-?\d+$/.test(option))
+        return undefined;
+      const applied = !e.cas || e.rowVersion === e.expected;
+      // The stock after the write: the value it computed from what it read, if it applied; else unchanged.
+      const after = applied ? Number(e.read) + e.delta : undefined;
+      if (after === undefined || String(after) !== e.after)
+        throw new Error("the row's value isn't what the write computed");
+      return Number(option) === after;
     }
     case "decision": {
       const d = step.sim?.decision;

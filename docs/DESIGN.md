@@ -95,6 +95,16 @@ reading the replica breaks the rule in 469 of 480 runs, the fix in 0. It depends
 the token on every read of the session (a second device without it breaks it, tested), and no failover; versions, not
 clock times, decide.
 
+**"Two edits, one lost."** One stock row at version 7 (20 in stock); Bo sells 3 and Cy receives 5. Both read version 7;
+Bo's write lands as version 8 (17), then Cy's, computed from version 7, replaces it with 25: Bo's sale is gone with no
+error. The fix, compare-and-set on the version: Cy's write expects version 7, finds version 8, and is rejected; Cy
+re-reads and writes 22. Every interleaving is enumerated: two editors, 4 of 6 lose an edit with blind writes and none of
+the 6 schedules with compare-and-set; three editors, 84 of 90, then none of 498. It depends on one database comparing
+and writing atomically on the version, changes recomputed from the value just read, and retries until the write
+applies. The cost is measured: with 16 editors at once, 5.9 retries per editor on average and 10 at most, and 56 of 320
+edits gave up after 10 retries: compare-and-set prevents lost updates, not starvation. Atomic increments (counters) and
+locks (long edits, at the price of waiting) are described, not simulated.
+
 **The flagship, "Why was the customer charged twice?"** A client pays through an API that charges a payment provider;
 either hop can lose a message. Without protection, a retry after a lost "paid" answer is a second payment. The fix: one
 idempotency key per order, sent on every retry; the API claims it as "in progress" atomically before charging (an

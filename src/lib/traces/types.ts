@@ -321,6 +321,36 @@ export type TraceSim = {
     baseline: number;
     fixed: number;
   };
+  /**
+   * A concurrent edit's step (consistency): who acted, a read or a write, whether writes compare-and-set, the version
+   * the editor read (what its write expects) and the row's version when this step reached it, the value read and the
+   * value written, the write's outcome, the edits it overwrote, the row's value after, and the edit itself (a stock
+   * change's `delta`, or a tag).
+   */
+  edit?: {
+    editor: string;
+    op: "read" | "write";
+    cas: boolean;
+    expected: number;
+    rowVersion: number;
+    read: string;
+    local?: string;
+    outcome?: "applied" | "rejected";
+    overwrote: string[];
+    after: string;
+    kind: "stock" | "tags";
+    delta?: number;
+    tag?: string;
+  };
+  /**
+   * Every schedule of the editors' reads and writes, enumerated for each number of editors: how many lose an
+   * acknowledged edit with blind writes and with compare-and-set (retries included).
+   */
+  interleavingProof?: {
+    cases: { editors: number; blind: { schedules: number; lost: number }; cas: { schedules: number; lost: number } }[];
+    runs: number;
+    fixed: number;
+  };
   ruleProof?: {
     runs: number;
     seeds: [number, number];
